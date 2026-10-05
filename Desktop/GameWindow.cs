@@ -18,7 +18,7 @@ namespace VanDao.Desktop;
 /// </summary>
 public sealed class GameWindow : Form
 {
-    private static readonly Size BaseSize = new(560, 170);
+    private static readonly Size BaseSize = new(280, 200);
     private const int HotkeyResetPos = 1, HotkeyResetScale = 2;
 
     private readonly string _url;
@@ -161,7 +161,7 @@ public sealed class GameWindow : Form
     }
 
     /// <summary>
-    /// Nền trong suốt bằng cách cắt hình cửa sổ (window region) theo đĩa nhân vật và bảng thông tin.
+    /// Nền trong suốt bằng cách cắt hình cửa sổ (window region) theo khung game bo góc.
     /// Không dùng TransparencyKey vì WebView2 vẽ ở lớp riêng nên Windows coi cả cửa sổ là "trong suốt"
     /// và mọi cú click đều xuyên qua.
     /// </summary>
@@ -180,15 +180,17 @@ public sealed class GameWindow : Form
         if (!_s.Transparent) return;
         try
         {
-            var c = m.GetProperty("circle");
             var k = m.GetProperty("card");
-            using var circle = new GraphicsPath();
-            circle.AddEllipse(c.GetProperty("x").GetInt32(), c.GetProperty("y").GetInt32(),
-                              c.GetProperty("size").GetInt32(), c.GetProperty("size").GetInt32());
             using var card = RoundRect(k.GetProperty("x").GetInt32(), k.GetProperty("y").GetInt32(),
                                        k.GetProperty("w").GetInt32(), k.GetProperty("h").GetInt32(), k.GetProperty("r").GetInt32());
-            var region = new Region(circle);
-            region.Union(card);
+            var region = new Region(card);
+            if (m.TryGetProperty("circle", out var c))
+            {
+                using var circle = new GraphicsPath();
+                circle.AddEllipse(c.GetProperty("x").GetInt32(), c.GetProperty("y").GetInt32(),
+                                  c.GetProperty("size").GetInt32(), c.GetProperty("size").GetInt32());
+                region.Union(circle);
+            }
             SetRegion(region);
         }
         catch (Exception) { /* dữ liệu lạ thì giữ nguyên hình cũ */ }

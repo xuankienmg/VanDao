@@ -18,7 +18,7 @@ public class WindowSettings
     /// <summary>Màn hình đặt dải game (DeviceName). null = màn hình chính.</summary>
     public string? Screen { get; set; }
 
-    /// <summary>Tỉ lệ kích thước dải game, 1 = 560×170.</summary>
+    /// <summary>Tỉ lệ kích thước dải game, 1 = 280×200.</summary>
     public double Scale { get; set; } = 1.0;
 
     /// <summary>Luôn hiển thị trên các cửa sổ khác.</summary>

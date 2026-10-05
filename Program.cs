@@ -58,7 +58,11 @@ public static class Program
         var app = builder.Build();
 
         using (var scope = app.Services.CreateScope())
-            scope.ServiceProvider.GetRequiredService<GameDbContext>().Database.EnsureCreated();
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+            db.Database.EnsureCreated();
+            SchemaUpgrade.Apply(db);
+        }
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -72,7 +76,8 @@ public static class Program
 
         api.MapGet("/data", () => new GameDataDto(
             GameData.Items,
-            GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Resources)),
+            GameData.Slots,
+            GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources)),
             GameData.Recipes.Select((r, i) => new RecipeInfoDto(i, r.Name, r.OutItem, r.OutCount, r.In, r.Rate, r.MinRealm, GameData.Realms[r.MinRealm].Name)),
             GameData.LockedRealms));
 
@@ -82,14 +87,24 @@ public static class Program
             return Results.Ok(await game.BuildStateAsync(p));
         });
 
+        api.MapGet("/players/current", async (GameService game) =>
+        {
+            var p = await game.CurrentAsync();
+            await game.SaveAsync(p);
+            return Results.Ok(new ActionResponse(await game.BuildStateAsync(p)));
+        });
+
         api.MapGet("/players/{id:guid}", (Guid id, GameService game) =>
             Run(id, game, _ => (null, null)));
 
         api.MapPost("/players/{id:guid}/channel", (Guid id, GameService game) =>
             Run(id, game, p => (game.Channel(p), null)));
 
-        api.MapPost("/players/{id:guid}/explore", (Guid id, GameService game) =>
-            Run(id, game, p => game.Explore(p)));
+        api.MapPost("/players/{id:guid}/equip/{itemId}", (Guid id, string itemId, GameService game) =>
+            Run(id, game, p => game.Equip(p, itemId)));
+
+        api.MapPost("/players/{id:guid}/unequip/{slot}", (Guid id, string slot, GameService game) =>
+            Run(id, game, p => game.Unequip(p, slot)));
 
         api.MapPost("/players/{id:guid}/advance", (Guid id, GameService game) =>
             Run(id, game, p => game.Advance(p)));

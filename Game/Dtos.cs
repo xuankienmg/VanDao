@@ -3,12 +3,13 @@ namespace VanDao.Game;
 // ---- Dữ liệu tĩnh cho giao diện ----
 public record GameDataDto(
     IEnumerable<ItemDef> Items,
+    IEnumerable<SlotDef> Slots,
     IEnumerable<RealmInfoDto> Realms,
     IEnumerable<RecipeInfoDto> Recipes,
     string[] LockedRealms);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
-    string Aura, string Lotus, string Sash, string[] Resources);
+    string Aura, string Lotus, string Sash, string Hero, string[] Resources);
 
 public record RecipeInfoDto(int Index, string Name, string OutItem, int OutCount,
     Dictionary<string, int> In, double Rate, int MinRealm, string MinRealmName);
@@ -39,9 +40,25 @@ public record StateDto(
     double Chance,
     double Bonus,
     long ExploreReadyInMs,
+    bool AutoExplore,
+    long ExploreCooldownMs,
+    double ExploreQiGain,
+    Dictionary<string, string> Equipment,
+    BonusDto Bonuses,
+    CombatStats Stats,
+    BattleDto Battle,
     Dictionary<string, int> Inventory,
     List<RecipeStateDto> Recipes,
     List<LogDto> Logs);
+
+public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
+
+/// <summary>
+/// Kết quả trận đánh của chuyến thám hiểm (tính sẵn từ chỉ số, không ngẫu nhiên)
+/// để hoạt ảnh ở client khớp đúng với server.
+/// </summary>
+public record BattleDto(string Monster, string Image, int MonsterHp, int MonsterAtk, int MonsterDef,
+    int HeroDmg, int MonsterDmg, int Hits, bool Win);
 
 public record ActionResponse(StateDto State, string? Message = null, string? Kind = null);
 
