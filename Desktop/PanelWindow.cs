@@ -3,7 +3,7 @@ using Microsoft.Web.WebView2.WinForms;
 namespace VanDao.Desktop;
 
 /// <summary>
-/// Bảng tu luyện (Đột phá / Túi đồ / Luyện đan) bật lên sát dải game khi cần,
+/// Cửa sổ Tu luyện (Đột phá / Túi đồ / Luyện đan) bật lên sát dải game khi cần,
 /// đóng lại thì game quay về dạng dải gọn trên taskbar.
 /// </summary>
 public sealed class PanelWindow : Form
@@ -32,8 +32,9 @@ public sealed class PanelWindow : Form
         StartPosition = FormStartPosition.Manual;
         BackColor = Theme.Ink;
         KeyPreview = true;
-        MinimumSize = LogicalToDeviceUnits(new Size(320, 360));
-        Size = _s.PanelWidth is int w && _s.PanelHeight is int h ? new Size(w, h) : LogicalToDeviceUnits(new Size(420, 580));
+        MinimumSize = LogicalToDeviceUnits(new Size(260, 300));
+        // kích thước gọn mặc định; khoá lưu mới nên kích thước lớn của bản cũ không còn áp dụng
+        Size = _s.PanelW is int w && _s.PanelH is int h ? new Size(w, h) : LogicalToDeviceUnits(new Size(310, 430));
         Controls.Add(_web);
 
         Load += async (_, _) =>
@@ -42,7 +43,7 @@ public sealed class PanelWindow : Form
             _web.CoreWebView2.NavigationCompleted += (_, _) => _ready = true;
             _web.Source = new Uri($"{_url}?mode=panel&tab={_tab}");
         };
-        ResizeEnd += (_, _) => { _s.PanelWidth = Width; _s.PanelHeight = Height; _s.Save(); };
+        ResizeEnd += (_, _) => { _s.PanelW = Width; _s.PanelH = Height; _s.Save(); };
         FormClosing += (_, e) =>
         {
             if (e.CloseReason != CloseReason.UserClosing) return;
@@ -54,7 +55,7 @@ public sealed class PanelWindow : Form
     public async void ShowTab(string tab)
     {
         _tab = TabNames.ContainsKey(tab) ? tab : "req";
-        Text = $"Vấn Đạo · {TabNames[_tab]}";
+        Text = $"Tu luyện · {TabNames[_tab]}";
         TopMost = _s.Pinned;
         PlaceNearStrip();
         if (!Visible) Show();

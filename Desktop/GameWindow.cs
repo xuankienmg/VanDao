@@ -12,7 +12,7 @@ namespace VanDao.Desktop;
 ///
 /// - Chuột phải (hoặc nút ⋯): menu nhanh — bố cục màn hình, kích thước, ghim, nền trong suốt, độ trong.
 /// - Kéo ⋮⋮ để đặt tự do; chọn lại một bố cục để neo về taskbar.
-/// - Nút "Bảng": mở Đột phá / Túi đồ / Luyện đan trong cửa sổ bật lên phía trên dải.
+/// - Nút "Tu luyện": mở Đột phá / Túi đồ / Luyện đan trong cửa sổ bật lên phía trên dải.
 /// - Shift+F12: đặt lại vị trí khi bị lạc. Shift+F11: đặt lại kích thước.
 /// - Biểu tượng ở khay hệ thống: ẩn/hiện và thoát.
 /// </summary>

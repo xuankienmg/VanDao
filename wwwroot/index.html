@@ -74,7 +74,7 @@ button{font:inherit;cursor:pointer}
 .trip-bar{height:4px;border-radius:999px;background:#0a0f10;overflow:hidden}
 .trip-bar i{display:block;height:100%;width:0;background:var(--muted)}
 .trip.walk .trip-bar i{background:#9fb3c8}
-.tip{position:fixed;z-index:50;max-width:240px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#0b1012;color:var(--paper);font-size:12px;line-height:1.45;white-space:pre-line;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.tip{position:fixed;z-index:50;max-width:min(240px,calc(100vw - 12px));padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#0b1012;color:var(--paper);font-size:12px;line-height:1.45;white-space:pre-line;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .tip b{color:var(--gold);font-weight:600}
 /* trang bị */
 .equip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
@@ -87,6 +87,23 @@ button{font:inherit;cursor:pointer}
 .bonus .stats{display:inline-flex;gap:12px;color:var(--paper);font-size:13px}
 .bonus .win{color:var(--muted)} .bonus .lose{color:var(--bad)}
 .item.eq{cursor:pointer}
+.gears{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:5px}
+.cell{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:6px;background:#11191b;display:grid;place-items:center;padding:3px;min-width:0}
+.cell .ic{width:62%;height:62%}
+.cell img{width:85%;height:85%;object-fit:contain}
+.cell .qty{position:absolute;right:2px;bottom:1px;font-size:10px;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums;text-shadow:0 1px 0 #000,0 0 2px #000}
+.cell.gear{border-color:#3d5450;cursor:pointer}
+.cell.gear:hover{border-color:var(--jade)}
+.cell.gear:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.gear-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.sort{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.sort select{background:var(--card);color:var(--paper);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit;font-size:12px}
+.sort select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.pager{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:10px}
+.pager button{min-width:28px;height:26px;padding:0 6px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--paper);font-size:12px;font-variant-numeric:tabular-nums}
+.pager button:hover:not(:disabled){border-color:var(--jade)}
+.pager button[aria-current="page"]{background:var(--gold);border-color:var(--gold);color:#1a1405;font-weight:600}
+.pager button:disabled{opacity:.35;cursor:not-allowed}
 .item.eq:hover{border-color:var(--jade)}
 img.ic{object-fit:contain}
 .log{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px;max-height:168px;overflow:auto;font-size:13px}
@@ -174,6 +191,29 @@ body.panel .wrap{max-width:none;height:100%;gap:0}
 body.panel header.top,body.panel .altar,body.panel footer{display:none}
 body.panel .grid{display:block;height:100%}
 body.panel aside.book{border:0;border-radius:0;height:100%;overflow:auto}
+body.panel{font-size:12px}
+body.panel .tab{padding:8px 4px;font-size:12.5px}
+body.panel .pane{padding:10px;gap:10px}
+body.panel .eyebrow{font-size:10px}
+body.panel .target{font-size:19px}
+body.panel .row{padding:6px 9px;font-size:12px;gap:8px}
+body.panel .ic{width:18px;height:18px}
+body.panel .chance b{font-size:19px}
+body.panel .note,body.panel .desc,body.panel .bonus{font-size:11.5px}
+body.panel .bonus .stats{font-size:12px;gap:9px}
+body.panel .chip{font-size:11px;padding:3px 7px 3px 4px}
+body.panel .chip .ic{width:15px;height:15px}
+body.panel .equip{gap:4px}
+body.panel .slot{font-size:9px}
+body.panel .gears{grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px}
+body.panel .cell .qty{font-size:9px}
+body.panel .recipe{padding:9px;gap:7px}
+body.panel .recipe .hd b{font-size:16px}
+body.panel .recipe .hd .ic{width:24px;height:24px}
+body.panel .recipe .btn{padding:6px 8px;font-size:12px}
+body.panel .pager{gap:3px;flex-wrap:nowrap}
+body.panel .pager button{min-width:20px;height:22px;padding:0 3px;font-size:11px}
+body.panel .sort select{font-size:11px;padding:2px 4px}
 body.panel .tabs{position:sticky;top:0;background:var(--ink-2);z-index:1}
 html.strip,html.panel{height:100%}
 [hidden]{display:none!important}
@@ -203,7 +243,6 @@ body{margin:0}
       <div class="strip-head">
         <span class="grip" id="grip" title="Kéo để di chuyển">⋮⋮</span>
         <b id="sRealm">Luyện Khí</b><span class="st" id="sStage">Tầng 1</span>
-        <button class="ib sm" id="btnPanel" aria-label="Bảng tu luyện" data-tip="Bảng tu luyện&#10;Đột phá · Túi đồ · Luyện đan"><svg viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg></button>
         <button class="ib sm" id="btnMenu" aria-label="Cài đặt" data-tip="Cài đặt&#10;Bố cục, kích thước, ghim, nền trong suốt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </div>
       <div class="qi">
@@ -212,6 +251,7 @@ body{margin:0}
       </div>
       <div class="actions">
         <button class="ib" id="btnBag" aria-label="Túi đồ" data-tip="Túi đồ&#10;Trang bị, chỉ số và vật phẩm"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1.2 11H6.2z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/></svg></button>
+        <button class="ib" id="btnPanel" aria-label="Tu luyện" data-tip="Tu luyện&#10;Đột phá · Túi đồ · Luyện đan"><svg viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg></button>
         <button class="ib gold" id="btnAdvance" aria-label="Đột phá" data-tip="Đột phá"><svg viewBox="0 0 24 24"><path d="m12 3 7 7h-4v5H9v-5H5z"/><path d="M8 19h8"/></svg></button>
         <div class="trip walk" id="trip"><div class="trip-bar"><i></i></div><span id="tripText">Thám hiểm</span></div>
       </div>
@@ -346,6 +386,18 @@ function renderReq(){
   $('pane-req').innerHTML = html;
 }
 const pct = v => `+${Math.round(v)}%`;
+const GEAR_PER_PAGE = 20;
+let gearPage = 1;
+// sắp xếp trang bị trong túi (nhớ lựa chọn trên máy này)
+const GEAR_SORTS = {
+  slot: {name:'Loại', key: it => it.slot ? DATA.slots.findIndex(s => s.id === it.slot) : DATA.items.indexOf(it)},
+  atk:  {name:'Tấn công', key: it => it.slot ? -(it.atk||0) : DATA.items.indexOf(it)},
+  hp:   {name:'Máu', key: it => it.slot ? -(it.hp||0) : DATA.items.indexOf(it)},
+  def:  {name:'Phòng thủ', key: it => it.slot ? -(it.def||0) : DATA.items.indexOf(it)},
+  name: {name:'Tên A–Z', key: it => it.name},
+};
+let gearSort = 'slot';
+try { const v = localStorage.getItem('van-dao-gear-sort'); if (v && GEAR_SORTS[v]) gearSort = v; } catch(e){}
 function statText(it){
   const parts = [];
   if (it.atk) parts.push(`Tấn công +${it.atk}`);
@@ -372,15 +424,36 @@ function renderInv(){
   const bonus = `<span class="stats"><span>Tấn công <b>${fmt(st.atk)}</b></span><span>Máu <b>${fmt(st.hp)}</b></span><span>Phòng thủ <b>${fmt(st.def)}</b></span></span>`
     + (extra ? `<br>${extra}` : '')
     + `<br><span class="${bt.win ? 'win' : 'lose'}">${bt.monster} (Máu ${fmt(bt.monsterHp)} · Công ${fmt(bt.monsterAtk)} · Thủ ${fmt(bt.monsterDef)}): ${bt.win ? `hạ sau ${bt.hits} đòn, mỗi đòn ${fmt(bt.heroDmg)}` : `chưa đánh lại, mỗi đòn của nó gây ${fmt(bt.monsterDmg)}`}</span>`;
-  const list = DATA.items.map(i => i.id).filter(k => (S.inventory[k]||0) > 0);
-  $('pane-inv').innerHTML = `<div><p class="eyebrow" style="margin-bottom:8px">Trang bị</p><div class="equip">${slots}</div></div>
-    <p class="bonus">${bonus}</p>` + (list.length
-    ? `<div class="inv">${list.map(k => {
-        const eq = !!ITEM[k].slot;
-        return `<div class="item ${eq?'eq':''}" ${eq?`data-equip="${k}"`:''} data-tip="${itemTip(k, eq ? 'Bấm để trang bị' : '')}">${icon(k)}<div><b>${ITEM[k].name}</b><span>× ${fmt(S.inventory[k])}</span></div></div>`;
-      }).join('')}</div>`
-    : `<p class="empty">Túi trống. Nhân vật đang thám hiểm, linh tài sẽ rơi dần vào đây.</p>`);
+  // một hộp chung: trang bị không xếp chồng (mỗi món một ô), vật phẩm xếp chồng (một ô kèm số lượng)
+  const owned = DATA.items.map(i => i.id).filter(k => (S.inventory[k]||0) > 0);
+  const sk = GEAR_SORTS[gearSort].key;
+  const order = (a, b) => {
+    const A = ITEM[a], B = ITEM[b];
+    if (!!A.slot !== !!B.slot) return A.slot ? 1 : -1;     // nguyên liệu/vật phẩm trước, trang bị sau (mọi kiểu sắp xếp)
+    const x = sk(A), y = sk(B);
+    return (typeof x === 'string' ? x.localeCompare(y, 'vi') : (x - y)) || A.name.localeCompare(B.name, 'vi');
+  };
+  const cells = owned.sort(order).flatMap(k => ITEM[k].slot
+    ? Array.from({length: S.inventory[k]}, () =>
+        `<button class="cell gear" data-equip="${k}" data-tip="${itemTip(k, 'Bấm để trang bị')}" aria-label="${ITEM[k].name}"><img src="${ITEM[k].icon}" alt=""></button>`)
+    : [`<div class="cell" data-tip="${itemTip(k, '')}" aria-label="${ITEM[k].name} × ${S.inventory[k]}">${icon(k)}<span class="qty">${short(S.inventory[k])}</span></div>`]);
+  const pages = Math.max(1, Math.ceil(cells.length / GEAR_PER_PAGE));
+  gearPage = Math.min(Math.max(1, gearPage), pages);
+  const pageCells = cells.slice((gearPage - 1) * GEAR_PER_PAGE, gearPage * GEAR_PER_PAGE);
+  const first = Math.max(1, Math.min(gearPage - 4, pages - 9)), last = Math.min(pages, first + 9);
+  const pager = pages > 1 ? `<nav class="pager" aria-label="Trang túi đồ">
+      <button data-page="${gearPage - 1}" ${gearPage === 1 ? 'disabled' : ''} aria-label="Trang trước">‹</button>
+      ${Array.from({length: last - first + 1}, (_, i) => first + i).map(n => `<button data-page="${n}" ${n === gearPage ? 'aria-current="page"' : ''}>${n}</button>`).join('')}
+      <button data-page="${gearPage + 1}" ${gearPage === pages ? 'disabled' : ''} aria-label="Trang sau">›</button>
+    </nav>` : '';
+  $('pane-inv').innerHTML = `<div><p class="eyebrow" style="margin-bottom:6px">Đang mặc</p><div class="equip">${slots}</div></div>
+    <p class="bonus">${bonus}</p>
+    <div><div class="gear-head"><p class="eyebrow">Túi đồ · ${cells.length} ô${pages > 1 ? ` · trang ${gearPage}/${pages}` : ''}</p>
+      <label class="sort">Sắp xếp <select id="gearSort">${Object.entries(GEAR_SORTS).map(([k, v]) => `<option value="${k}" ${k === gearSort ? 'selected' : ''}>${v.name}</option>`).join('')}</select></label></div>
+      ${cells.length ? `<div class="gears">${pageCells.join('')}</div>${pager}` : `<p class="empty">Túi trống. Nhân vật đang thám hiểm, linh tài sẽ rơi dần vào đây.</p>`}
+    </div>`;
 }
+const short = n => n >= 1e6 ? (n/1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.0','') + 'M' : n >= 1e4 ? Math.floor(n/1e3) + 'K' : String(n);
 function renderCraft(){
   $('pane-craft').innerHTML = `<p class="note">Đan dược và linh thạch cấp cao mở theo cảnh giới. Mỗi lò có tỉ lệ thành công riêng.</p>` +
     DATA.recipes.map(r => {
@@ -1004,7 +1077,15 @@ async function boot(){
   resize(); addEventListener('resize', resize);
   $('btnBag').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'inv'}) : openTab('inv');
   document.body.appendChild($('tip')); // tooltip phải nằm ngoài vùng bị ẩn ở chế độ bảng
+  $('pane-inv').addEventListener('change', e => {
+    if (e.target.id !== 'gearSort') return;
+    gearSort = e.target.value; gearPage = 1;
+    try { localStorage.setItem('van-dao-gear-sort', gearSort); } catch(err){}
+    renderInv();
+  });
   $('pane-inv').addEventListener('click', e => {
+    const pg = e.target.closest('[data-page]');
+    if (pg){ if (!pg.disabled){ gearPage = +pg.dataset.page; renderInv(); } return; }
     const eq = e.target.closest('[data-equip]'), un = e.target.closest('[data-unequip]');
     if (eq) act('equip/' + eq.dataset.equip); else if (un) act('unequip/' + un.dataset.unequip);
   });
@@ -1014,7 +1095,7 @@ async function boot(){
   if (Q.get('tab')) openTab(Q.get('tab'));
   // dải taskbar: kéo ⋮⋮ để di chuyển, mở bảng, mở menu cài đặt
   $('grip').addEventListener('mousedown', e => { if (e.button === 0){ e.preventDefault(); notifyHost('drag'); } });
-  $('btnPanel').onclick = () => notifyHost('open-panel', {tab:'req'});
+  $('btnPanel').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'req'}) : openTab('req');
   $('btnMenu').onclick = () => notifyHost('menu');
   addEventListener('keydown', e => { if (e.key === 'Escape' && MODE === 'panel') notifyHost('close-panel'); });
   let armed = 0;
