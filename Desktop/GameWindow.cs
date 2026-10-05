@@ -12,7 +12,7 @@ namespace VanDao.Desktop;
 ///
 /// - Chuột phải (hoặc nút ⋯): menu nhanh — bố cục màn hình, kích thước, ghim, nền trong suốt, độ trong.
 /// - Kéo ⋮⋮ để đặt tự do; chọn lại một bố cục để neo về taskbar.
-/// - Nút "Bảng": mở Đột phá / Túi đồ / Luyện đan trong cửa sổ bật lên phía trên dải.
+/// - Nút "Tu luyện": mở Đột phá / Túi đồ / Luyện đan trong cửa sổ bật lên phía trên dải.
 /// - Shift+F12: đặt lại vị trí khi bị lạc. Shift+F11: đặt lại kích thước.
 /// - Biểu tượng ở khay hệ thống: ẩn/hiện và thoát.
 /// </summary>
@@ -76,6 +76,13 @@ public sealed class GameWindow : Form
     }
 
     public Task SyncAsync() => WebHost.SyncAsync(_web);
+
+    /// <summary>Đột phá ở cửa sổ Tu luyện → phát hiệu ứng trên dải game.</summary>
+    public void PlayBreak(string kind)
+    {
+        if (_web.CoreWebView2 is null || kind is not ("good" or "gold" or "bad")) return;
+        _ = _web.ExecuteScriptAsync($"window.playBreak && window.playBreak('{kind}', true)");
+    }
 
     // ================= Kích thước, vị trí =================
 

@@ -29,8 +29,9 @@ public class WindowSettings
 
     public double Opacity { get; set; } = 1.0;
 
-    public int? PanelWidth { get; set; }
-    public int? PanelHeight { get; set; }
+    /// <summary>Kích thước cửa sổ Tu luyện người dùng đã kéo.</summary>
+    public int? PanelW { get; set; }
+    public int? PanelH { get; set; }
 
     private static string FilePath => Path.Combine(AppPaths.DataDir, "window.json");
 
