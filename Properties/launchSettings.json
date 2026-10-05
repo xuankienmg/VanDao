@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "VanDao (cửa sổ)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "VanDao (trình duyệt)": {
+      "commandName": "Project",
+      "commandLineArgs": "--web",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
