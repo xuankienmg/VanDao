@@ -77,6 +77,13 @@ public sealed class GameWindow : Form
 
     public Task SyncAsync() => WebHost.SyncAsync(_web);
 
+    /// <summary>Đột phá ở cửa sổ Tu luyện → phát hiệu ứng trên dải game.</summary>
+    public void PlayBreak(string kind)
+    {
+        if (_web.CoreWebView2 is null || kind is not ("good" or "gold" or "bad")) return;
+        _ = _web.ExecuteScriptAsync($"window.playBreak && window.playBreak('{kind}', true)");
+    }
+
     // ================= Kích thước, vị trí =================
 
     private void ApplySize()

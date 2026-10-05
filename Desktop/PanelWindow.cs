@@ -89,6 +89,7 @@ public sealed class PanelWindow : Form
         {
             case "changed": _ = _strip.SyncAsync(); break;
             case "close-panel": Hide(); break;
+            case "break": _strip.PlayBreak(msg.TryGetProperty("kind", out var k) ? k.GetString() ?? "good" : "good"); break;
         }
     }
 
