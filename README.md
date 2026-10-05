@@ -14,7 +14,7 @@ dotnet run
 Game chạy dưới dạng **dải nhỏ 280×200 nằm sát ngay trên thanh taskbar**, giống cách "TBH: Task Bar Hero" hoạt động (cần Microsoft Edge WebView2 Runtime, có sẵn trên Windows 10/11):
 
 - **Nền trong suốt**: chỉ thấy nhân vật và bảng thông tin gọn; phần trống bấm xuyên qua được. Tắt trong menu nếu màn hình bị đen.
-- **Chuột phải** lên dải (hoặc nút ⋯): menu nhanh gồm bảng tu luyện, bố cục màn hình, màn hình, kích thước (75–200%), độ trong, ghim luôn hiển thị, nền trong suốt, đặt lại vị trí, ẩn xuống khay, thoát.
+- **Chuột phải** lên dải (hoặc nút bánh răng): menu cài đặt gồm bố cục màn hình, kích thước (75–200%), ghim luôn hiển thị, nền trong suốt, đặt lại vị trí, ẩn xuống khay, thoát.
 - **Bố cục màn hình**: tự động theo vị trí taskbar, hoặc neo trái / giữa / phải ở mép dưới hay mép trên. Kéo ⋮⋮ để đặt tự do.
 - **Nút Bảng**: mở Đột phá / Túi đồ / Luyện đan trong cửa sổ bật lên phía trên dải. Esc hoặc nút đóng để quay về dạng dải.
 - **Shift+F12**: đặt lại vị trí khi dải bị lạc. **Shift+F11**: đặt lại kích thước.

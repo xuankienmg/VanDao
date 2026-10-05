@@ -47,7 +47,7 @@ public sealed class GameWindow : Form
         ApplySize();
         ApplyTransparency();
         ApplyPin();
-        Opacity = _s.Opacity;
+        Opacity = 1.0; // độ trong cố định 100%
         PlaceStrip();
 
         // người dùng kéo xong → chuyển sang vị trí tự do
@@ -226,13 +226,6 @@ public sealed class GameWindow : Form
     {
         _menu.Items.Clear();
 
-        var panel = new ToolStripMenuItem("Bảng tu luyện");
-        panel.DropDownItems.Add("Đột phá", null, (_, _) => OpenPanel("req"));
-        panel.DropDownItems.Add("Túi đồ", null, (_, _) => OpenPanel("inv"));
-        panel.DropDownItems.Add("Luyện đan", null, (_, _) => OpenPanel("craft"));
-        _menu.Items.Add(panel);
-        _menu.Items.Add(new ToolStripSeparator());
-
         var layout = new ToolStripMenuItem("Bố cục màn hình");
         foreach (var (dock, name) in new[]
         {
@@ -252,25 +245,6 @@ public sealed class GameWindow : Form
         layout.DropDownItems.Add(new ToolStripMenuItem("Tự do (kéo ⋮⋮ để di chuyển)") { Checked = _s.Dock == StripDock.Manual, Enabled = false });
         _menu.Items.Add(layout);
 
-        if (Screen.AllScreens.Length > 1)
-        {
-            var screens = new ToolStripMenuItem("Màn hình");
-            var current = TargetScreen().DeviceName;
-            var i = 1;
-            foreach (var sc in Screen.AllScreens)
-            {
-                var name = sc.DeviceName;
-                screens.DropDownItems.Add(new ToolStripMenuItem($"Màn hình {i++}{(sc.Primary ? " (chính)" : "")}", null, (_, _) =>
-                {
-                    _s.Screen = name;
-                    if (_s.Dock == StripDock.Manual) _s.Dock = StripDock.Auto;
-                    _s.Save();
-                    PlaceStrip();
-                }) { Checked = name == current });
-            }
-            _menu.Items.Add(screens);
-        }
-
         var size = new ToolStripMenuItem("Kích thước");
         foreach (var k in new[] { 0.75, 1.0, 1.25, 1.5, 2.0 })
         {
@@ -280,14 +254,6 @@ public sealed class GameWindow : Form
         }
         _menu.Items.Add(size);
 
-        var opacity = new ToolStripMenuItem("Độ trong");
-        foreach (var o in new[] { 1.0, 0.9, 0.75, 0.6 })
-        {
-            var v = o;
-            opacity.DropDownItems.Add(new ToolStripMenuItem($"{o * 100:0}%", null, (_, _) => { _s.Opacity = v; _s.Save(); Opacity = v; })
-                { Checked = Math.Abs(_s.Opacity - o) < 0.001 });
-        }
-        _menu.Items.Add(opacity);
         _menu.Items.Add(new ToolStripSeparator());
 
         _menu.Items.Add(new ToolStripMenuItem("Ghim luôn hiển thị", null, (_, _) => { _s.Pinned = !_s.Pinned; _s.Save(); ApplyPin(); })
