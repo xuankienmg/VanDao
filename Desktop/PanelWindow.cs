@@ -3,14 +3,14 @@ using Microsoft.Web.WebView2.WinForms;
 namespace VanDao.Desktop;
 
 /// <summary>
-/// Cửa sổ Tu luyện (Đột phá / Hành trang / Luyện đan) bật lên sát dải game khi cần,
+/// Cửa sổ Tu luyện (Đột phá / Hành trang / Đan dược / Bản đồ) bật lên sát dải game khi cần,
 /// đóng lại thì game quay về dạng dải gọn trên taskbar.
 /// </summary>
 public sealed class PanelWindow : Form
 {
     private static readonly Dictionary<string, string> TabNames = new()
     {
-        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện đan",
+        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp",
     };
 
     private readonly GameWindow _strip;
@@ -39,13 +39,13 @@ public sealed class PanelWindow : Form
         Load += async (_, _) =>
         {
             await WebHost.InitAsync(_web, OnMessage);
+            _web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; // không hiện menu chuột phải của trình duyệt
             _web.CoreWebView2.NavigationCompleted += (_, _) => _ready = true;
             _web.Source = new Uri($"{_url}?mode=panel&tab={_tab}");
         };
         ResizeEnd += (_, _) =>
         {
-            if (_tab == "inv") { _s.InvW = Width; _s.InvH = Height; }
-            else { _s.PanelW = Width; _s.PanelH = Height; }
+            _s.InvW = Width; _s.InvH = Height;
             _s.Save();
         };
         FormClosing += (_, e) =>
@@ -61,7 +61,7 @@ public sealed class PanelWindow : Form
         _tab = TabNames.ContainsKey(tab) ? tab : "req";
         Text = $"Tu luyện · {TabNames[_tab]}";
         TopMost = _s.Pinned;
-        Size = SizeFor(_tab); // Hành trang rộng, Đột phá / Luyện đan gọn
+        Size = SizeFor(_tab);
         PlaceNearStrip();
         if (!Visible) Show();
         Activate();
@@ -72,10 +72,9 @@ public sealed class PanelWindow : Form
         }
     }
 
-    /// <summary>Kích thước theo tab: dùng kích thước người dùng đã kéo, nếu chưa có thì mặc định.</summary>
-    private Size SizeFor(string tab) => tab == "inv"
-        ? (_s.InvW is int iw && _s.InvH is int ih ? new Size(iw, ih) : LogicalToDeviceUnits(new Size(740, 680)))
-        : (_s.PanelW is int w && _s.PanelH is int h ? new Size(w, h) : LogicalToDeviceUnits(new Size(310, 430)));
+    /// <summary>Mọi tab Tu luyện dùng chung một kích thước: kích thước người dùng đã kéo, chưa có thì mặc định.</summary>
+    private Size SizeFor(string _) =>
+        _s.InvW is int w && _s.InvH is int h ? new Size(w, h) : LogicalToDeviceUnits(new Size(740, 680));
 
     public Task SyncAsync() => Visible ? WebHost.SyncAsync(_web) : Task.CompletedTask;
 

@@ -6,20 +6,32 @@ public record GameDataDto(
     IEnumerable<SlotDef> Slots,
     IEnumerable<StatDef> ExtraStats,
     IEnumerable<RealmInfoDto> Realms,
-    IEnumerable<RecipeInfoDto> Recipes,
+    IEnumerable<SynthDef> Synths,
+    IEnumerable<ElementDef> Elements,
+    IEnumerable<SkillDef> SkillTree,
+    string[] PillChain,
+    int Areas,
     string[] LockedRealms);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
-    string Cn, int BagSlots, string[] EquipSlots);
-
-public record RecipeInfoDto(int Index, string Name, string OutItem, int OutCount,
-    Dictionary<string, int> In, double Rate, int MinRealm, string MinRealmName);
+    string Cn, int BagSlots, string[] EquipSlots, string Boss, string BossImage, string BossLair, string KeyItem, string BossItem);
 
 // ---- Trạng thái người chơi ----
 public record CostDto(string Item, int Need, int Have);
 
-public record RecipeStateDto(int Index, bool Locked, bool CanCraft);
+/// <summary>Bản đồ cảnh giới hiện tại: ải đang đánh, ải đã mở, dự đoán thắng/thua từng ải, chìa khóa và yêu hạch Boss.</summary>
+public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, string BossLair, double KeyChanceMin, double KeyChanceMax,
+    List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem);
+
+public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open);
+
+public record SynthStateDto(string From, int Max);
+
+/// <summary>Đột phá: tỉ lệ gốc, thời gian điều tức sau thất bại, thời gian suy yếu (tẩu hỏa nhập ma), thay đổi khi thành công.</summary>
+public record BreakStateDto(double BaseChance, long CooldownMs, long DebuffMs, BreakPreviewDto Preview);
+
+public record BreakPreviewDto(int Hp, int Atk, int Def, double RatePct, int BagSlots, string[] NewSlots, string[] NewStats);
 
 public record LogDto(DateTime At, string Text, string Kind);
 
@@ -58,7 +70,12 @@ public record StateDto(
     string[] EquipSlots,
     int Level,
     Dictionary<string, int> Inventory,
-    List<RecipeStateDto> Recipes,
+    MapDto Map,
+    Dictionary<string, int> Skills,
+    string[] SkillSlots,
+    int SkillPoints,
+    int SkillPointsTotal,
+    BreakStateDto Break,
     List<LogDto> Logs);
 
 public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
@@ -68,7 +85,11 @@ public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
 /// để hoạt ảnh ở client khớp đúng với server.
 /// </summary>
 public record BattleDto(string Monster, string Image, int MonsterHp, int MonsterAtk, int MonsterDef,
-    int HeroDmg, int MonsterDmg, int Hits, bool Win);
+    int HeroDmg, int MonsterDmg, int Hits, bool Win,
+    int[] MonHpLeft, int[] HeroHpLeft, bool[] MonSkip, List<CastDto> Casts, int HeroHp);
+
+/// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
+public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
 
 public record ActionResponse(StateDto State, string? Message = null, string? Kind = null);
 

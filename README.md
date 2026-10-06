@@ -16,11 +16,33 @@ Game chạy dưới dạng **dải nhỏ 280×200 nằm sát ngay trên thanh ta
 - **Nền trong suốt**: chỉ thấy nhân vật và bảng thông tin gọn; phần trống bấm xuyên qua được. Tắt trong menu nếu màn hình bị đen.
 - **Chuột phải** lên dải (hoặc nút bánh răng): menu cài đặt gồm bố cục màn hình, kích thước (75–200%), ghim luôn hiển thị, nền trong suốt, đặt lại vị trí, ẩn xuống khay, thoát.
 - **Bố cục màn hình**: tự động theo vị trí taskbar, hoặc neo trái / giữa / phải ở mép dưới hay mép trên. Kéo thanh tiêu đề (chỗ tên cảnh giới) để đặt tự do.
-- **Nút Tu luyện** (quyển sách): mở cửa sổ nhỏ Đột phá / Hành trang / Luyện đan bật lên phía trên dải. Esc hoặc nút đóng để quay về dạng dải.
+- **Nút Tu luyện** (quyển sách): mở cửa sổ nhỏ Đột phá / Hành trang / Đan dược / Bản đồ bật lên phía trên dải. Esc hoặc nút đóng để quay về dạng dải.
 - **Shift+F12**: đặt lại vị trí khi dải bị lạc. **Shift+F11**: đặt lại kích thước.
 - **Khay hệ thống**: bấm biểu tượng để ẩn/hiện, chuột phải để mở menu.
 
 Mọi cài đặt được nhớ cho lần mở sau.
+
+
+## Đan dược, Bản đồ và Boss
+
+- **Linh thạch**: chỉ một loại, dùng cho lên tầng, hợp thành đan và đột phá.
+- **Đan dược** (hợp thành 9 → 1, luôn thành công): Tụ Khí Đan →(9)→ Trúc Cơ Đan →(9)→ Ngưng Kim Đan →(9)→ Kết Anh Đan. Mỗi lần tốn một ít linh thạch. Đan chỉ dùng để lên tầng và đột phá, không hồi máu hay linh khí.
+- **Bản đồ**: mỗi cảnh giới có 20 ải (1-1 → 1-20). Nhân vật tự đánh ải đang chọn; thắng ải cao nhất thì mở ải kế, thua thì lùi một ải. Có thể chọn ải thấp hơn để cày.
+- **Boss (ải 1-21)**: cần chìa khóa rơi ở ải 1-1 đến 1-20 (Luyện Khí: Hư Thiên Tàn Đồ · Trúc Cơ: Huyết Sắc Lệnh Bài · Kim Đan: Côn Ngô Sơn Lệnh). Thắng Boss nhận yêu hạch, chìa khóa chỉ mất khi thắng.
+- **Đột phá đại cảnh giới**: đầy tu vi + 1 đan bậc kế + linh thạch + 1 yêu hạch Boss (Luyện Khí → Trúc Cơ cần Hắc Lân Yêu Hạch, Trúc Cơ → Kim Đan cần Huyết Giao Yêu Hạch) + thể trạng ổn định. Tỉ lệ gốc 65% (Trúc Cơ) / 50% (Kim Đan), mỗi lần thất bại +10%, tối đa 95%.
+  - Thành công: vào cảnh giới mới. Đại thành công (20% số lần thành công): +10% máu và phòng thủ gốc vĩnh viễn.
+  - Thất bại: mất đan và linh thạch (giữ yêu hạch), −10% tu vi, điều tức 1 phút.
+  - Tẩu hỏa nhập ma (25% số lần thất bại): −25% tu vi, điều tức 2 phút, suy yếu 5 phút (tu vi ×0.7, công/thủ −10%).
+  - Tab Đột phá: tu sĩ ngồi thiền giữa trận pháp, 5 giai đoạn đột phá, màn hình kết quả. Lên tầng nhỏ luôn thành công.
+- **Bán trang bị**: trong Hành trang chọn món rồi bấm Bán (phím B) để nhận linh thạch; nút đồng xu cạnh nút sắp xếp để bán hàng loạt theo độ hiếm. Giá theo độ hiếm (3 / 12 / 50 / 200 / 800) × (1 + 4 × cảnh giới yêu cầu). Đồ từ Bảo phẩm trở lên phải bấm hai lần.
+- **Công pháp** (tab trong cửa sổ Tu luyện): cây kỹ năng theo hệ. Hỏa hệ đã mở với 15 kỹ năng (Căn cơ, Công, Thủ, Khống, Thân pháp, Tuyệt kỹ); Thủy, Mộc, Kim, Thổ, Lôi, Băng, Phong đã có khung cây, chưa mở khóa.
+  - Điểm kỹ năng: 1 ban đầu, +1 mỗi lần lên tầng, +3 mỗi đại cảnh giới, +2 mỗi lần hạ Boss. Dùng để lĩnh ngộ và nâng cấp.
+  - Kỹ năng có tác dụng bị động thật trong chiến đấu: tăng công / thủ / máu / bạo kích / thân pháp / tốc chạy / tốc độ tu luyện, khống chế làm giảm công của quái.
+  - Ô kỹ năng: 3 ô Chiêu thức (Công / Thủ / Khống / Thân pháp) + 1 ô Tuyệt kỹ, hiện ở đầu tab Công pháp và dưới nhân vật trong Hành trang. Lĩnh ngộ chiêu mới tự đặt vào ô trống; nút "Trang bị vào ô" / "Tháo", hoặc kéo nút kỹ năng vào ô, kéo ra ngoài để tháo.
+  - Trong trận (mô phỏng từng lượt ở server): chiêu Công tự thi triển theo lượt (Hỏa Cầu cứ 3 lượt…), Thủ giảm sát thương nhận, Khống làm quái đứng yên vài lượt đầu, Thân pháp né đòn. Dải game hiện tên chiêu, hoạt ảnh Hỏa Cầu và sát thương chiêu.
+  - Thêm hệ mới: khai báo trong `Game/SkillData.cs` (Open = true, các SkillDef với Row/Col trên lưới 7×5 và Req), giao diện tự vẽ cây.
+  - `wwwroot/img/fx_hoa_cau.png`: sprite sheet Hỏa Cầu 8 khung 48×48 (khởi thế → vận khí → thành hình → phóng → bay → va chạm → nổ → tan).
+- Save cũ tự quy đổi: 3 loại linh thạch → Linh thạch (×1 / ×50 / ×1500), đan phẩm chất → đan gốc, nguyên liệu luyện đan cũ → Linh thạch.
 
 ## Cách chơi
 
@@ -41,13 +63,13 @@ Dữ liệu nằm trong `%LocalAppData%\VanDao`: `vandao.db` (tiến độ), `wi
 | File | Nội dung |
 |---|---|
 | `Program.cs` | Cấu hình DI, EF Core, các API endpoint |
-| `Game/GameData.cs` | Vật phẩm, cảnh giới, công thức luyện đan, tỉ lệ rơi |
-| `Game/GameService.cs` | Luật chơi: tu vi theo thời gian, vận công, thám hiểm, đột phá, luyện đan |
+| `Game/GameData.cs` | Vật phẩm, cảnh giới, ải và Boss, chuỗi hợp thành đan, tỉ lệ rơi |
+| `Game/GameService.cs` | Luật chơi: tu vi theo thời gian, vận công, thám hiểm, đột phá, hợp thành đan, ải và Boss |
 | `Game/Dtos.cs` | Dữ liệu trả về cho client |
 | `Data/Entities.cs` | Bảng `Players`, `Inventory`, `Equipment`, `Logs` |
 | `Data/GameDbContext.cs` | EF Core DbContext |
 | `Desktop/GameWindow.cs` | Dải game trên taskbar: neo vị trí, nền trong suốt, menu chuột phải, phím tắt, khay hệ thống |
-| `Desktop/PanelWindow.cs` | Cửa sổ Tu luyện bật lên (Đột phá / Hành trang / Luyện đan) |
+| `Desktop/PanelWindow.cs` | Cửa sổ Tu luyện bật lên (Đột phá / Hành trang / Đan dược / Bản đồ) |
 | `Desktop/WindowSettings.cs` | Lưu cài đặt cửa sổ |
 | `Desktop/WebHost.cs`, `Native.cs`, `Theme.cs` | WebView2 dùng chung, Win32 API, giao diện menu tối |
 | `wwwroot/index.html` | Giao diện, tooltip, cảnh 2D trên canvas |
@@ -65,7 +87,12 @@ Dữ liệu nằm trong `%LocalAppData%\VanDao`: `vandao.db` (tiến độ), `wi
 | POST | `/api/players/{id}/equip/{itemId}` | Mặc trang bị |
 | POST | `/api/players/{id}/unequip/{slot}` | Tháo trang bị |
 | POST | `/api/players/{id}/advance` | Đột phá tầng / cảnh giới |
-| POST | `/api/players/{id}/craft/{index}` | Luyện đan theo công thức |
+| POST | `/api/players/{id}/synth/{itemId}?n=` | Hợp thành 9 → 1 (n = số lần, 0 = tối đa) |
+| POST | `/api/players/{id}/skill/{skillId}` | Lĩnh ngộ / nâng cấp kỹ năng |
+| POST | `/api/players/{id}/skillslot/{slot}?skill=` | Đặt kỹ năng vào ô 0–3 (bỏ skill = tháo) |
+| POST | `/api/players/{id}/sell/{itemId}?n=` | Bán trang bị lấy linh thạch |
+| POST | `/api/players/{id}/sell-bulk?max=` | Bán hết trang bị có độ hiếm ≤ max (0–4) |
+| POST | `/api/players/{id}/area/{area}` | Chọn ải 1–20, 21 = Boss (cần chìa khóa) |
 | POST | `/api/players/{id}/reset` | Tu lại từ đầu |
 
 ## Thêm cảnh giới mới
