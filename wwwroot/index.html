@@ -40,7 +40,8 @@ canvas#stage{display:block;width:100%;aspect-ratio:5/4;max-width:100%}
 .qi{display:flex;flex-direction:column;gap:6px;order:-1}
 .qi-head{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .qi-head span:last-child{font-variant-numeric:tabular-nums;color:var(--paper);letter-spacing:0;text-transform:none;font-size:13px}
-.bar{height:10px;border-radius:999px;background:#0a0f10;border:1px solid var(--line);overflow:hidden}
+.bar{position:relative;height:10px;border-radius:999px;background:#0a0f10;border:1px solid var(--line);overflow:hidden}
+.bar-txt{display:none}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3d8f84,var(--jade));transition:width .2s linear}
 .bar.full i{background:linear-gradient(90deg,#b8963d,var(--gold))}
 .actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -189,7 +190,7 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#
 .link.armed{color:var(--bad)}
 /* ===== Cửa sổ desktop kiểu Task Bar Hero =====
    strip: dải ngang nằm sát thanh taskbar, nền trong suốt, chỉ có nhân vật + thông tin gọn
-   panel: cửa sổ bảng (Đột phá / Túi đồ / Luyện đan) bật lên phía trên dải khi cần */
+   panel: cửa sổ bảng (Đột phá / Hành trang / Luyện đan) bật lên phía trên dải khi cần */
 .strip-head{display:none}
 html.strip,body.strip{background:transparent!important;height:100%;overflow:hidden}
 body.strip{padding:0}
@@ -203,7 +204,6 @@ body.strip .stage-wrap{min-height:0;height:100%;margin:0;border:1px solid var(--
 body.strip canvas#stage{aspect-ratio:auto;width:100%;height:100%}
 body.strip .log{display:none}
 body.strip .strip-head{display:flex;align-items:center;gap:8px;min-width:0}
-.grip{cursor:grab;color:var(--muted);letter-spacing:-2px;font-size:14px;padding:0 4px;user-select:none}
 .strip-head b{font-family:var(--f-display);font-size:20px;line-height:1;white-space:nowrap}
 .strip-head .st{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .strip-head .mini{background:none;border:1px solid var(--line);color:var(--paper);border-radius:4px;padding:2px 8px;font-size:12px}
@@ -211,7 +211,8 @@ body.strip .strip-head{display:flex;align-items:center;gap:8px;min-width:0}
 body.strip .qi{gap:3px}
 body.strip .qi-head{display:none}
 body.strip .qi-head{font-size:11px}
-body.strip .bar{height:7px}
+body.strip .bar{height:13px}
+body.strip .bar-txt{display:block;position:absolute;inset:0;font-size:9.5px;font-weight:600;line-height:11px;text-align:center;color:#f4efe2;font-variant-numeric:tabular-nums;text-shadow:0 0 2px #000,0 1px 1px #000;pointer-events:none}
 body.strip .actions{gap:6px}
 body.strip .ib{width:34px;height:28px}
 body.strip .ib svg{width:17px;height:17px}
@@ -252,6 +253,100 @@ body.panel .tabs{position:sticky;top:0;background:var(--ink-2);z-index:1}
 html.strip,html.panel{height:100%}
 [hidden]{display:none!important}
 body{margin:0}
+/* ================= HÀNH TRANG: gỗ cổ, đồng xỉn, sắt tối, giấy da, ngọc ================= */
+:root{--wood:#1b1511;--wood2:#241c16;--iron:#1c2125;--iron2:#262c31;--bronze:#8a6a3a;--bronze2:#b8925a;--jade:#4f9a80;--parch:#d8c9a3;--ink2:#2b2116}
+.iv{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:10px;font-size:12px}
+@media (max-width:620px){.iv{grid-template-columns:minmax(0,1fr)}}
+.iv section{background:var(--wood);border:2px solid var(--bronze);box-shadow:inset 0 0 0 2px #0b0806,0 0 0 1px #000;padding:8px;position:relative;min-width:0;
+  background-image:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.12) 6px 7px,transparent 7px 13px)}
+.iv section::before,.iv section::after{content:"";position:absolute;width:6px;height:6px;border:2px solid var(--bronze2);background:#0b0806}
+.iv section::before{top:-4px;left:-4px} .iv section::after{bottom:-4px;right:-4px}
+.px{image-rendering:pixelated}
+/* nhân vật */
+.iv-name{display:flex;flex-direction:column;align-items:center;gap:1px;margin-bottom:6px}
+.iv-name b{font-family:var(--f-display);font-size:18px;color:var(--parch);text-shadow:0 0 6px rgba(92,214,198,.35)}
+.iv-name span{color:#a9b4ae;font-size:11.5px}
+.iv-doll{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center}
+.iv-col{display:flex;flex-direction:column;gap:5px}
+.iv-fig{display:flex;flex-direction:column;align-items:center;gap:6px}
+.iv-stage{width:100%;aspect-ratio:1;max-width:150px;display:grid;place-items:center;background:var(--iron);border:2px solid #0b0806;box-shadow:inset 0 0 0 1px var(--jade);
+  background-image:radial-gradient(circle at 50% 70%,rgba(92,214,198,.12) 0 30%,transparent 31%)}
+.iv-stage .hero{width:144px;max-width:100%;height:auto}
+.iv-pow{margin:0;font-size:11px;color:#a9b4ae;cursor:help}
+.iv-pow b{color:var(--gold);font-size:13px}
+.iv-slot{position:relative;width:44px;height:44px;padding:3px;display:grid;place-items:center;background:var(--iron2);border:2px solid #4a4f55;box-shadow:inset 0 0 0 1px #0b0806;color:#6d766f;cursor:pointer}
+.iv-slot .nm{font-size:8.5px;text-align:center;line-height:1.05}
+.iv-slot img{width:34px;height:34px;object-fit:contain}
+.iv-slot .ic{width:28px;height:28px}
+.iv-slot.locked{cursor:help;opacity:.55;background:#15181b;flex-direction:column;gap:1px}
+.iv-slot .lk{width:13px;height:13px;fill:none;stroke:#7d8580;stroke-width:2}
+.iv-slot.compat{border-color:var(--cyan,#5cd6c6);box-shadow:inset 0 0 0 1px #0b0806,0 0 0 2px rgba(92,214,198,.35);animation:iv-pulse 1s steps(2) infinite}
+.iv-slot.sel,.iv-cell.sel{outline:2px solid var(--parch);outline-offset:1px}
+.iv-slot.drop-ok,.iv-grid.drop-ok{box-shadow:inset 0 0 0 2px #5cd6c6}
+@keyframes iv-pulse{50%{border-color:#2f6f66}}
+@media (prefers-reduced-motion:reduce){.iv-slot.compat{animation:none}}
+.lv{position:absolute;left:2px;top:1px;font-size:8.5px;font-weight:700;color:#cfd6d0;text-shadow:0 1px 0 #000,0 0 2px #000}
+/* thanh + chỉ số */
+.iv-bars{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.iv-bar{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:6px;cursor:help}
+.iv-bar span{font-size:10.5px;color:#a9b4ae}
+.iv-bar div{position:relative;height:11px;background:#0b0806;border:1px solid #3b3127}
+.iv-bar i{display:block;height:100%}
+.iv-bar.qi i{background:#c9a24a} .iv-bar.hp i{background:#5aa564} .iv-bar.ql i{background:#3f9fb0}
+.iv-bar em{position:absolute;inset:0;font-style:normal;font-size:9px;line-height:9px;text-align:center;color:#f4efe2;text-shadow:0 1px 0 #000,0 0 2px #000;font-variant-numeric:tabular-nums}
+.iv-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:8px;border-top:1px solid #3b3127;padding-top:6px}
+.iv-stats .st{display:flex;justify-content:space-between;font-size:11.5px;padding:1px 0}
+.iv-stats .st span{color:#a9b4ae} .iv-stats .st b{color:var(--parch);font-variant-numeric:tabular-nums}
+.iv-stats .st.off{opacity:.45;cursor:help} .iv-stats .st.off b{font-weight:400;font-size:10.5px}
+.iv-next{margin:6px 0 0;font-size:10.5px;color:#8fa59b;border-top:1px dashed #3b3127;padding-top:5px}
+/* túi */
+.iv-bag{display:flex;flex-direction:column;gap:6px}
+.iv-cats{display:flex;flex-wrap:wrap;gap:3px}
+.iv-cats button{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;background:var(--iron2);border:1px solid #4a4f55;color:#b9c1bb;font-size:11px}
+.iv-cats button small{color:#7d8580;font-size:9.5px}
+.iv-cats button[aria-selected="true"]{background:#2a3a33;border-color:var(--jade);color:var(--parch)}
+.iv-head{display:flex;align-items:center;justify-content:space-between}
+.iv-head .eyebrow.full{color:var(--bad)}
+.iv-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:calc(5 * 48px + 4 * 4px);overflow-y:auto;padding:2px;background:#0d0a08;border:1px solid #3b3127;scrollbar-width:thin}
+.iv-cell{position:relative;aspect-ratio:1;min-width:0;padding:3px;display:grid;place-items:center;background:var(--iron);border:2px solid #3e4247;box-shadow:inset 0 0 0 1px #0b0806;cursor:pointer}
+.iv-cell.empty{cursor:default;background:#14171a;border-color:#272b2f}
+.iv-cell.empty.over{border-style:dashed}
+.iv-cell img{width:82%;height:82%;object-fit:contain}
+.iv-cell .ic{width:62%;height:62%}
+.iv-cell .qty{position:absolute;right:2px;bottom:1px;font-size:9.5px;font-weight:700;color:var(--gold);text-shadow:0 1px 0 #000,0 0 2px #000}
+.iv-cell.req{opacity:.5}
+.iv-cell:focus-visible,.iv-slot:focus-visible,.iv-act:focus-visible,.iv-cats button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.r-common{border-color:#6b7076} .r-uncommon{border-color:#4f9f58} .r-rare{border-color:#3f78c4} .r-epic{border-color:#8a52c8} .r-legendary{border-color:#d4a23c;box-shadow:inset 0 0 0 1px #0b0806,0 0 0 1px rgba(230,184,76,.35)}
+.rc-common{color:#b9bec4} .rc-uncommon{color:#6fd47a} .rc-rare{color:#6fa6f2} .rc-epic{color:#b98cf0} .rc-legendary{color:#f0c860}
+/* chi tiết: giấy da */
+.iv-detail{min-height:96px}
+.iv-card{background:var(--parch);color:var(--ink2);border:2px solid var(--bronze);box-shadow:inset 0 0 0 1px #f0e4c4;padding:7px 9px;display:flex;flex-direction:column;gap:2px}
+.iv-card p{margin:0}
+.iv-card .nm{font-family:var(--f-display);font-weight:700;font-size:16px;text-shadow:0 1px 0 rgba(0,0,0,.35);filter:brightness(.7) saturate(1.4)}
+.iv-card .sub{font-size:11px;color:#5a4a34}
+.iv-card .req{font-size:11px;color:#3d5a3a} .iv-card .req.bad{color:#9a2a20;font-weight:600}
+.iv-card .sts{font-size:11.5px;font-weight:600;color:#2b3a5a}
+.iv-card .spc{font-size:11px;color:#6a3d8a}
+.iv-card .ds{font-size:11px;font-style:italic;color:#5a4a34}
+.iv-card .sv{font-size:10.5px;color:#6b5a3e}
+.iv-cmp{margin-top:4px;border-top:1px dashed #a08c66;padding-top:4px}
+.iv-cmp p{font-size:11px} .iv-cmp b{filter:brightness(.7) saturate(1.4)}
+.iv-cmp ul{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:2px 10px;font-size:11.5px;font-weight:600}
+.iv-cmp .up{color:#2f7a35} .iv-cmp .down{color:#a8301f}
+.iv-hint{margin:0;padding:10px;color:#8a9690;font-size:11.5px;text-align:center;border:1px dashed #3b3127}
+/* nút hành động */
+.iv-acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.iv-act{display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 2px;background:#2a2218;border:2px solid var(--bronze);box-shadow:inset 0 0 0 1px #0b0806;color:var(--parch);font-size:11.5px;font-weight:600}
+.iv-act:hover:not(:disabled){background:#3a2f20;border-color:var(--bronze2)}
+.iv-act:disabled{opacity:.38;cursor:not-allowed}
+.iv-act kbd{font-family:inherit;font-size:8.5px;color:#a08c66;border:1px solid #5a4a34;padding:0 2px}
+
+/* cửa sổ Hành trang: lưới túi co giãn theo chiều cao để nút hành động luôn thấy được */
+body.panel .iv-grid{max-height:min(calc(5 * 48px + 4 * 4px), max(104px, calc(100vh - 420px)))}
+body.panel .iv-detail{max-height:150px;overflow-y:auto;scrollbar-width:thin}
+body.strip .strip-head{cursor:grab;user-select:none}
+body.strip .strip-head:active{cursor:grabbing}
+body.strip .strip-head button{cursor:pointer}
 </style>
 </head>
 <body>
@@ -275,17 +370,16 @@ body{margin:0}
         </div>
       </div>
       <div class="strip-head">
-        <span class="grip" id="grip" title="Kéo để di chuyển">⋮⋮</span>
         <b id="sRealm">Luyện Khí</b><span class="st" id="sStage">Tầng 1</span>
         <button class="ib sm" id="btnMenu" aria-label="Cài đặt" data-tip="Cài đặt&#10;Bố cục, kích thước, ghim, nền trong suốt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </div>
       <div class="qi">
         <div class="qi-head"><span id="qiLabel">Tu vi</span><span id="qiText">0 / 60</span></div>
-        <div class="bar" id="qiBar"><i></i></div>
+        <div class="bar" id="qiBar"><i></i><span class="bar-txt" id="qiBarTxt"></span></div>
       </div>
       <div class="actions">
-        <button class="ib" id="btnBag" aria-label="Túi đồ" data-tip="Túi đồ&#10;Trang bị, chỉ số và vật phẩm"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1.2 11H6.2z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/></svg></button>
-        <button class="ib" id="btnPanel" aria-label="Tu luyện" data-tip="Tu luyện&#10;Đột phá · Túi đồ · Luyện đan"><svg viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg></button>
+        <button class="ib" id="btnBag" aria-label="Hành trang" data-tip="Hành trang&#10;Trang bị, chỉ số và vật phẩm"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1.2 11H6.2z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/></svg></button>
+        <button class="ib" id="btnPanel" aria-label="Tu luyện" data-tip="Tu luyện&#10;Đột phá · Hành trang · Luyện đan"><svg viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg></button>
         <button class="ib gold" id="btnAdvance" aria-label="Đột phá" data-tip="Đột phá"><svg viewBox="0 0 24 24"><path d="m12 3 7 7h-4v5H9v-5H5z"/><path d="M8 19h8"/></svg></button>
         <div class="trip walk" id="trip"><div class="trip-bar"><i></i></div><span id="tripText">Thám hiểm</span></div>
       </div>
@@ -297,7 +391,7 @@ body{margin:0}
     <aside class="book">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-req" aria-selected="true" data-tab="req">Đột phá</button>
-        <button class="tab" role="tab" id="tab-inv" aria-selected="false" data-tab="inv">Túi đồ</button>
+        <button class="tab" role="tab" id="tab-inv" aria-selected="false" data-tab="inv">Hành trang</button>
         <button class="tab" role="tab" id="tab-craft" aria-selected="false" data-tab="craft">Luyện đan</button>
       </div>
       <div class="pane" id="pane-req"></div>
@@ -390,6 +484,8 @@ function icon(k){
     stone:`<path d="M12 2.5 20 8.5 16.8 20.5H7.2L4 8.5Z" fill="${c}" opacity=".9"/><path d="M12 2.5 9.5 8.5 12 20.5 14.5 8.5Z M4 8.5H20" fill="none" stroke="#0e1416" stroke-opacity=".35" stroke-width="1"/>`,
     pill:`<circle cx="12" cy="12" r="8" fill="${c}"/><ellipse cx="9.3" cy="9" rx="3" ry="2" fill="#fff" opacity=".55"/>`,
     herb:`<path d="M12 21.5c0-3 .5-6 2-8.5" stroke="#5f8a52" stroke-width="1.6" fill="none"/><path d="M14 13c-5 1-9-2-10-8 6-1 10 2 10 8Z" fill="${c}"/><path d="M14 13c3-1 6-4 6-8-4 0-7 3-6 8Z" fill="${c}" opacity=".75"/>`,
+    artifact:`<path d="M12 3c-3 0-5 2-5 5 0 2 1 3 2 4-2 1-3 3-3 5 0 2.5 2.7 4 6 4s6-1.5 6-4c0-2-1-4-3-5 1-1 2-2 2-4 0-3-2-5-5-5Z" fill="${c}"/><path d="M9 12h6" stroke="#0e1416" stroke-opacity=".4" stroke-width="1.4"/><circle cx="10" cy="7" r="1.4" fill="#fff" opacity=".5"/>`,
+    quest:`<rect x="5" y="3" width="14" height="18" rx="2" fill="${c}"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#0e1416" stroke-opacity=".45" stroke-width="1.4"/>`,
     core:`<circle cx="12" cy="12" r="10" fill="none" stroke="${c}" stroke-opacity=".5" stroke-width="1.4"/><circle cx="12" cy="12" r="6.5" fill="${c}"/><circle cx="10" cy="10" r="2" fill="#fff" opacity=".5"/>`,
     ore:`<path d="M12 2 21 12 12 22 3 12Z" fill="${c}"/><path d="M12 2 12 22 M3 12H21" stroke="#0e1416" stroke-opacity=".3"/>`,
   };
@@ -431,66 +527,267 @@ const GEAR_SORTS = {
 };
 let gearSort = 'slot', sortOpen = false;
 try { const v = localStorage.getItem('van-dao-gear-sort'); if (v && GEAR_SORTS[v]) gearSort = v; } catch(e){}
-function statText(it){
-  const parts = [];
-  if (it.atk) parts.push(`Tấn công +${it.atk}`);
-  if (it.hp) parts.push(`Máu +${it.hp}`);
-  if (it.def) parts.push(`Phòng thủ +${it.def}`);
-  if (it.qiPct) parts.push(`Tu vi ${pct(it.qiPct)}`);
-  if (it.luckPct) parts.push(`May mắn ${pct(it.luckPct)}`);
-  if (it.speedPct) parts.push(`Tốc độ thám hiểm ${pct(it.speedPct)}`);
-  return parts.join(' · ');
-}
+// =====================================================================
+// HÀNH TRANG: nhân vật ↔ trang bị ↔ hành trang ↔ so sánh ↔ mặc ↔ chỉ số
+// =====================================================================
+const RARITY = {
+  common:    {n:'Phàm phẩm',   c:'#8d9399', v:3},
+  uncommon:  {n:'Linh phẩm',   c:'#5fbf6a', v:12},
+  rare:      {n:'Bảo phẩm',    c:'#4f8fe0', v:50},
+  epic:      {n:'Huyền phẩm',  c:'#a46ae6', v:200},
+  legendary: {n:'Tiên phẩm',   c:'#e6b84c', v:800},
+};
+const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
+const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','ring','ring2','weapon','offhand'];
+const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['spiritPct','Linh lực','%'],['qiPct','Tu vi','%'],['luckPct','Thần thức','%']];
+const catOf = it => it.type === 'quest' ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' ? 'consumable' : 'material';
+const rar = it => RARITY[it.rarity] || RARITY.common;
+function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
+const reqLevel = it => levelOf(it.minRealm || 0);
+const sellValue = it => Math.max(1, Math.round(rar(it).v * (1 + (it.minRealm || 0) * 4) * (it.slot ? 1 : .2)));
+const canWear = it => (it.minRealm || 0) <= S.realm;
+const slotsFor = it => !it.slot ? [] : it.slot === 'ring' ? ['ring','ring2'] : [it.slot];
+function itemStats(it){ return STAT_KEYS.filter(([k]) => it[k]).map(([k, n, u]) => `${n} +${it[k]}${u}`); }
+function statText(it){ return itemStats(it).join(' · '); }
+// tooltip khi rê chuột (dùng chung cho các tab)
 function itemTip(k, hint){
-  const it = ITEM[k];
-  return `${it.name}\n${it.desc}${it.slot ? '\n' + statText(it) : ''}${hint ? '\n' + hint : ''}`;
+  const it = ITEM[k], lines = [it.name, `${rar(it).n} · ${it.kind || ''}`];
+  if (it.slot) lines.push(`Yêu cầu: ${DATA.realms[it.minRealm||0].name} · Cấp ${reqLevel(it)}`);
+  const sts = itemStats(it); if (sts.length) lines.push(sts.join(' · '));
+  if (it.special) lines.push(it.special);
+  lines.push(it.desc);
+  if (hint) lines.push(hint);
+  return lines.join('\n').replace(/"/g, '&quot;');
 }
-function renderInv(){
-  const slots = DATA.slots.map(sl => {
-    const k = S.equipment[sl.id];
-    return k
-      ? `<button class="slot has" data-unequip="${sl.id}" data-tip="${itemTip(k, 'Bấm để tháo')}" aria-label="${ITEM[k].name}"><img src="${ITEM[k].icon}" alt=""></button>`
-      : `<div class="slot">${sl.name}</div>`;
-  }).join('');
-  const b = S.bonuses, st = S.stats, bt = S.battle;
-  // chỉ số + so sánh với quái: đưa vào tooltip của nút "Chỉ số ⓘ"
-  const extraTxt = [b.qiPct && `Tu vi ${pct(b.qiPct)}`, b.luckPct && `May mắn ${pct(b.luckPct)}`, b.speedPct && `Tốc độ ${pct(b.speedPct)}`].filter(Boolean).join(' · ');
-  const statTip = [`Chỉ số`, `Tấn công ${fmt(st.atk)} · Máu ${fmt(st.hp)} · Phòng thủ ${fmt(st.def)}`]
-    .concat(extraTxt ? [extraTxt] : [])
-    .concat([`${bt.monster} (Máu ${fmt(bt.monsterHp)} · Công ${fmt(bt.monsterAtk)} · Thủ ${fmt(bt.monsterDef)}): ${bt.win ? `hạ sau ${bt.hits} đòn, mỗi đòn ${fmt(bt.heroDmg)}` : `chưa đánh lại, mỗi đòn của nó gây ${fmt(bt.monsterDmg)}`}`])
-    .join('&#10;');
-  // một hộp chung: trang bị không xếp chồng (mỗi món một ô), vật phẩm xếp chồng (một ô kèm số lượng)
-  const owned = DATA.items.map(i => i.id).filter(k => (S.inventory[k]||0) > 0);
+function itemImg(k, cls = ''){
+  const it = ITEM[k];
+  return it.icon ? `<img class="px ${cls}" src="${it.icon}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">` : icon(k);
+}
+const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
+try { invCat = localStorage.getItem('van-dao-inv-cat') || 'all'; } catch(e){}
+
+function bagList(){
+  // nguyên liệu/trang bị theo kiểu sắp xếp đang chọn, lọc theo danh mục
+  const owned = DATA.items.map(i => i.id).filter(k => (S.inventory[k]||0) > 0 && (invCat === 'all' || catOf(ITEM[k]) === invCat));
   const sk = GEAR_SORTS[gearSort].key;
-  const order = (a, b) => {
+  const gearFirst = gearSort === 'atk' || gearSort === 'hp' || gearSort === 'def';
+  owned.sort((a, b) => {
     const A = ITEM[a], B = ITEM[b];
-    // sắp theo Tấn công / Máu / Phòng thủ: trang bị trước; Loại: nguyên liệu trước
-    const gearFirst = gearSort === 'atk' || gearSort === 'hp' || gearSort === 'def';
-    // Tên A–Z: trộn chung mọi món theo tên, không tách nguyên liệu / trang bị
     if (gearSort !== 'name' && !!A.slot !== !!B.slot) return (A.slot ? -1 : 1) * (gearFirst ? 1 : -1);
     const x = sk(A), y = sk(B);
     return (typeof x === 'string' ? x.localeCompare(y, 'vi') : (x - y)) || A.name.localeCompare(B.name, 'vi');
-  };
-  const cells = owned.sort(order).flatMap(k => ITEM[k].slot
-    ? Array.from({length: S.inventory[k]}, () =>
-        `<button class="cell gear" data-equip="${k}" data-tip="${itemTip(k, 'Bấm để trang bị')}" aria-label="${ITEM[k].name}"><img src="${ITEM[k].icon}" alt=""></button>`)
-    : [`<div class="cell" data-tip="${itemTip(k, '')}" aria-label="${ITEM[k].name} × ${S.inventory[k]}">${icon(k)}<span class="qty">${short(S.inventory[k])}</span></div>`]);
-  const pages = Math.max(1, Math.ceil(cells.length / GEAR_PER_PAGE));
-  gearPage = Math.min(Math.max(1, gearPage), pages);
-  const pageCells = cells.slice((gearPage - 1) * GEAR_PER_PAGE, gearPage * GEAR_PER_PAGE);
-  const first = Math.max(1, Math.min(gearPage - 4, pages - 9)), last = Math.min(pages, first + 9);
-  const pager = pages > 1 ? `<nav class="pager" aria-label="Trang túi đồ">
-      ${Array.from({length: last - first + 1}, (_, i) => first + i).map(n => `<button data-page="${n}" ${n === gearPage ? 'aria-current="page"' : ''}>${n}</button>`).join('')}
-    </nav>` : '';
-  $('pane-inv').innerHTML = `<div><div class="gear-head" style="margin-bottom:6px"><p class="eyebrow">Đang mặc</p><span class="stat-info ${bt.win ? '' : 'lose'}" tabindex="0" data-tip="${statTip}">Chỉ số ⓘ</span></div><div class="equip">${slots}</div></div>
-    <div><div class="gear-head"><p class="eyebrow">Túi đồ · ${cells.length} ô${pages > 1 ? ` · trang ${gearPage}/${pages}` : ''}</p>
-      <div class="sort">
-        <button class="ib sm" id="sortBtn" aria-haspopup="listbox" aria-expanded="${sortOpen}" aria-label="Sắp xếp: ${GEAR_SORTS[gearSort].name}" data-tip="Sắp xếp&#10;Đang chọn: ${GEAR_SORTS[gearSort].name}"><svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5"/><path d="M14 6h7M14 11h5M14 16h3"/></svg></button>
-        <ul class="sort-menu" role="listbox" aria-label="Sắp xếp túi đồ" ${sortOpen ? '' : 'hidden'}>${Object.entries(GEAR_SORTS).map(([k, v]) => `<li role="option" data-sort="${k}" tabindex="0" aria-selected="${k === gearSort}">${v.name}</li>`).join('')}</ul>
-      </div></div>
-      ${cells.length ? `${pager}<div class="gears">${pageCells.join('')}</div>` : `<p class="empty">Túi trống. Nhân vật đang thám hiểm, linh tài sẽ rơi dần vào đây.</p>`}
-    </div>`;
+  });
+  // trang bị: mỗi món một ô; vật phẩm: một ô kèm số lượng
+  return owned.flatMap(k => ITEM[k].slot ? Array.from({length: S.inventory[k]}, () => ({k, n: 1})) : [{k, n: S.inventory[k]}]);
 }
+function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed + st.move + st.spirit + st.sense)*4); }
+
+function renderInv(){
+  const st = S.stats, unlocked = new Set(S.equipSlots), r = realm();
+  if (invSel?.src === 'bag' && !(S.inventory[invSel.k] > 0)) invSel = null;
+  if (invSel?.src === 'slot' && S.equipment[invSel.slot] !== invSel.k) invSel = null;
+  const sel = invSel ? ITEM[invSel.k] : null;
+  const compat = new Set(sel && invSel.src === 'bag' ? slotsFor(sel).filter(s => unlocked.has(s)) : []);
+
+  // ---- ô trang bị quanh nhân vật ----
+  const slotHtml = id => {
+    const sd = DATA.slots.find(s => s.id === id), k = S.equipment[id];
+    if (!unlocked.has(id)){
+      const opens = DATA.realms.find(x => x.equipSlots.includes(id));
+      return `<div class="iv-slot locked" data-tip="${sd.name}&#10;Mở ở cảnh giới ${opens ? opens.name : 'cao hơn'}">${LOCK_SVG}<span class="nm">${sd.name}</span></div>`;
+    }
+    const cls = `${compat.has(id) ? 'compat' : ''} ${invSel?.src === 'slot' && invSel.slot === id ? 'sel' : ''}`;
+    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${reqLevel(ITEM[k])}</span></button>`;
+    return `<button class="iv-slot empty ${cls}" data-slot="${id}" aria-label="${sd.name} (trống)" data-tip="${sd.name}&#10;Trống · kéo trang bị vào đây"><span class="nm">${sd.name}</span></button>`;
+  };
+
+  // ---- chỉ số ----
+  const statRows = [
+    ['Tấn công', fmt(st.atk), 0], ['Phòng thủ', fmt(st.def), 0], ['Máu', fmt(st.hp), 0],
+    ['Linh lực', `${Math.round(st.spirit)}%`, 2], ['Bạo kích', `${Math.round(st.crit)}%`, 0],
+    ['Tốc đánh', `${Math.round(st.speed)}%`, 1], ['Tốc chạy', `${Math.round(st.move)}%`, 0], ['Thần thức', `${Math.round(st.sense)}%`, 1],
+  ].map(([n, v, need]) => S.realm >= need
+      ? `<div class="st"><span>${n}</span><b>${v}</b></div>`
+      : `<div class="st off" data-tip="${n}&#10;Mở ở cảnh giới ${DATA.realms[need].name}"><span>${n}</span><b>${DATA.realms[need].name}</b></div>`).join('');
+
+  // ---- hành trang ----
+  const list = bagList();
+  const cap = S.bagCap, used = S.bagUsed;
+  const shown = invCat === 'all' ? Math.max(cap, list.length) : Math.max(30, Math.ceil(list.length / 6) * 6);
+  const cells = Array.from({length: shown}, (_, i) => {
+    const c = list[i];
+    if (!c) return `<div class="iv-cell empty ${invCat === 'all' && i >= cap ? 'over' : ''}"></div>`;
+    const it = ITEM[c.k], isSel = invSel?.src === 'bag' && invSel.idx === i;
+    return `<button class="iv-cell r-${it.rarity} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : it.useQiSeconds ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${reqLevel(it)}</span>` : ''}</button>`;
+  }).join('');
+  const counts = Object.fromEntries(CATS.map(([id]) => [id, 0]));
+  for (const k of DATA.items.map(i => i.id)) if ((S.inventory[k]||0) > 0){ counts.all++; counts[catOf(ITEM[k])]++; }
+
+  // ---- chi tiết + so sánh ----
+  let detail;
+  if (!sel) detail = `<p class="iv-hint">Chọn một vật phẩm để xem chi tiết.<br>Kéo trang bị vào ô quanh nhân vật để mặc, kéo ra hành trang để tháo.</p>`;
+  else {
+    const it = sel, okRealm = canWear(it);
+    let cmp = '';
+    if (compareOn && invSel.src === 'bag' && it.slot){
+      const target = slotsFor(it).filter(s => unlocked.has(s));
+      const cur = target.map(s => S.equipment[s]).find(Boolean);
+      const curIt = cur ? ITEM[cur] : null;
+      const rows = STAT_KEYS.map(([key, n, u]) => {
+        const a = it[key] || 0, b = curIt ? (curIt[key] || 0) : 0, d = a - b;
+        return d ? `<li class="${d > 0 ? 'up' : 'down'}">${n} ${d > 0 ? '+' : ''}${Math.round(d*10)/10}${u}</li>` : '';
+      }).join('');
+      cmp = `<div class="iv-cmp"><p>${curIt ? `So với đang mặc: <b class="rc-${curIt.rarity}">${curIt.name}</b>` : 'Ô đang trống: mọi chỉ số đều là tăng thêm'}</p><ul>${rows || '<li>Không đổi chỉ số</li>'}</ul></div>`;
+    }
+    detail = `<div class="iv-card">
+      <p class="nm rc-${it.rarity}">${it.name}</p>
+      <p class="sub">${rar(it).n} · ${it.kind || ''}${S.inventory[invSel.k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[invSel.k])}` : ''}</p>
+      ${it.slot ? `<p class="req ${okRealm ? '' : 'bad'}">Cảnh giới: ${DATA.realms[it.minRealm||0].name} · Cấp ${reqLevel(it)}</p>` : ''}
+      ${itemStats(it).length ? `<p class="sts">${itemStats(it).join('<br>')}</p>` : ''}
+      ${it.special ? `<p class="spc">${it.special}</p>` : ''}
+      <p class="ds">“${it.desc}”</p>
+      <p class="sv">Giá bán: ${fmt(sellValue(it))} Hạ phẩm linh thạch</p>
+      ${cmp}</div>`;
+  }
+
+  // ---- hành động ----
+  const isBag = invSel?.src === 'bag', isSlot = invSel?.src === 'slot';
+  const A = (id, label, key, enabled, tip) => `<button class="iv-act" data-act="${id}" ${enabled ? '' : 'disabled'} data-tip="${label}&#10;${tip}${key ? ` · phím ${key}` : ''}">${label}<kbd>${key}</kbd></button>`;
+  const armed = Date.now() - dropArm < 3000;
+  const actions = [
+    A('equip', 'Trang bị', 'E', isBag && !!sel.slot && canWear(sel) && compat.size > 0, 'Mặc món đang chọn'),
+    A('unequip', 'Tháo', 'U', isSlot, 'Tháo món đang chọn về hành trang'),
+    A('use', 'Dùng', 'R', isBag && !!sel.useQiSeconds, 'Dùng đan dược'),
+    A('drop', armed ? 'Xác nhận' : 'Bỏ', 'Del', isBag, armed ? 'Bấm lần nữa để bỏ 1 món' : 'Bỏ 1 món khỏi hành trang'),
+    A('split', 'Tách', 'T', false, 'Vật phẩm cùng loại tự gộp một ô nên không cần tách'),
+    A('compare', compareOn ? 'So sánh ✓' : 'So sánh', 'C', true, 'Bật/tắt so sánh với món đang mặc'),
+    A('sort', 'Sắp xếp', 'S', true, 'Đổi kiểu sắp xếp: ' + GEAR_SORTS[gearSort].name),
+    A('arrange', 'Tự xếp', 'A', true, 'Về danh mục Tất cả, xếp theo loại'),
+  ].join('');
+
+  const nextNote = S.atTop ? '' : `Lên ${S.nextRealmName}: hành trang ${DATA.realms[S.realm+1]?.bagSlots ?? '?'} ô, thêm ô trang bị và chỉ số mới`;
+  $('pane-inv').innerHTML = `<div class="iv" style="--aura:${r.aura}">
+    <section class="iv-char" aria-label="Nhân vật">
+      <header class="iv-name"><b>${S.name}</b><span>Cấp ${S.level} · ${S.realmName} ${S.stageName}</span></header>
+      <div class="iv-doll">
+        <div class="iv-col">${SLOT_LEFT.map(slotHtml).join('')}</div>
+        <div class="iv-fig"><div class="iv-stage"><img class="px hero" src="${r.hero.replace('.png', '_48.png')}" alt="${S.name}"></div>
+          <p class="iv-pow" data-tip="Lực chiến&#10;Tổng hợp tấn công, phòng thủ, máu và chỉ số phụ">Lực chiến <b>${fmt(power(st))}</b></p></div>
+        <div class="iv-col">${SLOT_RIGHT.map(slotHtml).join('')}</div>
+      </div>
+      <div class="iv-bars">
+        <div class="iv-bar qi" data-tip="Tu vi&#10;Đủ để đột phá lên tầng tiếp theo"><span>Tu vi</span><div><i id="ivQiFill"></i><em id="ivQiTxt"></em></div></div>
+        <div class="iv-bar hp" data-tip="Máu&#10;Hồi đầy sau mỗi chuyến thám hiểm"><span>Máu</span><div><i style="width:100%"></i><em>${fmt(st.hp)}/${fmt(st.hp)}</em></div></div>
+        <div class="iv-bar ql" data-tip="Linh khí&#10;Tốc độ hấp thu linh khí mỗi giây"><span>Linh khí</span><div><i style="width:${Math.min(100, 20 + S.rate)}%"></i><em>${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')}/giây</em></div></div>
+      </div>
+      <div class="iv-stats">${statRows}</div>
+      ${nextNote ? `<p class="iv-next">${nextNote}</p>` : ''}
+    </section>
+    <section class="iv-bag" aria-label="Hành trang">
+      <nav class="iv-cats" role="tablist">${CATS.map(([id, n], i) => `<button role="tab" data-cat="${id}" aria-selected="${invCat === id}" data-tip="${n}&#10;Phím ${i+1}">${n}<small>${counts[id]}</small></button>`).join('')}</nav>
+      <div class="iv-head"><p class="eyebrow ${used >= cap ? 'full' : ''}">Hành trang ${used}/${cap} ô</p>
+        <div class="sort">
+          <button class="ib sm" id="sortBtn" aria-haspopup="listbox" aria-expanded="${sortOpen}" aria-label="Sắp xếp: ${GEAR_SORTS[gearSort].name}" data-tip="Sắp xếp&#10;Đang chọn: ${GEAR_SORTS[gearSort].name}"><svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5"/><path d="M14 6h7M14 11h5M14 16h3"/></svg></button>
+          <ul class="sort-menu" role="listbox" aria-label="Sắp xếp hành trang" ${sortOpen ? '' : 'hidden'}>${Object.entries(GEAR_SORTS).map(([k, v]) => `<li role="option" data-sort="${k}" tabindex="0" aria-selected="${k === gearSort}">${v.name}</li>`).join('')}</ul>
+        </div></div>
+      <div class="iv-grid" id="ivGrid">${cells}</div>
+      <div class="iv-detail">${detail}</div>
+      <div class="iv-acts">${actions}</div>
+    </section>
+  </div>`;
+  liveInv();
+}
+function liveInv(){
+  const f = $('ivQiFill'); if (!f || !S) return;
+  const q = qiNow(); f.style.width = Math.min(100, q / S.qiReq * 100) + '%'; $('ivQiTxt').textContent = `${fmt(q)}/${fmt(S.qiReq)}`;
+}
+
+// ---- tương tác: chọn, nhấp đúp, kéo thả, phím tắt ----
+function invDo(action){
+  const sel = invSel ? ITEM[invSel.k] : null;
+  if (action === 'equip' && invSel?.src === 'bag' && sel?.slot) act('equip/' + invSel.k);
+  else if (action === 'unequip' && invSel?.src === 'slot') act('unequip/' + invSel.slot);
+  else if (action === 'use' && invSel?.src === 'bag' && sel?.useQiSeconds) act('use/' + invSel.k);
+  else if (action === 'drop' && invSel?.src === 'bag'){
+    if (Date.now() - dropArm < 3000){ dropArm = 0; act('drop/' + invSel.k); }
+    else { dropArm = Date.now(); renderInv(); setTimeout(() => { if (dropArm && Date.now() - dropArm >= 3000){ dropArm = 0; renderInv(); } }, 3100); }
+  }
+  else if (action === 'compare'){ compareOn = !compareOn; renderInv(); }
+  else if (action === 'sort'){ sortOpen = !sortOpen; hideTip(); renderInv(); }
+  else if (action === 'arrange'){ setCat('all'); gearSort = 'slot'; try { localStorage.setItem('van-dao-gear-sort', 'slot'); } catch(e){} renderInv(); $('ivGrid') && ($('ivGrid').scrollTop = 0); }
+}
+function setCat(c){ invCat = c; invSel = invSel?.src === 'slot' ? invSel : null; try { localStorage.setItem('van-dao-inv-cat', c); } catch(e){} renderInv(); }
+function initInventory(){
+  const pane = $('pane-inv');
+  let lastTap = {key:'', t:0};
+  const pickSort = k => { gearSort = k; sortOpen = false; try { localStorage.setItem('van-dao-gear-sort', gearSort); } catch(err){} hideTip(); renderInv(); };
+  document.addEventListener('click', e => { if (sortOpen && !e.target.closest('.sort') && !e.target.closest('[data-act="sort"]')){ sortOpen = false; renderInv(); } });
+  pane.addEventListener('click', e => {
+    if (e.target.closest('#sortBtn')){ sortOpen = !sortOpen; hideTip(); renderInv(); return; }
+    const so = e.target.closest('[data-sort]'); if (so){ pickSort(so.dataset.sort); return; }
+    const ca = e.target.closest('[data-cat]'); if (ca){ setCat(ca.dataset.cat); return; }
+    const ac = e.target.closest('[data-act]'); if (ac){ if (!ac.disabled) invDo(ac.dataset.act); return; }
+    // nhấp đúp tự nhận diện vì mỗi lần nhấp vẽ lại ô (sự kiện dblclick gốc bị mất khi phần tử bị thay)
+    const cell = e.target.closest('.iv-cell[data-k]'), slot = e.target.closest('.iv-slot.has');
+    const key = cell ? 'b' + cell.dataset.idx + cell.dataset.k : slot ? 's' + slot.dataset.slot : '';
+    const dbl = key && lastTap.key === key && performance.now() - lastTap.t < 400;
+    lastTap = dbl ? {key:'', t:0} : {key, t: performance.now()};
+    if (cell){
+      invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0;
+      const it = ITEM[cell.dataset.k];
+      if (dbl && it.slot) invDo('equip'); else if (dbl && it.useQiSeconds) invDo('use'); else renderInv();
+      return;
+    }
+    if (slot){ invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; if (dbl) invDo('unequip'); else renderInv(); return; }
+  });
+  // kéo thả giữa túi và ô trang bị
+  let drag = null;
+  pane.addEventListener('dragstart', e => {
+    const cell = e.target.closest('.iv-cell[data-k]'), slot = e.target.closest('.iv-slot.has');
+    drag = cell ? {src:'bag', k: cell.dataset.k} : slot ? {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot} : null;
+    if (!drag) return;
+    e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag.k);
+    hideTip();
+    if (drag.src === 'bag') for (const s of slotsFor(ITEM[drag.k])) pane.querySelector(`.iv-slot[data-slot="${s}"]`)?.classList.add('compat');
+  });
+  pane.addEventListener('dragend', () => { drag = null; pane.querySelectorAll('.drop-ok').forEach(x => x.classList.remove('drop-ok')); });
+  pane.addEventListener('dragover', e => {
+    if (!drag) return;
+    const slot = e.target.closest('.iv-slot[data-slot]'), grid = e.target.closest('.iv-grid');
+    const ok = (drag.src === 'bag' && slot && slotsFor(ITEM[drag.k]).includes(slot.dataset.slot)) || (drag.src === 'slot' && grid);
+    if (ok){ e.preventDefault(); (slot || grid).classList.add('drop-ok'); }
+  });
+  pane.addEventListener('dragleave', e => { e.target.closest?.('.drop-ok')?.classList.remove('drop-ok'); });
+  pane.addEventListener('drop', e => {
+    if (!drag) return; e.preventDefault();
+    const slot = e.target.closest('.iv-slot[data-slot]'), grid = e.target.closest('.iv-grid');
+    if (drag.src === 'bag' && slot) act(`equip/${drag.k}?slot=${slot.dataset.slot}`);
+    else if (drag.src === 'slot' && grid) act('unequip/' + drag.slot);
+    drag = null;
+  });
+  // phím tắt khi đang xem Hành trang
+  document.addEventListener('keydown', e => {
+    if ($('pane-inv').hidden || e.target.closest('input,select,textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (sortOpen){ const li = e.target.closest?.('[data-sort]'); if (li && (k === 'enter' || k === ' ')){ e.preventDefault(); pickSort(li.dataset.sort); } if (k === 'escape'){ sortOpen = false; renderInv(); } return; }
+    const map = {e:'equip', u:'unequip', r:'use', delete:'drop', c:'compare', s:'sort', a:'arrange'};
+    if (map[k]){ e.preventDefault(); invDo(map[k]); return; }
+    if (/^[1-7]$/.test(k)){ setCat(CATS[+k - 1][0]); return; }
+    if (k === 'enter' && invSel?.src === 'bag'){ const it = ITEM[invSel.k]; invDo(it.slot ? 'equip' : 'use'); return; }
+    if (['arrowleft','arrowright','arrowup','arrowdown'].includes(k)){
+      const list = bagList(); if (!list.length) return;
+      e.preventDefault();
+      let i = invSel?.src === 'bag' ? invSel.idx : -1;
+      i += {arrowleft:-1, arrowright:1, arrowup:-6, arrowdown:6}[k];
+      i = Math.max(0, Math.min(list.length - 1, i));
+      invSel = {src:'bag', k: list[i].k, idx: i}; renderInv();
+      pane.querySelector(`.iv-cell[data-idx="${i}"]`)?.scrollIntoView({block:'nearest'});
+    }
+  });
+}
+
 const short = n => n >= 1e6 ? (n/1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.0','') + 'M' : n >= 1e4 ? Math.floor(n/1e3) + 'K' : String(n);
 function renderCraft(){
   $('pane-craft').innerHTML = `<p class="note">Đan dược và linh thạch cấp cao mở theo cảnh giới. Mỗi lò có tỉ lệ thành công riêng.</p>` +
@@ -519,7 +816,7 @@ function live(){
   $('qiBar').firstElementChild.style.width = Math.min(100, q/rq*100) + '%';
   $('qiBar').classList.toggle('full', full);
   $('qiText').textContent = `${fmt(q)} / ${fmt(rq)}`;
-  if (MODE === 'strip') $('sStage').textContent = `${S.stageName} · tu vi ${fmt(q)}/${fmt(rq)}${full ? ' · bình cảnh' : ''}`;
+  if (MODE === 'strip'){ $('sStage').textContent = S.stageName; $('qiBarTxt').textContent = `${fmt(q)}/${fmt(rq)}`; $('qiBar').dataset.tip = `Tu vi${full ? ' · bình cảnh' : ''}&#10;${fmt(q)} / ${fmt(rq)} · ${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')}/giây`.replace('&#10;', '\n'); }
   $('qiLabel').textContent = full ? 'Tu vi · bình cảnh' : 'Tu vi';
   const rq2 = $('reqQi'); if (rq2){ rq2.textContent = `${fmt(q)} / ${fmt(rq)}`; rq2.classList.toggle('ok', full); }
   const a = advState(), b = $('btnAdvance');
@@ -528,13 +825,14 @@ function live(){
   b.disabled = !a.ok || busy; b.classList.toggle('ready', a.ok);
   b.dataset.tip = `${S.isPeak && S.hasNext ? 'Đột phá cảnh giới' : 'Đột phá'}: ${S.targetTitle}\n${a.label}`;
   const st = S.stats, bt = S.battle;
-  $('btnBag').dataset.tip = `Túi đồ\nTấn công ${fmt(st.atk)} · Máu ${fmt(st.hp)} · Phòng thủ ${fmt(st.def)}`;
+  $('btnBag').dataset.tip = `Hành trang\nTấn công ${fmt(st.atk)} · Máu ${fmt(st.hp)} · Phòng thủ ${fmt(st.def)}`;
   // thanh thám hiểm: luôn tự động, rê chuột để xem chi tiết chuyến
   const trip = $('trip'), left = exploreLeft();
   trip.dataset.tip = `Tự động thám hiểm\nMỗi ${(S.exploreCooldownMs/1000).toFixed(1).replace('.0','')}s một chuyến · ${bt.win ? `hạ ${bt.monster} sau ${bt.hits} đòn` : `thua ${bt.monster}, cần mạnh hơn`}\nThắng: +${fmt(S.exploreQiGain)} tu vi và vật phẩm rơi theo tỉ lệ`;
   trip.querySelector('i').style.width = Math.min(100, 100 - left / S.exploreCooldownMs * 100) + '%';
   $('tripText').textContent = left > 0 ? `Thám hiểm · ${Math.ceil(left/1000)}s` : 'Đang về…';
   if (left <= 0 && performance.now() - lastPull > 1500){ lastPull = performance.now(); sync(); }
+  liveInv();
   if (tipEl && !tipEl.hidden) showTip(tipEl._for);
 }
 function renderAll(){
@@ -1146,6 +1444,7 @@ window.playBreak = playBreak;
 function openTab(name){
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === name));
   ['req','inv','craft'].forEach(id => $('pane-'+id).hidden = id !== name);
+  if (MODE === 'panel' && typeof notifyHost === 'function') notifyHost('tab', {tab: name}); // cửa sổ đổi cỡ theo tab
 }
 window.openTab = openTab;
 // sync() là hàm toàn cục nên C# gọi được window.sync() trực tiếp
@@ -1170,33 +1469,18 @@ async function boot(){
   $('btnBag').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'inv'}) : openTab('inv');
   document.body.appendChild($('tip')); // tooltip phải nằm ngoài vùng bị ẩn ở chế độ bảng
   document.body.appendChild($('burst'));
-  const pickSort = k => {
-    gearSort = k; gearPage = 1; sortOpen = false;
-    try { localStorage.setItem('van-dao-gear-sort', gearSort); } catch(err){}
-    hideTip(); renderInv();
-  };
-  $('pane-inv').addEventListener('keydown', e => {
-    const li = e.target.closest('[data-sort]');
-    if (li && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); pickSort(li.dataset.sort); }
-    if (e.key === 'Escape' && sortOpen){ sortOpen = false; renderInv(); $('sortBtn')?.focus(); }
-  });
-  document.addEventListener('click', e => { if (sortOpen && !e.target.closest('.sort')){ sortOpen = false; renderInv(); } });
-  $('pane-inv').addEventListener('click', e => {
-    if (e.target.closest('#sortBtn')){ sortOpen = !sortOpen; hideTip(); renderInv(); return; }
-    const so = e.target.closest('[data-sort]');
-    if (so){ pickSort(so.dataset.sort); return; }
-    const pg = e.target.closest('[data-page]');
-    if (pg){ if (!pg.disabled){ gearPage = +pg.dataset.page; renderInv(); } return; }
-    const eq = e.target.closest('[data-equip]'), un = e.target.closest('[data-unequip]');
-    if (eq) act('equip/' + eq.dataset.equip); else if (un) act('unequip/' + un.dataset.unequip);
-  });
+  initInventory();
   $('btnAdvance').onclick = () => act('advance');
   $('pane-req').addEventListener('click', e => { if (e.target.closest('#btnAdvance2')) act('advance'); });
   $('pane-craft').addEventListener('click', e => { const b = e.target.closest('[data-craft]'); if (b) act('craft/' + b.dataset.craft); });
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => openTab(t.dataset.tab));
   if (Q.get('tab')) openTab(Q.get('tab'));
-  // dải taskbar: kéo ⋮⋮ để di chuyển, mở bảng, mở menu cài đặt
-  $('grip').addEventListener('mousedown', e => { if (e.button === 0){ e.preventDefault(); notifyHost('drag'); } });
+  // dải taskbar: kéo thanh tiêu đề để di chuyển, mở bảng, mở menu cài đặt
+  // kéo cả thanh tiêu đề (trừ nút cài đặt) để di chuyển cửa sổ
+  document.querySelector('.strip-head').addEventListener('mousedown', e => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    e.preventDefault(); hideTip(); notifyHost('drag');
+  });
   $('btnPanel').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'req'}) : openTab('req');
   $('btnMenu').onclick = () => notifyHost('menu');
   addEventListener('keydown', e => { if (e.key === 'Escape' && MODE === 'panel') notifyHost('close-panel'); });
