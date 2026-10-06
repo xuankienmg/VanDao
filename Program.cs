@@ -75,9 +75,10 @@ public static class Program
         var api = app.MapGroup("/api");
 
         api.MapGet("/data", () => new GameDataDto(
-            GameData.Items,
+            GameData.AllItems,
             GameData.Slots,
-            GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources)),
+            GameData.ExtraStats,
+            GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources, r.Cn, r.BagSlots, r.EquipSlots)),
             GameData.Recipes.Select((r, i) => new RecipeInfoDto(i, r.Name, r.OutItem, r.OutCount, r.In, r.Rate, r.MinRealm, GameData.Realms[r.MinRealm].Name)),
             GameData.LockedRealms));
 
@@ -100,8 +101,14 @@ public static class Program
         api.MapPost("/players/{id:guid}/channel", (Guid id, GameService game) =>
             Run(id, game, p => (game.Channel(p), null)));
 
-        api.MapPost("/players/{id:guid}/equip/{itemId}", (Guid id, string itemId, GameService game) =>
-            Run(id, game, p => game.Equip(p, itemId)));
+        api.MapPost("/players/{id:guid}/equip/{itemId}", (Guid id, string itemId, string? slot, GameService game) =>
+            Run(id, game, p => game.Equip(p, itemId, slot)));
+
+        api.MapPost("/players/{id:guid}/use/{itemId}", (Guid id, string itemId, GameService game) =>
+            Run(id, game, p => game.Use(p, itemId)));
+
+        api.MapPost("/players/{id:guid}/drop/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
+            Run(id, game, p => game.Drop(p, itemId, n ?? 1)));
 
         api.MapPost("/players/{id:guid}/unequip/{slot}", (Guid id, string slot, GameService game) =>
             Run(id, game, p => game.Unequip(p, slot)));

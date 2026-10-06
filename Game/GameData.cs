@@ -7,10 +7,25 @@ namespace VanDao.Game;
 /// </summary>
 public record ItemDef(string Id, string Name, string Type, string Color, string Desc,
     string? Icon = null, string? Slot = null, double QiPct = 0, double LuckPct = 0, double SpeedPct = 0,
-    int Atk = 0, int Hp = 0, int Def = 0);
+    int Atk = 0, int Hp = 0, int Def = 0,
+    int MinRealm = 0,          // cảnh giới tối thiểu để mặc
+    double SpiritPct = 0,      // Linh lực: % sát thương cộng thêm (mở ở Kim Đan)
+    string? Tint = null,       // bộ lọc màu CSS để phân biệt bậc trang bị dùng chung ảnh
+    string Rarity = "common",  // common · uncommon · rare · epic · legendary
+    string? Kind = null,       // loại hiển thị: Kiếm, Đao, Thương, Áo, Đan dược…
+    double CritPct = 0,        // Bạo kích %
+    double MovePct = 0,        // Tốc chạy %: rút ngắn đoạn đi đường
+    double UseQiSeconds = 0,   // dùng được: cộng tu vi = tốc độ tu luyện × số giây này
+    string? Special = null);   // dòng thuộc tính đặc biệt hiển thị trong tooltip
 
-/// <summary>Chỉ số chiến đấu.</summary>
-public record CombatStats(int Atk, int Hp, int Def);
+/// <summary>
+/// Chỉ số chiến đấu. Speed (Thân pháp), Sense (Thần thức), Spirit (Linh lực) tính bằng %
+/// và chỉ có tác dụng khi cảnh giới đã mở chỉ số đó.
+/// </summary>
+public record CombatStats(int Atk, int Hp, int Def, double Speed = 0, double Sense = 0, double Spirit = 0, double Crit = 0, double Move = 0);
+
+/// <summary>Chỉ số phụ mở theo cảnh giới.</summary>
+public record StatDef(string Id, string Name, string Desc, int MinRealm);
 
 /// <summary>Quái vật gặp khi thám hiểm ở một cảnh giới.</summary>
 public record MonsterDef(string Name, string Image, int Hp, int Atk, int Def);
@@ -30,6 +45,15 @@ public class RealmDef
     public required string Aura { get; init; }
     public required string Lotus { get; init; }
     public required string Sash { get; init; }
+
+    /// <summary>Tên chữ Hán của cảnh giới.</summary>
+    public required string Cn { get; init; }
+
+    /// <summary>Số ô hành trang ở cảnh giới này.</summary>
+    public required int BagSlots { get; init; }
+
+    /// <summary>Các ô trang bị được dùng ở cảnh giới này.</summary>
+    public required string[] EquipSlots { get; init; }
 
     /// <summary>Ảnh nhân vật khi đi thám hiểm ở cảnh giới này.</summary>
     public required string Hero { get; init; }
@@ -67,40 +91,93 @@ public static class GameData
 {
     public static readonly IReadOnlyList<ItemDef> Items = new[]
     {
-        new ItemDef("lt_ha",          "Hạ phẩm linh thạch",     "stone", "#8fd0c9", "Linh thạch phổ biến, dùng cho tu sĩ Luyện Khí."),
-        new ItemDef("lt_trung",       "Trung phẩm linh thạch",  "stone", "#7aa8ff", "Linh khí tinh thuần, tài nguyên chính của Trúc Cơ."),
-        new ItemDef("lt_thuong",      "Thượng phẩm linh thạch", "stone", "#e6c46a", "Hiếm có, chỉ tu sĩ Kim Đan mới hấp thu nổi."),
-        new ItemDef("linh_thao",      "Linh thảo",              "herb",  "#86c97f", "Thảo dược cơ bản để luyện Tụ Khí Đan và Trúc Cơ Đan."),
-        new ItemDef("huyet_sam",      "Huyết sâm trăm năm",     "herb",  "#d86a5f", "Bồi bổ khí huyết, nguyên liệu Bồi Nguyên Đan."),
-        new ItemDef("hoa_linh_chi",   "Hỏa linh chi",           "herb",  "#f0913f", "Mọc bên miệng núi lửa, nguyên liệu Kim Tủy Đan."),
-        new ItemDef("yeu_dan_1",      "Yêu đan nhất giai",      "core",  "#b4b4d8", "Lấy từ yêu thú cấp thấp."),
-        new ItemDef("yeu_dan_2",      "Yêu đan nhị giai",       "core",  "#a385ff", "Yêu lực dồi dào, cần cho Ngưng Kim Đan."),
-        new ItemDef("yeu_dan_3",      "Yêu đan tam giai",       "core",  "#ff74a8", "Yêu đan của đại yêu, cần cho Kim Tủy Đan."),
-        new ItemDef("canh_kim",       "Canh kim tinh",          "ore",   "#dcdce6", "Tinh hoa kim loại, giúp ngưng tụ kim đan."),
-        new ItemDef("tu_khi_dan",     "Tụ Khí Đan",             "pill",  "#bfeee2", "Dùng để lên tầng Luyện Khí."),
-        new ItemDef("truc_co_dan",    "Trúc Cơ Đan",            "pill",  "#6fd39a", "Bắt buộc khi đột phá Trúc Cơ."),
-        new ItemDef("boi_nguyen_dan", "Bồi Nguyên Đan",         "pill",  "#86b6ff", "Củng cố đạo cơ, dùng để lên kỳ Trúc Cơ."),
-        new ItemDef("ngung_kim_dan",  "Ngưng Kim Đan",          "pill",  "#f2c94c", "Bắt buộc khi đột phá Kim Đan."),
-        new ItemDef("kim_tuy_dan",    "Kim Tủy Đan",            "pill",  "#ffd98a", "Tôi luyện kim đan, dùng để lên kỳ Kim Đan."),
+        new ItemDef("lt_ha",          "Hạ phẩm linh thạch",     "stone", "#8fd0c9", "Linh thạch phổ biến, dùng cho tu sĩ Luyện Khí.", Rarity: "common", Kind: "Linh thạch"),
+        new ItemDef("lt_trung",       "Trung phẩm linh thạch",  "stone", "#7aa8ff", "Linh khí tinh thuần, tài nguyên chính của Trúc Cơ.", Rarity: "uncommon", Kind: "Linh thạch"),
+        new ItemDef("lt_thuong",      "Thượng phẩm linh thạch", "stone", "#e6c46a", "Hiếm có, chỉ tu sĩ Kim Đan mới hấp thu nổi.", Rarity: "rare", Kind: "Linh thạch"),
+        new ItemDef("linh_thao",      "Linh thảo",              "herb",  "#86c97f", "Thảo dược cơ bản để luyện Tụ Khí Đan và Trúc Cơ Đan.", Rarity: "common", Kind: "Linh dược"),
+        new ItemDef("huyet_sam",      "Huyết sâm trăm năm",     "herb",  "#d86a5f", "Bồi bổ khí huyết, nguyên liệu Bồi Nguyên Đan.", Rarity: "uncommon", Kind: "Linh dược"),
+        new ItemDef("hoa_linh_chi",   "Hỏa linh chi",           "herb",  "#f0913f", "Mọc bên miệng núi lửa, nguyên liệu Kim Tủy Đan.", Rarity: "rare", Kind: "Linh dược"),
+        new ItemDef("yeu_dan_1",      "Yêu đan nhất giai",      "core",  "#b4b4d8", "Lấy từ yêu thú cấp thấp.", Rarity: "common", Kind: "Yêu đan"),
+        new ItemDef("yeu_dan_2",      "Yêu đan nhị giai",       "core",  "#a385ff", "Yêu lực dồi dào, cần cho Ngưng Kim Đan.", Rarity: "uncommon", Kind: "Yêu đan"),
+        new ItemDef("yeu_dan_3",      "Yêu đan tam giai",       "core",  "#ff74a8", "Yêu đan của đại yêu, cần cho Kim Tủy Đan.", Rarity: "rare", Kind: "Yêu đan"),
+        new ItemDef("canh_kim",       "Canh kim tinh",          "ore",   "#dcdce6", "Tinh hoa kim loại, giúp ngưng tụ kim đan.", Rarity: "uncommon", Kind: "Khoáng thạch"),
+        new ItemDef("tu_khi_dan",     "Tụ Khí Đan",             "pill",  "#bfeee2", "Dùng để lên tầng Luyện Khí.", Rarity: "common", Kind: "Đan dược"),
+        new ItemDef("truc_co_dan",    "Trúc Cơ Đan",            "pill",  "#6fd39a", "Bắt buộc khi đột phá Trúc Cơ.", Rarity: "rare", Kind: "Đan dược"),
+        new ItemDef("boi_nguyen_dan", "Bồi Nguyên Đan",         "pill",  "#86b6ff", "Củng cố đạo cơ, dùng để lên kỳ Trúc Cơ.", Rarity: "uncommon", Kind: "Đan dược"),
+        new ItemDef("ngung_kim_dan",  "Ngưng Kim Đan",          "pill",  "#f2c94c", "Bắt buộc khi đột phá Kim Đan.", Rarity: "epic", Kind: "Đan dược"),
+        new ItemDef("kim_tuy_dan",    "Kim Tủy Đan",            "pill",  "#ffd98a", "Tôi luyện kim đan, dùng để lên kỳ Kim Đan.", Rarity: "rare", Kind: "Đan dược"),
 
         // ---- trang bị (ảnh trong wwwroot/img) ----
-        new ItemDef("thiet_kiem", "Thiết kiếm",     "equip", "#9aa0a8", "Kiếm sắt thường, chuôi quấn vải, đốc ngọc thô.",       "img/thiet_kiem.png", "weapon", Atk: 6),
-        new ItemDef("hac_dao",    "Hắc đao",        "equip", "#7f8794", "Đao bản rộng rèn từ sắt đen, khắc phù văn mờ.",       "img/hac_dao.png",    "weapon", Atk: 10, LuckPct: 5),
-        new ItemDef("non_vai",    "Nón vải rách",   "equip", "#6d7078", "Nón vải sờn mép, gắn mảnh linh thạch nhỏ.",           "img/non_vai.png",    "head",   Hp: 15, Def: 1),
-        new ItemDef("ao_vai",     "Áo vải thô",     "equip", "#6d7078", "Áo giao lĩnh vá chằng vá đụp của tán tu.",            "img/ao_vai.png",     "body",   Hp: 40, Def: 2),
-        new ItemDef("gang_vai",   "Găng tay vải",   "equip", "#5c5f66", "Găng vải dày buộc dây gai.",                          "img/gang_vai.png",   "hands",  Atk: 2, Def: 1),
-        new ItemDef("gang_da",    "Găng tay da",    "equip", "#7a6a55", "Găng da thú, mu tay đính linh thạch.",                "img/gang_da.png",    "hands",  Atk: 3, Def: 2),
-        new ItemDef("quan_vai",   "Quần vải thô",   "equip", "#6d7078", "Quần vải buộc dây thừng, gối vá.",                    "img/quan_vai.png",   "legs",   Hp: 25, Def: 1),
-        new ItemDef("nhan_ngoc",  "Nhẫn ngọc thô",  "equip", "#4f7a64", "Nhẫn ngọc xanh khắc phù văn, linh khí yếu ớt.",       "img/nhan_ngoc.png",  "ring",   QiPct: 5, LuckPct: 8),
+        new ItemDef("thiet_kiem", "Thiết kiếm",     "equip", "#9aa0a8", "Kiếm sắt thường, chuôi quấn vải, đốc ngọc thô.",       "img/thiet_kiem.png", "weapon", Atk: 6, Rarity: "common", Kind: "Kiếm", CritPct: 4, Special: "Kiếm pháp: +4% Bạo kích"),
+        new ItemDef("hac_dao",    "Hắc đao",        "equip", "#7f8794", "Đao bản rộng rèn từ sắt đen, khắc phù văn mờ.",       "img/hac_dao.png",    "weapon", Atk: 10, LuckPct: 5, Rarity: "uncommon", Kind: "Đao", CritPct: 2, Special: "Đao thế nặng: tăng may mắn khi nhặt đồ"),
+        new ItemDef("non_vai",    "Nón vải rách",   "equip", "#6d7078", "Nón vải sờn mép, gắn mảnh linh thạch nhỏ.",           "img/non_vai.png",    "head",   Hp: 15, Def: 1, Rarity: "common", Kind: "Nón"),
+        new ItemDef("ao_vai",     "Áo vải thô",     "equip", "#6d7078", "Áo giao lĩnh vá chằng vá đụp của tán tu.",            "img/ao_vai.png",     "body",   Hp: 40, Def: 2, Rarity: "common", Kind: "Đạo bào"),
+        new ItemDef("gang_vai",   "Găng tay vải",   "equip", "#5c5f66", "Găng vải dày buộc dây gai.",                          "img/gang_vai.png",   "hands",  Atk: 2, Def: 1, Rarity: "common", Kind: "Găng tay"),
+        new ItemDef("gang_da",    "Găng tay da",    "equip", "#7a6a55", "Găng da thú, mu tay đính linh thạch.",                "img/gang_da.png",    "hands",  Atk: 3, Def: 2, Rarity: "uncommon", Kind: "Găng tay"),
+        new ItemDef("quan_vai",   "Quần vải thô",   "equip", "#6d7078", "Quần vải buộc dây thừng, gối vá.",                    "img/quan_vai.png",   "legs",   Hp: 25, Def: 1, Rarity: "common", Kind: "Quần"),
+        new ItemDef("nhan_ngoc",  "Nhẫn ngọc thô",  "equip", "#4f7a64", "Nhẫn ngọc xanh khắc phù văn, linh khí yếu ớt.",       "img/nhan_ngoc.png",  "ring",   QiPct: 5, LuckPct: 8, Rarity: "uncommon", Kind: "Nhẫn"),
+
+        // ---- trang bị Trúc Cơ (cần cảnh giới Trúc Cơ) ----
+        new ItemDef("huyen_kiem", "Huyền thiết kiếm", "equip", "#6fa8ff", "Kiếm huyền thiết, lưỡi phủ một lớp linh quang xanh.", "img/thiet_kiem.png", "weapon", Atk: 45, SpeedPct: 5, MinRealm: 1, Tint: "hue-rotate(170deg) saturate(1.8) brightness(1.15)", Rarity: "rare", Kind: "Kiếm", CritPct: 6, Special: "Kiếm pháp: +6% Bạo kích"),
+        new ItemDef("huyet_dao",  "Huyết sát đao",    "equip", "#d05a52", "Đao uống máu yêu thú, sát khí cuồn cuộn.",             "img/hac_dao.png",    "weapon", Atk: 62, LuckPct: 5, MinRealm: 1, Tint: "sepia(1) hue-rotate(-40deg) saturate(3) brightness(.95)", Rarity: "rare", Kind: "Đao", CritPct: 5, Special: "Sát khí: tăng may mắn khi nhặt đồ"),
+        new ItemDef("non_linh",   "Thanh vân lạp",    "equip", "#6fa8ff", "Nón dệt từ mây xanh, che được thần thức.",            "img/non_vai.png",    "head",   Hp: 110, Def: 7, SpeedPct: 3, MinRealm: 1, Tint: "hue-rotate(180deg) saturate(2.2) brightness(1.2)", Rarity: "rare", Kind: "Nón"),
+        new ItemDef("ao_linh",    "Linh tơ bào",      "equip", "#6fa8ff", "Áo dệt tơ tằm linh, nhẹ mà bền.",                     "img/ao_vai.png",     "body",   Hp: 280, Def: 15, MinRealm: 1, Tint: "hue-rotate(180deg) saturate(2.2) brightness(1.2)", Rarity: "rare", Kind: "Đạo bào"),
+        new ItemDef("gang_linh",  "Hắc giao thủ sáo", "equip", "#6fa8ff", "Găng da giao long, mu tay khảm linh thạch trung phẩm.", "img/gang_da.png",    "hands",  Atk: 18, Def: 10, MinRealm: 1, Tint: "hue-rotate(170deg) saturate(1.8) brightness(1.1)", Rarity: "rare", Kind: "Găng tay"),
+        new ItemDef("quan_linh",  "Linh tơ khố",      "equip", "#6fa8ff", "Quần tơ linh, gối khâu phù chú hộ thân.",             "img/quan_vai.png",   "legs",   Hp: 170, Def: 9, MinRealm: 1, Tint: "hue-rotate(180deg) saturate(2.2) brightness(1.2)", Rarity: "rare", Kind: "Quần"),
+        new ItemDef("nhan_bich",  "Bích ngọc giới",   "equip", "#6fd39a", "Nhẫn bích ngọc, ẩn chứa linh khí tinh thuần.",       "img/nhan_ngoc.png",  "ring",   QiPct: 10, LuckPct: 12, MinRealm: 1, Tint: "saturate(2.4) brightness(1.3)", Rarity: "rare", Kind: "Nhẫn"),
+
+        // ---- trang bị Kim Đan ----
+        new ItemDef("kim_kiem",   "Kim tinh kiếm",    "equip", "#f2c94c", "Kiếm đúc từ canh kim tinh, kiếm khí vàng rực.",        "img/thiet_kiem.png", "weapon", Atk: 300, SpeedPct: 8, MinRealm: 2, Tint: "sepia(1) saturate(4) brightness(1.25)", Rarity: "epic", Kind: "Kiếm", CritPct: 10, Special: "Kiếm pháp: +10% Bạo kích"),
+        new ItemDef("non_kim",    "Kim quan",         "equip", "#f2c94c", "Kim quan buộc tóc, giữ đạo tâm vững vàng.",           "img/non_vai.png",    "head",   Hp: 700, Def: 45, MinRealm: 2, Tint: "sepia(1) saturate(4) brightness(1.3)", Rarity: "epic", Kind: "Nón"),
+        new ItemDef("ao_kim",     "Kim lân giáp",     "equip", "#f2c94c", "Giáp vảy vàng của giao long, đao kiếm khó xuyên.",    "img/ao_vai.png",     "body",   Hp: 1700, Def: 95, MinRealm: 2, Tint: "sepia(1) saturate(4) brightness(1.3)", Rarity: "epic", Kind: "Giáp"),
+        new ItemDef("gang_kim",   "Kim cương thủ",    "equip", "#f2c94c", "Găng tay kim cương, một quyền đập nát đá núi.",        "img/gang_da.png",    "hands",  Atk: 110, Def: 60, MinRealm: 2, Tint: "sepia(1) saturate(4) brightness(1.25)", Rarity: "epic", Kind: "Găng tay"),
+        new ItemDef("quan_kim",   "Kim tơ khố",       "equip", "#f2c94c", "Quần dệt kim tơ, linh khí lưu chuyển không ngừng.",   "img/quan_vai.png",   "legs",   Hp: 1000, Def: 55, MinRealm: 2, Tint: "sepia(1) saturate(4) brightness(1.3)", Rarity: "epic", Kind: "Quần"),
+        new ItemDef("nhan_kim",   "Tử kim giới",      "equip", "#c58cff", "Nhẫn tử kim, tụ linh khí thành sương.",               "img/nhan_ngoc.png",  "ring",   QiPct: 18, LuckPct: 18, SpiritPct: 5, MinRealm: 2, Tint: "hue-rotate(250deg) saturate(2.6) brightness(1.2)", Rarity: "epic", Kind: "Nhẫn"),
+        // ---- pháp bảo (ô Pháp bảo mở ở Kim Đan) ----
+        new ItemDef("kinh_kim",   "Kim Quang Kính",   "artifact", "#f2c94c", "Pháp bảo hộ thân, gương phản chiếu kim quang đẩy lùi yêu khí.", null, "offhand", Hp: 900, Def: 120, SpiritPct: 15, MinRealm: 2, Rarity: "legendary", Kind: "Pháp bảo"),
+        new ItemDef("ho_lo",      "Tử Kim Hồ Lô",     "artifact", "#c58cff", "Pháp bảo công kích, hút linh khí trời đất hoá thành kiếm khí.", null, "offhand", Atk: 160, SpiritPct: 25, QiPct: 10, MinRealm: 2, Rarity: "legendary", Kind: "Pháp bảo"),
+    };
+
+    // ---- vật phẩm mới cho màn hình Hành trang (icon pixel trong wwwroot/img) ----
+    public static readonly ItemDef[] ExtraItems =
+    {
+        new("truong_thuong", "Trường thương",     "equip", "#a07a50", "Thương gỗ cán dài, mũi sắt, buộc tua đỏ.",            "img/truong_thuong.png", "weapon", Atk: 8, CritPct: 3, Rarity: "uncommon", Kind: "Thương", Special: "Đâm xa: +3% Bạo kích"),
+        new("phi_kiem",      "Thanh phong phi kiếm","equip", "#7fe3d2", "Phi kiếm nhỏ, ngự khí bay lượn quanh thân.",         "img/thiet_kiem.png", "weapon", Atk: 50, SpeedPct: 6, CritPct: 6, MinRealm: 1, Tint: "hue-rotate(150deg) saturate(2.4) brightness(1.3)", Rarity: "rare", Kind: "Phi kiếm", Special: "Ngự kiếm: +6% Thân pháp"),
+        new("linh_truong",   "Linh trượng",       "equip", "#5cd6c6", "Trượng gỗ linh mộc ôm một viên ngọc tụ linh.",        "img/linh_truong.png", "weapon", Atk: 32, QiPct: 8, MinRealm: 1, Rarity: "rare", Kind: "Trượng", Special: "Tụ linh: +8% tu vi"),
+        new("giay_vai",      "Giày vải",          "equip", "#5c5f66", "Giày vải đế mỏng, đi đường núi đỡ mỏi.",              "img/giay_vai.png", "feet", Def: 1, MovePct: 6, Rarity: "common", Kind: "Giày"),
+        new("giay_linh",     "Đạp vân hài",       "equip", "#6fa8ff", "Giày thêu mây, bước đi nhẹ như gió.",                  "img/giay_vai.png", "feet", Hp: 60, Def: 8, MovePct: 12, MinRealm: 1, Tint: "hue-rotate(190deg) saturate(2.4) brightness(1.4)", Rarity: "rare", Kind: "Giày"),
+        new("ngoc_boi",      "Ngọc bội thô",      "equip", "#50aa78", "Ngọc bội đeo hông, linh khí mỏng manh.",               "img/ngoc_boi.png", "necklace", Hp: 20, QiPct: 3, Rarity: "uncommon", Kind: "Dây chuyền"),
+        new("ngoc_boi_bich", "Bích lạc ngọc bội", "equip", "#6fd39a", "Ngọc bội bích lạc, giữ tâm thần thanh tĩnh.",          "img/ngoc_boi.png", "necklace", Hp: 120, QiPct: 6, CritPct: 3, MinRealm: 1, Tint: "saturate(1.8) brightness(1.25)", Rarity: "rare", Kind: "Dây chuyền"),
+        new("hoi_khi_dan",   "Hồi Khí Đan",       "pill",  "#54aae8", "Đan dược hồi phục linh khí, uống vào tu vi tăng ngay.", "img/hoi_khi_dan.png", Rarity: "uncommon", Kind: "Đan dược", UseQiSeconds: 30, Special: "Dùng: +tu vi bằng 30 giây tu luyện"),
+        new("lenh_bai",      "Thanh Vân lệnh bài","quest", "#a07a50", "Lệnh bài của Thanh Vân tông, nhặt được trên xác yêu thú. Giữ lại cho nhiệm vụ tông môn.", "img/lenh_bai.png", Rarity: "uncommon", Kind: "Vật phẩm nhiệm vụ"),
+    };
+
+    /// <summary>Chỉ số phụ mở theo cảnh giới (hiện mờ khi chưa mở).</summary>
+    public static readonly IReadOnlyList<StatDef> ExtraStats = new[]
+    {
+        new StatDef("crit",   "Bạo kích",  "Tỉ lệ đánh chí mạng (×1.5 sát thương), tính theo kỳ vọng.", 0),
+        new StatDef("move",   "Tốc chạy",  "Rút ngắn đoạn đi đường mỗi chuyến.", 0),
+        new StatDef("speed",  "Thân pháp", "Đánh nhanh hơn: rút ngắn mỗi lượt giao chiến.", 1),
+        new StatDef("sense",  "Thần thức", "Tăng tỉ lệ rơi vật phẩm.", 1),
+        new StatDef("spirit", "Linh lực",  "Tăng sát thương mỗi đòn đánh.", 2),
+    };
+
+    /// <summary>Chỉ số phụ gốc theo cảnh giới (Thân pháp, Thần thức, Linh lực, đơn vị %).</summary>
+    public static readonly (double Speed, double Sense, double Spirit)[] BaseExtra =
+    {
+        (0, 0, 0), (5, 5, 0), (10, 10, 10),
     };
 
     public static readonly IReadOnlyList<SlotDef> Slots = new[]
     {
-        new SlotDef("weapon", "Vũ khí"), new SlotDef("head", "Nón"), new SlotDef("body", "Áo"),
-        new SlotDef("hands", "Găng tay"), new SlotDef("legs", "Quần"), new SlotDef("ring", "Nhẫn"),
+        new SlotDef("head", "Nón"), new SlotDef("body", "Áo"), new SlotDef("hands", "Găng tay"),
+        new SlotDef("legs", "Quần"), new SlotDef("feet", "Giày"),
+        new SlotDef("necklace", "Dây chuyền"), new SlotDef("ring", "Nhẫn 1"), new SlotDef("ring2", "Nhẫn 2"),
+        new SlotDef("weapon", "Vũ khí"), new SlotDef("offhand", "Pháp bảo"),
     };
 
-    public static readonly IReadOnlyDictionary<string, ItemDef> ItemById = Items.ToDictionary(i => i.Id);
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(ExtraItems).ToList();
+    public static readonly IReadOnlyDictionary<string, ItemDef> ItemById = AllItems.ToDictionary(i => i.Id);
 
     public static readonly IReadOnlyList<RealmDef> Realms = new[]
     {
@@ -110,6 +187,7 @@ public static class GameData
             Desc = "Dẫn linh khí trời đất nhập thể, tẩy kinh phạt tủy. Mỗi tầng cần linh thạch hạ phẩm và Tụ Khí Đan.",
             Stages = new[] { "Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5", "Tầng 6", "Tầng 7", "Tầng 8", "Tầng 9" },
             Aura = "#7fd3c4", Lotus = "#d9a3b0", Sash = "#3f8378", Hero = "img/hero_luyenkhi.png",
+            Cn = "炼气期", BagSlots = 60, EquipSlots = new[] { "weapon", "head", "body", "legs", "feet", "necklace", "ring" },
             QiReq = s => Math.Round(60 * Math.Pow(1.38, s)),
             Rate = s => 3 + s * 0.6,
             StageCost = s => new() { ["lt_ha"] = 5 + 5 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
@@ -119,7 +197,9 @@ public static class GameData
             Places = new[] { "Hắc Phong Lâm", "Thanh Vân Cốc", "Hậu sơn tông môn" },
             Drops = new[] { new DropDef("lt_ha", 3, 8, 1), new DropDef("linh_thao", 1, 3, .85), new DropDef("tu_khi_dan", 1, 1, .3), new DropDef("yeu_dan_1", 1, 1, .3),
                 new DropDef("ao_vai", 1, 1, .04), new DropDef("quan_vai", 1, 1, .04), new DropDef("non_vai", 1, 1, .03),
-                new DropDef("gang_vai", 1, 1, .03), new DropDef("thiet_kiem", 1, 1, .02), new DropDef("nhan_ngoc", 1, 1, .01) },
+                new DropDef("gang_vai", 1, 1, .03), new DropDef("thiet_kiem", 1, 1, .02), new DropDef("nhan_ngoc", 1, 1, .01),
+                new DropDef("truong_thuong", 1, 1, .02), new DropDef("giay_vai", 1, 1, .03), new DropDef("ngoc_boi", 1, 1, .015),
+                new DropDef("hoi_khi_dan", 1, 1, .08), new DropDef("lenh_bai", 1, 1, .01) },
             Resources = new[] { "lt_ha", "linh_thao", "tu_khi_dan", "yeu_dan_1", "truc_co_dan" },
         },
         new RealmDef
@@ -128,6 +208,7 @@ public static class GameData
             Desc = "Linh khí hóa lỏng, xây nền đạo cơ. Mỗi kỳ cần linh thạch trung phẩm và Bồi Nguyên Đan.",
             Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
             Aura = "#86b6ff", Lotus = "#9fd6c8", Sash = "#3b5f9a", Hero = "img/hero_trucco.png",
+            Cn = "筑基期", BagSlots = 100, EquipSlots = new[] { "weapon", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
             QiReq = s => Math.Round(1500 * Math.Pow(1.6, s)),
             Rate = s => 18 + s * 6,
             StageCost = s => new() { ["lt_trung"] = 3 * (s + 1), ["boi_nguyen_dan"] = s + 1 },
@@ -137,7 +218,11 @@ public static class GameData
             Places = new[] { "Huyết Sắc Cấm Địa", "Vạn Thú Sơn", "Đoạn Hồn Nhai" },
             Drops = new[] { new DropDef("lt_trung", 1, 3, 1), new DropDef("lt_ha", 10, 25, .8), new DropDef("huyet_sam", 1, 2, .75), new DropDef("boi_nguyen_dan", 1, 1, .2), new DropDef("yeu_dan_2", 1, 1, .3), new DropDef("canh_kim", 1, 1, .25),
                 new DropDef("gang_da", 1, 1, .04), new DropDef("hac_dao", 1, 1, .025), new DropDef("nhan_ngoc", 1, 1, .03),
-                new DropDef("ao_vai", 1, 1, .02), new DropDef("quan_vai", 1, 1, .02), new DropDef("non_vai", 1, 1, .02) },
+                new DropDef("ao_vai", 1, 1, .02), new DropDef("quan_vai", 1, 1, .02), new DropDef("non_vai", 1, 1, .02),
+                new DropDef("huyen_kiem", 1, 1, .02), new DropDef("huyet_dao", 1, 1, .012), new DropDef("non_linh", 1, 1, .02), new DropDef("ao_linh", 1, 1, .02),
+                new DropDef("gang_linh", 1, 1, .015), new DropDef("quan_linh", 1, 1, .02), new DropDef("nhan_bich", 1, 1, .01),
+                new DropDef("phi_kiem", 1, 1, .012), new DropDef("linh_truong", 1, 1, .012), new DropDef("giay_linh", 1, 1, .02),
+                new DropDef("ngoc_boi_bich", 1, 1, .01), new DropDef("hoi_khi_dan", 1, 1, .12), new DropDef("lenh_bai", 1, 1, .01) },
             Resources = new[] { "lt_trung", "huyet_sam", "boi_nguyen_dan", "yeu_dan_2", "canh_kim", "ngung_kim_dan" },
         },
         new RealmDef
@@ -146,6 +231,7 @@ public static class GameData
             Desc = "Ngưng tụ kim đan nơi đan điền, thọ nguyên năm trăm năm. Mỗi kỳ cần linh thạch thượng phẩm và Kim Tủy Đan.",
             Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
             Aura = "#f2c94c", Lotus = "#f0d58a", Sash = "#9a6b1f", Hero = "img/hero_trucco.png",
+            Cn = "金丹期", BagSlots = 160, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
             QiReq = s => Math.Round(18000 * Math.Pow(1.7, s)),
             Rate = s => 140 + s * 50,
             StageCost = s => new() { ["lt_thuong"] = 2 * (s + 1), ["kim_tuy_dan"] = s + 1 },
@@ -154,13 +240,16 @@ public static class GameData
             Monster = new MonsterDef("Lang vương", "img/yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
             Places = new[] { "Hỏa Diễm Sơn", "Táng Tiên Cốc", "Đông Hải bí cảnh" },
             Drops = new[] { new DropDef("lt_thuong", 1, 2, 1), new DropDef("lt_trung", 3, 8, .8), new DropDef("hoa_linh_chi", 1, 2, .75), new DropDef("kim_tuy_dan", 1, 1, .15), new DropDef("yeu_dan_3", 1, 1, .35),
-                new DropDef("hac_dao", 1, 1, .04), new DropDef("gang_da", 1, 1, .04), new DropDef("nhan_ngoc", 1, 1, .04) },
+                new DropDef("huyen_kiem", 1, 1, .03), new DropDef("ao_linh", 1, 1, .03), new DropDef("nhan_bich", 1, 1, .03),
+                new DropDef("kim_kiem", 1, 1, .015), new DropDef("non_kim", 1, 1, .015), new DropDef("ao_kim", 1, 1, .015), new DropDef("gang_kim", 1, 1, .012),
+                new DropDef("quan_kim", 1, 1, .015), new DropDef("nhan_kim", 1, 1, .008), new DropDef("kinh_kim", 1, 1, .005), new DropDef("ho_lo", 1, 1, .004) },
             Resources = new[] { "lt_thuong", "hoa_linh_chi", "kim_tuy_dan", "yeu_dan_3" },
         },
     };
 
     /// <summary>Cảnh giới hiển thị trên thanh tiến trình nhưng chưa mở.</summary>
     public static readonly string[] LockedRealms = { "Nguyên Anh", "Hóa Thần" };
+    public static readonly string[] LockedRealmsCn = { "元婴期", "化神期" };
 
     public static readonly IReadOnlyList<RecipeDef> Recipes = new[]
     {

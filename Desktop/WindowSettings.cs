@@ -33,6 +33,10 @@ public class WindowSettings
     public int? PanelW { get; set; }
     public int? PanelH { get; set; }
 
+    /// <summary>Kích thước riêng cho tab Hành trang (rộng hơn để chứa nhân vật + túi).</summary>
+    public int? InvW { get; set; }
+    public int? InvH { get; set; }
+
     private static string FilePath => Path.Combine(AppPaths.DataDir, "window.json");
 
     private static readonly JsonSerializerOptions Json = new()

@@ -4,12 +4,14 @@ namespace VanDao.Game;
 public record GameDataDto(
     IEnumerable<ItemDef> Items,
     IEnumerable<SlotDef> Slots,
+    IEnumerable<StatDef> ExtraStats,
     IEnumerable<RealmInfoDto> Realms,
     IEnumerable<RecipeInfoDto> Recipes,
     string[] LockedRealms);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
-    string Aura, string Lotus, string Sash, string Hero, string[] Resources);
+    string Aura, string Lotus, string Sash, string Hero, string[] Resources,
+    string Cn, int BagSlots, string[] EquipSlots);
 
 public record RecipeInfoDto(int Index, string Name, string OutItem, int OutCount,
     Dictionary<string, int> In, double Rate, int MinRealm, string MinRealmName);
@@ -47,6 +49,14 @@ public record StateDto(
     BonusDto Bonuses,
     CombatStats Stats,
     BattleDto Battle,
+    string RealmCn,
+    string NextRealmName,
+    string NextRealmCn,
+    bool AtTop,
+    int BagUsed,
+    int BagCap,
+    string[] EquipSlots,
+    int Level,
     Dictionary<string, int> Inventory,
     List<RecipeStateDto> Recipes,
     List<LogDto> Logs);
