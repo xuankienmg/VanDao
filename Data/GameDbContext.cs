@@ -59,6 +59,24 @@ public static class SchemaUpgrade
             cmd.CommandText = "ALTER TABLE \"Players\" ADD COLUMN \"AutoExplore\" INTEGER NOT NULL DEFAULT 1";
             cmd.ExecuteNonQuery();
         }
+        // cột luyện đan / luyện thể thêm sau
+        foreach (var (col, def) in new[]
+        {
+            ("AlchemyExp", "INTEGER NOT NULL DEFAULT 0"), ("RefineRecipe", "INTEGER NOT NULL DEFAULT -1"),
+            ("RefineStartAt", "TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'"), ("RefineEndAt", "TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'"),
+            ("RefineLeft", "INTEGER NOT NULL DEFAULT 0"), ("RefineCatalyst", "INTEGER NOT NULL DEFAULT 0"),
+            ("LastRefine", "TEXT NOT NULL DEFAULT ''"), ("LastRefineAt", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"),
+            ("BodyHp", "INTEGER NOT NULL DEFAULT 0"), ("BodyDef", "INTEGER NOT NULL DEFAULT 0"),
+            ("Area", "INTEGER NOT NULL DEFAULT 1"), ("AreaMax", "INTEGER NOT NULL DEFAULT 1"),
+            ("Skills", "TEXT NOT NULL DEFAULT ''"), ("BossKills", "INTEGER NOT NULL DEFAULT 0"), ("SkillSlots", "TEXT NOT NULL DEFAULT ''"),
+            ("BreakCooldownUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"), ("DebuffUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"),
+        })
+        {
+            cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('Players') WHERE name = '{col}'";
+            if (Convert.ToInt64(cmd.ExecuteScalar()) > 0) continue;
+            cmd.CommandText = $"ALTER TABLE \"Players\" ADD COLUMN \"{col}\" {def}";
+            cmd.ExecuteNonQuery();
+        }
         cmd.CommandText = """
             CREATE TABLE IF NOT EXISTS "Equipment" (
                 "PlayerId" TEXT NOT NULL,

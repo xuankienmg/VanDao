@@ -16,7 +16,10 @@ public record ItemDef(string Id, string Name, string Type, string Color, string 
     double CritPct = 0,        // Bạo kích %
     double MovePct = 0,        // Tốc chạy %: rút ngắn đoạn đi đường
     double UseQiSeconds = 0,   // dùng được: cộng tu vi = tốc độ tu luyện × số giây này
-    string? Special = null);   // dòng thuộc tính đặc biệt hiển thị trong tooltip
+    string? Special = null,    // dòng thuộc tính đặc biệt hiển thị trong tooltip
+    int Tier = 0,              // bậc đan trong chuỗi hợp thành 9→1 (0 = không phải đan)
+    string? Use = null,        // công dụng của đan / chìa khóa / nguyên liệu Boss
+    int Sell = 0);             // giá bán (linh thạch); chỉ trang bị bán được       // công dụng của đan / chìa khóa / nguyên liệu Boss
 
 /// <summary>
 /// Chỉ số chiến đấu. Speed (Thân pháp), Sense (Thần thức), Spirit (Linh lực) tính bằng %
@@ -34,7 +37,8 @@ public record SlotDef(string Id, string Name);
 
 public record DropDef(string Item, int Min, int Max, double Chance);
 
-public record RecipeDef(string Name, string OutItem, int OutCount, Dictionary<string, int> In, double Rate, int MinRealm);
+/// <summary>Hợp thành: 9 viên đan From + phí linh thạch → 1 viên đan To. Luôn thành công.</summary>
+public record SynthDef(string From, string To, int Count, int Stones);
 
 public class RealmDef
 {
@@ -77,6 +81,12 @@ public class RealmDef
     /// <summary>Quái vật chặn đường khi thám hiểm.</summary>
     public required MonsterDef Monster { get; init; }
     public required string[] Places { get; init; }
+
+    /// <summary>Boss ở ải 21 (cần chìa khóa để vào), rơi nguyên liệu Boss cho đột phá đại cảnh giới.</summary>
+    public required MonsterDef Boss { get; init; }
+    public required string BossLair { get; init; }
+    public required string KeyItem { get; init; }
+    public required string BossItem { get; init; }
     public required DropDef[] Drops { get; init; }
     public required string[] Resources { get; init; }
 }
@@ -91,21 +101,30 @@ public static class GameData
 {
     public static readonly IReadOnlyList<ItemDef> Items = new[]
     {
-        new ItemDef("lt_ha",          "Hạ phẩm linh thạch",     "stone", "#8fd0c9", "Linh thạch phổ biến, dùng cho tu sĩ Luyện Khí.", Rarity: "common", Kind: "Linh thạch"),
-        new ItemDef("lt_trung",       "Trung phẩm linh thạch",  "stone", "#7aa8ff", "Linh khí tinh thuần, tài nguyên chính của Trúc Cơ.", Rarity: "uncommon", Kind: "Linh thạch"),
-        new ItemDef("lt_thuong",      "Thượng phẩm linh thạch", "stone", "#e6c46a", "Hiếm có, chỉ tu sĩ Kim Đan mới hấp thu nổi.", Rarity: "rare", Kind: "Linh thạch"),
-        new ItemDef("linh_thao",      "Linh thảo",              "herb",  "#86c97f", "Thảo dược cơ bản để luyện Tụ Khí Đan và Trúc Cơ Đan.", Rarity: "common", Kind: "Linh dược"),
-        new ItemDef("huyet_sam",      "Huyết sâm trăm năm",     "herb",  "#d86a5f", "Bồi bổ khí huyết, nguyên liệu Bồi Nguyên Đan.", Rarity: "uncommon", Kind: "Linh dược"),
-        new ItemDef("hoa_linh_chi",   "Hỏa linh chi",           "herb",  "#f0913f", "Mọc bên miệng núi lửa, nguyên liệu Kim Tủy Đan.", Rarity: "rare", Kind: "Linh dược"),
-        new ItemDef("yeu_dan_1",      "Yêu đan nhất giai",      "core",  "#b4b4d8", "Lấy từ yêu thú cấp thấp.", Rarity: "common", Kind: "Yêu đan"),
-        new ItemDef("yeu_dan_2",      "Yêu đan nhị giai",       "core",  "#a385ff", "Yêu lực dồi dào, cần cho Ngưng Kim Đan.", Rarity: "uncommon", Kind: "Yêu đan"),
-        new ItemDef("yeu_dan_3",      "Yêu đan tam giai",       "core",  "#ff74a8", "Yêu đan của đại yêu, cần cho Kim Tủy Đan.", Rarity: "rare", Kind: "Yêu đan"),
-        new ItemDef("canh_kim",       "Canh kim tinh",          "ore",   "#dcdce6", "Tinh hoa kim loại, giúp ngưng tụ kim đan.", Rarity: "uncommon", Kind: "Khoáng thạch"),
-        new ItemDef("tu_khi_dan",     "Tụ Khí Đan",             "pill",  "#bfeee2", "Dùng để lên tầng Luyện Khí.", Rarity: "common", Kind: "Đan dược"),
-        new ItemDef("truc_co_dan",    "Trúc Cơ Đan",            "pill",  "#6fd39a", "Bắt buộc khi đột phá Trúc Cơ.", Rarity: "rare", Kind: "Đan dược"),
-        new ItemDef("boi_nguyen_dan", "Bồi Nguyên Đan",         "pill",  "#86b6ff", "Củng cố đạo cơ, dùng để lên kỳ Trúc Cơ.", Rarity: "uncommon", Kind: "Đan dược"),
-        new ItemDef("ngung_kim_dan",  "Ngưng Kim Đan",          "pill",  "#f2c94c", "Bắt buộc khi đột phá Kim Đan.", Rarity: "epic", Kind: "Đan dược"),
-        new ItemDef("kim_tuy_dan",    "Kim Tủy Đan",            "pill",  "#ffd98a", "Tôi luyện kim đan, dùng để lên kỳ Kim Đan.", Rarity: "rare", Kind: "Đan dược"),
+        new ItemDef("linh_thach",    "Linh thạch",       "stone", "#8fd0c9", "Tiền tệ chung của giới tu tiên: dùng để tu luyện, hợp thành đan và đột phá.", Rarity: "common", Kind: "Linh thạch"),
+        // ---- chuỗi đan 9→1: đan chỉ dùng để lên tầng và đột phá ----
+        new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, rơi từ yêu thú vùng Luyện Khí.", Rarity: "common", Kind: "Đan dược", Tier: 1,
+            Use: "Dùng để lên tầng Luyện Khí. 9 viên hợp thành 1 Trúc Cơ Đan."),
+        new ItemDef("truc_co_dan",   "Trúc Cơ Đan",      "pill",  "#6fd39a", "Đan xây nền đạo cơ.", Rarity: "rare", Kind: "Đan dược", Tier: 2,
+            Use: "Dùng để đột phá đại cảnh giới Luyện Khí → Trúc Cơ, và lên kỳ trong Trúc Cơ."),
+        new ItemDef("ngung_kim_dan", "Ngưng Kim Đan",    "pill",  "#f2c94c", "Đan ngưng tụ kim đan nơi đan điền.", Rarity: "epic", Kind: "Đan dược", Tier: 3,
+            Use: "Dùng để đột phá đại cảnh giới Trúc Cơ → Kim Đan, và lên kỳ trong Kim Đan."),
+        new ItemDef("ket_anh_dan",   "Kết Anh Đan",      "pill",  "#c58cff", "Đan phá đan thành anh, cực kỳ hiếm có.", Rarity: "legendary", Kind: "Đan dược", Tier: 4,
+            Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
+        // ---- chìa khóa vào ải Boss (rơi ở ải 1–20) ----
+        new ItemDef("hu_thien_tan_do", "Hư Thiên Tàn Đồ",  "key", "#c9a86a", "Mảnh bản đồ cổ dẫn tới Hư Thiên Điện, nơi Hắc Lân Mãng ẩn mình.", Rarity: "epic", Kind: "Chìa khóa",
+            Use: "Cần để vào ải Boss 1-21 · Hư Thiên Điện. Chỉ mất khi thắng Boss."),
+        new ItemDef("huyet_sac_lenh",  "Huyết Sắc Lệnh Bài", "key", "#c0463a", "Lệnh bài đỏ thẫm mở cửa trung tâm Huyết Sắc Cấm Địa.", Rarity: "epic", Kind: "Chìa khóa",
+            Use: "Cần để vào ải Boss 2-21 · Cấm Địa Trung Tâm. Chỉ mất khi thắng Boss."),
+        new ItemDef("con_ngo_lenh",    "Côn Ngô Sơn Lệnh",   "key", "#e6c46a", "Lệnh bài vàng khắc phù trận phong ấn Côn Ngô Sơn.", Rarity: "epic", Kind: "Chìa khóa",
+            Use: "Cần để vào ải Boss 3-21 · Côn Ngô Sơn. Chỉ mất khi thắng Boss."),
+        // ---- nguyên liệu Boss: bắt buộc khi đột phá đại cảnh giới ----
+        new ItemDef("hac_lan_yeu_hach",  "Hắc Lân Yêu Hạch",  "boss", "#3d6fd8", "Yêu hạch của Hắc Lân Mãng, vảy đen bao quanh một đốm u quang.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+            Use: "Bắt buộc khi đột phá Luyện Khí Tầng 9 → Trúc Cơ."),
+        new ItemDef("huyet_giao_hach",   "Huyết Giao Yêu Hạch", "boss", "#d8404a", "Yêu hạch của Huyết Giao, nóng như máu sôi.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+            Use: "Bắt buộc khi đột phá Trúc Cơ Đại viên mãn → Kim Đan."),
+        new ItemDef("kim_o_tinh_hach",   "Kim Ô Tinh Hạch",    "boss", "#f2b23c", "Tinh hạch của Kim Ô yêu vương, chứa thái dương chân hỏa.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+            Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
 
         // ---- trang bị (ảnh trong wwwroot/img) ----
         new ItemDef("thiet_kiem", "Thiết kiếm",     "equip", "#9aa0a8", "Kiếm sắt thường, chuôi quấn vải, đốc ngọc thô.",       "img/thiet_kiem.png", "weapon", Atk: 6, Rarity: "common", Kind: "Kiếm", CritPct: 4, Special: "Kiếm pháp: +4% Bạo kích"),
@@ -148,8 +167,6 @@ public static class GameData
         new("giay_linh",     "Đạp vân hài",       "equip", "#6fa8ff", "Giày thêu mây, bước đi nhẹ như gió.",                  "img/giay_vai.png", "feet", Hp: 60, Def: 8, MovePct: 12, MinRealm: 1, Tint: "hue-rotate(190deg) saturate(2.4) brightness(1.4)", Rarity: "rare", Kind: "Giày"),
         new("ngoc_boi",      "Ngọc bội thô",      "equip", "#50aa78", "Ngọc bội đeo hông, linh khí mỏng manh.",               "img/ngoc_boi.png", "necklace", Hp: 20, QiPct: 3, Rarity: "uncommon", Kind: "Dây chuyền"),
         new("ngoc_boi_bich", "Bích lạc ngọc bội", "equip", "#6fd39a", "Ngọc bội bích lạc, giữ tâm thần thanh tĩnh.",          "img/ngoc_boi.png", "necklace", Hp: 120, QiPct: 6, CritPct: 3, MinRealm: 1, Tint: "saturate(1.8) brightness(1.25)", Rarity: "rare", Kind: "Dây chuyền"),
-        new("hoi_khi_dan",   "Hồi Khí Đan",       "pill",  "#54aae8", "Đan dược hồi phục linh khí, uống vào tu vi tăng ngay.", "img/hoi_khi_dan.png", Rarity: "uncommon", Kind: "Đan dược", UseQiSeconds: 30, Special: "Dùng: +tu vi bằng 30 giây tu luyện"),
-        new("lenh_bai",      "Thanh Vân lệnh bài","quest", "#a07a50", "Lệnh bài của Thanh Vân tông, nhặt được trên xác yêu thú. Giữ lại cho nhiệm vụ tông môn.", "img/lenh_bai.png", Rarity: "uncommon", Kind: "Vật phẩm nhiệm vụ"),
     };
 
     /// <summary>Chỉ số phụ mở theo cảnh giới (hiện mờ khi chưa mở).</summary>
@@ -176,7 +193,75 @@ public static class GameData
         new SlotDef("weapon", "Vũ khí"), new SlotDef("offhand", "Pháp bảo"),
     };
 
-    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(ExtraItems).ToList();
+    /// <summary>Vật phẩm có ảnh pixel 48×48 trong wwwroot/img/{id}.png.</summary>
+    private static readonly HashSet<string> PixelIcons = new()
+    {
+        "linh_thach", "tu_khi_dan", "truc_co_dan", "ngung_kim_dan", "ket_anh_dan",
+        "hu_thien_tan_do", "huyet_sac_lenh", "con_ngo_lenh", "hac_lan_yeu_hach", "huyet_giao_hach", "kim_o_tinh_hach",
+    };
+
+    /// <summary>Giá gốc theo độ hiếm; trang bị cảnh giới cao bán đắt hơn (×5 mỗi cảnh giới).</summary>
+    public static readonly Dictionary<string, int> RarityPrice = new()
+    {
+        ["common"] = 3, ["uncommon"] = 12, ["rare"] = 50, ["epic"] = 200, ["legendary"] = 800,
+    };
+    public static readonly string[] RarityOrder = { "common", "uncommon", "rare", "epic", "legendary" };
+    public static int SellPrice(ItemDef it) =>
+        it.Slot is null ? 0 : Math.Max(1, RarityPrice.GetValueOrDefault(it.Rarity, 3) * (1 + it.MinRealm * 4));
+
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(ExtraItems)
+        .Select(it => PixelIcons.Contains(it.Id) ? it with { Icon = $"img/{it.Id}.png" } : it)
+        .Select(it => it with { Sell = SellPrice(it) }).ToList();
+
+    /// <summary>Chuỗi đan: 9 viên bậc dưới → 1 viên bậc trên.</summary>
+    public static readonly string[] PillChain = { "tu_khi_dan", "truc_co_dan", "ngung_kim_dan", "ket_anh_dan" };
+    public static readonly IReadOnlyList<SynthDef> Synths = new[]
+    {
+        new SynthDef("tu_khi_dan",    "truc_co_dan",   9, 50),
+        new SynthDef("truc_co_dan",   "ngung_kim_dan", 9, 800),
+        new SynthDef("ngung_kim_dan", "ket_anh_dan",   9, 8000),
+    };
+
+    /// <summary>Vật phẩm của bản cũ quy đổi khi nạp nhân vật: (id mới, hệ số). Không có id mới = đổi ra linh thạch.</summary>
+    public static readonly Dictionary<string, (string To, int Factor)> Legacy = new()
+    {
+        ["lt_ha"] = ("linh_thach", 1), ["lt_trung"] = ("linh_thach", 50), ["lt_thuong"] = ("linh_thach", 1500),
+        ["boi_nguyen_dan"] = ("truc_co_dan", 1), ["kim_tuy_dan"] = ("ngung_kim_dan", 1),
+        ["hoi_khi_dan"] = ("linh_thach", 20), ["luyen_the_dan"] = ("linh_thach", 30), ["hoa_tinh"] = ("linh_thach", 20),
+        ["linh_thao"] = ("linh_thach", 2), ["huyet_sam"] = ("linh_thach", 20), ["hoa_linh_chi"] = ("linh_thach", 300),
+        ["yeu_dan_1"] = ("linh_thach", 10), ["yeu_dan_2"] = ("linh_thach", 100), ["yeu_dan_3"] = ("linh_thach", 1000),
+        ["canh_kim"] = ("linh_thach", 150), ["lenh_bai"] = ("linh_thach", 50),
+    };
+
+    /// <summary>Đột phá đại cảnh giới: phần tỉ lệ đại thành công trong thành công, phần tẩu hỏa nhập ma trong thất bại.</summary>
+    public const double BreakCritShare = .2, BreakMajorShare = .25;
+    /// <summary>Thất bại: tổn tu vi, thời gian điều tức trước lần thử sau (giây).</summary>
+    public const double BreakFailLoss = .10, BreakMajorLoss = .25, BreakFailCooldown = 60, BreakMajorCooldown = 120;
+    /// <summary>Tẩu hỏa nhập ma: suy yếu trong DebuffSeconds (tu vi ×0.7, công/thủ ×0.9).</summary>
+    public const double DebuffSeconds = 300, DebuffRate = .7, DebuffStat = .9;
+    /// <summary>Đại thành công: đạo cơ vững chắc, thêm vĩnh viễn 10% máu và phòng thủ gốc của cảnh giới mới.</summary>
+    public const double BreakCritBonus = .10;
+
+    /// <summary>Số ải thường mỗi cảnh giới; ải kế tiếp (21) là ải Boss.</summary>
+    public const int Areas = 20;
+    public const int BossArea = Areas + 1;
+
+    /// <summary>Quái ở ải s (1..20): mạnh dần từ ×0.6 đến ×2.6 so với quái gốc của cảnh giới.</summary>
+    public static MonsterDef AreaMonster(RealmDef r, int s)
+    {
+        if (s >= BossArea) return r.Boss;
+        var m = 0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1);
+        var b = r.Monster;
+        return b with { Hp = (int)Math.Round(b.Hp * m), Atk = (int)Math.Round(b.Atk * m), Def = (int)Math.Round(b.Def * m) };
+    }
+
+    /// <summary>Tên vùng của ải s.</summary>
+    public static string AreaPlace(RealmDef r, int s) =>
+        s >= BossArea ? r.BossLair : r.Places[Math.Min(r.Places.Length - 1, (Math.Clamp(s, 1, Areas) - 1) * r.Places.Length / Areas)];
+
+    /// <summary>Tỉ lệ rơi chìa khóa Boss ở ải s.</summary>
+    public static double KeyChance(int s) => 0.004 + 0.0015 * s;
+
     public static readonly IReadOnlyDictionary<string, ItemDef> ItemById = AllItems.ToDictionary(i => i.Id);
 
     public static readonly IReadOnlyList<RealmDef> Realms = new[]
@@ -184,85 +269,79 @@ public static class GameData
         new RealmDef
         {
             Id = "luyen_khi", Name = "Luyện Khí",
-            Desc = "Dẫn linh khí trời đất nhập thể, tẩy kinh phạt tủy. Mỗi tầng cần linh thạch hạ phẩm và Tụ Khí Đan.",
+            Desc = "Dẫn linh khí trời đất nhập thể, tẩy kinh phạt tủy. Mỗi tầng cần linh thạch và Tụ Khí Đan.",
             Stages = new[] { "Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5", "Tầng 6", "Tầng 7", "Tầng 8", "Tầng 9" },
             Aura = "#7fd3c4", Lotus = "#d9a3b0", Sash = "#3f8378", Hero = "img/hero_luyenkhi.png",
-            Cn = "炼气期", BagSlots = 60, EquipSlots = new[] { "weapon", "head", "body", "legs", "feet", "necklace", "ring" },
+            Cn = "", BagSlots = 60, EquipSlots = new[] { "weapon", "head", "body", "legs", "feet", "necklace", "ring" },
             QiReq = s => Math.Round(60 * Math.Pow(1.38, s)),
             Rate = s => 3 + s * 0.6,
-            StageCost = s => new() { ["lt_ha"] = 5 + 5 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
-            BreakCost = new() { ["truc_co_dan"] = 1, ["lt_ha"] = 100 }, BreakChance = 0.55,
+            StageCost = s => new() { ["linh_thach"] = 10 + 10 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
+            BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["hac_lan_yeu_hach"] = 1 }, BreakChance = .65,
             StatMult = 1,
             Monster = new MonsterDef("Yêu lang", "img/yeu_lang.png", Hp: 30, Atk: 8, Def: 2),
             Places = new[] { "Hắc Phong Lâm", "Thanh Vân Cốc", "Hậu sơn tông môn" },
-            Drops = new[] { new DropDef("lt_ha", 3, 8, 1), new DropDef("linh_thao", 1, 3, .85), new DropDef("tu_khi_dan", 1, 1, .3), new DropDef("yeu_dan_1", 1, 1, .3),
+            Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 140, Atk: 23, Def: 5),
+            BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
+            Drops = new[] { new DropDef("linh_thach", 3, 8, 1), new DropDef("tu_khi_dan", 1, 1, .4),
                 new DropDef("ao_vai", 1, 1, .04), new DropDef("quan_vai", 1, 1, .04), new DropDef("non_vai", 1, 1, .03),
                 new DropDef("gang_vai", 1, 1, .03), new DropDef("thiet_kiem", 1, 1, .02), new DropDef("nhan_ngoc", 1, 1, .01),
-                new DropDef("truong_thuong", 1, 1, .02), new DropDef("giay_vai", 1, 1, .03), new DropDef("ngoc_boi", 1, 1, .015),
-                new DropDef("hoi_khi_dan", 1, 1, .08), new DropDef("lenh_bai", 1, 1, .01) },
-            Resources = new[] { "lt_ha", "linh_thao", "tu_khi_dan", "yeu_dan_1", "truc_co_dan" },
+                new DropDef("truong_thuong", 1, 1, .02), new DropDef("giay_vai", 1, 1, .03), new DropDef("ngoc_boi", 1, 1, .015) },
+            Resources = new[] { "linh_thach", "tu_khi_dan", "hu_thien_tan_do", "hac_lan_yeu_hach" },
         },
         new RealmDef
         {
             Id = "truc_co", Name = "Trúc Cơ",
-            Desc = "Linh khí hóa lỏng, xây nền đạo cơ. Mỗi kỳ cần linh thạch trung phẩm và Bồi Nguyên Đan.",
+            Desc = "Linh khí hóa lỏng, xây nền đạo cơ. Mỗi kỳ cần linh thạch và Trúc Cơ Đan.",
             Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
             Aura = "#86b6ff", Lotus = "#9fd6c8", Sash = "#3b5f9a", Hero = "img/hero_trucco.png",
-            Cn = "筑基期", BagSlots = 100, EquipSlots = new[] { "weapon", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
+            Cn = "", BagSlots = 100, EquipSlots = new[] { "weapon", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
             QiReq = s => Math.Round(1500 * Math.Pow(1.6, s)),
             Rate = s => 18 + s * 6,
-            StageCost = s => new() { ["lt_trung"] = 3 * (s + 1), ["boi_nguyen_dan"] = s + 1 },
-            BreakCost = new() { ["ngung_kim_dan"] = 1, ["lt_trung"] = 30 }, BreakChance = 0.4,
+            StageCost = s => new() { ["linh_thach"] = 200 * (s + 1), ["truc_co_dan"] = s + 1 },
+            BreakCost = new() { ["ngung_kim_dan"] = 1, ["linh_thach"] = 3000, ["huyet_giao_hach"] = 1 }, BreakChance = .5,
             StatMult = 6,
             Monster = new MonsterDef("Huyết lang", "img/yeu_lang.png", Hp: 200, Atk: 60, Def: 20),
             Places = new[] { "Huyết Sắc Cấm Địa", "Vạn Thú Sơn", "Đoạn Hồn Nhai" },
-            Drops = new[] { new DropDef("lt_trung", 1, 3, 1), new DropDef("lt_ha", 10, 25, .8), new DropDef("huyet_sam", 1, 2, .75), new DropDef("boi_nguyen_dan", 1, 1, .2), new DropDef("yeu_dan_2", 1, 1, .3), new DropDef("canh_kim", 1, 1, .25),
+            Boss = new MonsterDef("Huyết Giao", "img/boss_huyet_giao.png", Hp: 940, Atk: 172, Def: 52),
+            BossLair = "Cấm Địa Trung Tâm", KeyItem = "huyet_sac_lenh", BossItem = "huyet_giao_hach",
+            Drops = new[] { new DropDef("linh_thach", 30, 80, 1), new DropDef("tu_khi_dan", 1, 3, .8), new DropDef("truc_co_dan", 1, 1, .05),
                 new DropDef("gang_da", 1, 1, .04), new DropDef("hac_dao", 1, 1, .025), new DropDef("nhan_ngoc", 1, 1, .03),
                 new DropDef("ao_vai", 1, 1, .02), new DropDef("quan_vai", 1, 1, .02), new DropDef("non_vai", 1, 1, .02),
                 new DropDef("huyen_kiem", 1, 1, .02), new DropDef("huyet_dao", 1, 1, .012), new DropDef("non_linh", 1, 1, .02), new DropDef("ao_linh", 1, 1, .02),
                 new DropDef("gang_linh", 1, 1, .015), new DropDef("quan_linh", 1, 1, .02), new DropDef("nhan_bich", 1, 1, .01),
                 new DropDef("phi_kiem", 1, 1, .012), new DropDef("linh_truong", 1, 1, .012), new DropDef("giay_linh", 1, 1, .02),
-                new DropDef("ngoc_boi_bich", 1, 1, .01), new DropDef("hoi_khi_dan", 1, 1, .12), new DropDef("lenh_bai", 1, 1, .01) },
-            Resources = new[] { "lt_trung", "huyet_sam", "boi_nguyen_dan", "yeu_dan_2", "canh_kim", "ngung_kim_dan" },
+                new DropDef("ngoc_boi_bich", 1, 1, .01) },
+            Resources = new[] { "linh_thach", "tu_khi_dan", "truc_co_dan", "huyet_sac_lenh", "huyet_giao_hach" },
         },
         new RealmDef
         {
             Id = "kim_dan", Name = "Kim Đan",
-            Desc = "Ngưng tụ kim đan nơi đan điền, thọ nguyên năm trăm năm. Mỗi kỳ cần linh thạch thượng phẩm và Kim Tủy Đan.",
+            Desc = "Ngưng tụ kim đan nơi đan điền, thọ nguyên năm trăm năm. Mỗi kỳ cần linh thạch và Ngưng Kim Đan.",
             Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
             Aura = "#f2c94c", Lotus = "#f0d58a", Sash = "#9a6b1f", Hero = "img/hero_trucco.png",
-            Cn = "金丹期", BagSlots = 160, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
+            Cn = "", BagSlots = 160, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
             QiReq = s => Math.Round(18000 * Math.Pow(1.7, s)),
             Rate = s => 140 + s * 50,
-            StageCost = s => new() { ["lt_thuong"] = 2 * (s + 1), ["kim_tuy_dan"] = s + 1 },
-            BreakCost = null, BreakChance = 0, // điền khi thêm Nguyên Anh
+            StageCost = s => new() { ["linh_thach"] = 1500 * (s + 1), ["ngung_kim_dan"] = s + 1 },
+            BreakCost = null, BreakChance = 1, // điền khi thêm Nguyên Anh: Kết Anh Đan + Kim Ô Tinh Hạch
             StatMult = 35,
             Monster = new MonsterDef("Lang vương", "img/yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
             Places = new[] { "Hỏa Diễm Sơn", "Táng Tiên Cốc", "Đông Hải bí cảnh" },
-            Drops = new[] { new DropDef("lt_thuong", 1, 2, 1), new DropDef("lt_trung", 3, 8, .8), new DropDef("hoa_linh_chi", 1, 2, .75), new DropDef("kim_tuy_dan", 1, 1, .15), new DropDef("yeu_dan_3", 1, 1, .35),
+            Boss = new MonsterDef("Kim Ô Yêu Vương", "img/boss_kim_o.png", Hp: 5600, Atk: 860, Def: 260),
+            BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",
+            Drops = new[] { new DropDef("linh_thach", 200, 500, 1), new DropDef("tu_khi_dan", 3, 6, .6), new DropDef("truc_co_dan", 1, 2, .7), new DropDef("ngung_kim_dan", 1, 1, .03),
                 new DropDef("huyen_kiem", 1, 1, .03), new DropDef("ao_linh", 1, 1, .03), new DropDef("nhan_bich", 1, 1, .03),
                 new DropDef("kim_kiem", 1, 1, .015), new DropDef("non_kim", 1, 1, .015), new DropDef("ao_kim", 1, 1, .015), new DropDef("gang_kim", 1, 1, .012),
                 new DropDef("quan_kim", 1, 1, .015), new DropDef("nhan_kim", 1, 1, .008), new DropDef("kinh_kim", 1, 1, .005), new DropDef("ho_lo", 1, 1, .004) },
-            Resources = new[] { "lt_thuong", "hoa_linh_chi", "kim_tuy_dan", "yeu_dan_3" },
+            Resources = new[] { "linh_thach", "truc_co_dan", "ngung_kim_dan", "con_ngo_lenh", "kim_o_tinh_hach" },
         },
     };
 
     /// <summary>Cảnh giới hiển thị trên thanh tiến trình nhưng chưa mở.</summary>
     public static readonly string[] LockedRealms = { "Nguyên Anh", "Hóa Thần" };
-    public static readonly string[] LockedRealmsCn = { "元婴期", "化神期" };
+    public static readonly string[] LockedRealmsCn = { "", "" };
 
-    public static readonly IReadOnlyList<RecipeDef> Recipes = new[]
-    {
-        new RecipeDef("Tụ Khí Đan",           "tu_khi_dan",     1, new() { ["linh_thao"] = 3, ["lt_ha"] = 5 }, 1.0, 0),
-        new RecipeDef("Trúc Cơ Đan",          "truc_co_dan",    1, new() { ["linh_thao"] = 12, ["yeu_dan_1"] = 3, ["lt_ha"] = 40 }, .75, 0),
-        new RecipeDef("Hợp luyện linh thạch", "lt_trung",       1, new() { ["lt_ha"] = 50 }, 1.0, 1),
-        new RecipeDef("Bồi Nguyên Đan",       "boi_nguyen_dan", 1, new() { ["huyet_sam"] = 2, ["lt_trung"] = 1 }, .9, 1),
-        new RecipeDef("Ngưng Kim Đan",        "ngung_kim_dan",  1, new() { ["huyet_sam"] = 8, ["yeu_dan_2"] = 3, ["canh_kim"] = 2 }, .65, 1),
-        new RecipeDef("Hợp luyện linh thạch", "lt_thuong",      1, new() { ["lt_trung"] = 30 }, 1.0, 2),
-        new RecipeDef("Kim Tủy Đan",          "kim_tuy_dan",    1, new() { ["hoa_linh_chi"] = 2, ["yeu_dan_3"] = 1, ["lt_thuong"] = 1 }, .85, 2),
-    };
-
-    public static readonly Dictionary<string, int> StartingInventory = new() { ["lt_ha"] = 20, ["linh_thao"] = 6 };
+    public static readonly Dictionary<string, int> StartingInventory = new() { ["linh_thach"] = 30, ["tu_khi_dan"] = 1 };
 
     /// <summary>Thời gian vắng mặt tối đa được cộng tu vi và thám hiểm bù.</summary>
     public const double MaxOfflineSeconds = 7200;
