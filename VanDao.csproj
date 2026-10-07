@@ -10,6 +10,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>VanDao</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- Phiên bản phát hành: tăng số này mỗi lần gửi bản chơi thử mới -->
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
