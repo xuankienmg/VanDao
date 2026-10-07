@@ -10,10 +10,23 @@ public record ElementDef(string Id, string Name, string Color, string Color2, bo
 public record SkillDef(string Id, string Element, string Name, string Category, int Row, int Col, int MaxLv, int MinRealm, int Cost,
     string[] Req, string Effect, string Anim, int QiCost = 0, double Cooldown = 0, int DmgBase = 0, int DmgPerLv = 0,
     double AtkPct = 0, double DefPct = 0, double HpPct = 0, double Crit = 0, double Speed = 0, double Move = 0,
-    double QiPct = 0, double MonAtkDown = 0)
+    double QiPct = 0, double MonAtkDown = 0,
+    double SkillPct = 0,       // % sát thương cộng thêm cho mọi chiêu hệ Hỏa tự thi triển
+    double Pen = 0,            // % phòng thủ của quái bị bỏ qua (xuyên thấu)
+    int Every = 0,             // kỹ năng: hồi chiêu (số lượt giữa 2 lần thi triển)
+    string Code = "",          // Skill ID (FIRE_ACTIVE_001…)
+    string AnimId = "NONE",    // Animation ID (bị động: NONE). Animation chỉ để hiển thị, không chứa logic
+    string Range = "", string Area = "",   // tầm đánh / phạm vi (hiển thị)
+    double Lead = 0,           // bị động: giá trị = mức/cấp × (cấp + Lead) — cho phép Lv.1 cao hơn tuyến tính (vd. 5% → 20%)
+    double QiCut = 0,          // % giảm linh khí tiêu hao của chiêu Hỏa (mỗi cấp)
+    double RangePct = 0)       // % tầm đánh chiêu Hỏa (hiển thị)
 {
-    /// <summary>Điểm cần để lên từ cấp lv lên lv+1.</summary>
-    public int CostAt(int lv) => Cost + lv / 2;
+    /// <summary>Điểm cần để lên từ cấp lv lên lv+1: lĩnh ngộ tốn Cost, mỗi lần nâng tốn 1 + lv/2.</summary>
+    public int CostAt(int lv) => lv == 0 ? Cost : 1 + lv / 2;
+    /// <summary>Hệ số cấp cho chỉ số bị động.</summary>
+    public double Factor(int lv) => lv <= 0 ? 0 : lv + Lead;
+    /// <summary>Cây: basic (đòn thường, không dùng điểm) · active · passive.</summary>
+    public string Tree => Category == "Đòn thường" ? "basic" : Category is "Căn cơ" or "Bị động" ? "passive" : "active";
 }
 
 /// <summary>
@@ -36,42 +49,43 @@ public static class SkillData
 
     public static readonly IReadOnlyList<SkillDef> Skills = new SkillDef[]
     {
-        // ===== HỎA: gốc =====
-        new("hoa_linh_can", "hoa", "Hỏa Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(),
-            "Linh căn hệ Hỏa trong cơ thể. Tăng tấn công và tốc độ hấp thu linh khí.", "root", AtkPct: 2, QiPct: 2),
-        new("hoa_cau", "hoa", "Hỏa Cầu", "Công", 1, 2, 5, 0, 1, new[] { "hoa_linh_can:1" },
-            "Ngưng tụ một quả cầu lửa linh khí bắn thẳng về phía địch.", "bolt", 30, 3, 100, 25, AtkPct: 3),
-        // ===== nhánh Công =====
-        new("hoa_tien", "hoa", "Hỏa Tiễn", "Công", 2, 1, 5, 0, 1, new[] { "hoa_cau:2" },
-            "Bắn ba mũi tên lửa liên tiếp, dễ trúng chỗ hiểm.", "arrow", 40, 4, 60, 15, AtkPct: 3, Crit: 1),
-        new("liet_diem", "hoa", "Liệt Diễm", "Công", 3, 1, 5, 0, 2, new[] { "hoa_tien:3" },
-            "Liệt hỏa bùng lên quanh mục tiêu, thiêu đốt liên tục.", "burst", 60, 6, 150, 30, AtkPct: 4),
-        new("hoa_long", "hoa", "Hỏa Long Thuật", "Công", 4, 2, 5, 1, 3, new[] { "liet_diem:3", "hoa_giap:3" },
-            "Hóa linh hỏa thành rồng lửa lao vào kẻ địch.", "dragon", 120, 10, 260, 45, AtkPct: 6),
-        new("phan_thien", "hoa", "Phần Thiên", "Công", 5, 2, 5, 1, 3, new[] { "hoa_long:3" },
-            "Cột lửa thiêu trời từ dưới chân kẻ địch bốc lên.", "pillar", 180, 14, 380, 60, AtkPct: 8, Crit: 2),
-        // ===== nhánh Thủ =====
-        new("hoa_thuan", "hoa", "Hỏa Thuẫn", "Thủ", 2, 3, 5, 0, 1, new[] { "hoa_cau:2" },
-            "Tấm khiên lửa chặn đòn trước mặt.", "shield", 35, 8, DefPct: 4),
-        new("hoa_giap", "hoa", "Hỏa Giáp", "Thủ", 3, 3, 5, 0, 2, new[] { "hoa_thuan:3" },
-            "Lửa bám thân thành giáp, vừa chống đỡ vừa đốt kẻ chạm vào.", "aura", 50, 12, HpPct: 4, DefPct: 2),
-        new("ho_the", "hoa", "Hộ Thể Liệt Diễm", "Thủ", 4, 4, 5, 1, 2, new[] { "hoa_giap:3" },
-            "Vòng liệt diễm bao quanh thân, đòn đánh khó xuyên qua.", "aura", 80, 15, HpPct: 5, DefPct: 3),
-        // ===== nhánh Khống =====
-        new("hoa_troi", "hoa", "Hỏa Trói", "Khống", 2, 0, 5, 0, 1, new[] { "hoa_cau:1" },
-            "Xích lửa quấn lấy địch, làm chậm và yếu đòn đánh.", "bind", 30, 7, MonAtkDown: 2),
-        new("liet_diem_lao", "hoa", "Liệt Diễm Lao", "Khống", 3, 0, 5, 0, 2, new[] { "hoa_troi:3" },
-            "Lồng song lửa giam kẻ địch tại chỗ.", "bind", 60, 10, MonAtkDown: 3),
-        new("hoa_tran", "hoa", "Hỏa Trận", "Khống", 4, 0, 5, 1, 2, new[] { "liet_diem_lao:3" },
-            "Bày trận lửa dưới chân, kẻ địch trong trận bị thiêu và suy yếu.", "field", 90, 14, 80, 20, AtkPct: 2, MonAtkDown: 3),
-        // ===== nhánh Thân pháp =====
-        new("hoa_bo", "hoa", "Hỏa Bộ", "Thân pháp", 2, 4, 5, 0, 1, new[] { "hoa_linh_can:2" },
-            "Bước chân mang lửa, di chuyển nhanh hơn.", "dash", 20, 5, Move: 3),
-        new("viem_don", "hoa", "Viêm Độn", "Thân pháp", 3, 4, 5, 1, 2, new[] { "hoa_bo:3" },
-            "Hóa thân thành lửa lướt đi trong chớp mắt.", "dash", 50, 10, Move: 3, Speed: 3),
-        // ===== Tuyệt kỹ =====
-        new("xich_diem_thien", "hoa", "Xích Diễm Thiên", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "phan_thien:3" },
-            "Nhuộm đỏ cả bầu trời, liệt diễm từ trời giáng xuống thiêu rụi vạn vật.", "ultimate", 400, 40, 900, 200, AtkPct: 15, Crit: 5),
+        // ===== HỎA: Đánh thường (2, không dùng điểm) + Cây Chủ động (4) + Cây Bị động (7). Mọi hệ sau dùng cùng khung =====
+        // Row/Col: vị trí trong cây của chính nó (chủ động 3 hàng × 3 cột, bị động 5 hàng × 3 cột).
+        // ---- ĐÁNH THƯỜNG: luôn có, không có cấp, mạnh lên theo cảnh giới / chỉ số / trang bị / công pháp bị động ----
+        new("hoa_cau", "hoa", "Hỏa Cầu", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
+            "Ngưng tụ hỏa cầu nhỏ bắn thẳng vào một mục tiêu. Đơn mục tiêu, tầm xa.", "bolt", 0, 0, 115, 0,
+            Code: "FIRE_BASIC_001", AnimId: "FIRE_BOLT_001", Range: "6m", Area: "Đơn mục tiêu"),
+        new("hoa_tien", "hoa", "Hỏa Tiễn", "Đòn thường", 0, 1, 0, 0, 0, Array.Empty<string>(),
+            "Bắn liên tiếp nhiều hỏa tiễn nhỏ, dễ trúng chỗ hiểm. Đa mục tiêu / bộc phát, tầm xa.", "arrow", 0, 0, 105, 0, Crit: 15,
+            Code: "FIRE_BASIC_002", AnimId: "FIRE_ARROW_001", Range: "6m", Area: "Ba mục tiêu"),
+        // ---- CHỦ ĐỘNG ----
+        new("liet_diem", "hoa", "Liệt Diễm", "Công", 0, 1, 5, 0, 1, Array.Empty<string>(),
+            "Ngưng tụ linh lực Hỏa hệ thành một vụ bùng cháy dữ dội, thiêu đốt kẻ địch trong phạm vi.", "burst", 80, 6, 140, 20, AtkPct: 2, Every: 3,
+            Code: "FIRE_ACTIVE_001", AnimId: "FIRE_AOE_001", Range: "5m", Area: "3m"),
+        new("hoa_long", "hoa", "Hỏa Long Thuật", "Công", 1, 0, 5, 1, 3, new[] { "liet_diem:3" },
+            "Triệu hồi một con hỏa long linh khí lao về phía kẻ địch. Sát thương đơn mục tiêu cao, va chạm diện nhỏ, tầm xa.", "dragon", 140, 10, 300, 50, AtkPct: 3, Every: 4,
+            Code: "FIRE_ACTIVE_002", AnimId: "FIRE_DRAGON_001", Range: "9m", Area: "1.5m"),
+        new("phan_thien", "hoa", "Phần Thiên", "Công", 1, 2, 5, 1, 5, new[] { "liet_diem:5" },
+            "Triệu gọi cột linh hỏa khổng lồ giáng từ trên cao. Diện rộng, sát thương cao, hồi chiêu dài.", "pillar", 200, 14, 420, 70, AtkPct: 3, Every: 6,
+            Code: "FIRE_ACTIVE_003", AnimId: "FIRE_HEAVEN_001", Range: "8m", Area: "5m"),
+        new("xich_diem_thien", "hoa", "Xích Diễm Thiên", "Tuyệt kỹ", 2, 1, 5, 2, 10, new[] { "hoa_long:5", "phan_thien:5" },
+            "Giải phóng thượng cổ hỏa long cùng vụ nổ linh hỏa quy mô lớn. Sát thương cực cao, diện rộng.", "ultimate", 400, 30, 900, 200, AtkPct: 5, Every: 8,
+            Code: "FIRE_ULTIMATE_001", AnimId: "FIRE_ULTIMATE_001", Range: "10m", Area: "8m"),
+        // ---- BỊ ĐỘNG (không có animation) ----
+        new("hoa_linh_can", "hoa", "Hỏa Linh Căn", "Căn cơ", 0, 1, 5, 0, 1, Array.Empty<string>(),
+            "Linh căn hệ Hỏa trong cơ thể (mở thân hòa Hỏa). Tăng tấn công và tốc độ hấp thu linh khí.", "root", AtkPct: 2, QiPct: 2, Code: "FIRE_ROOT_001"),
+        new("hoa_tu", "hoa", "Hỏa Tụ", "Bị động", 1, 1, 5, 0, 1, new[] { "hoa_linh_can:1" },
+            "Tụ hỏa linh trong kinh mạch: tăng sát thương Hỏa (Lv.1 +5% → Lv.5 +20%).", "passive", SkillPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_001"),
+        new("nhiet_huyet", "hoa", "Nhiệt Huyết", "Bị động", 2, 0, 5, 0, 1, new[] { "hoa_tu:2" },
+            "Máu nóng sục sôi: tăng tỉ lệ chí mạng Hỏa (Lv.1 +3% → Lv.5 +15%).", "passive", Crit: 3, Code: "FIRE_PASSIVE_002"),
+        new("hoa_the", "hoa", "Hỏa Thể", "Bị động", 2, 1, 5, 0, 1, new[] { "hoa_tu:2" },
+            "Thân thể quen lửa: kháng Hỏa (Lv.1 +5% → Lv.5 +20%), tính là giảm sát thương nhận vào qua phòng thủ.", "passive", DefPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_003"),
+        new("hoa_tam", "hoa", "Hỏa Tâm", "Bị động", 2, 2, 5, 1, 2, new[] { "hoa_tu:3" },
+            "Tâm hỏa bình ổn: giảm linh khí tiêu hao của chiêu Hỏa (Lv.1 −3% → Lv.5 −15%).", "passive", QiCut: 3, Code: "FIRE_PASSIVE_004"),
+        new("liet_diem_tam", "hoa", "Liệt Diễm Tâm", "Bị động", 3, 1, 5, 1, 2, new[] { "liet_diem:3", "hoa_tam:3" },
+            "Tâm như liệt diễm: chiêu Hỏa +10% sát thương, +5% tầm đánh (ở Lv.5).", "passive", SkillPct: 2, RangePct: 1, Code: "FIRE_PASSIVE_005"),
+        new("hoa_linh_chan_y", "hoa", "Hỏa Linh Chân Ý", "Bị động", 4, 1, 1, 2, 5, new[] { "liet_diem:5", "hoa_long:3", "liet_diem_tam:5" },
+            "Bị động cao cấp: chiêu Hỏa +20% sát thương, +10% xuyên thấu, +10% tầm đánh.", "passive", SkillPct: 20, Pen: 10, RangePct: 10, Code: "FIRE_PASSIVE_006"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         new("thuy_linh_can", "thuy", "Thủy Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Thủy.", "root"),
@@ -113,34 +127,18 @@ public static class SkillData
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);
 
-    /// <summary>Số ô: 3 ô chiêu thức (Công, Thủ, Khống, Thân pháp) + 1 ô tuyệt kỹ.</summary>
-    public const int SkillSlotCount = 4, UltimateSlot = 3;
+    /// <summary>2 ô chiến đấu: ô 0 = đòn đánh thường (mỗi lượt), ô 1 = kỹ năng có hồi chiêu (Công hoặc Tuyệt kỹ).</summary>
+    public const int SkillSlotCount = 2, BasicSlot = 0, UltimateSlot = 1;
     public static bool FitsSlot(SkillDef s, int slot) =>
-        slot == UltimateSlot ? s.Category == "Tuyệt kỹ" : s.Category is "Công" or "Thủ" or "Khống" or "Thân pháp";
+        slot == BasicSlot ? s.Category == "Đòn thường" : s.Category is "Công" or "Tuyệt kỹ" or "Khống" or "Thủ" or "Thân pháp";
 
     /// <summary>
     /// Hiệu ứng khi kỹ năng được đặt vào ô và tự thi triển trong trận (cấp lv):
     /// Every = mấy lượt dùng một lần (0 = chỉ lượt đầu), Shield = % giảm sát thương nhận, Stun = số lượt quái bị khống,
     /// Dodge = % né đòn, Burn = % sát thương thiêu đốt mỗi lượt.
     /// </summary>
-    public static (int every, int first, double shield, int stun, double dodge, double burn) Active(SkillDef s, int lv) => s.Id switch
-    {
-        "hoa_cau"         => (3, 0, 0, 0, 0, 0),
-        "hoa_tien"        => (4, 1, 0, 0, 0, 0),
-        "liet_diem"       => (5, 1, 0, 0, 0, 0),
-        "hoa_long"        => (8, 1, 0, 0, 0, 0),
-        "phan_thien"      => (10, 1, 0, 0, 0, 0),
-        "xich_diem_thien" => (0, 1, 0, 0, 0, 0),
-        "hoa_thuan"       => (0, 0, Math.Min(40, 8 + 4 * lv), 0, 0, 0),
-        "hoa_giap"        => (0, 0, Math.Min(40, 5 + 3 * lv), 0, 0, 0),
-        "ho_the"          => (0, 0, Math.Min(50, 10 + 4 * lv), 0, 0, 0),
-        "hoa_troi"        => (0, 0, 0, lv >= 3 ? 2 : 1, 0, 0),
-        "liet_diem_lao"   => (0, 0, 0, lv >= 3 ? 3 : 2, 0, 0),
-        "hoa_tran"        => (0, 0, 0, 1, 0, 25),
-        "hoa_bo"          => (0, 0, 0, 0, Math.Min(30, 4 + 2 * lv), 0),
-        "viem_don"        => (0, 0, 0, 0, Math.Min(40, 6 + 3 * lv), 0),
-        _                 => (0, 0, 0, 0, 0, 0),
-    };
+    public static (int every, int first, double shield, int stun, double dodge, double burn) Active(SkillDef s, int lv) =>
+        s.Every > 0 ? (s.Every, 1, 0, 0, 0, 0) : (0, 0, 0, 0, 0, 0);   // thi triển lần đầu ở lượt 2, sau đó cứ Every lượt
 
     /// <summary>Sát thương (% công) của kỹ năng ở cấp lv.</summary>
     public static int Damage(SkillDef s, int lv) => s.DmgBase == 0 ? 0 : s.DmgBase + s.DmgPerLv * Math.Max(0, lv - 1);

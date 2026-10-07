@@ -115,7 +115,7 @@ public class GameService(GameDbContext db)
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills),
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList());
+            logs.Take(LogShow).ToList(), p.Admin);
     }
 
     // ================= Hành động =================
@@ -239,6 +239,7 @@ public class GameService(GameDbContext db)
         var next = NextRealm(p) ?? throw new GameException($"Cảnh giới {GameData.LockedRealms[0]} chưa khai mở.");
         if (!p.Has(cost)) throw new GameException(p.Count(r.BossItem) < 1 ? $"Thiếu {GameData.ItemById[r.BossItem].Name}: đánh bại Boss {r.Boss.Name} để nhận." : "Thiếu vật liệu.");
         var now = DateTime.UtcNow;
+        if (p.Cheat("break")) { p.DebuffUntil = p.BreakCooldownUntil = DateTime.MinValue; }   // admin: bỏ điều tức
         if (now < p.DebuffUntil) throw new GameException($"Kinh mạch còn hỗn loạn sau tẩu hỏa nhập ma, cần điều tức thêm {Math.Ceiling((p.DebuffUntil - now).TotalSeconds)} giây.");
         if (now < p.BreakCooldownUntil) throw new GameException($"Khí tức chưa ổn định, chờ thêm {Math.Ceiling((p.BreakCooldownUntil - now).TotalSeconds)} giây.");
         var chance = Chance(p);
@@ -294,6 +295,76 @@ public class GameService(GameDbContext db)
         return new BreakPreviewDto(b.Hp - a.Hp, b.Atk - a.Atk, b.Def - a.Def, Math.Round((rate2 / rate - 1) * 100), next.BagSlots - r.BagSlots, slots, stats);
     }
 
+    // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
+
+    public static readonly string[] AdminFlags = { "god", "break", "fast" };
+
+    /// <summary>Lệnh admin: give · stones · qi · realm · clearcd · points · maxfire · resetskills · unlock · explore · flag.</summary>
+    public (string msg, string kind) AdminAction(Player p, string action, string? arg, int n)
+    {
+        n = Math.Clamp(n, 1, 1_000_000_000);
+        switch (action)
+        {
+            case "give":
+                if (arg is null || !GameData.ItemById.TryGetValue(arg, out var it)) throw new GameException("Vật phẩm không tồn tại.");
+                p.Add(arg, n);
+                return Log(p, $"[Admin] +{n:N0} {it.Name}.", "good");
+            case "stones":
+                p.Add("linh_thach", n);
+                return Log(p, $"[Admin] +{n:N0} linh thạch.", "good");
+            case "qi":
+                p.Qi = QiReq(p);
+                return Log(p, "[Admin] Tu vi đầy bình cảnh.", "good");
+            case "realm":
+            {
+                var parts = (arg ?? "").Split(':');
+                if (parts.Length != 2 || !int.TryParse(parts[0], out var ri) || !int.TryParse(parts[1], out var si)
+                    || ri < 0 || ri >= GameData.Realms.Count || si < 0 || si >= GameData.Realms[ri].Stages.Length)
+                    throw new GameException("Cảnh giới / tầng không hợp lệ.");
+                p.Realm = ri; p.Stage = si; p.Qi = 0; p.Bonus = 0; p.Area = 1; p.AreaMax = 1;
+                p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
+                foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList()) { p.Add(e.ItemId, 1); p.Equipment.Remove(e); db.Equipment.Remove(e); }
+                return Log(p, $"[Admin] Chuyển tới {Realm(p).Name} {Realm(p).Stages[si]}.", "gold");
+            }
+            case "clearcd":
+                p.BreakCooldownUntil = p.DebuffUntil = DateTime.MinValue;
+                return Log(p, "[Admin] Đã xóa điều tức và suy yếu.", "good");
+            case "points":
+                p.AdminPoints += n;
+                return Log(p, $"[Admin] +{n} điểm kỹ năng.", "good");
+            case "maxfire":
+            {
+                var lv = SkillLevels(p);
+                foreach (var s in SkillData.Skills.Where(s => s.Element == "hoa")) lv[s.Id] = s.MaxLv;
+                p.SetSkillLevels(lv);
+                if (SkillPoints(p) < 0) p.AdminPoints += -SkillPoints(p);
+                return Log(p, "[Admin] Học tối đa toàn bộ cây Hỏa hệ.", "good");
+            }
+            case "resetskills":
+                p.SetSkillLevels(new Dictionary<string, int> { [SkillData.StartSkill] = 1 });
+                p.SkillSlots = "";
+                p.AdminPoints = 0;                                   // về đúng số điểm kiếm được
+                return Log(p, "[Admin] Đã reset cây kỹ năng, hoàn toàn bộ điểm.", "good");
+            case "unlock":
+                p.AreaMax = GameData.Areas;
+                p.Add(Realm(p).KeyItem, 1);
+                return Log(p, $"[Admin] Mở toàn bộ ải {p.Realm + 1}-1 → {p.Realm + 1}-{GameData.Areas}, +1 {GameData.ItemById[Realm(p).KeyItem].Name}.", "good");
+            case "explore":
+                p.ExploreReadyAt = DateTime.UtcNow;
+                return Log(p, "[Admin] Chuyến thám hiểm kết thúc ngay.", "good");
+            case "flag":
+            {
+                if (arg is null || !AdminFlags.Contains(arg)) throw new GameException("Cờ admin không hợp lệ.");
+                var set = p.Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+                var on = set.Add(arg); if (!on) set.Remove(arg);
+                p.Admin = string.Join(',', set);
+                if (arg == "fast") p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
+                return Log(p, $"[Admin] {(arg == "god" ? "Bất tử" : arg == "break" ? "Đột phá luôn thành công" : "Thám hiểm nhanh")}: {(on ? "BẬT" : "TẮT")}.", on ? "good" : "");
+            }
+            default: throw new GameException("Lệnh admin không tồn tại.");
+        }
+    }
+
     // ================= Công pháp =================
 
     public static Dictionary<string, int> SkillLevels(Player p)
@@ -304,10 +375,10 @@ public class GameService(GameDbContext db)
     }
 
     public static int SkillPointsSpent(Player p) =>
-        SkillLevels(p).Sum(kv => SkillData.ById.TryGetValue(kv.Key, out var s)
+        SkillLevels(p).Sum(kv => SkillData.ById.TryGetValue(kv.Key, out var s) && s.Tree != "basic"   // đòn thường không dùng điểm
             ? Enumerable.Range(0, kv.Value).Sum(l => s.Id == SkillData.StartSkill && l == 0 ? 0 : s.CostAt(l)) : 0);
 
-    public static int SkillPoints(Player p) => SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) - SkillPointsSpent(p);
+    public static int SkillPoints(Player p) => SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) + p.AdminPoints - SkillPointsSpent(p);
 
     /// <summary>Nâng một kỹ năng lên 1 cấp: hệ đã mở, đủ cảnh giới, đủ kỹ năng tiền đề, đủ điểm.</summary>
     public (string msg, string kind) UpgradeSkill(Player p, string id)
@@ -315,6 +386,7 @@ public class GameService(GameDbContext db)
         if (!SkillData.ById.TryGetValue(id, out var s)) throw new GameException("Kỹ năng không tồn tại.");
         if (!SkillData.Elements.First(e => e.Id == s.Element).Open) throw new GameException("Hệ này chưa mở khóa.");
         var lv = SkillLevels(p);
+        if (s.Tree == "basic") throw new GameException($"{s.Name} là đòn đánh thường, luôn sẵn có, không dùng điểm kỹ năng.");
         var cur = lv.GetValueOrDefault(id);
         if (cur >= s.MaxLv) throw new GameException($"{s.Name} đã đạt cấp tối đa.");
         if (p.Realm < s.MinRealm) throw new GameException($"Cần cảnh giới {GameData.Realms[s.MinRealm].Name}.");
@@ -349,14 +421,15 @@ public class GameService(GameDbContext db)
             return (old.Length > 0 && SkillData.ById.TryGetValue(old, out var od) ? $"Tháo {od.Name}." : "", "");
         }
         if (!SkillData.ById.TryGetValue(skill, out var s)) throw new GameException("Kỹ năng không tồn tại.");
-        if (SkillLevels(p).GetValueOrDefault(skill) < 1) throw new GameException($"Chưa lĩnh ngộ {s.Name}.");
+        if (s.Tree != "basic" && SkillLevels(p).GetValueOrDefault(skill) < 1) throw new GameException($"Chưa lĩnh ngộ {s.Name}.");
         if (!SkillData.FitsSlot(s, slot))
-            throw new GameException(slot == SkillData.UltimateSlot ? "Ô tuyệt kỹ chỉ đặt được kỹ năng Tuyệt kỹ." : s.Category == "Tuyệt kỹ" ? "Tuyệt kỹ đặt ở ô thứ 4." : $"{s.Name} là căn cơ bị động, không cần đặt vào ô.");
+            throw new GameException(s.Category is "Căn cơ" or "Bị động" ? $"{s.Name} là bị động, luôn có hiệu lực, không cần đặt vào ô."
+                : slot == SkillData.BasicSlot ? "Ô đòn thường chỉ đặt Hỏa Cầu hoặc Hỏa Tiễn." : $"{s.Name} là đòn đánh thường, đặt ở ô Đòn thường.");
         var at = Array.IndexOf(slots, skill);
         if (at >= 0 && at != slot) slots[at] = SkillData.FitsSlot(SkillData.ById.GetValueOrDefault(slots[slot]) ?? s, at) ? slots[slot] : "";
         slots[slot] = skill;
         p.SkillSlots = string.Join(',', slots);
-        return ($"Trang bị {s.Name} vào ô {(slot == SkillData.UltimateSlot ? "Tuyệt kỹ" : (slot + 1).ToString())}.", "good");
+        return ($"Trang bị {s.Name} vào ô {(slot == SkillData.BasicSlot ? "Đòn thường" : "Kỹ năng")}.", "good");
     }
 
     /// <summary>Tổng hiệu quả bị động của các kỹ năng đã học (đơn vị %).</summary>
@@ -365,10 +438,20 @@ public class GameService(GameDbContext db)
         double a = 0, d = 0, h = 0, c = 0, sp = 0, mv = 0, q = 0, m = 0;
         foreach (var (id, l) in SkillLevels(p))
         {
-            if (!SkillData.ById.TryGetValue(id, out var s)) continue;
-            a += s.AtkPct * l; d += s.DefPct * l; h += s.HpPct * l; c += s.Crit * l; sp += s.Speed * l; mv += s.Move * l; q += s.QiPct * l; m += s.MonAtkDown * l;
+            if (!SkillData.ById.TryGetValue(id, out var s) || s.Tree == "basic") continue;
+            var f = s.Factor(l);
+            a += s.AtkPct * f; d += s.DefPct * f; h += s.HpPct * f; c += s.Crit * f; sp += s.Speed * f; mv += s.Move * f; q += s.QiPct * f; m += s.MonAtkDown * f;
         }
         return (a, d, h, c, sp, mv, q, Math.Min(40, m));
+    }
+
+    /// <summary>Bị động cho chiêu thức: % sát thương chiêu hệ Hỏa và % xuyên thấu phòng thủ quái.</summary>
+    private static (double skill, double pen) SkillExtra(Player p)
+    {
+        double k = 0, pe = 0;
+        foreach (var (id, l) in SkillLevels(p))
+            if (SkillData.ById.TryGetValue(id, out var s) && s.Tree != "basic") { k += s.SkillPct * s.Factor(l); pe += s.Pen * s.Factor(l); }
+        return (k, Math.Min(80, pe));
     }
 
     // ================= Đan dược: hợp thành 9 → 1 =================
@@ -579,7 +662,7 @@ public class GameService(GameDbContext db)
         Realm(p).Rate(p.Stage) * (1 + (Bonus(p, i => i.QiPct) + SkillBonus(p).qi) / 100) * (DateTime.UtcNow < p.DebuffUntil ? GameData.DebuffRate : 1);
 
     /// <summary>Thời lượng một chuyến: đi đường + số lượt đánh + kết thúc. Tấn công cao thì hạ quái nhanh hơn.</summary>
-    private static double ExploreSeconds(Player p) =>
+    private static double ExploreSeconds(Player p) => p.Cheat("fast") ? 3 :   // admin: chuyến thám hiểm 3 giây
         Math.Max(GameData.MinExploreSeconds,
             GameData.WalkSeconds * (1 - Math.Min(60, Stats(p).Move) / 100)
             + Battle(p).Hits * GameData.HitSeconds * (1 - Math.Min(60, Stats(p).Speed) / 100)
@@ -616,13 +699,21 @@ public class GameService(GameDbContext db)
         var m = GameData.AreaMonster(Realm(p), area);
         var down = SkillBonus(p).monAtk;                       // công pháp khống chế làm yếu đòn quái
         if (down > 0) m = m with { Atk = (int)Math.Round(m.Atk * (1 - down / 100)) };
+        var (skillPct, pen) = SkillExtra(p);                   // Hỏa Tụ / Liệt Diễm Tâm / Xích Diễm Đạo Thể · Hỏa Linh Chân Ý
+        if (pen > 0) m = m with { Def = (int)Math.Round(m.Def * (1 - pen / 100)) };
         var crit = Math.Min(100, st.Crit) / 100;
         var power = st.Atk * (1 + st.Spirit / 100) * (1 + crit * 0.5);
-        var heroDmg = Math.Max(1, (int)Math.Round(power) - m.Def);
+        // đòn đánh thường = chiêu ở ô 1 (Hỏa Cầu / Hỏa Tiễn), chưa đặt thì đánh 100% công
+        var lv = SkillLevels(p);
+        var basicId = p.Slots()[SkillData.BasicSlot];
+        var basicOk = SkillData.ById.TryGetValue(basicId, out var bdef) && bdef.Tree == "basic";
+        if (!basicOk) { basicId = "hoa_cau"; bdef = SkillData.ById[basicId]; }        // mặc định: Hỏa Cầu
+        var bcrit = Math.Min(100, st.Crit + bdef!.Crit) / 100;                       // Hỏa Tiễn: bộc phát, dễ chí mạng
+        var bpower = st.Atk * (1 + st.Spirit / 100) * (1 + bcrit * 0.5);
+        var heroDmg = Math.Max(1, (int)Math.Round(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100) - m.Def);
 
         // kỹ năng trong ô: chiêu công tự thi triển theo lượt, chiêu thủ giảm sát thương, khống làm quái đứng yên, thân pháp né đòn
-        var lv = SkillLevels(p);
-        var equipped = p.Slots().Where(id => id.Length > 0 && lv.GetValueOrDefault(id) > 0 && SkillData.ById.ContainsKey(id))
+        var equipped = p.Slots().Skip(1).Where(id => id.Length > 0 && lv.GetValueOrDefault(id) > 0 && SkillData.ById.ContainsKey(id))
             .Select(id => (s: SkillData.ById[id], l: lv[id])).ToList();
         double shield = 0, dodge = 0, burn = 0; int stun = 0;
         foreach (var (s, l) in equipped)
@@ -632,7 +723,7 @@ public class GameService(GameDbContext db)
             burn += a.burn > 0 ? SkillData.Damage(s, l) * a.burn / 100 : 0;
         }
         shield = Math.Min(60, shield); dodge = Math.Min(50, dodge); stun = Math.Min(4, stun);
-        var monDmg = Math.Max(1, (int)Math.Round(Math.Max(1, m.Atk - st.Def) * (1 - shield / 100) * (1 - dodge / 100)));
+        var monDmg = p.Cheat("god") ? 0 : Math.Max(1, (int)Math.Round(Math.Max(1, m.Atk - st.Def) * (1 - shield / 100) * (1 - dodge / 100)));   // admin: bất tử
 
         int monHp = m.Hp, heroHp = st.Hp, turns = 0; var win = false;
         var monLeft = new List<int>(); var heroLeft = new List<int>(); var skip = new List<bool>(); var casts = new List<CastDto>();
@@ -651,7 +742,7 @@ public class GameService(GameDbContext db)
                 }
                 var fire = a.every == 0 ? t == a.first : t >= a.first && (t - a.first) % a.every == 0;
                 if (!fire) continue;
-                var cd = Math.Max(1, (int)Math.Round(power * pct / 100) - m.Def);
+                var cd = Math.Max(1, (int)Math.Round(power * pct * (1 + skillPct / 100) / 100) - m.Def);
                 dmg += cd;
                 casts.Add(new CastDto(t, s.Id, s.Name, s.Anim, cd));
             }
@@ -669,7 +760,7 @@ public class GameService(GameDbContext db)
         var idx = Enumerable.Range(0, hits).Select(Pick).ToArray();
         var castShown = casts.Where(c => idx.Contains(c.Turn)).Select(c => c with { Turn = Array.IndexOf(idx, c.Turn) }).ToList();
         return new BattleDto(m.Name, m.Image, m.Hp, m.Atk, m.Def, heroDmg, monDmg, hits, win,
-            idx.Select(i => monLeft[i]).ToArray(), idx.Select(i => heroLeft[i]).ToArray(), idx.Select(i => skip[i]).ToArray(), castShown, st.Hp);
+            idx.Select(i => monLeft[i]).ToArray(), idx.Select(i => heroLeft[i]).ToArray(), idx.Select(i => skip[i]).ToArray(), castShown, st.Hp, basicId);
     }
 
     private static double ExploreQi(Player p) => Realm(p).Rate(p.Stage) * GameData.ExploreQiSeconds;
@@ -684,7 +775,7 @@ public class GameService(GameDbContext db)
     private static Dictionary<string, int> TargetCost(Player p) =>
         IsPeak(p) ? Realm(p).BreakCost ?? new() : Realm(p).StageCost(p.Stage);
 
-    private static double Chance(Player p) => Realm(p).BreakChance >= 1 ? 1 : Math.Clamp(Realm(p).BreakChance + p.Bonus, 0, 0.95);
+    private static double Chance(Player p) => p.Cheat("break") || Realm(p).BreakChance >= 1 ? 1 : Math.Clamp(Realm(p).BreakChance + p.Bonus, 0, 0.95);
 
     private void AddLog(Player p, string text, string kind = "")
     {

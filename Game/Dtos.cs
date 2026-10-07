@@ -76,7 +76,8 @@ public record StateDto(
     int SkillPoints,
     int SkillPointsTotal,
     BreakStateDto Break,
-    List<LogDto> Logs);
+    List<LogDto> Logs,
+    string Admin = "");   // cờ admin mode đang bật
 
 public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
 
@@ -86,7 +87,8 @@ public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
 /// </summary>
 public record BattleDto(string Monster, string Image, int MonsterHp, int MonsterAtk, int MonsterDef,
     int HeroDmg, int MonsterDmg, int Hits, bool Win,
-    int[] MonHpLeft, int[] HeroHpLeft, bool[] MonSkip, List<CastDto> Casts, int HeroHp);
+    int[] MonHpLeft, int[] HeroHpLeft, bool[] MonSkip, List<CastDto> Casts, int HeroHp,
+    string Basic = "hoa_cau");   // chiêu dùng làm đòn đánh thường (để client chọn animation)
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
 public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);

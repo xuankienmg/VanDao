@@ -38,10 +38,19 @@ public class Player
     /// <summary>Ô kỹ năng: 3 ô chiêu thức + 1 ô tuyệt kỹ, "id,id,,id" (trống = chưa đặt).</summary>
     public string SkillSlots { get; set; } = "";
 
+    /// <summary>Admin mode: cờ gian lận đang bật (god · break · fast), cách nhau dấu phẩy; điểm kỹ năng admin cộng thêm.</summary>
+    public string Admin { get; set; } = "";
+    public int AdminPoints { get; set; }
+    public bool Cheat(string flag) => Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
+
+    /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng có hồi chiêu. Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>
     public string[] Slots()
     {
-        var a = SkillSlots.Split(',');
-        return Enumerable.Range(0, 4).Select(i => i < a.Length ? a[i].Trim() : "").ToArray();
+        var a = SkillSlots.Split(',').Select(x => x.Trim()).ToArray();
+        var n = VanDao.Game.SkillData.SkillSlotCount;
+        string Fit(string id, int i) => VanDao.Game.SkillData.ById.TryGetValue(id, out var s) && VanDao.Game.SkillData.FitsSlot(s, i) ? id : "";
+        if (a.Length == n) return Enumerable.Range(0, n).Select(i => Fit(a[i], i)).ToArray();
+        return Enumerable.Range(0, n).Select(i => a.Select(x => Fit(x, i)).FirstOrDefault(x => x.Length > 0) ?? "").ToArray();
     }
 
     public Dictionary<string, int> SkillLevels() =>
