@@ -92,7 +92,7 @@ public class GameService(GameDbContext db)
         string title, kind;
         if (peak && next is null) { title = $"{r.Name} {r.Stages[p.Stage]}"; kind = "Đỉnh phong hiện tại"; }
         else if (peak) { title = $"{next!.Name} · {next.Stages[0]}"; kind = "Đột phá cảnh giới"; }
-        else { title = $"{r.Name} · {r.Stages[p.Stage + 1]}"; kind = "Lên tầng tiếp theo"; }
+        else { title = $"{r.Name} · {r.Stages[p.Stage + 1]}"; kind = "Đột phá tầng tiếp theo"; }
 
         return new StateDto(
             p.Id, p.Name, p.Realm, p.Stage, r.Name, r.Stages[p.Stage],
@@ -160,7 +160,7 @@ public class GameService(GameDbContext db)
     public (string msg, string kind) Use(Player p, string itemId)
     {
         if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.UseQiSeconds <= 0)
-            throw new GameException("Đan dược chỉ dùng khi lên tầng và đột phá.");
+            throw new GameException("Đan dược chỉ dùng khi đột phá.");
         if (p.Count(itemId) < 1) throw new GameException("Không có vật phẩm này trong hành trang.");
         var gain = Rate(p) * def.UseQiSeconds;
         var before = p.Qi;
