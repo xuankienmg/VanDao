@@ -27,8 +27,9 @@ public sealed class GameWindow : Form
     private readonly ContextMenuStrip _menu = new() { Renderer = Theme.Renderer, ShowImageMargin = true };
     private readonly NotifyIcon _tray = new() { Text = "Vấn Đạo", Icon = SystemIcons.Application, Visible = true };
     private readonly System.Windows.Forms.Timer _dockTimer = new() { Interval = 2000 };
+    private readonly System.Windows.Forms.Timer _revealTimer = new() { Interval = 10000 };
     private PanelWindow? _panel;
-    private bool _placing;
+    private bool _placing, _revealed;
 
     public GameWindow(string serverUrl)
     {
@@ -49,6 +50,12 @@ public sealed class GameWindow : Form
         ApplyPin();
         Opacity = 1.0; // độ trong cố định 100%
         PlaceStrip();
+
+        // ẩn hẳn (region rỗng) tới khi trang có dữ liệu thật và vẽ xong khung đầu,
+        // tránh lúc mở hiện khối đen rồi khung "Tầng 1" trống rồi mới nhảy sang trạng thái thật
+        SetRegion(new Region(Rectangle.Empty));
+        _revealTimer.Tick += (_, _) => Reveal(); // trang lỗi / không báo về thì vẫn hiện
+        _revealTimer.Start();
 
         // người dùng kéo xong → chuyển sang vị trí tự do
         ResizeEnd += (_, _) =>
@@ -176,15 +183,24 @@ public sealed class GameWindow : Form
     {
         BackColor = Theme.Ink;
         _web.DefaultBackgroundColor = Theme.Ink;
-        if (!_s.Transparent) SetRegion(null);
+        if (!_s.Transparent && _revealed) SetRegion(null);
         if (_web.CoreWebView2 is null) return;
         _ = _web.ExecuteScriptAsync($"window.setOpaque && window.setOpaque({(_s.Transparent ? "false" : "true")})");
         if (_s.Transparent) _ = _web.ExecuteScriptAsync("window.reportShape && window.reportShape(true)");
     }
 
+    /// <summary>Hiện dải game lần đầu: cả khung chữ nhật (nền đặc, hoặc trang không báo hình về).</summary>
+    private void Reveal()
+    {
+        _revealTimer.Stop();
+        if (_revealed) return;
+        _revealed = true;
+        SetRegion(null);
+    }
+
     private void ApplyShape(JsonElement m)
     {
-        if (!_s.Transparent) return;
+        if (!_s.Transparent) { Reveal(); return; }
         try
         {
             var k = m.GetProperty("card");
@@ -199,6 +215,8 @@ public sealed class GameWindow : Form
                 region.Union(circle);
             }
             SetRegion(region);
+            _revealTimer.Stop();
+            _revealed = true;
         }
         catch (Exception) { /* dữ liệu lạ thì giữ nguyên hình cũ */ }
     }

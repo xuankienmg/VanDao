@@ -137,6 +137,10 @@ public static class Program
         api.MapPost("/players/{id:guid}/area/{area:int}", (Guid id, int area, GameService game) =>
             Run(id, game, p => game.SelectArea(p, area)));
 
+        // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
+        api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
+            Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)));
+
         api.MapPost("/players/{id:guid}/reset", async (Guid id, GameService game) =>
         {
             try
