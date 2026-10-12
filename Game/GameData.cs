@@ -230,12 +230,15 @@ public static class GameData
     public const int BossArea = Areas + 1;
 
     /// <summary>Quái ở ải s (1..20): mạnh dần từ ×0.6 đến ×2.6 so với quái gốc của cảnh giới.</summary>
+    /// <summary>Hệ số máu chung cho mọi quái và Boss (1.875 = +87.5% so với gốc).</summary>
+    public const double MonsterHpMult = 1.875;   // 1.25 × 1.5: tăng thêm 50% máu quái
+
     public static MonsterDef AreaMonster(RealmDef r, int s)
     {
-        if (s >= BossArea) return r.Boss;
+        if (s >= BossArea) return r.Boss with { Hp = (int)Math.Round(r.Boss.Hp * MonsterHpMult) };
         var m = 0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1);
         var b = r.Monster;
-        return b with { Hp = (int)Math.Round(b.Hp * m), Atk = (int)Math.Round(b.Atk * m), Def = (int)Math.Round(b.Def * m) };
+        return b with { Hp = (int)Math.Round(b.Hp * m * MonsterHpMult), Atk = (int)Math.Round(b.Atk * m), Def = (int)Math.Round(b.Def * m) };
     }
 
     /// <summary>Tên vùng của ải s.</summary>
@@ -321,9 +324,30 @@ public static class GameData
     /// <summary>Thời gian vắng mặt tối đa được cộng tu vi và thám hiểm bù.</summary>
     public const double MaxOfflineSeconds = 7200;
 
-    /// <summary>Chỉ số gốc ở tầng/kỳ s, nhân với StatMult của cảnh giới.</summary>
-    public static CombatStats BaseStats(RealmDef r, int s) =>
-        new((10 + 2 * s) * r.StatMult, (100 + 15 * s) * r.StatMult, (2 + s) * r.StatMult);
+    /// <summary>Tỉ lệ giữ lại phần tốc độ tu luyện tăng thêm khi lên đại cảnh giới (0.8 = giảm 20%),
+    /// tính từ mốc Luyện Khí: tốc độ thực = gốc + (Rate(0) − gốc) × QiGrowth.</summary>
+    public const double QiGrowth = 0.8;
+
+    /// <summary>Tốc độ tu luyện gốc (linh khí/giây) của cảnh giới r: chỉ tăng khi lên đại cảnh giới,
+    /// lên tầng/kỳ nhỏ không đổi (tham số s giữ cho tương thích). Luyện Khí 3 · Trúc Cơ 15 · Kim Đan 112.6.</summary>
+    public static double QiRate(RealmDef r, int s)
+    {
+        var start = Realms[0].Rate(0);
+        return start + (r.Rate(0) - start) * QiGrowth;
+    }
+
+    /// <summary>Tỉ lệ giữ lại phần chỉ số tăng thêm khi lên cảnh giới (0.7 = giảm 30%): hệ số thực = 1 + (StatMult − 1) × StatGrowth.</summary>
+    public const double StatGrowth = 0.7;
+
+    /// <summary>Hệ số chỉ số thực của cảnh giới (Luyện Khí ×1 · Trúc Cơ ×4.5 · Kim Đan ×24.8).</summary>
+    public static double StatScale(RealmDef r) => 1 + (r.StatMult - 1) * StatGrowth;
+
+    /// <summary>Chỉ số gốc ở tầng/kỳ s, nhân với hệ số chỉ số của cảnh giới.</summary>
+    public static CombatStats BaseStats(RealmDef r, int s)
+    {
+        var k = StatScale(r);
+        return new((int)Math.Round((10 + 2 * s) * k), (int)Math.Round((100 + 15 * s) * k), (int)Math.Round((2 + s) * k));
+    }
 
     /// <summary>Thời lượng các pha của một chuyến (giây): đi đường, mỗi lượt đánh, kết thúc.</summary>
     public const double WalkSeconds = 2.5, HitSeconds = 1.0, EndSeconds = 1.0;

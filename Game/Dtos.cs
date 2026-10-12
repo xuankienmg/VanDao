@@ -88,7 +88,10 @@ public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
 public record BattleDto(string Monster, string Image, int MonsterHp, int MonsterAtk, int MonsterDef,
     int HeroDmg, int MonsterDmg, int Hits, bool Win,
     int[] MonHpLeft, int[] HeroHpLeft, bool[] MonSkip, List<CastDto> Casts, int HeroHp,
-    string Basic = "hoa_cau");   // chiêu dùng làm đòn đánh thường (để client chọn animation)
+    string Basic = "hoa_cau",    // chiêu dùng làm đòn đánh thường (để client chọn animation)
+    int[]? Rage = null,          // nộ cuối mỗi lượt, 0–100 (lượt tung kỹ năng: về 0)
+    int Burn = 0, double BurnPct = 0,    // thiêu đốt (Phần Cốt): sát thương mỗi lần kích hoạt · % công
+    bool[]? Burned = null);               // lượt nào thiêu đốt kích hoạt (30%)
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
 public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
