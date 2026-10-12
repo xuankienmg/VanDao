@@ -189,6 +189,7 @@ body.panel .burst b{font-size:22px}
 .craft-toast .ct-u{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center}
 .craft-toast .ct-u img{width:16px;height:16px;vertical-align:-3px;image-rendering:pixelated}
 body.strip .craft-toast{top:8px;min-width:0;padding:6px 10px 6px 6px} body.strip .craft-toast .ct-ic{width:36px;height:36px} body.strip .craft-toast .ct-ic img{width:32px;height:32px}
+.craft-toast.fast{animation-duration:1s}
 @keyframes ct-in{0%{opacity:0;transform:translate(-50%,10px) scale(.92)}8%{opacity:1;transform:translate(-50%,0) scale(1.03)}14%{transform:translate(-50%,0) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px)}}
 @keyframes ct-pop{0%{transform:scale(.3);filter:brightness(2)}100%{transform:scale(1);filter:none}}
 @media (prefers-reduced-motion:reduce){.craft-toast,.craft-toast .ct-ic img{animation-duration:.01s}.craft-toast{animation:none}}
@@ -528,6 +529,12 @@ body.panel .rq .row{border-color:#3b3127}
 /* ================= BẢN ĐỒ ================= */
 .mp{display:flex;flex-direction:column;gap:8px}
 .mp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mp-realms{display:flex;gap:4px}
+.mp-realms button{flex:1;padding:5px 8px;background:#17120e;border:1px solid #6b5a3e;color:#a9a090;font-family:var(--f-display);font-size:13px;letter-spacing:.06em;cursor:pointer}
+.mp-realms button[aria-selected="true"]{background:#2a1e12;border-color:#e6b060;color:#ffe2a0;box-shadow:inset 0 -2px 0 #e6b060}
+.mp-realms button:hover{border-color:#b8925a}
+.mp-realms button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.mp-hd .mp-back{font-family:inherit;font-size:11px;color:#c9a86a;letter-spacing:.04em}
 .mp-hd b{display:block;font-family:var(--f-display);font-size:18px;color:var(--parch)}
 .mp-hd span{font-size:11px;color:#a9b4ae}
 .mp-key{display:flex;align-items:center;gap:5px;padding:3px 8px;background:#20160e;border:1px solid #6b5a3e}
@@ -673,21 +680,8 @@ body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 .sk2 h3 small{font-family:inherit;font-size:9px;letter-spacing:.06em;text-transform:none;color:#a08c66;margin-left:6px}
 .sk2 h4{margin:6px 0 3px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#d8a060;border-bottom:1px solid #3a2a1c}
 
-
-
-  
 .sk2-pts{display:flex;justify-content:space-between;align-items:center;padding:3px 8px;background:#2a1408;border:2px solid #b8642a;box-shadow:inset 0 0 0 1px #000;cursor:help}
 .sk2-pts span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#f0b880} .sk2-pts b{font-family:var(--f-display);font-size:24px;line-height:1;color:#ffd27a}
-
-
-
-  
-
- 
-
-
-
- 
   
 .sk2-tree{padding:0 0 6px;display:flex;flex-direction:column}
 .sk2-tree.act{grid-area:act} .sk2-tree.pas{grid-area:pas}
@@ -726,10 +720,7 @@ body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
  
 .sk-up small{font-family:system-ui;font-size:10px;letter-spacing:0;opacity:.8}
 
-
 .sk2 .sk-lockmsg{grid-column:1 / -1;position:absolute;inset:auto 12px 12px 12px}
-
-
 
 .sk-slot{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;width:44px;padding:2px 0 1px;background:#120e0c;border:1px solid #4a3a2a;color:#a08c66;font:inherit}
 .sk-slot img{width:30px;height:30px} .sk-slot .emp{display:grid;place-items:center;width:30px;height:30px;color:#5d564c;font-size:16px}
@@ -751,12 +742,6 @@ body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 .sk > header,.sk > nav,.sk > section,.sk > aside{background:#17120e;border:2px solid #8a6a3a;box-shadow:inset 0 0 0 2px #0b0806,0 0 0 1px #000;position:relative;min-width:0;
   background-image:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.12) 6px 7px,transparent 7px 13px)}
 
-
- 
- 
-
-
- 
 /* thanh chọn hệ */
 .sk-els{grid-area:els;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding:4px}
 .sk-els button{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;padding:2px;background:#120e0c;border:1px solid #3b3127;color:#c9c0a8;font-size:10.5px;font-weight:700;letter-spacing:.06em}
@@ -799,8 +784,6 @@ body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 
 .sk-lockmsg b{font-family:var(--f-display);font-size:18px;letter-spacing:.12em;color:var(--ec2)} .sk-lockmsg span{font-size:11px;color:#a9a090}
 
-
-
 .sk-card{background:var(--parch);color:var(--ink2);border:2px solid #8a6a3a;box-shadow:inset 0 0 0 1px #f0e4c4;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
 .sk-card p{margin:0}
 .sk-hd{display:flex;align-items:center;gap:7px}
@@ -813,8 +796,6 @@ body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 .sk-sec{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7a6440;border-top:1px dashed #a08c66;padding-top:3px;margin-top:2px !important}
 .sk-pass{list-style:none;margin:0;padding:0;font-size:11px;display:flex;flex-direction:column}
 .sk-pass b{color:#2f6a35} .sk-pass i{font-style:normal;color:#7a6440;margin-left:4px}
- 
-  
 
 .sk-up{margin-top:4px;padding:7px 6px;font-family:var(--f-display);font-size:16px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:#3a2a1a;color:#a08c66;border:2px solid #6b5a3e;box-shadow:inset 0 0 0 1px #0b0806}
 .sk-up.go{background:#4a1e10;color:#ffd27a;border-color:#c98a3a;box-shadow:inset 0 0 0 1px #0b0806,0 0 8px rgba(224,82,30,.35)}
@@ -1025,7 +1006,7 @@ function renderReq(){
   const nextName = peak ? DATA.realms[S.realm + 1].name : top ? DATA.lockedRealms[0] : S.targetTitle.replace(' · ', ' ');
   const nextDesc = peak ? DATA.realms[S.realm + 1].desc.split('.')[0] + '.' : top ? 'Cảnh giới chưa khai mở.' : 'Đột phá tầng kế tiếp trong cùng cảnh giới.';
   const gains = [pv.hp && `Máu +${fmt(pv.hp)}`, pv.atk && `Tấn công +${fmt(pv.atk)}`, pv.def && `Phòng thủ +${fmt(pv.def)}`, pv.ratePct && `Tốc độ tu luyện +${pv.ratePct}%`,
-    pv.bagSlots && `Hành trang +${pv.bagSlots} ô`, pv.newSlots.length && `Ô trang bị: ${pv.newSlots.join(', ')}`, pv.newStats.length && `Chỉ số mới: ${pv.newStats.join(', ')}`].filter(Boolean);
+    pv.bagSlots && `Hành trang +${pv.bagSlots} ô`, pv.newSlots.length && `Ô trang bị: ${pv.newSlots.join(', ')}`, pv.newStats.length && `Chỉ số mới: ${pv.newStats.join(', ')}`, pv.skillPoints && `Điểm kỹ năng +${pv.skillPoints}`].filter(Boolean);
   $('btCur').innerHTML = `<p class="bt-sec">Cảnh giới hiện tại</p>
     <p class="bt-realm">${S.realmName}</p><p class="bt-stage-n">${S.realmName} ${S.stageName}</p>
     <div class="bt-qi"><span>Tu vi</span><b class="btq"></b></div>
@@ -1081,7 +1062,8 @@ function btShowResult(){
     const rows = [[`Máu`, d(bs.hp, st.hp)], [`Tấn công`, d(bs.atk, st.atk)], [`Phòng thủ`, d(bs.def, st.def)]].filter(r => r[1])
       .map(([n, v]) => `<li>${n} <b>+${fmt(v)}</b></li>`).join('')
       + (after.rate > before.rate ? `<li>Tốc độ tu luyện <b>+${Math.round((after.rate / before.rate - 1) * 100)}%</b></li>` : '')
-      + (after.bagCap > before.bagCap ? `<li>Hành trang <b>+${after.bagCap - before.bagCap} ô</b></li>` : '');
+      + (after.bagCap > before.bagCap ? `<li>Hành trang <b>+${after.bagCap - before.bagCap} ô</b></li>` : '')
+      + (after.skillPointsTotal > before.skillPts ? `<li>Điểm kỹ năng <b>+${after.skillPointsTotal - before.skillPts}</b></li>` : '');
     const pv = before.preview;
     const unl = major ? [pv.newSlots.length && `Ô trang bị: ${pv.newSlots.join(', ')}`, pv.newStats.length && `Chỉ số: ${pv.newStats.join(', ')}`,
       `Bản đồ mới: ải ${after.realm + 1}-1 → ${after.realm + 1}-${DATA.areas} · Boss ${DATA.realms[after.realm].boss}`].filter(Boolean) : [];
@@ -1113,7 +1095,7 @@ async function btStart(){
   if (busy || btProc || btLock || !btReady()) return;
   btLock = true; const go = $('btGo'); if (go) go.disabled = true;      // khóa ngay khi bấm, chống bấm lặp
   const peak = S.isPeak && S.hasNext;
-  const before = {peak, realm: S.realm, stats: {...S.stats}, rate: S.rate, bagCap: S.bagCap, preview: S.break.preview};
+  const before = {peak, realm: S.realm, stats: {...S.stats}, rate: S.rate, bagCap: S.bagCap, skillPts: S.skillPointsTotal, preview: S.break.preview};
   busy = true; btResult = null;
   btProc = {t0: performance.now(), dur: peak ? 3000 : 1200, peak, res: null, err: null};   // thời gian diễn hoạt (ms) trước khi hiện kết quả
   renderReq();
@@ -1480,7 +1462,7 @@ function itemCardHtml(k, src){
     cmp = `<div class="iv-cmp"><p>${curIt ? `So với đang mặc: <b class="rc-${curIt.rarity}">${curIt.name}</b>` : 'Ô đang trống: mọi chỉ số đều là tăng thêm'}</p><ul>${rows || '<li>Không đổi chỉ số</li>'}</ul></div>`;
   }
   const hint = src === 'slot' ? 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo · U tháo'
-    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : canUse(it) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
+    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : it.type === 'chest' ? 'Nhấp đúp hoặc chuột phải để mở · Ctrl + chuột phải mở hết · Del bỏ' : canUse(it) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
     <p class="sub">${rar(it).n} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
@@ -1572,7 +1554,8 @@ function initInventory(){
     if (cell){
       invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0; sellArm = 0;
       const it = ITEM[cell.dataset.k];
-      if (it?.slot) invDo('equip'); else if (it && canUse(it)) invDo('use'); else renderInv();
+      if (it?.type === 'chest' && e.ctrlKey) act(`use/${cell.dataset.k}?n=0`);     // Ctrl + chuột phải: mở hết rương loại này
+      else if (it?.slot) invDo('equip'); else if (it && canUse(it)) invDo('use'); else renderInv();
       return;
     }
     invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; invDo('unequip');
@@ -1812,10 +1795,14 @@ let craftTimer = 0;
 function showCraft(c){
   const el = $('craftToast'), out = ITEM[c.output.item]; if (!el || !out) return;
   const used = c.inputs.map(u => `<span>${ITEM[u.item] ? itemImg(u.item) : ''}−${fmt(u.qty)} ${ITEM[u.item]?.name || u.item}</span>`).join('');
+  const outs = c.outputs?.length ? c.outputs : [c.output];          // mở nhiều rương: nhiều món nhận được
+  const got = outs.map(o => `<b class="rc-${ITEM[o.item]?.rarity}">${ITEM[o.item]?.name || o.item}</b> × ${fmt(o.qty)}`).join(' · ');
   el.innerHTML = `<span class="ct-ic">${itemImg(c.output.item)}</span><span class="ct-t">${c.recipe.startsWith('chest:') ? 'Mở rương' : 'Luyện đan thành công'}</span>
-    <span class="ct-o">Nhận <b class="rc-${out.rarity}">${out.name}</b> × ${fmt(c.output.qty)}</span><span class="ct-u">${used}</span>`;
+    <span class="ct-o">Nhận ${got}</span><span class="ct-u">${used}</span>`;
+  const chest = c.recipe.startsWith('chest:'), ms = chest ? (outs.length > 1 ? 2400 : 1400) : 2800;      // mở rương: thông báo ngắn hơn (hay mở liên tục)
+  el.classList.toggle('fast', chest && outs.length === 1);
   el.hidden = true; void el.offsetWidth; el.hidden = false;
-  clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, 2800);
+  clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, ms);
 }
 
 async function ddSynth(n){
@@ -1826,6 +1813,7 @@ async function ddSynth(n){
 }
 function ddGoBoss(){
   const r = realm(), m = S.map;
+  if (m.realm !== S.realm){ act(`map/${S.realm}`).then(() => openTab('map')); return; }   // đang ở bản đồ cũ: về bản đồ hiện tại trước
   if (m.areaMax >= DATA.areas && (S.inventory[r.keyItem] || 0) > 0) act(`area/${DATA.areas + 1}`).then(() => openTab('map'));
   else openTab('map');
 }
@@ -1850,19 +1838,23 @@ function initDan(){
 // BẢN ĐỒ: 15 ải + ải Boss (cần chìa khóa rơi ở ải 1–15)
 // =====================================================================
 function renderMap(){
-  const r = realm(), m = S.map, R = S.realm + 1, keyN = S.inventory[m.keyItem] || 0;
-  const cur = m.areas[m.area - 1];
+  const m = S.map, r = DATA.realms[m.realm], R = m.realm + 1, keyN = S.inventory[m.keyItem] || 0, back = m.realm < S.realm;
+  const cur = m.areas[Math.min(m.area, DATA.areas) - 1];
+  // chọn bản đồ: cảnh giới hiện tại hoặc quay lại cảnh giới trước
+  const realmTabs = S.realm > 0 ? `<nav class="mp-realms" role="tablist" aria-label="Bản đồ cảnh giới">${DATA.realms.slice(0, S.realm + 1).map((x, i) => `<button role="tab" aria-selected="${i === m.realm}" data-mrealm="${i}" data-tip="${x.name}&#10;${i < S.realm ? 'Bản đồ cảnh giới trước: mọi ải đã mở, rơi đồ và đan của ' + x.name : 'Bản đồ cảnh giới hiện tại'}">${x.name}</button>`).join('')}</nav>` : '';
   const tile = a => {
     const st = !a.open ? 'locked' : a.index === m.area ? 'cur' : a.win ? 'win' : 'lose';
-    const tip = a.open ? `Ải ${R}-${a.index} · ${a.place}&#10;${a.monster}: máu ${fmt(a.hp)} · công ${fmt(a.atk)} · thủ ${fmt(a.def)}&#10;${a.win ? `Dự đoán: thắng sau ${a.hits} đòn` : 'Dự đoán: thua, cần mạnh hơn'}&#10;Chìa khóa rơi ${(0.4 + 0.15 * a.index).toFixed(2).replace(/0$/, '')}%` : `Ải ${R}-${a.index}&#10;Thắng ải ${R}-${a.index - 1} để mở`;
-    return `<button class="mp-t ${st} g${Math.min(2, Math.floor((a.index - 1) * 3 / DATA.areas))}" data-area="${a.index}" ${a.open ? '' : 'disabled'} data-tip="${tip}">
+    // mô tả ải (quái, dự đoán thắng thua, tỉ lệ chìa khóa) chỉ hiện ở admin mode
+    const tip = !adminOn ? `Ải ${R}-${a.index} · ${a.place}` : a.open ? `Ải ${R}-${a.index} · ${a.place}&#10;${a.monster}: máu ${fmt(a.hp)} · công ${fmt(a.atk)} · thủ ${fmt(a.def)}&#10;${a.win ? `Dự đoán: thắng sau ${a.hits} đòn` : 'Dự đoán: thua, cần mạnh hơn'}&#10;Chìa khóa rơi ${(m.keyChanceMin * 100).toFixed(0)}%` : `Ải ${R}-${a.index}&#10;Thắng ải ${R}-${a.index - 1} để mở`;
+    return `<button class="mp-t ${st} g${Math.min(2, Math.floor((a.index - 1) * 3 / DATA.areas))}" data-area="${a.index}" ${a.open ? '' : 'disabled'} ${tip ? `data-tip="${tip}"` : ''}>
       <b>${R}-${a.index}</b><small>${!a.open ? LOCK_SVG : a.index === m.area ? 'Đang đánh' : a.win ? '✓' : 'Nguy hiểm'}</small></button>`;
   };
   const boss = m.areas[DATA.areas];
   const bossOpen = m.areaMax >= DATA.areas, canBoss = bossOpen && keyN > 0;
   const why = !bossOpen ? `Mở ải ${R}-${DATA.areas} trước` : keyN < 1 ? `Cần ${ITEM[m.keyItem].name}` : '';
   $('pane-map').innerHTML = `<div class="mp">
-    <header class="mp-hd"><div><b>Bản đồ · ${r.name}</b><span>${m.area > DATA.areas ? `Đang khiêu chiến Boss · ${r.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${cur.place}`}</span></div>
+    ${realmTabs}
+    <header class="mp-hd"><div><b>Bản đồ · ${r.name}${back ? ' <small class="mp-back">cảnh giới trước</small>' : ''}</b><span>${m.area > DATA.areas ? `Đang khiêu chiến Boss · ${r.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${cur.place}`}</span></div>
       <div class="mp-key" data-tip="${itemTip(m.keyItem)}">${itemImg(m.keyItem)}<span>${ITEM[m.keyItem].name}</span><b>× ${keyN}</b></div></header>
     <div class="mp-grid">${m.areas.slice(0, DATA.areas).map(tile).join('')}</div>
     <div class="mp-boss ${m.area > DATA.areas ? 'cur' : ''}">
@@ -1875,11 +1867,13 @@ function renderMap(){
         <button class="dd-go ${canBoss ? 'gold' : ''}" data-area="${DATA.areas + 1}" ${canBoss && m.area <= DATA.areas ? '' : 'disabled'}>${m.area > DATA.areas ? 'Đang khiêu chiến' : 'Khiêu chiến'}</button>
         ${why ? `<small class="bad">${why}</small>` : ''}</div>
     </div>
-    <p class="mp-note">Thắng ải cao nhất sẽ mở ải kế tiếp, thua thì lùi một ải. ${ITEM[m.keyItem].name} rơi ở ải ${R}-1 đến ${R}-${DATA.areas} (ải càng cao càng dễ rơi), chỉ mất khi thắng Boss.</p>
+    <p class="mp-note">${back ? `Bản đồ ${r.name} đã mở hết ải. ` : 'Thắng ải cao nhất sẽ mở ải kế tiếp, thua thì lùi một ải. '} ${ITEM[m.keyItem].name} rơi ở ải ${R}-1 đến ${R}-${DATA.areas} (${(m.keyChanceMin * 100).toFixed(0)}% mỗi trận thắng), chỉ mất khi thắng Boss.</p>
   </div>`;
 }
 function initMap(){
   $('pane-map').addEventListener('click', e => {
+    const mr = e.target.closest('[data-mrealm]');
+    if (mr){ if (+mr.dataset.mrealm !== S.map.realm) act(`map/${mr.dataset.mrealm}`); return; }
     const t = e.target.closest('[data-area]'); if (!t || t.disabled) return;
     act(`area/${t.dataset.area}`);
   });
@@ -2298,9 +2292,9 @@ function live(){
   $('btnBag').dataset.tip = `Hành trang\nTấn công ${fmt(st.atk)} · Máu ${fmt(st.hp)} · Phòng thủ ${fmt(st.def)}`;
   // thanh thám hiểm: luôn tự động, rê chuột để xem chi tiết chuyến
   const trip = $('trip'), left = exploreLeft();
-  trip.dataset.tip = `${S.map.area > DATA.areas ? 'Khiêu chiến Boss · ' + realm().bossLair : 'Ải ' + (S.realm + 1) + '-' + S.map.area + ' · ' + S.map.areas[S.map.area - 1].place}\nMỗi ${(S.exploreCooldownMs/1000).toFixed(1).replace('.0','')}s một chuyến · ${bt.win ? `hạ ${bt.monster} sau ${bt.hits} đòn` : `thua ${bt.monster}, cần mạnh hơn`}\nThắng: +${fmt(S.exploreQiGain)} tu vi và vật phẩm rơi theo tỉ lệ`;
+  trip.dataset.tip = `${S.map.area > DATA.areas ? 'Khiêu chiến Boss · ' + DATA.realms[S.map.realm].bossLair : 'Ải ' + (S.map.realm + 1) + '-' + S.map.area + ' · ' + S.map.areas[S.map.area - 1].place}\nMỗi ${(S.exploreCooldownMs/1000).toFixed(1).replace('.0','')}s một chuyến · ${bt.win ? `hạ ${bt.monster} sau ${bt.hits} đòn` : `thua ${bt.monster}, cần mạnh hơn`}\nThắng: +${fmt(S.exploreQiGain)} tu vi và vật phẩm rơi theo tỉ lệ`;
   trip.querySelector('i').style.width = Math.min(100, 100 - left / S.exploreCooldownMs * 100) + '%';
-  $('tripText').textContent = left > 0 ? `${S.map.area > DATA.areas ? 'Boss' : 'Ải ' + (S.realm + 1) + '-' + S.map.area} · ${Math.ceil(left/1000)}s` : 'Đang về…';
+  $('tripText').textContent = left > 0 ? `${S.map.area > DATA.areas ? 'Boss' : 'Ải ' + (S.map.realm + 1) + '-' + S.map.area} · ${Math.ceil(left/1000)}s` : 'Đang về…';
   if (left <= 0 && performance.now() - lastPull > 1500){ lastPull = performance.now(); sync(); }
   liveInv();
   liveDan(); liveBreak(); liveSkill();
@@ -3238,6 +3232,7 @@ function setAdmin(on){
   adminOn = on; try { localStorage.setItem('van-dao-admin', on ? '1' : '0'); } catch(e){}
   document.body.classList.toggle('admin-on', on);
   const t = $('tab-admin'); if (t) t.hidden = !on;
+  if (S && DATA) renderMap();                   // mô tả ô ải chỉ hiện khi bật admin
   if (on){ renderAdmin(true); openTab('admin'); } else if ($('tab-admin')?.getAttribute('aria-selected') === 'true') openTab('req');
   localLog(on ? 'Admin mode: BẬT (Ctrl+Shift+A để tắt)' : 'Admin mode: TẮT', on ? 'good' : '');
 }

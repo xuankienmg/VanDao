@@ -164,9 +164,10 @@ public class GameService(GameDbContext db)
     }
 
     /// <summary>Dùng vật phẩm: rương thì mở (kèm kết quả cho thông báo), còn lại như Use.</summary>
-    public (string msg, string kind, CraftResultDto? craft) UseItem(Player p, string itemId)
+    /// <param name="n">Số rương mở một lần (Ctrl + chuột phải: 0 = mở hết); vật phẩm khác luôn dùng 1.</param>
+    public (string msg, string kind, CraftResultDto? craft) UseItem(Player p, string itemId, int n = 1)
     {
-        if (GameData.ItemById.TryGetValue(itemId, out var d) && d.Type == "chest") return OpenChest(p, d);
+        if (GameData.ItemById.TryGetValue(itemId, out var d) && d.Type == "chest") return OpenChests(p, d, n);
         var (m, k) = Use(p, itemId);
         return (m, k, null);
     }
@@ -176,9 +177,35 @@ public class GameService(GameDbContext db)
     /// trong bảng rơi của cảnh giới hiện tại và đan dược dùng để lên tầng/kỳ của cảnh giới đó.
     /// Rương hiếm: pháp bảo nhiều hơn, trang bị chỉ lấy phẩm cao nhất, đan nhiều hơn.
     /// </summary>
-    private (string msg, string kind, CraftResultDto craft) OpenChest(Player p, ItemDef chest)
+    /// <summary>Mở n rương cùng loại (0 = mở hết), dừng khi hết rương hoặc hành trang đầy; gộp phần thưởng vào một thông báo.</summary>
+    private (string msg, string kind, CraftResultDto craft) OpenChests(Player p, ItemDef chest, int n)
     {
         if (p.Count(chest.Id) < 1) throw new GameException("Không có rương này trong hành trang.");
+        var want = n <= 0 ? p.Count(chest.Id) : Math.Min(n, p.Count(chest.Id));
+        var got = new List<ItemQtyDto>();
+        var opened = 0; var full = false;
+        while (opened < want)
+        {
+            var res = OpenOne(p, chest);
+            if (res is null) { full = true; break; }
+            opened++;
+            var i = got.FindIndex(g => g.Item == res.Item);
+            if (i >= 0) got[i] = got[i] with { Qty = got[i].Qty + res.Qty }; else got.Add(res);
+        }
+        if (opened == 0) throw new GameException("Hành trang đầy, dọn bớt rồi mở rương.");
+        // món giá trị nhất lên đầu (pháp bảo → phẩm cao → đan)
+        int Rank(ItemQtyDto x) { var d = GameData.ItemById[x.Item]; return (d.Slot == "offhand" ? 10 : 0) + Array.IndexOf(GameData.RarityOrder, d.Rarity); }
+        got = got.OrderByDescending(Rank).ToList();
+        var best = GameData.ItemById[got[0].Item];
+        var text = string.Join(", ", got.Select(g => $"{g.Qty} {GameData.ItemById[g.Item].Name}{(GameData.ItemById[g.Item].Slot == "offhand" ? " (pháp bảo)" : "")}"));
+        var (msg, kind) = Log(p, $"Mở {(opened > 1 ? $"{opened} " : "")}{chest.Name}: nhận {text}.{(full ? " Hành trang đầy, dừng lại." : "")}",
+            best.Slot == "offhand" || Array.IndexOf(GameData.RarityOrder, best.Rarity) >= 2 ? "gold" : "loot");
+        return (msg, kind, new CraftResultDto("chest:" + chest.Id, got[0], new() { new(chest.Id, opened) }, got));
+    }
+
+    /// <summary>Mở 1 rương; null = hành trang đầy (rương được giữ lại).</summary>
+    private ItemQtyDto? OpenOne(Player p, ItemDef chest)
+    {
         var cd = GameData.Chests[chest.Id];
         var r = Realm(p);
         var rng = Random.Shared;
@@ -206,15 +233,14 @@ public class GameService(GameDbContext db)
             n = rng.Next(cd.PillMin, cd.PillMax + 1);
         }
         p.Add(chest.Id, -1);
-        if (TryAddLoot(p, item, n) < n)
+        var added = TryAddLoot(p, item, n);
+        if (added < n)
         {
+            if (added > 0) p.Add(item, -added);
             p.Add(chest.Id, 1);
-            throw new GameException("Hành trang đầy, dọn bớt rồi mở rương.");
+            return null;
         }
-        var def = GameData.ItemById[item];
-        var (msg, kind) = Log(p, $"Mở {chest.Name}: nhận {n} {def.Name}{(def.Slot == "offhand" ? " (pháp bảo)" : "")}.",
-            def.Slot == "offhand" || Array.IndexOf(GameData.RarityOrder, def.Rarity) >= 2 ? "gold" : "loot");
-        return (msg, kind, new CraftResultDto("chest:" + chest.Id, new(item, n), new() { new(chest.Id, 1) }));
+        return new ItemQtyDto(item, n);
     }
 
     /// <summary>Dùng vật phẩm tiêu hao (đan dược hồi linh khí).</summary>
@@ -309,7 +335,7 @@ public class GameService(GameDbContext db)
             p.Pay(cost);
             p.Stage++;
             p.Qi = 0;
-            return Log(p, $"Đột phá thành công: {r.Name} {r.Stages[p.Stage]}.", "good");
+            return Log(p, $"Đột phá thành công: {r.Name} {r.Stages[p.Stage]}, +{SkillData.PointsForBreak(false)} điểm kỹ năng.", "good");
         }
 
         var next = NextRealm(p) ?? throw new GameException($"Cảnh giới {GameData.LockedRealms[0]} chưa khai mở.");
@@ -345,15 +371,16 @@ public class GameService(GameDbContext db)
             p.Bonus = 0;
             p.Area = 1;
             p.AreaMax = 1;
+            p.MapRealm = -1;
             p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
             if (crit)
             {
                 var nb = GameData.BaseStats(next, 0);
                 p.BodyHp += (int)Math.Round(nb.Hp * GameData.BreakCritBonus);
                 p.BodyDef += (int)Math.Round(nb.Def * GameData.BreakCritBonus);
-                return Log(p, $"Đại thành công! Đạo cơ vững chắc, bước vào {next.Name}: vĩnh viễn +{nb.Hp * GameData.BreakCritBonus:0} máu, +{nb.Def * GameData.BreakCritBonus:0} phòng thủ.", "crit");
+                return Log(p, $"Đại thành công! Đạo cơ vững chắc, bước vào {next.Name}: vĩnh viễn +{nb.Hp * GameData.BreakCritBonus:0} máu, +{nb.Def * GameData.BreakCritBonus:0} phòng thủ, +{SkillData.PointsForBreak(true)} điểm kỹ năng.", "crit");
             }
-            return Log(p, $"Thiên địa dị tượng! Đột phá thành công cảnh giới {next.Name}.", "gold");
+            return Log(p, $"Thiên địa dị tượng! Đột phá thành công cảnh giới {next.Name}, +{SkillData.PointsForBreak(true)} điểm kỹ năng.", "gold");
         }
     }
 
@@ -368,7 +395,8 @@ public class GameService(GameDbContext db)
         var rate = GameData.QiRate(r, p.Stage); var rate2 = GameData.QiRate(next, ns);
         var slots = next.EquipSlots.Except(r.EquipSlots).Select(s => GameData.Slots.First(x => x.Id == s).Name).ToArray();
         var stats = next == r ? Array.Empty<string>() : GameData.ExtraStats.Where(x => x.MinRealm == p.Realm + 1).Select(x => x.Name).ToArray();
-        return new BreakPreviewDto(b.Hp - a.Hp, b.Atk - a.Atk, b.Def - a.Def, Math.Round((rate2 / rate - 1) * 100), next.BagSlots - r.BagSlots, slots, stats);
+        return new BreakPreviewDto(b.Hp - a.Hp, b.Atk - a.Atk, b.Def - a.Def, Math.Round((rate2 / rate - 1) * 100), next.BagSlots - r.BagSlots, slots, stats,
+            SkillData.PointsForBreak(next != r));
     }
 
     // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
@@ -397,7 +425,7 @@ public class GameService(GameDbContext db)
                 if (parts.Length != 2 || !int.TryParse(parts[0], out var ri) || !int.TryParse(parts[1], out var si)
                     || ri < 0 || ri >= GameData.Realms.Count || si < 0 || si >= GameData.Realms[ri].Stages.Length)
                     throw new GameException("Cảnh giới / tầng không hợp lệ.");
-                p.Realm = ri; p.Stage = si; p.Qi = 0; p.Bonus = 0; p.Area = 1; p.AreaMax = 1;
+                p.Realm = ri; p.Stage = si; p.Qi = 0; p.Bonus = 0; p.Area = 1; p.AreaMax = 1; p.MapRealm = -1;
                 p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
                 foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList()) { p.Add(e.ItemId, 1); p.Equipment.Remove(e); db.Equipment.Remove(e); }
                 return Log(p, $"[Admin] Chuyển tới {Realm(p).Name} {Realm(p).Stages[si]}.", "gold");
@@ -426,7 +454,7 @@ public class GameService(GameDbContext db)
                 // về đúng trạng thái nhân vật mới tạo: giữ Id, tên, ngày tạo và cờ admin mode
                 var now = DateTime.UtcNow;
                 p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0;
-                p.Area = 1; p.AreaMax = 1; p.BossKills = 0;
+                p.Area = 1; p.AreaMax = 1; p.MapRealm = -1; p.BossKills = 0;
                 p.BreakCooldownUntil = p.DebuffUntil = DateTime.MinValue;
                 p.Skills = ""; p.SkillSlots = ""; p.AdminPoints = 0;
                 p.AlchemyExp = 0; p.RefineRecipe = -1; p.RefineLeft = 0; p.RefineCatalyst = false;
@@ -584,32 +612,44 @@ public class GameService(GameDbContext db)
     /// <summary>Chọn ải để tự động thám hiểm. Ải Boss (BossArea) cần chìa khóa và đã mở ải cuối.</summary>
     public (string msg, string kind) SelectArea(Player p, int area)
     {
-        var r = Realm(p);
+        var r = MapRealm(p); var R = MapIdx(p) + 1;
         if (area == GameData.BossArea)
         {
-            if (p.AreaMax < GameData.Areas) throw new GameException($"Mở ải {p.Realm + 1}-{GameData.Areas} trước khi khiêu chiến Boss.");
-            if (p.Count(r.KeyItem) < 1) throw new GameException($"Cần {GameData.ItemById[r.KeyItem].Name} để vào {r.BossLair}. Rơi ở ải {p.Realm + 1}-1 đến {p.Realm + 1}-{GameData.Areas}.");
+            if (MapAreaMax(p) < GameData.Areas) throw new GameException($"Mở ải {R}-{GameData.Areas} trước khi khiêu chiến Boss.");
+            if (p.Count(r.KeyItem) < 1) throw new GameException($"Cần {GameData.ItemById[r.KeyItem].Name} để vào {r.BossLair}. Rơi ở ải {R}-1 đến {R}-{GameData.Areas}.");
         }
-        else if (area < 1 || area > p.AreaMax) throw new GameException("Ải này chưa mở.");
+        else if (area < 1 || area > MapAreaMax(p)) throw new GameException("Ải này chưa mở.");
         if (p.Area == area) return ("", "");
         p.Area = area;
         p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));   // bắt đầu chuyến mới ở ải vừa chọn
         return area == GameData.BossArea
             ? Log(p, $"Cầm {GameData.ItemById[r.KeyItem].Name} tiến vào {r.BossLair}, khiêu chiến {r.Boss.Name}!", "gold")
-            : ($"Chuyển sang ải {p.Realm + 1}-{area} · {GameData.AreaPlace(r, area)}.", "");
+            : ($"Chuyển sang ải {R}-{area} · {GameData.AreaPlace(r, area)}.", "");
+    }
+
+    /// <summary>Chọn bản đồ cảnh giới: hiện tại hoặc quay lại cảnh giới trước (mọi ải đã mở, rơi đồ của cảnh giới đó).</summary>
+    public (string msg, string kind) SelectMap(Player p, int realm)
+    {
+        if (realm < 0 || realm > p.Realm) throw new GameException("Bản đồ cảnh giới này chưa mở.");
+        if (MapIdx(p) == realm) return ("", "");
+        p.MapRealm = realm == p.Realm ? -1 : realm;
+        p.Area = MapAreaMax(p);                                  // vào ải cao nhất đã mở của bản đồ đó
+        p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
+        var r = MapRealm(p);
+        return Log(p, $"Chuyển sang bản đồ {r.Name}: ải {realm + 1}-{p.Area} · {GameData.AreaPlace(r, p.Area)}.", "");
     }
 
     private static MapDto MapState(Player p)
     {
-        var r = Realm(p);
+        var r = MapRealm(p); var amax = MapAreaMax(p);
         var areas = Enumerable.Range(1, GameData.BossArea).Select(a =>
         {
             var b = BattleAt(p, a);
             return new AreaDto(a, b.Monster, GameData.AreaPlace(r, a),
-                b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= p.AreaMax || (a == GameData.BossArea && p.AreaMax >= GameData.Areas));
+                b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= amax || (a == GameData.BossArea && amax >= GameData.Areas));
         }).ToList();
-        return new MapDto(p.Area, p.AreaMax, r.KeyItem, r.BossItem, r.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
-            GameData.Synths.Select(sd => new SynthStateDto(sd.From, MaxSynth(p, sd))).ToList(), p.Count(r.BossItem) > 0);
+        return new MapDto(p.Area, amax, r.KeyItem, r.BossItem, r.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
+            GameData.Synths.Select(sd => new SynthStateDto(sd.From, MaxSynth(p, sd))).ToList(), p.Count(r.BossItem) > 0, MapIdx(p));
     }
 
     /// <summary>Quy đổi vật phẩm của bản cũ (3 loại linh thạch, nguyên liệu luyện đan, đan phẩm chất…).</summary>
@@ -625,6 +665,10 @@ public class GameService(GameDbContext db)
             inv.Count = 0;
         }
         p.RefineRecipe = -1;
+        // Boss Luyện Khí đổi từ Hắc Lân Mãng sang Kim Ô Yêu Vương: tu sĩ Luyện Khí giữ chìa khóa / yêu hạch cũ thì đổi sang loại mới
+        if (p.Realm == 0)
+            foreach (var (from, to) in new[] { ("hu_thien_tan_do", "con_ngo_lenh"), ("hac_lan_yeu_hach", "kim_o_tinh_hach") })
+                if (p.Count(from) > 0) { p.Add(to, p.Count(from)); p.Add(from, -p.Count(from)); }
         if (p.AreaMax > GameData.Areas && p.Area >= GameData.BossArea) p.Area = GameData.Areas;   // bản đồ cũ 20 ải → 15 ải
         p.Area = Math.Clamp(p.Area, 1, GameData.BossArea);
         p.AreaMax = Math.Clamp(p.AreaMax, 1, GameData.Areas);
@@ -677,8 +721,9 @@ public class GameService(GameDbContext db)
         }
         string? special = null, specialKind = "gold";
         var startArea = p.Area;
+        var mapTag = MapIdx(p) + 1;
         {
-            var r = Realm(p);
+            var r = MapRealm(p);
             var luck = 1 + Stats(p).Sense / 100;
             var t = p.ExploreReadyAt < now.AddSeconds(-GameData.MaxOfflineSeconds) ? now.AddSeconds(-GameData.MaxOfflineSeconds) : p.ExploreReadyAt;
             while (t <= now)
@@ -740,7 +785,7 @@ public class GameService(GameDbContext db)
                 }
                 p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p));
                 // thắng ở ải cao nhất → mở và tiến sang ải kế
-                if (area == p.AreaMax && p.AreaMax < GameData.Areas) { p.AreaMax++; p.Area = p.AreaMax; }
+                if (MapIdx(p) == p.Realm && area == p.AreaMax && p.AreaMax < GameData.Areas) { p.AreaMax++; p.Area = p.AreaMax; }
             }
             p.ExploreReadyAt = t;
         }
@@ -751,18 +796,18 @@ public class GameService(GameDbContext db)
             + (lost > 0 ? $"{(loot.Count > 0 ? ", " : "")}hành trang đầy nên bỏ lại {lost} món" : "");
         var gotEquip = loot.Keys.Any(k => GameData.ItemById[k].Slot is not null || GameData.ItemById[k].Type == "key");
         if (special is not null) AddLog(p, special, specialKind);
-        var areaTag = $"ải {p.Realm + 1}-{startArea}";
+        var areaTag = $"ải {mapTag}-{startArea}";
         if (p.Area != startArea && startArea <= GameData.Areas && trips > 0 && gap <= 60)
-            AddLog(p, p.Area > startArea ? $"Qua {areaTag}, mở ải {p.Realm + 1}-{p.Area} · {GameData.AreaPlace(Realm(p), p.Area)}." : $"Thua ở {areaTag}, lùi về ải {p.Realm + 1}-{p.Area}.", p.Area > startArea ? "good" : "bad");
+            AddLog(p, p.Area > startArea ? $"Qua {areaTag}, mở ải {mapTag}-{p.Area} · {GameData.AreaPlace(MapRealm(p), p.Area)}." : $"Thua ở {areaTag}, lùi về ải {mapTag}-{p.Area}.", p.Area > startArea ? "good" : "bad");
         if (gap > 60)
             AddLog(p, trips > 0
                 ? $"Vắng mặt {Math.Round(gap / 60)} phút: thám hiểm {trips} chuyến{(losses > 0 ? $" (thua {losses})" : "")}, {qiText}{(lootText.Length > 0 ? ", " + lootText : "")}."
                 : $"Vắng mặt {Math.Round(gap / 60)} phút, thu được {gained:N0} tu vi.", "gold");
         else if (special is not null && trips == 1) { }
         else if (trips > 0 && losses == trips)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {GameData.AreaMonster(Realm(p), startArea).Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {GameData.AreaMonster(MapRealm(p), startArea).Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
         else if (trips > 0)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {GameData.AreaMonster(Realm(p), startArea).Name}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {GameData.AreaMonster(MapRealm(p), startArea).Name}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
     }
 
     /// <summary>Tổng chỉ số % từ trang bị đang mặc.</summary>
@@ -812,7 +857,7 @@ public class GameService(GameDbContext db)
         var tripSec = (trip ?? p.ExploreReadyAt).Ticks / TimeSpan.TicksPerSecond;
         var rng = new Random(unchecked((p.Id.GetHashCode() * 31 + area) * 31 + (int)(tripSec % 1_000_000_007)));
         var st = Stats(p);
-        var m = GameData.AreaMonster(Realm(p), area);
+        var m = GameData.AreaMonster(MapRealm(p), area);
         var down = SkillBonus(p).monAtk;                       // công pháp khống chế làm yếu đòn quái
         if (down > 0) m = m with { Atk = (int)Math.Round(m.Atk * (1 - down / 100)) };
         var (skillPct, pen, burnPct) = SkillExtra(p);                   // Hỏa Tụ / Liệt Diễm Tâm / Xích Diễm Đạo Thể · Hỏa Linh Chân Ý
@@ -892,6 +937,11 @@ public class GameService(GameDbContext db)
     private static double ExploreQi(Player p) => GameData.QiRate(Realm(p), p.Stage) * GameData.ExploreQiSeconds;
 
     private static RealmDef Realm(Player p) => GameData.Realms[p.Realm];
+    /// <summary>Cảnh giới của bản đồ đang đánh (có thể quay lại bản đồ cảnh giới trước).</summary>
+    private static int MapIdx(Player p) => p.MapRealm >= 0 && p.MapRealm < p.Realm ? p.MapRealm : p.Realm;
+    private static RealmDef MapRealm(Player p) => GameData.Realms[MapIdx(p)];
+    /// <summary>Ải cao nhất đã mở trên bản đồ đang đánh: bản đồ cảnh giới trước luôn mở hết.</summary>
+    private static int MapAreaMax(Player p) => MapIdx(p) < p.Realm ? GameData.Areas : p.AreaMax;
     private static double QiReq(Player p) => Realm(p).QiReq(p.Stage);
     private static bool IsPeak(Player p) => p.Stage == Realm(p).Stages.Length - 1;
 

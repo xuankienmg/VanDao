@@ -26,6 +26,8 @@ public class Player
     // ---- Bản đồ: ải đang đánh (1..20, 21 = Boss) và ải cao nhất đã mở trong cảnh giới hiện tại ----
     public int Area { get; set; } = 1;
     public int AreaMax { get; set; } = 1;
+    /// <summary>Bản đồ đang đánh: -1 = cảnh giới hiện tại; 0..Realm-1 = quay lại bản đồ cảnh giới trước (mọi ải đã mở).</summary>
+    public int MapRealm { get; set; } = -1;
 
     // ---- Đột phá đại cảnh giới: thất bại phải điều tức (chờ), tẩu hỏa nhập ma bị suy yếu tạm thời ----
     public DateTime BreakCooldownUntil { get; set; } = DateTime.MinValue;

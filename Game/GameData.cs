@@ -124,18 +124,18 @@ public static class GameData
             Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
         // ---- chìa khóa vào ải Boss (rơi ở ải 1–15) ----
         new ItemDef("hu_thien_tan_do", "Hư Thiên Tàn Đồ",  "key", "#c9a86a", "Mảnh bản đồ cổ dẫn tới Hư Thiên Điện, nơi Hắc Lân Mãng ẩn mình.", Rarity: "epic", Kind: "Chìa khóa",
-            Use: "Cần để vào ải Boss 1-21 · Hư Thiên Điện. Chỉ mất khi thắng Boss."),
+            Use: "Cần để vào ải Boss 3-16 · Hư Thiên Điện. Chỉ mất khi thắng Boss."),
         new ItemDef("huyet_sac_lenh",  "Huyết Sắc Lệnh Bài", "key", "#c0463a", "Lệnh bài đỏ thẫm mở cửa trung tâm Huyết Sắc Cấm Địa.", Rarity: "epic", Kind: "Chìa khóa",
-            Use: "Cần để vào ải Boss 2-21 · Cấm Địa Trung Tâm. Chỉ mất khi thắng Boss."),
+            Use: "Cần để vào ải Boss 2-16 · Cấm Địa Trung Tâm. Chỉ mất khi thắng Boss."),
         new ItemDef("con_ngo_lenh",    "Côn Ngô Sơn Lệnh",   "key", "#e6c46a", "Lệnh bài vàng khắc phù trận phong ấn Côn Ngô Sơn.", Rarity: "epic", Kind: "Chìa khóa",
-            Use: "Cần để vào ải Boss 3-21 · Côn Ngô Sơn. Chỉ mất khi thắng Boss."),
+            Use: "Cần để vào ải Boss 1-16 · Côn Ngô Sơn. Chỉ mất khi thắng Boss."),
         // ---- nguyên liệu Boss: bắt buộc khi đột phá đại cảnh giới ----
         new ItemDef("hac_lan_yeu_hach",  "Hắc Lân Yêu Hạch",  "boss", "#3d6fd8", "Yêu hạch của Hắc Lân Mãng, vảy đen bao quanh một đốm u quang.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
-            Use: "Bắt buộc khi đột phá Luyện Khí Tầng 9 → Trúc Cơ."),
+            Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
         new ItemDef("huyet_giao_hach",   "Huyết Giao Yêu Hạch", "boss", "#d8404a", "Yêu hạch của Huyết Giao, nóng như máu sôi.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
             Use: "Bắt buộc khi đột phá Trúc Cơ Đại viên mãn → Kim Đan."),
         new ItemDef("kim_o_tinh_hach",   "Kim Ô Tinh Hạch",    "boss", "#f2b23c", "Tinh hạch của Kim Ô yêu vương, chứa thái dương chân hỏa.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
-            Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
+            Use: "Bắt buộc khi đột phá Luyện Khí Tầng 9 → Trúc Cơ."),
 
         // ---- trang bị (ảnh trong wwwroot/img) ----
         new ItemDef("hac_dao",    "Hắc đao",        "equip", "#7f8794", "Đao bản rộng rèn từ sắt đen, khắc phù văn mờ.",       "img/hac_dao.png",    "weapon", Atk: 10, LuckPct: 5, Rarity: "uncommon", Kind: "Đao", CritPct: 2, Special: "Đao thế nặng: tăng may mắn khi nhặt đồ"),
@@ -248,7 +248,7 @@ public static class GameData
 
     // ---- rương ----
     /// <summary>Tỉ lệ rơi mỗi trận thắng: rương thường ở mọi ải, rương hiếm chỉ từ ải RareChestMinArea.</summary>
-    public const double ChestChance = 0.5, RareChestChance = 0.3;
+    public const double ChestChance = 0.25, RareChestChance = 0.15;
     public const int RareChestMinArea = 10;
     /// <summary>Hạ Boss: chắc chắn rơi 1 Rương Boss.</summary>
     public const string BossChest = "ruong_boss";
@@ -294,7 +294,7 @@ public static class GameData
         s >= BossArea ? r.BossLair : r.Places[Math.Min(r.Places.Length - 1, (Math.Clamp(s, 1, Areas) - 1) * r.Places.Length / Areas)];
 
     /// <summary>Tỉ lệ rơi chìa khóa Boss ở ải s.</summary>
-    public static double KeyChance(int s) => 0.004 + 0.0015 * s;
+    public static double KeyChance(int s) => 0.07;   // mọi ải như nhau
 
     public static readonly IReadOnlyDictionary<string, ItemDef> ItemById = AllItems.ToDictionary(i => i.Id);
 
@@ -310,19 +310,19 @@ public static class GameData
             QiReq = s => Math.Round(60 * Math.Pow(1.38, s)),
             Rate = s => 3 + s * 0.6,
             StageCost = s => new() { ["linh_thach"] = 10 + 10 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
-            BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["hac_lan_yeu_hach"] = 1 }, BreakChance = .55,
+            BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["kim_o_tinh_hach"] = 1 }, BreakChance = .55,
             StatMult = 1,
             Monster = new MonsterDef("Yêu lang", "img/quai_yeu_lang.png", Hp: 30, Atk: 8, Def: 2),
             MonsterNames = new[] { "Yêu Lang", "Độc Xà", "Thạch Giáp Quy", "Hỏa Hồ", "Băng Lang", "Thiết Giáp Trùng", "Cốt Khuyển" },
             Places = new[] { "Hắc Phong Lâm", "Thanh Vân Cốc", "Hậu sơn tông môn" },
-            Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 140, Atk: 23, Def: 5),
-            BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
+            Boss = new MonsterDef("Kim Ô Yêu Vương", "img/boss_kim_o.png", Hp: 140, Atk: 23, Def: 5),
+            BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",
             Drops = new[] { new DropDef("linh_thach", 3, 8, 1), new DropDef("tu_khi_dan", 1, 1, .4),
                 new DropDef("nhan_ngoc", 1, 1, .01), new DropDef("truong_thuong", 1, 1, .02), new DropDef("ngoc_boi", 1, 1, .015),
                 // bộ Luyện Khí Giới (Linh phẩm): hiếm hơn đồ vải ~4–5 lần
                 new DropDef("lk_ao", 1, 1, .008), new DropDef("lk_mu", 1, 1, .008), new DropDef("lk_gang", 1, 1, .008), new DropDef("lk_giay", 1, 1, .008),
                 new DropDef("lk_kiem", 1, 1, .006), new DropDef("lk_nhan", 1, 1, .005) },
-            Resources = new[] { "linh_thach", "tu_khi_dan", "hu_thien_tan_do", "hac_lan_yeu_hach" } },
+            Resources = new[] { "linh_thach", "tu_khi_dan", "con_ngo_lenh", "kim_o_tinh_hach" } },
         new RealmDef
         {
             Id = "truc_co", Name = "Trúc Cơ",
@@ -356,15 +356,15 @@ public static class GameData
             QiReq = s => Math.Round(18000 * Math.Pow(1.7, s)),
             Rate = s => 140 + s * 50,
             StageCost = s => new() { ["linh_thach"] = 1500 * (s + 1), ["ngung_kim_dan"] = s + 1 },
-            BreakCost = null, BreakChance = 1, // điền khi thêm Nguyên Anh: Kết Anh Đan + Kim Ô Tinh Hạch
+            BreakCost = null, BreakChance = 1, // điền khi thêm Nguyên Anh: Kết Anh Đan + Hắc Lân Yêu Hạch
             StatMult = 35,
             Monster = new MonsterDef("Lang vương", "img/quai_yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
             MonsterNames = new[] { "Yêu Lang Vương", "Độc Xà Vương", "Thạch Quy Vương", "Hỏa Hồ Vương", "Băng Lang Vương", "Thiết Trùng Vương", "Cốt Khuyển Vương" },
             Places = new[] { "Hỏa Diễm Sơn", "Táng Tiên Cốc", "Đông Hải bí cảnh" },
-            Boss = new MonsterDef("Kim Ô Yêu Vương", "img/boss_kim_o.png", Hp: 5600, Atk: 860, Def: 260),
-            BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",
+            Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 5600, Atk: 860, Def: 260),
+            BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
             Drops = new[] { new DropDef("linh_thach", 200, 500, 1), new DropDef("tu_khi_dan", 3, 6, .6), new DropDef("truc_co_dan", 1, 2, .7), new DropDef("ngung_kim_dan", 1, 1, .03) },
-            Resources = new[] { "linh_thach", "truc_co_dan", "ngung_kim_dan", "con_ngo_lenh", "kim_o_tinh_hach" } } };
+            Resources = new[] { "linh_thach", "truc_co_dan", "ngung_kim_dan", "hu_thien_tan_do", "hac_lan_yeu_hach" } } };
 
     /// <summary>Cảnh giới hiển thị trên thanh tiến trình nhưng chưa mở.</summary>
     public static readonly string[] LockedRealms = { "Nguyên Anh", "Hóa Thần" };

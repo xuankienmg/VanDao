@@ -148,4 +148,6 @@ public static class SkillData
 
     /// <summary>Điểm kỹ năng nhận được: 1 lúc đầu, +1 mỗi tầng/kỳ đã lên, +3 mỗi đại cảnh giới, +2 mỗi lần hạ Boss.</summary>
     public static int PointsEarned(int level, int realm, int bossKills) => 1 + (level - 1) + 3 * realm + 2 * bossKills;
+    /// <summary>Điểm kỹ năng nhận khi đột phá thành công: lên tầng/kỳ +1, lên đại cảnh giới +1 (tầng mới) +3.</summary>
+    public static int PointsForBreak(bool major) => major ? 4 : 1;
 }
