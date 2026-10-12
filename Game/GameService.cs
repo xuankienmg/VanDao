@@ -191,20 +191,36 @@ public class GameService(GameDbContext db)
     }
 
     /// <summary>Bán hết trang bị trong hành trang có độ hiếm từ maxRarity trở xuống (0 = Phàm phẩm … 4 = Tiên phẩm).</summary>
-    public (string msg, string kind) SellBulk(Player p, int maxRarity)
+    /// <summary>Bán hàng loạt theo độ hiếm (≤ maxRarity). gearOnly: chỉ trang bị.
+    /// items: giới hạn trong các món "id:số,id:số" (vd. trang hành trang đang xem); null = cả hành trang.
+    /// Đồ đang mặc không nằm trong hành trang nên không bao giờ bị bán.</summary>
+    public (string msg, string kind) SellBulk(Player p, int maxRarity, bool gearOnly = false, string? items = null)
     {
+        Dictionary<string, int>? scope = null;
+        if (!string.IsNullOrWhiteSpace(items))
+        {
+            scope = new();
+            foreach (var part in items.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = part.Split(':');
+                if (kv.Length == 2 && int.TryParse(kv[1], out var c) && c > 0) scope[kv[0]] = scope.GetValueOrDefault(kv[0]) + c;
+            }
+        }
         var list = p.Inventory.Where(i => i.Count > 0 && GameData.ItemById.TryGetValue(i.ItemId, out var d) && d.Sell > 0
+                && (!gearOnly || d.Slot is not null)
+                && (scope is null || scope.ContainsKey(i.ItemId))
                 && Array.IndexOf(GameData.RarityOrder, d.Rarity) <= maxRarity).ToList();
-        if (list.Count == 0) throw new GameException("Không có trang bị nào để bán.");
         int count = 0, gain = 0;
         foreach (var i in list)
         {
             var d = GameData.ItemById[i.ItemId];
-            count += i.Count; gain += d.Sell * i.Count;
-            p.Add(i.ItemId, -i.Count);
+            var n = scope is null ? i.Count : Math.Min(i.Count, scope[i.ItemId]);
+            count += n; gain += d.Sell * n;
+            p.Add(i.ItemId, -n);
         }
+        if (count == 0) throw new GameException(gearOnly ? "Không có trang bị nào để bán." : "Không có món nào để bán.");
         p.Add("linh_thach", gain);
-        return Log(p, $"Bán {count} món trang bị: +{gain:N0} linh thạch.", "loot");
+        return Log(p, $"Bán {count} {(gearOnly ? "món trang bị" : "món")}{(scope is null ? "" : " (trang đang xem)")}: +{gain:N0} linh thạch.", "loot");
     }
 
     /// <summary>Cấp hiển thị: đếm liên tục qua các tầng/kỳ của mọi cảnh giới.</summary>
@@ -526,7 +542,7 @@ public class GameService(GameDbContext db)
         var areas = Enumerable.Range(1, GameData.BossArea).Select(a =>
         {
             var b = BattleAt(p, a);
-            return new AreaDto(a, a == GameData.BossArea ? r.Boss.Name : r.Monster.Name, GameData.AreaPlace(r, a),
+            return new AreaDto(a, b.Monster, GameData.AreaPlace(r, a),
                 b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= p.AreaMax || (a == GameData.BossArea && p.AreaMax >= GameData.Areas));
         }).ToList();
         return new MapDto(p.Area, p.AreaMax, r.KeyItem, r.BossItem, r.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
@@ -671,9 +687,9 @@ public class GameService(GameDbContext db)
                 : $"Vắng mặt {Math.Round(gap / 60)} phút, thu được {gained:N0} tu vi.", "gold");
         else if (special is not null && trips == 1) { }
         else if (trips > 0 && losses == trips)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {Realm(p).Monster.Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {GameData.AreaMonster(Realm(p), startArea).Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
         else if (trips > 0)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {Realm(p).Monster.Name}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {GameData.AreaMonster(Realm(p), startArea).Name}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
     }
 
     /// <summary>Tổng chỉ số % từ trang bị đang mặc.</summary>

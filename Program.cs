@@ -120,8 +120,8 @@ public static class Program
         api.MapPost("/players/{id:guid}/sell/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             Run(id, game, p => game.Sell(p, itemId, n ?? 1)));
 
-        api.MapPost("/players/{id:guid}/sell-bulk", (Guid id, int max, GameService game) =>
-            Run(id, game, p => game.SellBulk(p, max)));
+        api.MapPost("/players/{id:guid}/sell-bulk", (Guid id, int max, bool? gear, string? items, GameService game) =>
+            Run(id, game, p => game.SellBulk(p, max, gear ?? false, items)));
 
         api.MapPost("/players/{id:guid}/unequip/{slot}", (Guid id, string slot, GameService game) =>
             Run(id, game, p => game.Unequip(p, slot)));
