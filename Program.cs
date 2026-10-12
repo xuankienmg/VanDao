@@ -131,7 +131,7 @@ public static class Program
 
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
-            Run(id, game, p => game.Synthesize(p, itemId, n ?? 1)));
+            RunCraft(id, game, p => game.Synthesize(p, itemId, n ?? 1)));
 
         // bản đồ: chọn ải 1..20, 21 = Boss (cần chìa khóa)
         api.MapPost("/players/{id:guid}/area/{area:int}", (Guid id, int area, GameService game) =>
@@ -154,14 +154,18 @@ public static class Program
     }
 
     // Nạp người chơi → thực hiện hành động → lưu DB → trả trạng thái mới
-    private static async Task<IResult> Run(Guid id, GameService game, Func<Player, (string? msg, string? kind)> action)
+    private static Task<IResult> Run(Guid id, GameService game, Func<Player, (string? msg, string? kind)> action) =>
+        RunCraft(id, game, p => { var (m, k) = action(p); return (m, k, null); });
+
+    // Như Run, kèm kết quả luyện chế (thành phẩm + nguyên liệu) để giao diện hiện thông báo
+    private static async Task<IResult> RunCraft(Guid id, GameService game, Func<Player, (string? msg, string? kind, CraftResultDto? craft)> action)
     {
         try
         {
             var p = await game.LoadAsync(id);
-            var (msg, kind) = action(p);
+            var (msg, kind, craft) = action(p);
             await game.SaveAsync(p);
-            return Results.Ok(new ActionResponse(await game.BuildStateAsync(p), msg, kind));
+            return Results.Ok(new ActionResponse(await game.BuildStateAsync(p), msg, kind, craft));
         }
         catch (KeyNotFoundException)
         {

@@ -29,10 +29,6 @@ public class WindowSettings
 
     public double Opacity { get; set; } = 1.0;
 
-    /// <summary>Kích thước cửa sổ Tu luyện người dùng đã kéo.</summary>
-    public int? PanelW { get; set; }
-    public int? PanelH { get; set; }
-
     /// <summary>Kích thước riêng cho tab Hành trang (rộng hơn để chứa nhân vật + túi).</summary>
     public int? InvW { get; set; }
     public int? InvH { get; set; }
