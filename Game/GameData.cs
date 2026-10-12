@@ -79,8 +79,11 @@ public class RealmDef
     /// <summary>Hệ số chỉ số gốc của tu sĩ ở cảnh giới này.</summary>
     public required int StatMult { get; init; }
 
-    /// <summary>Quái vật chặn đường khi thám hiểm.</summary>
+    /// <summary>Quái vật chặn đường khi thám hiểm: chỉ số gốc (tên/ảnh mặc định nếu không có MonsterNames).</summary>
     public required MonsterDef Monster { get; init; }
+
+    /// <summary>Tên 7 loài quái theo thứ tự GameData.MonsterImages (ải 1-20 chia đều, mạnh dần); null = dùng Monster.</summary>
+    public string[]? MonsterNames { get; init; }
     public required string[] Places { get; init; }
 
     /// <summary>Boss ở ải 21 (cần chìa khóa để vào), rơi nguyên liệu Boss cho đột phá đại cảnh giới.</summary>
@@ -233,11 +236,23 @@ public static class GameData
     /// <summary>Hệ số máu chung cho mọi quái và Boss (1.875 = +87.5% so với gốc).</summary>
     public const double MonsterHpMult = 1.875;   // 1.25 × 1.5: tăng thêm 50% máu quái
 
+    /// <summary>Ảnh 7 loài quái thường, dùng chung mọi cảnh giới (tên riêng từng cảnh giới ở RealmDef.MonsterNames).
+    /// Ải 1-3 · 4-6 · 7-9 · 10-12 · 13-15 · 16-18 · 19-20.</summary>
+    public static readonly string[] MonsterImages =
+    {
+        "img/quai_yeu_lang.png", "img/quai_doc_xa.png", "img/quai_thach_quy.png", "img/quai_hoa_ho.png",
+        "img/quai_bang_lang.png", "img/quai_thiet_trung.png", "img/quai_cot_khuyen.png",
+    };
+
+    /// <summary>Loài quái (0..6) ở ải s.</summary>
+    public static int MonsterKind(int s) => Math.Min(MonsterImages.Length - 1, (Math.Clamp(s, 1, Areas) - 1) * MonsterImages.Length / Areas);
+
     public static MonsterDef AreaMonster(RealmDef r, int s)
     {
         if (s >= BossArea) return r.Boss with { Hp = (int)Math.Round(r.Boss.Hp * MonsterHpMult) };
         var m = 0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1);
         var b = r.Monster;
+        if (r.MonsterNames is { } names) { var k = MonsterKind(s); b = b with { Name = names[k], Image = MonsterImages[k] }; }
         return b with { Hp = (int)Math.Round(b.Hp * m * MonsterHpMult), Atk = (int)Math.Round(b.Atk * m), Def = (int)Math.Round(b.Def * m) };
     }
 
@@ -264,7 +279,8 @@ public static class GameData
             StageCost = s => new() { ["linh_thach"] = 10 + 10 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
             BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["hac_lan_yeu_hach"] = 1 }, BreakChance = .55,
             StatMult = 1,
-            Monster = new MonsterDef("Yêu lang", "img/yeu_lang.png", Hp: 30, Atk: 8, Def: 2),
+            Monster = new MonsterDef("Yêu lang", "img/quai_yeu_lang.png", Hp: 30, Atk: 8, Def: 2),
+            MonsterNames = new[] { "Yêu Lang", "Độc Xà", "Thạch Giáp Quy", "Hỏa Hồ", "Băng Lang", "Thiết Giáp Trùng", "Cốt Khuyển" },
             Places = new[] { "Hắc Phong Lâm", "Thanh Vân Cốc", "Hậu sơn tông môn" },
             Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 140, Atk: 23, Def: 5),
             BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
@@ -288,7 +304,8 @@ public static class GameData
             StageCost = s => new() { ["linh_thach"] = 200 * (s + 1), ["truc_co_dan"] = s + 1 },
             BreakCost = new() { ["ngung_kim_dan"] = 1, ["linh_thach"] = 3000, ["huyet_giao_hach"] = 1 }, BreakChance = .4,
             StatMult = 6,
-            Monster = new MonsterDef("Huyết lang", "img/yeu_lang.png", Hp: 200, Atk: 60, Def: 20),
+            Monster = new MonsterDef("Huyết lang", "img/quai_yeu_lang.png", Hp: 200, Atk: 60, Def: 20),
+            MonsterNames = new[] { "Huyết Yêu Lang", "Huyết Độc Xà", "Huyết Giáp Quy", "Huyết Hỏa Hồ", "Huyết Băng Lang", "Huyết Giáp Trùng", "Huyết Cốt Khuyển" },
             Places = new[] { "Huyết Sắc Cấm Địa", "Vạn Thú Sơn", "Đoạn Hồn Nhai" },
             Boss = new MonsterDef("Huyết Giao", "img/boss_huyet_giao.png", Hp: 940, Atk: 172, Def: 52),
             BossLair = "Cấm Địa Trung Tâm", KeyItem = "huyet_sac_lenh", BossItem = "huyet_giao_hach",
@@ -308,7 +325,8 @@ public static class GameData
             StageCost = s => new() { ["linh_thach"] = 1500 * (s + 1), ["ngung_kim_dan"] = s + 1 },
             BreakCost = null, BreakChance = 1, // điền khi thêm Nguyên Anh: Kết Anh Đan + Kim Ô Tinh Hạch
             StatMult = 35,
-            Monster = new MonsterDef("Lang vương", "img/yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
+            Monster = new MonsterDef("Lang vương", "img/quai_yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
+            MonsterNames = new[] { "Yêu Lang Vương", "Độc Xà Vương", "Thạch Quy Vương", "Hỏa Hồ Vương", "Băng Lang Vương", "Thiết Trùng Vương", "Cốt Khuyển Vương" },
             Places = new[] { "Hỏa Diễm Sơn", "Táng Tiên Cốc", "Đông Hải bí cảnh" },
             Boss = new MonsterDef("Kim Ô Yêu Vương", "img/boss_kim_o.png", Hp: 5600, Atk: 860, Def: 260),
             BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",

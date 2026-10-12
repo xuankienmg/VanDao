@@ -114,6 +114,10 @@ button{font:inherit;cursor:pointer}
 .pager button:hover:not(:disabled){border-color:var(--jade)}
 .pager button[aria-current="page"]{background:var(--gold);border-color:var(--gold);color:#1a1405;font-weight:600}
 .pager button:disabled{opacity:.35;cursor:not-allowed}
+.iv-pager{justify-content:center;align-items:center;margin:6px 0 0}
+.iv-pager .pg-gap{min-width:16px;text-align:center;color:var(--muted)}
+.iv-pager .pg-info{margin-left:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.iv-cell.void{visibility:hidden}
 .item.eq:hover{border-color:var(--jade)}
 img.ic{object-fit:contain}
 .log{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px;max-height:168px;overflow:auto;font-size:13px}
@@ -263,6 +267,7 @@ body.panel .recipe .hd .ic{width:24px;height:24px}
 body.panel .recipe .btn{padding:6px 8px;font-size:12px}
 body.panel .pager{gap:3px;flex-wrap:nowrap}
 body.panel .pager button{min-width:20px;height:22px;padding:0 3px;font-size:11px}
+body.panel .iv-pager .pg-info{display:none}
 body.panel .sort-menu li{font-size:11px;padding:4px 7px}
 body.panel .tabs{position:sticky;top:0;background:var(--ink-2);z-index:1}
 html.strip,html.panel{height:100%}
@@ -327,10 +332,33 @@ img[src^="img/sk_"]{image-rendering:auto}   /* icon kỹ năng vẽ nét theo b�
 .iv-head{gap:6px} .iv-head .eyebrow{margin-right:auto}
 .iv-stone{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--parch);font-variant-numeric:tabular-nums}
 .iv-stone img{width:18px;height:18px}
-.sell-menu li{display:flex;justify-content:space-between;gap:14px}
-.sell-menu li small{color:var(--gold);font-variant-numeric:tabular-nums}
+.sell-btn{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px 0 7px;border:1px solid #6b5a2a;border-radius:4px;background:#2a2414;color:var(--gold);font-size:11.5px;font-weight:600;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.sell-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sell-btn:hover,.sell-btn.open{background:var(--gold);border-color:var(--gold);color:#1a1405}
+.sell-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sell-menu{min-width:270px;padding:0;overflow:hidden}
+.sell-menu li{display:flex;align-items:center;gap:8px}
+.sell-menu .bs-head{flex-wrap:wrap;gap:6px 8px;padding:8px 10px;background:#121a1d;border-bottom:1px solid var(--line);border-radius:0;cursor:default}
+.sell-menu .bs-head:hover{background:#121a1d}
+.sell-menu .bs-head b{width:100%;font-size:12px;color:var(--parch);letter-spacing:.04em}
+.bs-tg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.bs-tg button{padding:3px 8px;border:0;background:transparent;color:#b9c1bb;font-size:11px;cursor:pointer}
+.bs-tg button+button{border-left:1px solid var(--line)}
+.bs-tg button.on{background:#2a3a33;color:var(--parch)}
+.bs-ck{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:11px;color:#b9c1bb;cursor:pointer}
+.bs-ck input{margin:0;accent-color:var(--gold)}
+.sell-menu .bs-row{margin:2px 4px;padding:6px 8px}
+.bs-dots{display:inline-flex;gap:2px;width:30px}
+.bs-dots i{width:6px;height:6px;border-radius:50%}
+.bs-n{flex:1}
+.sell-menu li small{color:var(--muted);font-variant-numeric:tabular-nums}
+.sell-menu li small b{color:var(--gold);font-weight:600}
 .sell-menu li.armed{background:#3a1e14;color:#ffc0a0}
-.sell-menu li.off{opacity:.45;cursor:default} .sell-menu li.off small{color:var(--muted)}
+.sell-menu li.off{opacity:.45;cursor:default} .sell-menu li.off small b{color:var(--muted)}
+.sell-menu .bs-foot{padding:6px 10px;border-top:1px solid var(--line);border-radius:0;font-size:10.5px;color:var(--muted);white-space:normal;cursor:default}
+.sell-menu .bs-foot:hover{background:none}
+body.panel .sell-btn span{display:none}
+body.panel .sell-btn{padding:0 6px}
 .iv-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:calc(7 * 48px + 6 * 4px);overflow-y:auto;padding:2px;background:#0d0a08;border:1px solid #3b3127;scrollbar-width:thin}
 .iv-cell{position:relative;aspect-ratio:1;min-width:0;padding:3px;display:grid;place-items:center;background:var(--iron);border:2px solid #3e4247;box-shadow:inset 0 0 0 1px #0b0806;cursor:pointer}
 .iv-cell.empty{cursor:default;background:#14171a;border-color:#272b2f}
@@ -503,7 +531,7 @@ body.panel .rq .drops .cell{background:#1c2125;border-color:#4a4f55}
 .mp-boss{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;border-color:#8a3a8a !important;background-color:#150d18 !important}
 .mp-boss.cur{box-shadow:inset 0 0 0 2px #0b0806,0 0 0 2px rgba(200,80,200,.45)}
 .mp-bimg{width:96px;height:72px;display:grid;place-items:center;background:#0b0710;border:1px solid #3a1e3a}
-.mp-bimg img{width:96px;height:96px;margin-top:-18px;image-rendering:pixelated}
+.mp-bimg img{width:96px;height:96px;margin-top:-18px;} .mp-bimg img.px{image-rendering:pixelated}
 .mp-binfo p{margin:0} .mp-binfo .t{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#c08ac0}
 .mp-binfo .nm{font-family:var(--f-display);font-size:19px;font-weight:700;color:#f0c8f0}
 .mp-binfo .st{font-size:10.5px;color:#b8a6c4} .mp-binfo .pr{font-size:11px;font-weight:600} .mp-binfo .pr.ok{color:#9fe6a8} .mp-binfo .pr.bad{color:#ff9a88}
@@ -583,8 +611,8 @@ body.panel .rq .drops .cell{background:#1c2125;border-color:#4a4f55}
 @media (prefers-reduced-motion:reduce){.bt-go.ready{animation:none}}
 .bt-why{margin:0;font-size:10.5px;color:#8fd49a} .bt-why.bad{color:#ff8a70}
 /* màn hình kết quả */
-.bt-result{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(6,8,10,.72)}
-.bt-card{min-width:280px;max-width:340px;padding:14px 18px;text-align:center;background:#0f1a22;border:3px solid #8a6a3a;box-shadow:inset 0 0 0 2px #0b0806,0 0 0 1px #000,0 10px 30px rgba(0,0,0,.6);animation:bt-in .3s steps(3) both}
+.bt-result{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(6,8,10,.72);animation:bt-fade .25s ease-out both}
+.bt-card{min-width:280px;max-width:340px;padding:14px 18px;text-align:center;background:#0f1a22;border:3px solid #8a6a3a;box-shadow:inset 0 0 0 2px #0b0806,0 0 0 1px #000,0 10px 30px rgba(0,0,0,.6);animation:bt-in .38s cubic-bezier(.2,.9,.3,1.1) .05s both;will-change:transform,opacity}
 .bt-card p{margin:0}
 .bt-card .t{font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .bt-card.win .t{color:#e6fbff;text-shadow:0 0 10px rgba(127,227,224,.6)}
@@ -602,7 +630,9 @@ body.panel .rq .drops .cell{background:#1c2125;border-color:#4a4f55}
 .bt-card.lose .rw li{color:#e8c0b0} .bt-card.lose .rw b{color:#ff9a70}
 .bt-ok{margin-top:12px;padding:6px 22px;background:#2a2218;border:2px solid #8a6a3a;color:var(--parch);font-weight:700;letter-spacing:.08em}
 .bt-ok:hover{border-color:#b8925a}
-@keyframes bt-in{from{transform:scale(.85);opacity:0}}
+@keyframes bt-in{from{transform:translateY(8px) scale(.94);opacity:0}}
+@keyframes bt-fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.bt-result,.bt-card{animation-duration:.01s}}
 /* cửa sổ Tu luyện: cây và khung chi tiết vừa khít chiều cao, khung chi tiết tự cuộn khi dài */
 body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 body.panel .sk-side{max-height:calc(100vh - 192px);overflow-y:auto;scrollbar-width:thin}
@@ -898,7 +928,11 @@ async function act(path){
     const res = await api('POST', `/api/players/${S.id}/${path}`);
     setState(res.state);
     notifyHost('changed');
-    if (path === 'advance'){ playBreak(res.kind || 'good'); notifyHost('break', {kind: res.kind || 'good'}); }
+    if (path === 'advance'){                     // hiệu ứng chạy sau khi lần vẽ lại của setState đã xong, tránh khựng khung đầu
+      const k = res.kind || 'good';
+      requestAnimationFrame(() => requestAnimationFrame(() => playBreak(k)));
+      notifyHost('break', {kind: k});
+    }
   } catch(e){ localLog(e.message, 'bad'); ddErr = {msg: e.message, at: performance.now()}; }
   finally { busy = false; live(); }
 }
@@ -1073,14 +1107,20 @@ async function btStart(){
   try { btProc.res = await api('POST', `/api/players/${S.id}/advance`); } catch(e){ btProc.err = e.message; }
   const wait = btProc.dur - (performance.now() - btProc.t0); if (wait > 0) await sleep(wait);
   const {res, err} = btProc;
-  busy = false; btProc = null;
-  if (err){ localLog(err, 'bad'); renderReq(); $('btWhy').textContent = err; $('btWhy').className = 'bt-why bad'; return; }
+  btProc = null;
+  if (err){ busy = false; localLog(err, 'bad'); renderReq(); $('btWhy').textContent = err; $('btWhy').className = 'bt-why bad'; return; }
   btFx = {kind: res.kind, t0: performance.now()};
   const result = {kind: res.kind, msg: res.message || '', before, after: res.state};
-  setState(res.state);
-  // bảng kết quả hiện sau khi hoạt ảnh thành công (tia sáng ~2.6s) / thất bại (~1.4s) chạy xong
+  // bảng kết quả hiện sau khi hoạt ảnh thành công (tia sáng ~2.6s) / thất bại (~1.4s) chạy xong.
+  // Trạng thái mới (renderAll vẽ lại mọi tab — nặng) chỉ áp dụng lúc đó, không chen giữa hoạt ảnh gây giật;
+  // busy giữ tới lúc ấy để sync() định kỳ cũng không vẽ lại giữa chừng.
   const fx0 = btFx, win = ['gold', 'crit', 'good'].includes(res.kind);
-  setTimeout(() => { if (btFx === fx0 && !btProc){ btResult = result; renderReq(); } }, win ? 2600 : 1400);
+  setTimeout(() => {
+    busy = false;
+    setState(res.state);
+    // bảng hiện ở khung hình sau lần vẽ lại nặng, để hoạt ảnh xuất hiện chạy trọn từ đầu
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (btFx === fx0 && !btProc){ btResult = result; renderReq(); } }));
+  }, win ? 2600 : 1400);
   notifyHost('changed'); notifyHost('break', {kind: res.kind === 'crit' ? 'gold' : res.kind === 'major' ? 'bad' : res.kind});
 }
 
@@ -1197,8 +1237,22 @@ function initBreak(){
 }
 
 const pct = v => `+${Math.round(v)}%`;
-const GEAR_PER_PAGE = 20;
-let gearPage = 1;
+// hành trang chia trang: 6 cột × 7 hàng mỗi trang, thanh "‹ 1 2 3 ›" dưới lưới
+const BAG_PER_PAGE = 42;
+let bagPage = 0;
+/** Thanh phân trang: ‹ trước · số trang (rút gọn bằng … khi nhiều) · sau ›. cur bắt đầu từ 0. */
+function pagerHtml(cur, pages, attr){
+  const nums = [];
+  for (let p = 0; p < pages; p++){
+    if (pages <= 7 || p === 0 || p === pages - 1 || Math.abs(p - cur) <= 1) nums.push(p);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+  const btn = (p, label, dis, aria) => `<button type="button" ${attr}="${p}" ${dis ? 'disabled' : ''} aria-label="${aria}">${label}</button>`;
+  return btn(cur - 1, '‹', cur <= 0, 'Trang trước')
+    + nums.map(p => p === '…' ? '<span class="pg-gap">…</span>'
+      : `<button type="button" ${attr}="${p}" ${p === cur ? 'aria-current="page"' : ''} aria-label="Trang ${p + 1}">${p + 1}</button>`).join('')
+    + btn(cur + 1, '›', cur >= pages - 1, 'Trang sau');
+}
 // sắp xếp trang bị trong túi (nhớ lựa chọn trên máy này)
 const GEAR_SORTS = {
   slot: {name:'Loại', key: it => it.slot ? DATA.slots.findIndex(s => s.id === it.slot) : DATA.items.indexOf(it)},
@@ -1230,6 +1284,9 @@ const sellValue = it => it.sell || 0;
 const RAR_KEYS = ['common','uncommon','rare','epic','legendary'];
 const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
+// bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
+let bulkScope = 'all', bulkGear = true;
+try { bulkScope = localStorage.getItem('van-dao-bulk-scope') || 'all'; bulkGear = localStorage.getItem('van-dao-bulk-gear') !== '0'; } catch(e){}
 const canWear = it => (it.minRealm || 0) <= S.realm;
 const slotsFor = it => !it.slot ? [] : it.slot === 'ring' ? ['ring','ring2'] : [it.slot];
 function itemStats(it){ return STAT_KEYS.filter(([k]) => it[k]).map(([k, n, u]) => `${n} +${it[k]}${u}`); }
@@ -1311,8 +1368,13 @@ function renderInvInner(){
   const list = bagList();
   const cap = S.bagCap, used = S.bagUsed;
   const shown = invCat === 'all' ? Math.max(cap, list.length) : Math.max(30, Math.ceil(list.length / 6) * 6);
-  const cells = Array.from({length: shown}, (_, i) => {
-    const c = list[i];
+  const pages = Math.max(1, Math.ceil(shown / BAG_PER_PAGE));
+  if (invSel?.src === 'bag' && invSel._follow){ bagPage = Math.floor(invSel.idx / BAG_PER_PAGE); delete invSel._follow; }   // phím mũi tên đi qua trang khác
+  bagPage = Math.max(0, Math.min(pages - 1, bagPage));
+  const first = bagPage * BAG_PER_PAGE;
+  const cells = Array.from({length: BAG_PER_PAGE}, (_, j) => {
+    const i = first + j, c = list[i];
+    if (i >= shown) return '<div class="iv-cell empty void"></div>';            // giữ lưới đủ 7 hàng ở trang cuối
     if (!c) return `<div class="iv-cell empty ${invCat === 'all' && i >= cap ? 'over' : ''}"></div>`;
     const it = ITEM[c.k], isSel = invSel?.src === 'bag' && invSel.idx === i;
     return `<button class="iv-cell r-${it.rarity} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : (it.useQiSeconds || it.temperHp) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${reqLevel(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
@@ -1345,7 +1407,7 @@ function renderInvInner(){
       <div class="iv-head"><p class="eyebrow ${used >= cap ? 'full' : ''}">Hành trang ${used}/${cap} ô</p>
         <span class="iv-stone" data-tip="Linh thạch&#10;Bán trang bị để nhận thêm">${itemImg('linh_thach')}${fmt(S.inventory.linh_thach || 0)}</span>
         <div class="sort">
-          <button class="ib sm" id="sellBtn" aria-haspopup="menu" aria-expanded="${sellOpen}" aria-label="Bán hàng loạt" data-tip="Bán hàng loạt&#10;Bán hết trang bị trong hành trang theo độ hiếm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg></button>
+          <button class="sell-btn ${sellOpen ? 'open' : ''}" id="sellBtn" aria-haspopup="menu" aria-expanded="${sellOpen}" aria-label="Bán hàng loạt" data-tip="Bán hàng loạt&#10;Bán trang bị theo độ hiếm · cả hành trang hoặc trang đang xem"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg><span>Bán hàng loạt</span></button>
           <ul class="sort-menu sell-menu" role="menu" aria-label="Bán hàng loạt" ${sellOpen ? '' : 'hidden'}>${bulkSellRows()}</ul>
         </div>
         <button class="ib sm" id="arrangeBtn" aria-label="Tự xếp" data-tip="Tự xếp&#10;Về danh mục Tất cả, xếp theo loại · phím A"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 17h6M17 14v6"/></svg></button>
@@ -1354,21 +1416,38 @@ function renderInvInner(){
           <ul class="sort-menu" role="listbox" aria-label="Sắp xếp hành trang" ${sortOpen ? '' : 'hidden'}>${Object.entries(GEAR_SORTS).map(([k, v]) => `<li role="option" data-sort="${k}" tabindex="0" aria-selected="${k === gearSort}">${v.name}</li>`).join('')}</ul>
         </div></div>
       <div class="iv-grid" id="ivGrid">${cells}</div>
+      <nav class="pager iv-pager" aria-label="Trang hành trang">${pagerHtml(bagPage, pages, 'data-bagpage')}<span class="pg-info">Trang ${bagPage + 1}/${pages}</span></nav>
     </section>
   </div>`;
   liveInv();
 }
+/** Các món nằm trong phạm vi bán hàng loạt: {id: số lượng} (cả hành trang hoặc các ô ở trang đang xem). */
+function bulkPool(){
+  const pool = {};
+  if (bulkScope === 'page'){
+    const first = bagPage * BAG_PER_PAGE;
+    for (const c of bagList().slice(first, first + BAG_PER_PAGE)) pool[c.k] = (pool[c.k] || 0) + c.n;
+  } else for (const [k, c] of Object.entries(S.inventory)) if (c > 0) pool[k] = c;
+  for (const k of Object.keys(pool)){ const it = ITEM[k]; if (!it?.sell || (bulkGear && !it.slot)) delete pool[k]; }
+  return pool;
+}
 function bulkSellRows(){
-  const rows = [];
+  const pool = bulkPool(), rows = [];
+  const tg = (attr, val, on, label) => `<button type="button" ${attr}="${val}" aria-pressed="${on}" class="${on ? 'on' : ''}">${label}</button>`;
+  rows.push(`<li class="bs-head" role="presentation"><b>Bán hàng loạt</b>
+    <div class="bs-tg" role="group" aria-label="Phạm vi">${tg('data-bulkscope', 'all', bulkScope === 'all', 'Cả hành trang')}${tg('data-bulkscope', 'page', bulkScope === 'page', `Trang ${bagPage + 1}`)}</div>
+    <label class="bs-ck"><input type="checkbox" data-bulkgear ${bulkGear ? 'checked' : ''}> Chỉ trang bị</label></li>`);
   for (let m = 0; m < 4; m++){
     let n = 0, gain = 0;
-    for (const [k, c] of Object.entries(S.inventory)){
-      const it = ITEM[k]; if (!it?.sell || c <= 0 || RAR_KEYS.indexOf(it.rarity) > m) continue;
-      n += c; gain += it.sell * c;
-    }
+    for (const [k, c] of Object.entries(pool)){ if (RAR_KEYS.indexOf(ITEM[k].rarity) > m) continue; n += c; gain += ITEM[k].sell * c; }
     const armed = bulkArm && bulkArm.m === m && Date.now() - bulkArm.t < 3000;
-    rows.push(`<li role="menuitem" tabindex="0" data-sellmax="${m}" class="${n ? '' : 'off'} ${armed ? 'armed' : ''}">${armed ? 'Bấm lần nữa để bán' : m ? RARITY[RAR_KEYS[m]].n + ' trở xuống' : 'Chỉ ' + RARITY.common.n}<small>${n ? `${n} món · +${fmt(gain)}` : 'không có'}</small></li>`);
+    const dots = RAR_KEYS.slice(0, m + 1).map(r => `<i style="background:${RARITY[r].c}"></i>`).join('');
+    const label = m ? `${RARITY[RAR_KEYS[m]].n} trở xuống` : `Chỉ ${RARITY.common.n}`;
+    rows.push(`<li role="menuitem" tabindex="0" data-sellmax="${m}" class="bs-row ${n ? '' : 'off'} ${armed ? 'armed' : ''}">
+      <span class="bs-dots">${dots}</span><span class="bs-n" style="color:${n && !armed ? RARITY[RAR_KEYS[m]].c : ''}">${armed ? 'Bấm lần nữa để bán' : label}</span>
+      <small>${n ? `${n} món · <b>+${fmt(gain)}</b>` : 'không có'}</small></li>`);
   }
+  rows.push(`<li class="bs-foot" role="presentation">Không bán đồ đang mặc · từ ${RARITY.rare.n} trở lên bấm 2 lần để xác nhận</li>`);
   return rows.join('');
 }
 /** Thẻ chi tiết vật phẩm (giấy da) hiện trong tooltip khi rê chuột: chỉ số, yêu cầu, giá bán, so sánh với đồ đang mặc. */
@@ -1424,7 +1503,7 @@ function invDo(action){
   else if (action === 'sort'){ sortOpen = !sortOpen; hideTip(); renderInv(); }
   else if (action === 'arrange'){ setCat('all'); gearSort = 'slot'; try { localStorage.setItem('van-dao-gear-sort', 'slot'); } catch(e){} renderInv(); $('ivGrid') && ($('ivGrid').scrollTop = 0); }
 }
-function setCat(c){ invCat = c; invSel = invSel?.src === 'slot' ? invSel : null; try { localStorage.setItem('van-dao-inv-cat', c); } catch(e){} renderInv(); }
+function setCat(c){ invCat = c; bagPage = 0; invSel = invSel?.src === 'slot' ? invSel : null; try { localStorage.setItem('van-dao-inv-cat', c); } catch(e){} renderInv(); }
 function initInventory(){
   const pane = $('pane-inv');
   let lastTap = {key:'', t:0};
@@ -1437,17 +1516,25 @@ function initInventory(){
     if (e.target.closest('#sortBtn')){ sortOpen = !sortOpen; sellOpen = false; hideTip(); renderInv(); return; }
     if (e.target.closest('[data-goskill]')){ const sl = e.target.closest('[data-slot]'); if (sl && S.skillSlots[+sl.dataset.slot]) skSel = S.skillSlots[+sl.dataset.slot]; skEl = 'hoa'; openTab('skill'); return; }
     if (e.target.closest('#arrangeBtn')){ hideTip(); invDo('arrange'); return; }
-    if (e.target.closest('#sellBtn')){ sellOpen = !sellOpen; sortOpen = false; hideTip(); renderInv(); return; }
+    if (e.target.closest('#sellBtn')){ sellOpen = !sellOpen; sortOpen = false; bulkArm = null; hideTip(); renderInv(); return; }
+    const bsc = e.target.closest('[data-bulkscope]');
+    if (bsc){ bulkScope = bsc.dataset.bulkscope; bulkArm = null; try { localStorage.setItem('van-dao-bulk-scope', bulkScope); } catch(err){} renderInv(); return; }
+    const bge = e.target.closest('[data-bulkgear]');
+    if (bge){ bulkGear = bge.checked; bulkArm = null; try { localStorage.setItem('van-dao-bulk-gear', bulkGear ? '1' : '0'); } catch(err){} renderInv(); return; }
+    if (e.target.closest('.bs-head,.bs-foot')) return;
     const sm = e.target.closest('[data-sellmax]');
     if (sm){
       const m = +sm.dataset.sellmax;
       if (sm.classList.contains('off')) return;
       // gồm cả đồ Bảo phẩm trở lên: bấm hai lần để tránh bán nhầm
       if (m >= 2 && !(bulkArm && bulkArm.m === m && Date.now() - bulkArm.t < 3000)){ bulkArm = {m, t: Date.now()}; renderInv(); return; }
-      bulkArm = null; sellOpen = false; act('sell-bulk?max=' + m); return;
+      bulkArm = null; sellOpen = false;
+      const q = `sell-bulk?max=${m}&gear=${bulkGear}` + (bulkScope === 'page' ? '&items=' + encodeURIComponent(Object.entries(bulkPool()).map(([k, c]) => k + ':' + c).join(',')) : '');
+      act(q); return;
     }
     const so = e.target.closest('[data-sort]'); if (so){ pickSort(so.dataset.sort); return; }
     const ca = e.target.closest('[data-cat]'); if (ca){ setCat(ca.dataset.cat); return; }
+    const pg = e.target.closest('[data-bagpage]'); if (pg){ if (!pg.disabled){ bagPage = +pg.dataset.bagpage; renderInv(); } return; }
     const ac = e.target.closest('[data-act]'); if (ac){ if (!ac.disabled) invDo(ac.dataset.act); return; }
     // nhấp đúp tự nhận diện vì mỗi lần nhấp vẽ lại ô (sự kiện dblclick gốc bị mất khi phần tử bị thay)
     const cell = e.target.closest('.iv-cell[data-k]'), slot = e.target.closest('.iv-slot.has');
@@ -1517,9 +1604,10 @@ function initInventory(){
       let i = invSel?.src === 'bag' ? invSel.idx : -1;
       i += {arrowleft:-1, arrowright:1, arrowup:-6, arrowdown:6}[k];
       i = Math.max(0, Math.min(list.length - 1, i));
-      invSel = {src:'bag', k: list[i].k, idx: i}; renderInv();
+      invSel = {src:'bag', k: list[i].k, idx: i, _follow: true}; renderInv();
       pane.querySelector(`.iv-cell[data-idx="${i}"]`)?.scrollIntoView({block:'nearest'});
     }
+    if (k === 'pageup' || k === 'pagedown'){ e.preventDefault(); bagPage += k === 'pagedown' ? 1 : -1; renderInv(); }
   });
 }
 
@@ -1762,7 +1850,7 @@ function renderMap(){
       <div class="mp-key" data-tip="${itemTip(m.keyItem)}">${itemImg(m.keyItem)}<span>${ITEM[m.keyItem].name}</span><b>× ${keyN}</b></div></header>
     <div class="mp-grid">${m.areas.slice(0, DATA.areas).map(tile).join('')}</div>
     <div class="mp-boss ${m.area > DATA.areas ? 'cur' : ''}">
-      <div class="mp-bimg"><img class="px" src="${r.bossImage.replace('.png', '_48.png')}" alt=""></div>
+      <div class="mp-bimg"><img src="${r.bossImage.replace('.png', '_hd.png')}" onerror="this.onerror=null;this.className='px';this.src=this.src.replace('_hd.png','_48.png')" alt=""></div>
       <div class="mp-binfo"><p class="t">Ải ${R}-${DATA.areas + 1} · Boss</p><p class="nm">${r.boss}</p>
         <p class="st">${r.bossLair} · máu ${fmt(boss.hp)} · công ${fmt(boss.atk)} · thủ ${fmt(boss.def)}</p>
         <p class="pr ${boss.win ? 'ok' : 'bad'}">${boss.win ? `Dự đoán: thắng sau ${boss.hits} đòn` : 'Dự đoán: thua, cần tu luyện và trang bị thêm'}</p></div>
@@ -1826,7 +1914,7 @@ const skBasicId = () => (S.skillSlots && S.skillSlots[0]) || 'hoa_cau';
 function skSlotsHtml(cls = ''){
   return SLOT_IDX.map(i => {
     const id = i === 0 ? skBasicId() : (S.skillSlots || [])[1], s = id && skById(id), pick = skPick && fitsSlot(skById(skPick), i);
-    const tip = s ? `${SLOT_NAMES[i]}: ${s.name}${i ? ` · Lv. ${skLv(id)} · tung khi đủ ${RAGE_MAX} nộ` : ` · mỗi lượt, +${RAGE_HIT} nộ`}&#10;${s.effect}` : `${SLOT_NAMES[i]}: trống&#10;Chọn một kỹ năng chủ động đã lĩnh ngộ (tung khi đủ ${RAGE_MAX} nộ)`;
+    const tip = s ? `${SLOT_NAMES[i]}: ${s.name}${i ? ` · Lv. ${skLv(id)}` : ` · mỗi lượt`}&#10;${s.effect}` : `${SLOT_NAMES[i]}: trống&#10;Chọn một kỹ năng chủ động đã lĩnh ngộ`;
     return `<button class="sk-slot ${i === 1 ? 'ult' : ''} ${s ? 'has' : ''} ${pick ? 'pick' : ''} ${cls}" data-slot="${i}" data-tip="${tip}" ${s && i ? `draggable="true" data-slotsk="${id}"` : ''}>
       ${s ? `<img src="${skIcon(s)}" alt="">` : `<span class="emp">★</span>`}<small>${SLOT_NAMES[i]}</small></button>`;
   }).join('');
@@ -1928,19 +2016,17 @@ function skTipHtml(s){
       <dl class="sk-dl">
         <dt>Loại</dt><dd>${SK_TYPE[tree]}${s.category === 'Tuyệt kỹ' ? ' (tối thượng)' : ''}</dd>
         <dt>Hệ</dt><dd>${el.name}</dd>
-        ${s.code ? `<dt>Skill ID</dt><dd class="id">${s.code}</dd>` : ''}
-        <dt>Animation ID</dt><dd class="id">${s.animId || 'NONE'}</dd>
         ${isBasic ? '' : `<dt>Cấp</dt><dd>${lv} / ${s.maxLv}</dd><dt>Cảnh giới</dt><dd class="${S.realm < s.minRealm ? 'bad' : ''}">${realmName(s.minRealm)}</dd>`}
         ${s.qiCost ? `<dt>Linh khí</dt><dd>${Math.round(s.qiCost * (1 - Math.min(60, qiCut) / 100))}${qiCut ? ` <i>(−${pct1(qiCut)})</i>` : ''}</dd>` : ''}
-        ${isBasic ? `<dt>Thi triển</dt><dd>Mỗi lượt · +${RAGE_HIT} nộ</dd>` : tree === 'active' ? `<dt>Nộ</dt><dd>${RAGE_MAX} (${RAGE_HITS} đòn thường)</dd>` : ''}
-        ${s.dmgBase ? `<dt>Sát thương</dt><dd>${isBasic ? s.dmgBase : dmg(Math.max(1, lv))}% linh lực</dd>` : ''}
+        ${isBasic ? `<dt>Thi triển</dt><dd>Mỗi lượt</dd>` : ''}
+        ${s.dmgBase ? `<dt>Sát thương</dt><dd>${isBasic ? s.dmgBase : dmg(Math.max(1, lv))}% tấn công</dd>` : ''}
         ${isBasic && s.crit ? `<dt>Chí mạng</dt><dd>+${s.crit}%</dd>` : ''}
         ${range ? `<dt>Tầm đánh</dt><dd>${range}</dd>` : ''}${s.area ? `<dt>Phạm vi</dt><dd>${s.area}</dd>` : ''}
       </dl>
       <p class="sk-eff">“${s.effect}”</p>
       ${s.id === 'hoa_cau' ? `<p class="sk-note">Biến thể theo cảnh giới: <b>${HC_TIER_NAME[Math.min(2, S.realm)]}</b></p>` : ''}
       ${pass.length ? `<p class="sk-sec">Hiệu quả bị động</p><ul class="sk-pass">${pass.map(([n, v, nx]) => `<li>${n} <b>+${pct1(v)}</b>${!st.max ? `<i>→ +${pct1(nx)}</i>` : ''}</li>`).join('')}</ul>` : ''}
-      ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: mỗi đòn thường tích ${RAGE_HIT} nộ, đủ ${RAGE_MAX} nộ thì lượt sau tung chiêu thay cho đòn thường (${RAGE_HITS} đòn thường → 1 chiêu), mỗi lần ${dmg(lv)}% linh lực${!st.max ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
+      ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: mỗi lần thi triển ${dmg(lv)}% tấn công${!st.max && dmg(next) !== dmg(lv) ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
       ${!isBasic && !st.max ? `<p class="sk-sec">${lv ? `Nâng cấp Lv. ${lv} → ${next}` : 'Yêu cầu lĩnh ngộ'}</p>
         <ul class="sk-reqs">${st.reqs.map(r => `<li class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓' : '✗'} ${r.t}</li>`).join('')}</ul>` : ''}
       ${isBasic ? `<p class="sk-note">${skBasicId() === s.id ? 'Đang dùng làm đòn đánh thường.' : 'Bấm để dùng làm đòn đánh thường.'}</p>` : ''}
@@ -2002,7 +2088,7 @@ function hcRef(g, img, i, a, px, py, k, alpha = 1){              // vẽ khung i
   g.globalAlpha = 1;
 }
 function hcPreview(g, now, hero, mon, P){
-  const ref = skImg(HC_REF.src), wolf = skImg('img/yeu_lang.png') || mon, tier = Math.min(2, S.realm), t = now / 1000;   // đòn thường: biến thể theo cảnh giới
+  const ref = skImg(HC_REF.src), wolf = skImg('img/quai_yeu_lang.png') || mon, tier = Math.min(2, S.realm), t = now / 1000;   // đòn thường: biến thể theo cảnh giới
   
   const total = HC.phases.reduce((a, p) => a + p[1], 0) + HC.rest, e = t % total, ph = hcAt(e);
   const name = ph ? ph.name : 'rest', k = ph ? ph.k : 0, ease = x => x * x * (3 - 2 * x);
@@ -2062,7 +2148,7 @@ function skFrame(now){
   g.clearRect(0, 0, 120, 60);
   g.fillStyle = '#0d0a08'; g.fillRect(0, 0, 120, 60);
   for (let x = 0; x < 120; x++) P(x, 52, '#2a221a'), P(x, 53, '#1a140f');
-  const hero = skImg(realm().hero.replace('.png', '_48.png')), mon = skImg('img/yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
+  const hero = skImg(realm().hero.replace('.png', '_48.png')), mon = skImg('img/quai_yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
   if (open && s.id === 'hoa_cau'){ hcPreview(g, now - skAnimT0, hero, mon, P); return; }
   if (open && SK_FX_ROW[s.id] !== undefined){ skFlip(g, now - skAnimT0, s); return; }
   if (open && s.category === 'Bị động'){ skPassiveFx(g, now, s); return; }
@@ -2347,6 +2433,23 @@ function sprite48(src){                       // img/hero_luyenkhi.png → img/h
   }
   return o.im.complete && o.im.naturalWidth ? o : null;
 }
+// quái bản nét (img/x.png → img/x_hd.png, 240×240 cùng bố cục với _48): vẽ ở độ phân giải thật như tu sĩ,
+// không phóng to từ lưới pixel. Chưa có / lỗi tải → dùng sprite pixel cũ.
+const imgHD = {};
+function monHD(src){
+  const s = src.replace(/\.png$/, '_hd.png');
+  if (!imgHD[s]){ const im = new Image(); const o = imgHD[s] = {im, flash:null, burn:null, bad:false}; im.onerror = () => { o.bad = true; }; im.src = s; }
+  const o = imgHD[s];
+  if (o.bad || !o.im.complete || !o.im.naturalWidth) return null;
+  if (!o.flash){
+    const tint = f => { const c = document.createElement('canvas'); c.width = o.im.naturalWidth; c.height = o.im.naturalHeight;
+      const x = c.getContext('2d'); x.drawImage(o.im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+      for (let i = 0; i < a.length; i += 4) if (a[i+3]) f(a, i); x.putImageData(d, 0, 0); return c; };
+    o.flash = tint((a, i) => { if (a[i] + a[i+1] + a[i+2] > 60){ a[i] += (255-a[i])*.55; a[i+1] += (255-a[i+1])*.55; a[i+2] += (255-a[i+2])*.55; } });
+    o.burn = tint((a, i) => { a[i] += (255-a[i])*.28; a[i+1] += (90-a[i+1])*.28; a[i+2] += (30-a[i+2])*.28; });
+  }
+  return o;
+}
 // lưới pixel: chiều cao cố định, chiều ngang theo tỉ lệ khung
 function pixGrid(){
   const h = MODE === 'strip' ? 64 : 320;
@@ -2444,6 +2547,106 @@ function pslash(cx, cy, r, a0, a1, prog, fade){
     }
   }
 }
+// ---- đòn phản công của quái: mỗi loài một kiểu ----
+// k: 0→1 trong pha phản đòn (trúng đích ở k≈.32, ứng với s=.85). Trả về vị trí quái + màu hiệu ứng khi trúng;
+// hiệu ứng phụ (đạn, vệt, khói) đẩy vào o.fxAfter để vẽ sau sprite.
+const MON_STYLE = {quai_yeu_lang:'pounce', boss_huyet_giao:'pounce', quai_doc_xa:'spit', quai_thach_quy:'slam',
+  quai_hoa_ho:'foxfire', boss_kim_o:'foxfire', quai_bang_lang:'frost', quai_thiet_trung:'charge', quai_cot_khuyen:'blink', boss_hac_lan:'foxfire'};
+const monStyleOf = src => MON_STYLE[(src || '').replace(/^.*\/|\.png$/g, '')] || 'pounce';
+const HIT = .32, lerp = (a, b, k) => a + (b - a) * k, clamp01 = k => Math.max(0, Math.min(1, k));
+function pline(x0, y0, x1, y1, col, w = 1){                       // đoạn thẳng pixel
+  const n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+  for (let j = 0; j <= n; j++){ const x = lerp(x0, x1, j / n), y = lerp(y0, y1, j / n); for (let d = 0; d < w; d++) P(x, y + d, col); }
+}
+function pblob(x, y, r, c1, c2){                                  // cục tròn 2 màu (đạn, cầu lửa)
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++){ const d = dx*dx + dy*dy; if (d <= r*r) P(x + dx, y + dy, d <= (r-1)*(r-1) ? c2 : c1); }
+}
+function monAttack(style, k, o){
+  const {g, sz, U, t} = o, fx = fn => o.fxAfter.push(fn);
+  const big = Math.max(0, Math.round((sz - 48 * o.u) / 2));                      // Boss to gấp đôi: dừng xa hơn, miệng cao hơn
+  const heroX = o.heroX + big, wolfX = o.wolfX;               // heroX: mốc dừng khi áp sát (lùi ra theo cỡ quái)
+  const chest = [o.heroX + U(6), g - U(24)], mouth = [wolfX - U(16) - big, g - U(22) - big];
+  switch (style){
+    case 'spit': {                                                 // rắn độc: ngóc lên, phun nọc xanh
+      const back = clamp01(k / .2);
+      const r = {wx: Math.round(wolfX + U(4) * Math.sin(back * Math.PI / 2) * (k < HIT ? 1 : 1 - clamp01((k - HIT) / .3))), wy: -Math.round(U(3) * Math.sin(clamp01(k / HIT) * Math.PI)),
+        numCol: '#a6e868', sparks: ['#7ad04a', '#c8f080', '#3e8a2a'], nSparks: 12, label: 'Trúng độc'};
+      if (k >= .18 && k < HIT){ const q = (k - .18) / (HIT - .18);
+        fx(() => { const x = lerp(mouth[0], chest[0], q), y = lerp(mouth[1], chest[1], q) - Math.sin(q * Math.PI) * U(6);
+          pblob(x, y, Math.max(1, U(2)), '#3e8a2a', '#9be05a'); P(x + U(3), y + 1, '#7ad04a'); P(x + U(5), y, '#3e8a2a'); }); }
+      if (k >= HIT && k < .7) fx(() => { const q = (k - HIT) / .38;                                   // nọc nhỏ giọt trên người
+        for (let n = 0; n < 4; n++) P(chest[0] - U(4) + n * U(3), chest[1] + U(2) + q * U(10) * ((n % 2) + 1), n % 2 ? '#7ad04a' : '#3e8a2a'); });
+      return r;
+    }
+    case 'slam': {                                                 // rùa đá: nhảy lên dậm đất, đá vỡ chạy tới
+      const up = k < .2 ? Math.sin(k / .2 * Math.PI / 2) : k < .27 ? 1 - (k - .2) / .07 : 0;
+      const r = {wy: -Math.round(U(12) * up), wx: k >= .27 && k < .35 ? wolfX + (Math.floor(t * 40) % 2 ? 1 : -1) : wolfX,
+        knock: 3, numCol: '#e0b878', sparks: ['#8a6a48', '#b89060', '#5a4632'], nSparks: 12, spread: 70};
+      if (k >= .27 && k < .6) fx(() => { const q = clamp01((k - .27) / (HIT - .27 + .02));
+        const x1 = lerp(wolfX - U(12), heroX + U(4), q);
+        for (let x = wolfX - U(12); x >= x1; x -= U(3)){ const h = Math.round(U(2) + (Math.sin(x * 1.7) + 1) * U(2)) * (1 - clamp01((k - HIT) / .28));
+          for (let y = 0; y < h; y++) P(x, g - y, y === h - 1 ? '#b89060' : '#6a5038'); } });
+      return r;
+    }
+    case 'foxfire': {                                              // hồ lửa: bật nhẹ, phóng 3 quả hồ hỏa vòng cung
+      const r = {wy: -Math.round(U(4) * Math.sin(clamp01(k / .25) * Math.PI)), numCol: '#ffb060', sparks: FIRE.slice(2), nSparks: 14, label: 'Hồ hỏa'};
+      for (let n = 0; n < 3; n++){ const k0 = .04 + n * .07, q = (k - k0) / (HIT - k0 + n * .04);
+        if (q >= 0 && q < 1) fx(() => { const x = lerp(wolfX - U(10), chest[0], q), y = lerp(g - U(30), chest[1], q) - Math.sin(q * Math.PI) * U(14 + n * 4);
+          pblob(x, y, Math.max(1, U(2)), FIRE[2], FIRE[4]); P(x + U(3), y + 1, FIRE[3]); P(x + U(5), y + 2, FIRE[1]); }); }
+      return r;
+    }
+    case 'frost': {                                                // sói băng: lao thẳng như tên, để lại vệt băng
+      const go = k < HIT ? ease(k / HIT) : 1 - ease(clamp01((k - HIT) / .5));
+      const x = Math.round(lerp(wolfX, heroX + U(24), go));
+      const r = {wx: x, wy: 0, numCol: '#bfe8ff', sparks: ['#ffffff', '#bfe8ff', '#6cc0e8'], nSparks: 16, spread: 60, label: 'Băng hàn'};
+      if (k < .75) fx(() => { const fade = 1 - clamp01((k - HIT) / .4);
+        for (let xx = x + U(10); xx < wolfX + U(8); xx += U(4)) if (Math.random() < .6 * fade + .2) P(xx, g - 1 - (xx % 3), xx % 2 ? '#bfe8ff' : '#6cc0e8'); });
+      if (k >= HIT && k < .55) fx(() => { const q = (k - HIT) / .23;                                  // gai băng bung ra
+        for (let n = 0; n < 6; n++){ const a = -Math.PI / 2 + (n - 2.5) * .45, L = U(4) + q * U(8);
+          pline(chest[0], chest[1], chest[0] + Math.cos(a) * L, chest[1] + Math.sin(a) * L, n % 2 ? '#ffffff' : '#9fd8f8'); } });
+      return r;
+    }
+    case 'charge': {                                               // bọ sắt: lùi lấy đà, húc thẳng sát đất
+      const go = k < .12 ? -clamp01(k / .12) * .15 : k < HIT ? ease((k - .12) / (HIT - .12)) : 1 - ease(clamp01((k - HIT) / .5));
+      const shakeX = k < .12 && Math.floor(t * 40) % 2 ? 1 : 0;
+      const r = {wx: Math.round(lerp(wolfX, heroX + U(20), go)) + shakeX, wy: 0, knock: 5, numCol: '#ffe080', sparks: ['#ffffff', '#ffe080', '#c0c0c0', '#e8a040'], nSparks: 18, spread: 90};
+      if (k >= .12 && k < HIT + .05 && Math.random() < .7)
+        pfx.push({type:'dust', x: r.wx + U(10), y: g - 1, vx: 20 + Math.random() * 20, vy: -6, life: 0, max: .45});
+      return r;
+    }
+    case 'blink': {                                                // chó xương: tan vào khói, hiện ra sát bên cắn
+      let wx = wolfX, wAlpha = 1;
+      if (k < .12) wAlpha = 1 - k / .12;
+      else if (k < HIT){ wx = heroX + U(22); wAlpha = (k - .12) / (HIT - .12); }
+      else if (k < .6){ wx = heroX + U(22) - (k < .42 ? U(3) : 0); }
+      else if (k < .78){ wx = heroX + U(22); wAlpha = 1 - (k - .6) / .18; }
+      else wAlpha = (k - .78) / .22;
+      const smoke = (cx) => fx(() => { for (let n = 0; n < 14; n++){ const a = n * 2.4 + t * 3, rr = U(6) + (n % 4) * U(3);
+        P(cx + Math.cos(a) * rr, g - U(14) + Math.sin(a) * rr * .7 - (t * 20 + n * 3) % U(10), n % 3 ? '#3a2d4a' : '#7a6a96'); } });
+      if (k < .2 || k > .7) smoke(wolfX);
+      if (k > .05 && k < .4) smoke(heroX + U(22));
+      return {wx: Math.round(wx), wy: 0, wAlpha: Math.max(.05, Math.min(1, wAlpha)), numCol: '#c8b8f0', sparks: ['#7a6a96', '#d8d0c0', '#3a2d4a'], nSparks: 10, label: 'Cắn xé'};
+    }
+    case 'breath': {                                               // xà vương: ngóc đầu, phun luồng hắc khí
+      const r = {wy: -Math.round(U(4) * Math.sin(clamp01(k / .5) * Math.PI)), wx: wolfX + Math.round(U(2) * clamp01(k / .15)),
+        knock: 4, numCol: '#d8a0ff', sparks: ['#8040c0', '#d8a0ff', '#301848'], nSparks: 16, spread: 60, label: 'Hắc khí'};
+      if (k >= .14 && k < .62) fx(() => { const q = clamp01((k - .14) / (HIT - .14)), fade = 1 - clamp01((k - HIT) / .3);
+        const x0 = mouth[0], y0 = g - sz + U(16), x1 = lerp(x0, chest[0], q);
+        for (let x = x0; x >= x1; x -= 1){ const p = (x0 - x) / Math.max(1, x0 - chest[0]), y = lerp(y0, chest[1], p), wv = Math.sin(x * .6 + t * 30);
+          const w = Math.max(1, Math.round((U(2) + p * U(3)) * fade));
+          for (let d = -w; d <= w; d++) if (Math.random() < .85) P(x, y + d + wv, Math.abs(d) < w * .4 ? '#d8a0ff' : d % 2 ? '#8040c0' : '#301848'); } });
+      return r;
+    }
+    default: {                                                     // vồ: nhảy vòng cung, cào 3 vệt
+      const r = {wx: Math.round(wolfX - (wolfX - heroX - U(26)) * Math.sin(k * Math.PI)), wy: -Math.round(U(5) * Math.sin(k * Math.PI)),
+        sparks: [PX.red, '#ff8070'], nSparks: 10};
+      if (k >= HIT && k < .6) fx(() => { const q = clamp01((k - HIT) / .12), fade = k < .5;
+        for (let n = 0; n < 3; n++){ const x0 = chest[0] - U(5) + n * U(4), y0 = chest[1] - U(8);
+          pline(x0 + U(4), y0, lerp(x0 + U(4), x0 - U(3), q), lerp(y0, y0 + U(14), q), fade ? '#ff6050' : PX.red2); } });
+      return r;
+    }
+  }
+}
 function pring(cx, cy, rx, ry, col, dotted){
   for (let a = 0; a < 360; a += 3){
     if (dotted && Math.floor(a/15) % 2) continue;
@@ -2523,7 +2726,7 @@ function drawPixelBattle(t, dt, ph, r){
   const key = w + 'x' + h;
   if (pixKey !== key){ pixLayers = buildPixLayers(w, h); pixKey = key; }
   const L = pixLayers, g = L.g, b = S.battle;
-  const hero = sprite48(realm().hero), mon = sprite48(b.image);
+  const hero = sprite48(realm().hero), mon = sprite48(b.image), monHi = monHD(b.image);
   if (!hero || !mon) return false;
   pctx.imageSmoothingEnabled = false;
 
@@ -2539,8 +2742,11 @@ function drawPixelBattle(t, dt, ph, r){
 
   // ---- vị trí ----
   const sz = SPR(), u = sz/48, hs = sz/2, U = v => Math.max(1, Math.round(v*u));
-  const heroX = Math.round(w*.27), wolfX = Math.round(w*.70), strikeX = wolfX - U(30);
+  // ải Boss: Boss to gấp đôi quái thường (msz = ô sprite của quái, đáy vẫn chạm đất)
+  const isBoss = /\/boss_/.test(b.image), ms = isBoss ? 2 : 1, msz = sz * ms, mhs = msz / 2;
+  const heroX = Math.round(w*.27), wolfX = Math.round(w*(isBoss ? .72 : .70)), strikeX = wolfX - U(30) - (msz - sz) / 2;
   let hx = heroX, hy = 0, wx = null, wy = 0, wFlash = false, hFlash = false, wAlpha = 1, hAlpha = 1, sword = null;
+  const fxAfter = [];                                                                 // hiệu ứng đòn quái vẽ đè lên sprite
   const dealt = n => Math.min(b.monsterHp, n * b.heroDmg);
   // máu sau mỗi lượt do server mô phỏng (đã tính chiêu thức trong ô, khiên, khống, né)
   const heroMax = b.heroHp || S.stats.hp;
@@ -2556,7 +2762,7 @@ function drawPixelBattle(t, dt, ph, r){
     hy = reduce ? 0 : -(Math.floor(t*8) % 2);
     if (!reduce && Math.random() < dt*6) pfx.push({type:'dust', x: hx - U(4) + Math.random()*U(8), y: g - 1, vx: -12 - Math.random()*10, vy: -4, life: 0, max: .5});
   } else if (ph.name === 'enter'){
-    wx = Math.round(w + hs + 2 - (w + hs + 2 - wolfX) * ease(ph.k));
+    wx = Math.round(w + mhs + 2 - (w + mhs + 2 - wolfX) * ease(ph.k));
     wy = reduce ? 0 : -(Math.floor(ph.k*10) % 2);
     sword = 'ready';
   } else if (ph.name === 'fight'){
@@ -2571,15 +2777,15 @@ function drawPixelBattle(t, dt, ph, r){
     if (burnNow && s >= .62){
       const bk = ph.trip + ':burn' + i;
       if (!battleDone[bk]){ battleDone[bk] = 1;
-        pfx.push({type:'num', x: wolfX + U(12), y: g - sz + (MODE === 'strip' ? 2 : 6), text: '-' + b.burn, col: '#ff7a28', life: 0, max: .9});
-        if (MODE !== 'strip') pfx.push({type:'label', x: wolfX + U(12), y: g - sz + 22, text: 'Thiêu đốt', col: '#ff9a50', life: 0, max: .9});
+        pfx.push({type:'num', x: wolfX + U(12), y: g - msz + (MODE === 'strip' ? 2 : 6), text: '-' + b.burn, col: '#ff7a28', life: 0, max: .9});
+        if (MODE !== 'strip') pfx.push({type:'label', x: wolfX + U(12), y: g - msz + 22, text: 'Thiêu đốt', col: '#ff9a50', life: 0, max: .9});
       }
     }
     castsNow.forEach((c, n) => {                                                        // tên chiêu (xếp chồng) + sát thương chiêu
       const ck = ph.trip + ':c' + i + c.skill;
       if (s >= .05 + n * .12 && !battleDone[ck]){ battleDone[ck] = 1; pfx.push({type:'label', x: heroX + (MODE === 'strip' ? U(6) : 0), y: g - sz - (MODE === 'strip' ? 2 : 14) - n * (MODE === 'strip' ? 7 : 14), text: c.name, col: '#f8d25a', life: 0, max: 1.1}); }
       const dk = ck + 'd';                                                              // Hỏa Cầu: số gộp vào đòn đánh (cùng một quả cầu)
-      if (c.dmg > 0 && s >= .45 && !battleDone[dk] && !(refHero && c.skill === 'hoa_cau')){ battleDone[dk] = 1; pfx.push({type:'num', x: wolfX + U(4), y: g - sz - (MODE === 'strip' ? 16 : 40), text: '-' + c.dmg, col: '#f08a2a', life: 0, max: 1}); }
+      if (c.dmg > 0 && s >= .45 && !battleDone[dk] && !(refHero && c.skill === 'hoa_cau')){ battleDone[dk] = 1; pfx.push({type:'num', x: wolfX + U(4), y: g - msz - (MODE === 'strip' ? 16 : 40), text: '-' + c.dmg, col: '#f08a2a', life: 0, max: 1}); }
     });
     if (held && s >= .78){ const hk = ph.trip + ':held' + i; if (!battleDone[hk]){ battleDone[hk] = 1; pfx.push({type:'label', x: wolfX, y: g + (MODE === 'strip' ? 1 : 4), text: 'Bị khống', col: '#f08a2a', life: 0, max: .9}); } }
     if (refHero && s < .78){                                                           // thi triển Hỏa Cầu tại chỗ
@@ -2590,7 +2796,7 @@ function drawPixelBattle(t, dt, ph, r){
         const fk = ph.trip + ':h' + i;
         if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
           const hc = castsNow.filter(c => c.skill === 'hoa_cau' && c.dmg > 0).reduce((a, c) => a + c.dmg, 0);   // cùng một quả cầu → một con số
-          pfx.push({type:'num', x: wolfX - U(6), y: g - sz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.heroDmg + hc), col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
+          pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.heroDmg + hc), col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
           for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(4), y: g - U(22), vx: (Math.random()-.3)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.25, col: FIRE[2 + Math.floor(Math.random()*4)]});
         }
       }
@@ -2604,20 +2810,24 @@ function drawPixelBattle(t, dt, ph, r){
       wFlash = k < .5; wx = wolfX + (k < .5 ? U(3) : U(2));
       const fk = ph.trip + ':h' + i;
       if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
-        pfx.push({type:'num', x: wolfX - U(6), y: g - sz - (MODE === 'strip' ? 10 : 28), text: '-' + b.heroDmg, col: PX.dmg, life: 0, max: .9});
+        pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + b.heroDmg, col: PX.dmg, life: 0, max: .9});
         for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(10), y: g - U(24), vx: (Math.random()-.2)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.2, col: Math.random() < .5 ? PX.cyan2 : PX.white});
       }
     }
     else if (s < .78){ hx = Math.round(strikeX + (heroX - strikeX) * ease((s-.62)/.16)); sword = 'down'; }   // lùi về
-    else if (!killing && !held){                                                       // quái vồ phản đòn
-      const k = (s-.78)/.22;
-      wx = Math.round(wolfX - (wolfX - heroX - U(26)) * Math.sin(k*Math.PI)); wy = -Math.round(U(5)*Math.sin(k*Math.PI));
+    else if (!killing && !held){                                                       // quái phản đòn: mỗi loài một kiểu (monAttack)
+      const st = monAttack(monStyleOf(b.image), (s-.78)/.22, {heroX, wolfX, g, sz: msz, U, u, t, trip: ph.trip, i, fxAfter});
+      if (st.wx !== undefined) wx = st.wx;
+      if (st.wy !== undefined) wy = st.wy;
+      if (st.wAlpha !== undefined) wAlpha = st.wAlpha;
       if (s >= .85){
-        hFlash = s < .93; hx = heroX - (s < .93 ? U(2) : 1);
+        hFlash = s < .93; hx = heroX - (s < .93 ? U(st.knock || 2) : 1);
         const fk = ph.trip + ':m' + i;
         if (!battleDone[fk]){ battleDone[fk] = 1;
-          pfx.push({type:'num', x: heroX - U(4), y: g - sz - (MODE === 'strip' ? 8 : 26), text: '-' + b.monsterDmg, col: PX.hurt, life: 0, max: .8});
-          for (let n = 0; n < 8; n++) pfx.push({type:'spark', x: heroX + U(6), y: g - U(26), vx: (Math.random()-.5)*40*u, vy: -Math.random()*40*u, life: 0, max: .3, col: PX.red});
+          pfx.push({type:'num', x: heroX - U(4), y: g - sz - (MODE === 'strip' ? 8 : 26), text: '-' + b.monsterDmg, col: st.numCol || PX.hurt, life: 0, max: .8});
+          const cols = st.sparks || [PX.red];
+          for (let n = 0; n < (st.nSparks || 8); n++) pfx.push({type:'spark', x: heroX + U(6), y: g - U(26), vx: (Math.random()-.5)*(st.spread || 40)*u, vy: -Math.random()*40*u, life: 0, max: .3 + Math.random()*.15, col: cols[n % cols.length]});
+          if (st.label && MODE !== 'strip') pfx.push({type:'label', x: heroX, y: g - sz - 40, text: st.label, col: st.numCol || PX.hurt, life: 0, max: .9});
         }
       }
     }
@@ -2639,22 +2849,22 @@ function drawPixelBattle(t, dt, ph, r){
   lastMHp = mHp; ghostHp = Math.max(mHp, ghostHp - dt*.9);
 
   // ---- vòng mục tiêu + bóng ----
-  if (wx !== null && wAlpha > .5){ pring(wx, g + 1, U(16), U(3), PX.red2, false); pring(wx, g + 1, U(18), U(4), PX.red, true); }
+  if (wx !== null && wAlpha > .5){ pring(wx, g + 1, U(16*ms), U(3*ms), PX.red2, false); pring(wx, g + 1, U(18*ms), U(4*ms), PX.red, true); }
   pctx.fillStyle = PX.shadow;
   for (let k = -U(9); k <= U(9); k++) pctx.fillRect(hx + k, g, 1, Math.abs(k) < U(6) ? 2 : 1);
-  if (wx !== null) for (let k = -U(16); k <= U(16); k++) pctx.fillRect(wx + k, g, 1, Math.abs(k) < U(10) ? 2 : 1);
+  if (wx !== null) for (let k = -U(16*ms); k <= U(16*ms); k++) pctx.fillRect(wx + k, g, 1, Math.abs(k) < U(10*ms) ? 2 : 1);
 
   // ---- quái ----
   if (wx !== null){
     pctx.globalAlpha = wAlpha;
-    pctx.drawImage(wFlash ? mon.flash : burning && mon.burn ? mon.burn : mon.im, wx - hs, g - sz + 1 + wy);
+    if (!monHi) pctx.drawImage(wFlash ? mon.flash : burning && mon.burn ? mon.burn : mon.im, wx - mhs, g - msz + 1 + wy, msz, msz);   // bản nét vẽ sau, ở độ phân giải thật
     pctx.globalAlpha = 1;
-    if (burning) pburn(wx, g, U(15), t, u);
+    if (burning) pburn(wx, g, U(15*ms), t, u);
     if (wAlpha > .5){
-      const bw = Math.max(12, U(26));
-      pbar(wx, g - sz - 3, bw, mHp, ghostHp, PX.red, PX.red2);
+      const bw = Math.max(12, U(26*ms));
+      pbar(wx, g - msz - 3, bw, mHp, ghostHp, PX.red, PX.red2);
       if (burning){                                                                    // biểu tượng lửa + % cạnh thanh máu quái
-        const ix = Math.round(wx + bw/2) + 3, iy = g - sz - 5;
+        const ix = Math.round(wx + bw/2) + 3, iy = g - msz - 5;
         ['010','111','121','010'].forEach((row, yy) => [...row].forEach((c, xx) => { if (c !== '0') P(ix + xx, iy + yy, c === '2' ? FIRE[4] : FIRE[3]); }));
         if (MODE !== 'strip') ptext(ix + 5, iy - 1, Math.round(b.burnPct) + '%', '#ff9a50');
       }
@@ -2758,6 +2968,7 @@ function drawPixelBattle(t, dt, ph, r){
       }
     });
   }
+  for (const fn of fxAfter) fn();
   // ---- phóng to lên canvas chính, giữ cạnh pixel ----
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2767,13 +2978,18 @@ function drawPixelBattle(t, dt, ph, r){
 
   // chữ tiếng Việt (tên quái, "Rút lui", vật phẩm nhặt được) vẽ ở độ phân giải thật cho rõ
   const sx = W / w, sy = H / h, big = MODE !== 'strip';
+  if (monHi && wx !== null){                                                         // quái bản nét: phủ đúng ô sz×sz của sprite pixel
+    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.globalAlpha = wAlpha;
+    ctx.drawImage(wFlash ? monHi.flash : burning ? monHi.burn : monHi.im, (wx - mhs) * sx, (g - msz + 1 + wy) * sy, msz * sx, msz * sy);
+    ctx.restore();
+  }
   if (refHero) hcBattleDraw(refHero, {ph, hx, hy, hAlpha, hFlash, g, sz, sx, sy, wolfX, t, casts: castsNow, basic: b.basic,
     cast: b.basic === 'hoa_cau'});
   ctx.textAlign = 'center';
   if (big && wx !== null && wAlpha > .5){
     ctx.font = '600 12px "Be Vietnam Pro", system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(b.monster, wx*sx + 1, (g - sz - 7)*sy + 1);
-    ctx.fillStyle = 'rgba(235,228,211,.9)'; ctx.fillText(b.monster, wx*sx, (g - sz - 7)*sy);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(b.monster, wx*sx + 1, (g - msz - 7)*sy + 1);
+    ctx.fillStyle = 'rgba(235,228,211,.9)'; ctx.fillText(b.monster, wx*sx, (g - msz - 7)*sy);
   }
   for (const f of labels){
     const k = f.life / f.max;
@@ -2989,7 +3205,10 @@ document.addEventListener('focusout', hideTip);
 let breakFx = null, burstTimer = 0;
 async function playBreak(kind, fromHost){
   if (kind === 'crit') kind = 'gold'; else if (kind === 'major') kind = 'bad';
-  if (fromHost) await sync();                    // cửa sổ khác vừa đột phá → lấy trạng thái mới trước
+  if (fromHost){                                 // cửa sổ khác vừa đột phá → lấy trạng thái mới trước
+    await sync();
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));   // đợi lần vẽ lại xong rồi mới chạy hiệu ứng, tránh khựng khung đầu
+  }
   const el = $('burst'), title = el.querySelector('b'), sub = el.querySelector('small');
   // chữ "Thành công" / "Thất bại" tách từng ký tự để chạy hiệu ứng lần lượt
   const word = kind === 'bad' ? 'Thất bại' : 'Thành công';
