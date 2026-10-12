@@ -387,7 +387,7 @@ body.panel .sell-btn{padding:0 6px}
 .r-common{border-color:#6b7076} .r-uncommon{border-color:#4f9f58} .r-rare{border-color:#3f78c4} .r-epic{border-color:#8a52c8} .r-legendary{border-color:#d4a23c;box-shadow:inset 0 0 0 1px #0b0806,0 0 0 1px rgba(230,184,76,.35)}
 /* Linh phẩm: nền xanh lục để nổi hơn đồ thường */
 .iv-cell.r-uncommon,.iv-slot.r-uncommon,.dd-fr.r-uncommon{background:radial-gradient(circle at 50% 42%,#3a7a44 0%,#21492a 55%,#142a19 100%)}
-.iv-cell.r-rare,.iv-slot.r-rare,.dd-fr.r-rare{background:radial-gradient(circle at 50% 42%,#2f5f9e 0%,#1b3a66 55%,#10213d 100%)}
+.iv-cell.eq.r-rare,.iv-slot.r-rare{background:radial-gradient(circle at 50% 42%,#2f5f9e 0%,#1b3a66 55%,#10213d 100%)}
 .rc-common{color:#b9bec4} .rc-uncommon{color:#6fd47a} .rc-rare{color:#6fa6f2} .rc-epic{color:#b98cf0} .rc-legendary{color:#f0c860}
 
 .iv-card{background:var(--parch);color:var(--ink2);border:2px solid var(--bronze);box-shadow:inset 0 0 0 1px #f0e4c4;padding:7px 9px;display:flex;flex-direction:column;gap:2px}
@@ -1290,6 +1290,8 @@ const RARITY = {
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','ring','ring2','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['spiritPct','Linh lực','%'],['qiPct','Tu vi','%'],['luckPct','Thần thức','%']];
+/** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
+const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest');
 const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
@@ -1389,7 +1391,7 @@ function renderInvInner(){
     if (i >= shown) return '<div class="iv-cell empty void"></div>';            // giữ lưới đủ 7 hàng ở trang cuối
     if (!c) return `<div class="iv-cell empty ${invCat === 'all' && i >= cap ? 'over' : ''}"></div>`;
     const it = ITEM[c.k], isSel = invSel?.src === 'bag' && invSel.idx === i;
-    return `<button class="iv-cell r-${it.rarity} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : (it.useQiSeconds || it.temperHp) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${reqLevel(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
+    return `<button class="iv-cell r-${it.rarity} ${it.slot ? 'eq' : ''} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : canUse(it) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${reqLevel(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
   }).join('');
   const counts = Object.fromEntries(CATS.map(([id]) => [id, 0]));
   for (const k of DATA.items.map(i => i.id)) if ((S.inventory[k]||0) > 0){ counts.all++; counts[catOf(ITEM[k])]++; }
@@ -1478,7 +1480,7 @@ function itemCardHtml(k, src){
     cmp = `<div class="iv-cmp"><p>${curIt ? `So với đang mặc: <b class="rc-${curIt.rarity}">${curIt.name}</b>` : 'Ô đang trống: mọi chỉ số đều là tăng thêm'}</p><ul>${rows || '<li>Không đổi chỉ số</li>'}</ul></div>`;
   }
   const hint = src === 'slot' ? 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo · U tháo'
-    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : (it.useQiSeconds || it.temperHp) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
+    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : canUse(it) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
     <p class="sub">${rar(it).n} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
@@ -1501,7 +1503,7 @@ function invDo(action){
   const sel = invSel ? ITEM[invSel.k] : null;
   if (action === 'equip' && invSel?.src === 'bag' && sel?.slot) act('equip/' + invSel.k);
   else if (action === 'unequip' && invSel?.src === 'slot') act('unequip/' + invSel.slot);
-  else if (action === 'use' && invSel?.src === 'bag' && (sel?.useQiSeconds || sel?.temperHp)) act('use/' + invSel.k);
+  else if (action === 'use' && invSel?.src === 'bag' && canUse(sel)) act('use/' + invSel.k);
   else if (action === 'drop' && invSel?.src === 'bag'){
     if (Date.now() - dropArm < 3000){ dropArm = 0; act('drop/' + invSel.k); }
     else { dropArm = Date.now(); renderInv(); setTimeout(() => { if (dropArm && Date.now() - dropArm >= 3000){ dropArm = 0; renderInv(); } }, 3100); }
@@ -1556,7 +1558,7 @@ function initInventory(){
     if (cell){
       invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0; sellArm = 0;
       const it = ITEM[cell.dataset.k];
-      if (dbl && it.slot) invDo('equip'); else if (dbl && (it.useQiSeconds || it.temperHp)) invDo('use'); else renderInv();
+      if (dbl && it.slot) invDo('equip'); else if (dbl && canUse(it)) invDo('use'); else renderInv();
       return;
     }
     if (slot){ invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; if (dbl) invDo('unequip'); else renderInv(); return; }
@@ -1570,7 +1572,7 @@ function initInventory(){
     if (cell){
       invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0; sellArm = 0;
       const it = ITEM[cell.dataset.k];
-      if (it?.slot) invDo('equip'); else if (it && (it.useQiSeconds || it.temperHp)) invDo('use'); else renderInv();
+      if (it?.slot) invDo('equip'); else if (it && canUse(it)) invDo('use'); else renderInv();
       return;
     }
     invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; invDo('unequip');
@@ -1810,7 +1812,7 @@ let craftTimer = 0;
 function showCraft(c){
   const el = $('craftToast'), out = ITEM[c.output.item]; if (!el || !out) return;
   const used = c.inputs.map(u => `<span>${ITEM[u.item] ? itemImg(u.item) : ''}−${fmt(u.qty)} ${ITEM[u.item]?.name || u.item}</span>`).join('');
-  el.innerHTML = `<span class="ct-ic">${itemImg(c.output.item)}</span><span class="ct-t">Luyện đan thành công</span>
+  el.innerHTML = `<span class="ct-ic">${itemImg(c.output.item)}</span><span class="ct-t">${c.recipe.startsWith('chest:') ? 'Mở rương' : 'Luyện đan thành công'}</span>
     <span class="ct-o">Nhận <b class="rc-${out.rarity}">${out.name}</b> × ${fmt(c.output.qty)}</span><span class="ct-u">${used}</span>`;
   el.hidden = true; void el.offsetWidth; el.hidden = false;
   clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, 2800);
@@ -1845,7 +1847,7 @@ function initDan(){
 }
 
 // =====================================================================
-// BẢN ĐỒ: 20 ải + ải Boss (cần chìa khóa rơi ở ải 1–20)
+// BẢN ĐỒ: 15 ải + ải Boss (cần chìa khóa rơi ở ải 1–15)
 // =====================================================================
 function renderMap(){
   const r = realm(), m = S.map, R = S.realm + 1, keyN = S.inventory[m.keyItem] || 0;
@@ -1957,13 +1959,10 @@ function skState(s){
   return {lv, st, why, reqs, cost, max, reqOk, learned: lv > 0};
 }
 const pct1 = v => (Math.round(v * 10) / 10) + '%';
-const SK_PASSIVE = s => skTree(s) === 'passive';
 function skPassive(s, lv){
-  const P = [['atkPct','Tấn công'],['defPct','Phòng thủ (kháng Hỏa)'],['hpPct','Máu'],['crit','Chí mạng Hỏa'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct','Sát thương Hỏa'],['pen','Xuyên thấu Hỏa'],['qiCut','Giảm linh khí tiêu hao'],['rangePct','Tầm đánh chiêu Hỏa'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
+  const P = [['atkPct','Tấn công'],['defPct','Phòng thủ (kháng Hỏa)'],['hpPct','Máu'],['crit','Chí mạng Hỏa'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct','Sát thương Hỏa'],['pen','Xuyên thấu Hỏa'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
   return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1))]);
 }
-/** Tổng bị động của các kỹ năng đã học theo một chỉ số (để hiện linh khí / tầm đánh thực tế). */
-const skSum = k => skOfEl(skEl).filter(SK_PASSIVE).reduce((a, s) => a + (s[k] || 0) * skFactor(s, skLv(s.id)), 0);
 
 function renderSkill(){
   const pane = $('pane-skill'); if (!pane || !S) return;
@@ -2021,8 +2020,6 @@ function skTipHtml(s){
   if (!s) return '';
   const el = elOf(s.element), tree = skTree(s), st = skState(s), lv = st.lv, next = Math.min(s.maxLv, lv + 1);
   const dmg = l => s.dmgBase ? s.dmgBase + s.dmgPerLv * Math.max(0, l - 1) : 0;
-  const qiCut = skSum('qiCut'), rng = skSum('rangePct');
-  const range = s.range ? (rng && tree !== 'passive' ? `${(parseFloat(s.range) * (1 + rng / 100)).toFixed(1)}m <i>(+${pct1(rng)})</i>` : s.range) : '';
   const pass = skPassive(s, lv);
   const isBasic = tree === 'basic';
   return `<div class="sk-card sk-tipcard">
@@ -2031,11 +2028,9 @@ function skTipHtml(s){
         <dt>Loại</dt><dd>${SK_TYPE[tree]}${s.category === 'Tuyệt kỹ' ? ' (tối thượng)' : ''}</dd>
         <dt>Hệ</dt><dd>${el.name}</dd>
         ${isBasic ? '' : `<dt>Cấp</dt><dd>${lv} / ${s.maxLv}</dd><dt>Cảnh giới</dt><dd class="${S.realm < s.minRealm ? 'bad' : ''}">${realmName(s.minRealm)}</dd>`}
-        ${s.qiCost ? `<dt>Linh khí</dt><dd>${Math.round(s.qiCost * (1 - Math.min(60, qiCut) / 100))}${qiCut ? ` <i>(−${pct1(qiCut)})</i>` : ''}</dd>` : ''}
         ${isBasic ? `<dt>Thi triển</dt><dd>Mỗi lượt</dd>` : ''}
         ${s.dmgBase ? `<dt>Sát thương</dt><dd>${isBasic ? s.dmgBase : dmg(Math.max(1, lv))}% tấn công</dd>` : ''}
         ${isBasic && s.crit ? `<dt>Chí mạng</dt><dd>+${s.crit}%</dd>` : ''}
-        ${range ? `<dt>Tầm đánh</dt><dd>${range}</dd>` : ''}${s.area ? `<dt>Phạm vi</dt><dd>${s.area}</dd>` : ''}
       </dl>
       <p class="sk-eff">“${s.effect}”</p>
       ${s.id === 'hoa_cau' ? `<p class="sk-note">Biến thể theo cảnh giới: <b>${HC_TIER_NAME[Math.min(2, S.realm)]}</b></p>` : ''}
