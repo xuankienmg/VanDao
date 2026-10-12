@@ -43,7 +43,7 @@ public class Player
     public int AdminPoints { get; set; }
     public bool Cheat(string flag) => Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
 
-    /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng có hồi chiêu. Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>
+    /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng chủ động (tung khi đầy nộ). Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>
     public string[] Slots()
     {
         var a = SkillSlots.Split(',').Select(x => x.Trim()).ToArray();

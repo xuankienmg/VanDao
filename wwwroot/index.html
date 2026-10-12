@@ -607,7 +607,7 @@ body.panel .rq .drops .cell{background:#1c2125;border-color:#4a4f55}
 body.panel .sk-grid{height:calc(100vh - 248px);min-height:300px}
 body.panel .sk-side{max-height:calc(100vh - 192px);overflow-y:auto;scrollbar-width:thin}
 /* ô kỹ năng (Công pháp + Hành trang) */
-/* ---- Công pháp v2: Đánh thường | Cây Chủ động | Cây Bị động | Chi tiết (khung chung cho mọi hệ) ---- */
+/* ---- Công pháp v2: Đánh thường | Chủ động | Cây Bị động | Chi tiết (khung chung cho mọi hệ) ---- */
 #pane-skill{container:sk / inline-size}
 /* bố cục theo bề rộng khung chứa: hẹp (thanh bên) xếp dọc · vừa (cửa sổ Tu luyện) 2 cột · rộng 4 cột như thiết kế */
 .sk2{position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"els" "left" "act" "pas" "side";gap:6px;font-size:12px}
@@ -1294,7 +1294,7 @@ function renderInvInner(){
       return `<div class="iv-slot locked" data-tip="${sd.name}&#10;Mở ở cảnh giới ${opens ? opens.name : 'cao hơn'}">${LOCK_SVG}<span class="nm">${sd.name}</span></div>`;
     }
     const cls = `${compat.has(id) ? 'compat' : ''} ${invSel?.src === 'slot' && invSel.slot === id ? 'sel' : ''}`;
-    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${reqLevel(ITEM[k])}</span></button>`;
+    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${reqLevel(ITEM[k])}</span></button>`;
     return `<button class="iv-slot empty ${cls}" data-slot="${id}" aria-label="${sd.name} (trống)" data-tip="${sd.name}&#10;Trống · kéo trang bị vào đây"><span class="nm">${sd.name}</span></button>`;
   };
 
@@ -1386,8 +1386,8 @@ function itemCardHtml(k, src){
     }).join('');
     cmp = `<div class="iv-cmp"><p>${curIt ? `So với đang mặc: <b class="rc-${curIt.rarity}">${curIt.name}</b>` : 'Ô đang trống: mọi chỉ số đều là tăng thêm'}</p><ul>${rows || '<li>Không đổi chỉ số</li>'}</ul></div>`;
   }
-  const hint = src === 'slot' ? 'Nhấp đúp hoặc kéo vào hành trang để tháo · U tháo'
-    : it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : 'Del bỏ';
+  const hint = src === 'slot' ? 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo · U tháo'
+    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : (it.useQiSeconds || it.temperHp) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
     <p class="sub">${rar(it).n} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
@@ -1461,6 +1461,20 @@ function initInventory(){
       return;
     }
     if (slot){ invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; if (dbl) invDo('unequip'); else renderInv(); return; }
+  });
+  // chuột phải: mặc / dùng đồ trong túi, tháo đồ đang mặc, tháo kỹ năng trong ô
+  pane.addEventListener('contextmenu', e => {
+    const cell = e.target.closest('.iv-cell[data-k]'), slot = e.target.closest('.iv-slot.has'), ss = e.target.closest('.sk-slot[data-slotsk]');
+    if (!cell && !slot && !ss) return;
+    e.preventDefault(); hideTip(); lastTap = {key:'', t:0};
+    if (ss){ act(`skillslot/${ss.dataset.slot}`); return; }
+    if (cell){
+      invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0; sellArm = 0;
+      const it = ITEM[cell.dataset.k];
+      if (it?.slot) invDo('equip'); else if (it && (it.useQiSeconds || it.temperHp)) invDo('use'); else renderInv();
+      return;
+    }
+    invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; invDo('unequip');
   });
   // kéo thả giữa túi và ô trang bị
   let drag = null;
@@ -1801,7 +1815,9 @@ function hcFlash(img){                                          // bóng sáng c
   hcFlashCache.set(img, c); return c;
 }
 let skEl = 'hoa', skSel = 'liet_diem', skFade = 0, skPick = null, skAnimT0 = 0;
-// Chiến đấu: ô 0 = ĐÒN THƯỜNG (Hỏa Cầu / Hỏa Tiễn, luôn sẵn có, không dùng điểm) · ô 1 = KỸ NĂNG chủ động (theo hồi chiêu)
+// Chiến đấu: ô 0 = ĐÒN THƯỜNG (Hỏa Cầu / Hỏa Tiễn, luôn sẵn có, không dùng điểm) · ô 1 = KỸ NĂNG chủ động (tung khi đầy nộ)
+// Nộ: mỗi đòn đánh thường +RAGE_HIT, đủ RAGE_MAX thì tung kỹ năng ở ô 1 (khớp SkillData.RagePerHit / RageMax ở server)
+const RAGE_HIT = 25, RAGE_MAX = 100, RAGE_HITS = Math.ceil(RAGE_MAX / RAGE_HIT);
 const SLOT_NAMES = ['Đòn thường', 'Kỹ năng'], SLOT_IDX = [0, 1];
 const fitsSlot = (s, i) => !!s && (i === 0 ? s.category === 'Đòn thường' : ['Công','Tuyệt kỹ'].includes(s.category));
 const skTree = s => s.category === 'Đòn thường' ? 'basic' : (s.category === 'Căn cơ' || s.category === 'Bị động') ? 'passive' : 'active';
@@ -1810,7 +1826,7 @@ const skBasicId = () => (S.skillSlots && S.skillSlots[0]) || 'hoa_cau';
 function skSlotsHtml(cls = ''){
   return SLOT_IDX.map(i => {
     const id = i === 0 ? skBasicId() : (S.skillSlots || [])[1], s = id && skById(id), pick = skPick && fitsSlot(skById(skPick), i);
-    const tip = s ? `${SLOT_NAMES[i]}: ${s.name}${i ? ` · Lv. ${skLv(id)} · hồi chiêu ${s.every} lượt` : ' · mỗi lượt'}&#10;${s.effect}` : `${SLOT_NAMES[i]}: trống&#10;Chọn một kỹ năng chủ động đã lĩnh ngộ (thi triển theo hồi chiêu)`;
+    const tip = s ? `${SLOT_NAMES[i]}: ${s.name}${i ? ` · Lv. ${skLv(id)} · tung khi đủ ${RAGE_MAX} nộ` : ` · mỗi lượt, +${RAGE_HIT} nộ`}&#10;${s.effect}` : `${SLOT_NAMES[i]}: trống&#10;Chọn một kỹ năng chủ động đã lĩnh ngộ (tung khi đủ ${RAGE_MAX} nộ)`;
     return `<button class="sk-slot ${i === 1 ? 'ult' : ''} ${s ? 'has' : ''} ${pick ? 'pick' : ''} ${cls}" data-slot="${i}" data-tip="${tip}" ${s && i ? `draggable="true" data-slotsk="${id}"` : ''}>
       ${s ? `<img src="${skIcon(s)}" alt="">` : `<span class="emp">★</span>`}<small>${SLOT_NAMES[i]}</small></button>`;
   }).join('');
@@ -1841,7 +1857,7 @@ function skState(s){
 const pct1 = v => (Math.round(v * 10) / 10) + '%';
 const SK_PASSIVE = s => skTree(s) === 'passive';
 function skPassive(s, lv){
-  const P = [['atkPct','Tấn công'],['defPct','Phòng thủ (kháng Hỏa)'],['hpPct','Máu'],['crit','Chí mạng Hỏa'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct','Sát thương Hỏa'],['pen','Xuyên thấu Hỏa'],['qiCut','Giảm linh khí tiêu hao'],['rangePct','Tầm đánh chiêu Hỏa']];
+  const P = [['atkPct','Tấn công'],['defPct','Phòng thủ (kháng Hỏa)'],['hpPct','Máu'],['crit','Chí mạng Hỏa'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct','Sát thương Hỏa'],['pen','Xuyên thấu Hỏa'],['qiCut','Giảm linh khí tiêu hao'],['rangePct','Tầm đánh chiêu Hỏa'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
   return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1))]);
 }
 /** Tổng bị động của các kỹ năng đã học theo một chỉ số (để hiện linh khí / tầm đánh thực tế). */
@@ -1862,15 +1878,15 @@ function renderSkill(){
     <nav class="sk-els" role="tablist" aria-label="Hệ tu luyện">${DATA.elements.map(e => `<button role="tab" class="${e.id === el.id ? 'on' : ''} ${e.open ? '' : 'lock'}" aria-selected="${e.id === el.id}" data-el="${e.id}" style="--c:${e.color}" data-tip="${e.name} hệ&#10;${e.desc}${e.open ? (WX[e.id] || '') : '&#10;Chưa mở khóa'}">
       <img class="px" src="img/el_${e.id}.png" alt=""><span>${e.name.toUpperCase()}</span>${e.open ? '' : '<small>Chưa mở khóa</small>'}</button>`).join('')}</nav>
     <section class="sk2-bar">
-      <div class="sk2-pts" data-tip="Điểm kỹ năng&#10;Chỉ dùng cho Cây Chủ động và Bị động (đánh thường không tốn điểm)&#10;Đã nhận ${S.skillPointsTotal} · đã dùng ${S.skillPointsTotal - S.skillPoints}"><span>Điểm</span><b>${S.skillPoints}</b></div>
+      <div class="sk2-pts" data-tip="Điểm kỹ năng&#10;Chỉ dùng cho Chủ động và Bị động (đánh thường không tốn điểm)&#10;Đã nhận ${S.skillPointsTotal} · đã dùng ${S.skillPointsTotal - S.skillPoints}"><span>Điểm</span><b>${S.skillPoints}</b></div>
       <div class="sk2-grp"><span>Đánh thường</span>${basics.map(b => `<button class="sk2-ico ${skBasicId() === b.id ? 'on' : ''}" data-basic="${b.id}" data-skcard="${b.id}" data-tip="${b.name}" ${el.open ? '' : 'disabled'}><img src="${skIcon(b)}" alt="${b.name}"></button>`).join('')}</div>
       <div class="sk2-grp"><span>Kỹ năng</span><button class="sk2-ico slot ${act ? 'on' : ''}" data-slot="1" ${act ? 'draggable="true" data-slotsk="' + act.id + '"' : ''} ${act ? `data-sk="${act.id}" data-skcard="${act.id}" data-tip="${act.name}"` : 'data-tip="Ô kỹ năng trống&#10;Nhấp đúp hoặc kéo một kỹ năng chủ động đã lĩnh ngộ vào đây"'}>${act ? `<img src="${skIcon(act)}" alt="">` : '<span class="emp">+</span>'}</button></div>
       <div class="sk2-sel" data-skcard="${sel.id}" data-tip="${sel.name}"><img src="${skIcon(sel)}" alt=""><span><b>${sel.name}</b><small>${SK_TYPE[tree]}${tree === 'basic' ? '' : ` · Lv. ${st.lv}/${sel.maxLv}`}</small></span></div>
       <div class="sk2-act">${selBtns}</div>
     </section>
-    <section class="sk2-tree act ${skFade ? 'fade' : ''}"><h3>Cây Chủ động <small>có animation</small></h3>${skTreeHtml(el, 'active', 3, 3)}</section>
-    <section class="sk2-tree pas ${skFade ? 'fade' : ''}"><h3>Cây Bị động <small>tăng cường vĩnh viễn</small></h3>${skTreeHtml(el, 'passive', 5, 3)}</section>
-    ${el.open ? '' : `<div class="sk-lockmsg"><b>${el.name.toUpperCase()} HỆ · CHƯA MỞ KHÓA</b><span>Cùng khung với Hỏa hệ: Đánh thường + Cây Chủ động + Cây Bị động.</span></div>`}
+    <section class="sk2-tree act ${skFade ? 'fade' : ''}"><h3>Chủ động <small>có animation</small></h3>${skTreeHtml(el, 'active', 3, 3)}</section>
+    <section class="sk2-tree pas ${skFade ? 'fade' : ''}"><h3>Bị động <small>tăng cường vĩnh viễn</small></h3>${skTreeHtml(el, 'passive', 5, 3)}</section>
+    ${el.open ? '' : `<div class="sk-lockmsg"><b>${el.name.toUpperCase()} HỆ · CHƯA MỞ KHÓA</b><span>Cùng khung với Hỏa hệ: Đánh thường + Chủ động + Bị động.</span></div>`}
   </div>`;
   skFade = 0;
   liveSkill();
@@ -1916,7 +1932,7 @@ function skTipHtml(s){
         <dt>Animation ID</dt><dd class="id">${s.animId || 'NONE'}</dd>
         ${isBasic ? '' : `<dt>Cấp</dt><dd>${lv} / ${s.maxLv}</dd><dt>Cảnh giới</dt><dd class="${S.realm < s.minRealm ? 'bad' : ''}">${realmName(s.minRealm)}</dd>`}
         ${s.qiCost ? `<dt>Linh khí</dt><dd>${Math.round(s.qiCost * (1 - Math.min(60, qiCut) / 100))}${qiCut ? ` <i>(−${pct1(qiCut)})</i>` : ''}</dd>` : ''}
-        ${isBasic ? '<dt>Thi triển</dt><dd>Mỗi lượt</dd>' : s.every ? `<dt>Hồi chiêu</dt><dd>${s.every} lượt</dd>` : ''}
+        ${isBasic ? `<dt>Thi triển</dt><dd>Mỗi lượt · +${RAGE_HIT} nộ</dd>` : tree === 'active' ? `<dt>Nộ</dt><dd>${RAGE_MAX} (${RAGE_HITS} đòn thường)</dd>` : ''}
         ${s.dmgBase ? `<dt>Sát thương</dt><dd>${isBasic ? s.dmgBase : dmg(Math.max(1, lv))}% linh lực</dd>` : ''}
         ${isBasic && s.crit ? `<dt>Chí mạng</dt><dd>+${s.crit}%</dd>` : ''}
         ${range ? `<dt>Tầm đánh</dt><dd>${range}</dd>` : ''}${s.area ? `<dt>Phạm vi</dt><dd>${s.area}</dd>` : ''}
@@ -1924,11 +1940,11 @@ function skTipHtml(s){
       <p class="sk-eff">“${s.effect}”</p>
       ${s.id === 'hoa_cau' ? `<p class="sk-note">Biến thể theo cảnh giới: <b>${HC_TIER_NAME[Math.min(2, S.realm)]}</b></p>` : ''}
       ${pass.length ? `<p class="sk-sec">Hiệu quả bị động</p><ul class="sk-pass">${pass.map(([n, v, nx]) => `<li>${n} <b>+${pct1(v)}</b>${!st.max ? `<i>→ +${pct1(nx)}</i>` : ''}</li>`).join('')}</ul>` : ''}
-      ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: thi triển ở lượt 2, sau đó cứ ${s.every} lượt, mỗi lần ${dmg(lv)}% linh lực${!st.max ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
+      ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: mỗi đòn thường tích ${RAGE_HIT} nộ, đủ ${RAGE_MAX} nộ thì lượt sau tung chiêu thay cho đòn thường (${RAGE_HITS} đòn thường → 1 chiêu), mỗi lần ${dmg(lv)}% linh lực${!st.max ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
       ${!isBasic && !st.max ? `<p class="sk-sec">${lv ? `Nâng cấp Lv. ${lv} → ${next}` : 'Yêu cầu lĩnh ngộ'}</p>
         <ul class="sk-reqs">${st.reqs.map(r => `<li class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓' : '✗'} ${r.t}</li>`).join('')}</ul>` : ''}
       ${isBasic ? `<p class="sk-note">${skBasicId() === s.id ? 'Đang dùng làm đòn đánh thường.' : 'Bấm để dùng làm đòn đánh thường.'}</p>` : ''}
-      ${tree === 'active' && lv > 0 ? `<p class="sk-note">${S.skillSlots?.[1] === s.id ? 'Đang dùng trong trận · nhấp đúp hoặc kéo ra ngoài để tháo.' : 'Nhấp đúp hoặc kéo vào ô Kỹ năng để dùng trong trận.'}</p>` : ''}
+      ${tree === 'active' && lv > 0 ? `<p class="sk-note">${S.skillSlots?.[1] === s.id ? 'Đang dùng trong trận · nhấp đúp, chuột phải hoặc kéo ra ngoài để tháo.' : 'Nhấp đúp, chuột phải hoặc kéo vào ô Kỹ năng để dùng trong trận.'}</p>` : ''}
     </div>`;
 }
 function liveSkill(){
@@ -2130,6 +2146,18 @@ function initSkill(){
     const sk = skById(n.dataset.sk); if (!sk || skTree(sk) !== 'active' || skLv(sk.id) < 1) return;
     act(S.skillSlots?.[1] === sk.id ? 'skillslot/1' : `skillslot/1?skill=${sk.id}`);
   });
+  // chuột phải: chọn đòn thường · kỹ năng chủ động đã lĩnh ngộ vào ô (đang dùng thì tháo) · chuột phải ô kỹ năng để tháo
+  $('pane-skill').addEventListener('contextmenu', e => {
+    const bs = e.target.closest('[data-basic]');
+    if (bs){ e.preventDefault(); hideTip(); if (!bs.disabled && skBasicId() !== bs.dataset.basic) act(`skillslot/0?skill=${bs.dataset.basic}`); return; }
+    const sl = e.target.closest('.sk-slot[data-slotsk], .sk2-ico.slot[data-slotsk]');
+    if (sl){ e.preventDefault(); hideTip(); act(`skillslot/${sl.dataset.slot}`); return; }
+    const n = e.target.closest('.sk-n[data-sk]'); if (!n) return;
+    e.preventDefault();
+    const sk = skById(n.dataset.sk); if (!sk || skTree(sk) !== 'active' || skLv(sk.id) < 1) return;
+    hideTip(); skPick = null;
+    act(S.skillSlots?.[1] === sk.id ? 'skillslot/1' : `skillslot/1?skill=${sk.id}`);
+  });
   // kéo nút kỹ năng đã học vào ô, kéo kỹ năng trong ô ra ngoài để tháo
   let dragSk = null;
   const pane = $('pane-skill');
@@ -2299,7 +2327,7 @@ const img48 = {};
 const SPR = () => MODE === 'strip' ? 24 : 48;
 function sprite48(src){                       // img/hero_luyenkhi.png → img/hero_luyenkhi_24.png / _48.png
   const z = SPR(), s = src.replace(/\.png$/, `_${z}.png`);
-  if (!img48[s]){ const im = new Image(); im.src = s; img48[s] = {im, flash:null}; }
+  if (!img48[s]){ const im = new Image(); im.src = s; img48[s] = {im, flash:null, burn:null}; }
   const o = img48[s];
   if (o.im.complete && o.im.naturalWidth && !o.flash){
     // bản nháy sáng khi trúng đòn: sáng lên nhưng giữ viền tối để không mất hình
@@ -2308,6 +2336,14 @@ function sprite48(src){                       // img/hero_luyenkhi.png → img/h
     const d = x.getImageData(0, 0, z, z), a = d.data;
     for (let i = 0; i < a.length; i += 4) if (a[i+3] && a[i] + a[i+1] + a[i+2] > 60){ a[i] += (255-a[i])*.55; a[i+1] += (255-a[i+1])*.55; a[i+2] += (255-a[i+2])*.55; }
     x.putImageData(d, 0, 0); o.flash = c;
+  }
+  if (o.im.complete && o.im.naturalWidth && !o.burn){
+    // bản bị thiêu đốt: ám đỏ cam
+    const c = document.createElement('canvas'); c.width = c.height = z;
+    const x = c.getContext('2d'); x.drawImage(o.im, 0, 0);
+    const d = x.getImageData(0, 0, z, z), a = d.data;
+    for (let i = 0; i < a.length; i += 4) if (a[i+3]){ a[i] += (255-a[i])*.28; a[i+1] += (90-a[i+1])*.28; a[i+2] += (30-a[i+2])*.28; }
+    x.putImageData(d, 0, 0); o.burn = c;
   }
   return o.im.complete && o.im.naturalWidth ? o : null;
 }
@@ -2370,12 +2406,26 @@ function buildPixLayers(w, h){
 }
 // phông chữ pixel 3×5 cho số sát thương
 const FONT = {'0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001',
-  '5':'111100111001111','6':'111100111101111','7':'111001010010010','8':'111101111101111','9':'111101111001111','-':'000000111000000','+':'000010111010000'};
+  '5':'111100111001111','6':'111100111101111','7':'111001010010010','8':'111101111101111','9':'111101111001111','-':'000000111000000','+':'000010111010000','%':'101001010100101'};
 function ptext(x, y, s, col, sc = 1){
   const draw = (ox, oy, c) => { let cx = 0; for (const ch of s){ const g = FONT[ch]; if (g) for (let i = 0; i < 15; i++) if (g[i] === '1') R(x + (cx + i%3)*sc + ox, y + Math.floor(i/3)*sc + oy, sc, sc, c); cx += 4; } };
   for (const [ox, oy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1]]) draw(ox, oy, PX.out);
   draw(0, 0, col);
   return s.length*4*sc;
+}
+// lửa thiêu đốt bám chân quái + tàn lửa bay lên
+function pburn(cx, g, half, t, u){
+  for (let k = -half; k <= half; k += 2){
+    const edge = 1 - Math.abs(k) / (half + 1), hgt = Math.round((2 + (Math.sin(t*13 + k*1.7) + 1) * 2.5) * edge * Math.max(1, u));
+    for (let y = 0; y < hgt; y++){ const f = y / Math.max(1, hgt); P(cx + k, g - 1 - y, f < .35 ? FIRE[4] : f < .7 ? FIRE[3] : FIRE[2]); }
+  }
+  if (Math.random() < .25) pfx.push({type:'spark', x: cx + (Math.random() - .5) * half * 2, y: g - 2 - Math.random() * half, vx: (Math.random() - .5) * 6 * u, vy: (-16 - Math.random() * 12) * u, life: 0, max: .55, col: Math.random() < .5 ? FIRE[3] : FIRE[4]});
+}
+// thanh nộ mảnh 1px, ghép sát dưới thanh máu (dùng chung viền)
+function pbarThin(cx, y, w, v, col){
+  const x = Math.round(cx - w/2);
+  R(x-1, y-1, w+2, 3, PX.out); R(x, y, w, 1, '#16202a');
+  if (v > 0) R(x, y, Math.max(1, Math.round(w*v)), 1, col);
 }
 function pbar(cx, y, w, v, ghost, col, col2){
   const x = Math.round(cx - w/2);
@@ -2499,7 +2549,9 @@ function drawPixelBattle(t, dt, ph, r){
   const castsNow = ph.name === 'fight' ? (b.casts || []).filter(c => c.turn === ph.i) : [];
   // đòn đánh mặc định là Hỏa Cầu (chưa có kiếm pháp): tu sĩ + lửa vẽ nét từ bản thiết kế ở bước sau, không vẽ kiếm pixel
   const refHero = skImg(HC_REF.src);
-  let mHp = 1, hHp = 1;
+  // nộ cuối mỗi lượt (server): lượt tung kỹ năng thì về 0
+  const rageAt = n => !b.rage || n <= 0 ? 0 : b.rage[Math.min(n, b.rage.length) - 1];
+  let mHp = 1, hHp = 1, rg = 0, burning = false;
   if (ph.name === 'walk'){
     hy = reduce ? 0 : -(Math.floor(t*8) % 2);
     if (!reduce && Math.random() < dt*6) pfx.push({type:'dust', x: hx - U(4) + Math.random()*U(8), y: g - 1, vx: -12 - Math.random()*10, vy: -4, life: 0, max: .5});
@@ -2512,6 +2564,17 @@ function drawPixelBattle(t, dt, ph, r){
     wx = wolfX;
     mHp = mLeft(i + (s >= .45 ? 1 : 0)) / b.monsterHp;
     hHp = Math.max(0, hLeft(i + (s >= .85 && !killing && !held ? 1 : 0)) / heroMax);
+    rg = rageAt(i + (s >= .45 ? 1 : 0)) / RAGE_MAX;
+    const skTurn = castsNow.some(c => c.dmg > 0 && c.skill !== 'hoa_cau');           // lượt tung kỹ năng: không có đòn thường
+    const burnNow = b.burn > 0 && !!b.burned?.[i];                                     // thiêu đốt (Phần Cốt) kích hoạt lượt này (30%)
+    burning = burnNow && s >= .45;
+    if (burnNow && s >= .62){
+      const bk = ph.trip + ':burn' + i;
+      if (!battleDone[bk]){ battleDone[bk] = 1;
+        pfx.push({type:'num', x: wolfX + U(12), y: g - sz + (MODE === 'strip' ? 2 : 6), text: '-' + b.burn, col: '#ff7a28', life: 0, max: .9});
+        if (MODE !== 'strip') pfx.push({type:'label', x: wolfX + U(12), y: g - sz + 22, text: 'Thiêu đốt', col: '#ff9a50', life: 0, max: .9});
+      }
+    }
     castsNow.forEach((c, n) => {                                                        // tên chiêu (xếp chồng) + sát thương chiêu
       const ck = ph.trip + ':c' + i + c.skill;
       if (s >= .05 + n * .12 && !battleDone[ck]){ battleDone[ck] = 1; pfx.push({type:'label', x: heroX + (MODE === 'strip' ? U(6) : 0), y: g - sz - (MODE === 'strip' ? 2 : 14) - n * (MODE === 'strip' ? 7 : 14), text: c.name, col: '#f8d25a', life: 0, max: 1.1}); }
@@ -2525,7 +2588,7 @@ function drawPixelBattle(t, dt, ph, r){
         const k = (s-.45)/.17;
         wFlash = k < .4; wx = wolfX + (k < .5 ? U(3) : U(2));
         const fk = ph.trip + ':h' + i;
-        if (!battleDone[fk]){ battleDone[fk] = 1;
+        if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
           const hc = castsNow.filter(c => c.skill === 'hoa_cau' && c.dmg > 0).reduce((a, c) => a + c.dmg, 0);   // cùng một quả cầu → một con số
           pfx.push({type:'num', x: wolfX - U(6), y: g - sz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.heroDmg + hc), col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
           for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(4), y: g - U(22), vx: (Math.random()-.3)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.25, col: FIRE[2 + Math.floor(Math.random()*4)]});
@@ -2540,7 +2603,7 @@ function drawPixelBattle(t, dt, ph, r){
       pslash(wolfX - U(10), g - U(24), MODE === 'strip' ? 8 : 18, -1.9, 1.3, Math.min(1, k*2.2), k < .6 ? 1 : 1 - (k-.6)*2);
       wFlash = k < .5; wx = wolfX + (k < .5 ? U(3) : U(2));
       const fk = ph.trip + ':h' + i;
-      if (!battleDone[fk]){ battleDone[fk] = 1;
+      if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
         pfx.push({type:'num', x: wolfX - U(6), y: g - sz - (MODE === 'strip' ? 10 : 28), text: '-' + b.heroDmg, col: PX.dmg, life: 0, max: .9});
         for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(10), y: g - U(24), vx: (Math.random()-.2)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.2, col: Math.random() < .5 ? PX.cyan2 : PX.white});
       }
@@ -2584,9 +2647,18 @@ function drawPixelBattle(t, dt, ph, r){
   // ---- quái ----
   if (wx !== null){
     pctx.globalAlpha = wAlpha;
-    pctx.drawImage(wFlash ? mon.flash : mon.im, wx - hs, g - sz + 1 + wy);
+    pctx.drawImage(wFlash ? mon.flash : burning && mon.burn ? mon.burn : mon.im, wx - hs, g - sz + 1 + wy);
     pctx.globalAlpha = 1;
-    if (wAlpha > .5) pbar(wx, g - sz - 3, Math.max(12, U(26)), mHp, ghostHp, PX.red, PX.red2);
+    if (burning) pburn(wx, g, U(15), t, u);
+    if (wAlpha > .5){
+      const bw = Math.max(12, U(26));
+      pbar(wx, g - sz - 3, bw, mHp, ghostHp, PX.red, PX.red2);
+      if (burning){                                                                    // biểu tượng lửa + % cạnh thanh máu quái
+        const ix = Math.round(wx + bw/2) + 3, iy = g - sz - 5;
+        ['010','111','121','010'].forEach((row, yy) => [...row].forEach((c, xx) => { if (c !== '0') P(ix + xx, iy + yy, c === '2' ? FIRE[4] : FIRE[3]); }));
+        if (MODE !== 'strip') ptext(ix + 5, iy - 1, Math.round(b.burnPct) + '%', '#ff9a50');
+      }
+    }
   }
   // ---- tu sĩ + kiếm linh khí ----
   if (!refHero){
@@ -2606,6 +2678,7 @@ function drawPixelBattle(t, dt, ph, r){
     for (let i = 0; i < U(10); i++) P(handX + i, handY + Math.floor(i/2), i > Math.max(1, U(2)) ? PX.cyan2 : PX.gold);
   }
   if (ph.name !== 'walk') pbar(hx, g - sz - 3, Math.max(10, U(20)), hHp, hHp, PX.hp, PX.hp2);
+  if (ph.name === 'fight' && b.rage) pbarThin(hx, g - sz, Math.max(10, U(20)), rg, rg >= 1 ? PX.dmg : PX.gold);   // thanh nộ mảnh, sát dưới thanh máu
 
   // ---- cột linh quang khi đột phá ----
   if (breakFx){
@@ -2982,6 +3055,9 @@ function renderAdmin(force){
       <small>Điểm kỹ năng: ${S.skillPoints}</small></section>
     <section><h4>Thám hiểm & trận đánh</h4>
       <div class="adm-row"><button data-adm="explore">Kết thúc chuyến ngay</button><button data-adm="unlock">Mở toàn bộ ải + chìa khóa Boss</button></div></section>
+    <section><h4>Nhân vật</h4>
+      <div class="adm-row"><button data-adm="resetall">Reset nhân vật về từ đầu</button></div>
+      <small>Xóa toàn bộ tu vi, cảnh giới, vật phẩm, trang bị, kỹ năng, ải và nhật ký. Giữ tên và cờ chế độ admin.</small></section>
   </div>`;
   if (keepRealm && $('admRealm')) $('admRealm').value = keepRealm;
 }
@@ -2991,6 +3067,7 @@ document.addEventListener('click', e => {
   if (a === 'give') adminAct('give', $('admItem').value, Math.max(1, +$('admN').value || 1));
   else if (a === 'realm') adminAct('realm', $('admRealm').value);
   else if (a === 'resetskills' && !b.dataset.armed){ b.dataset.armed = 1; b.textContent = 'Bấm lần nữa để reset'; setTimeout(() => renderAdmin(true), 3000); }
+  else if (a === 'resetall' && !b.dataset.armed){ b.dataset.armed = 1; b.textContent = 'Bấm lần nữa để xóa sạch nhân vật'; setTimeout(() => renderAdmin(true), 3000); }
   else adminAct(a, b.dataset.arg ?? null, b.dataset.n ? +b.dataset.n : 0);
 });
 function openTab(name){

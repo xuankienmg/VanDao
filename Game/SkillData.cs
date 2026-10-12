@@ -13,13 +13,14 @@ public record SkillDef(string Id, string Element, string Name, string Category, 
     double QiPct = 0, double MonAtkDown = 0,
     double SkillPct = 0,       // % sát thương cộng thêm cho mọi chiêu hệ Hỏa tự thi triển
     double Pen = 0,            // % phòng thủ của quái bị bỏ qua (xuyên thấu)
-    int Every = 0,             // kỹ năng: hồi chiêu (số lượt giữa 2 lần thi triển)
+    int Every = 0,             // (cũ) hồi chiêu theo lượt — không còn dùng: kỹ năng chủ động nay thi triển khi đầy nộ
     string Code = "",          // Skill ID (FIRE_ACTIVE_001…)
     string AnimId = "NONE",    // Animation ID (bị động: NONE). Animation chỉ để hiển thị, không chứa logic
     string Range = "", string Area = "",   // tầm đánh / phạm vi (hiển thị)
     double Lead = 0,           // bị động: giá trị = mức/cấp × (cấp + Lead) — cho phép Lv.1 cao hơn tuyến tính (vd. 5% → 20%)
     double QiCut = 0,          // % giảm linh khí tiêu hao của chiêu Hỏa (mỗi cấp)
-    double RangePct = 0)       // % tầm đánh chiêu Hỏa (hiển thị)
+    double RangePct = 0,       // % tầm đánh chiêu Hỏa (hiển thị)
+    double BurnPct = 0)        // bị động: thiêu đốt = % công (mỗi cấp), BurnChance% kích hoạt mỗi lượt từ lượt 2, bỏ qua phòng thủ
 {
     /// <summary>Điểm cần để lên từ cấp lv lên lv+1: lĩnh ngộ tốn Cost, mỗi lần nâng tốn 1 + lv/2.</summary>
     public int CostAt(int lv) => lv == 0 ? Cost : 1 + lv / 2;
@@ -49,7 +50,7 @@ public static class SkillData
 
     public static readonly IReadOnlyList<SkillDef> Skills = new SkillDef[]
     {
-        // ===== HỎA: Đánh thường (2, không dùng điểm) + Cây Chủ động (4) + Cây Bị động (7). Mọi hệ sau dùng cùng khung =====
+        // ===== HỎA: Đánh thường (2, không dùng điểm) + Chủ động (4) + Bị động (7). Mọi hệ sau dùng cùng khung =====
         // Row/Col: vị trí trong cây của chính nó (chủ động 3 hàng × 3 cột, bị động 5 hàng × 3 cột).
         // ---- ĐÁNH THƯỜNG: luôn có, không có cấp, mạnh lên theo cảnh giới / chỉ số / trang bị / công pháp bị động ----
         new("hoa_cau", "hoa", "Hỏa Cầu", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
@@ -76,6 +77,8 @@ public static class SkillData
             "Linh căn hệ Hỏa trong cơ thể (mở thân hòa Hỏa). Tăng tấn công và tốc độ hấp thu linh khí.", "root", AtkPct: 2, QiPct: 2, Code: "FIRE_ROOT_001"),
         new("hoa_tu", "hoa", "Hỏa Tụ", "Bị động", 1, 1, 5, 0, 1, new[] { "hoa_linh_can:1" },
             "Tụ hỏa linh trong kinh mạch: tăng sát thương Hỏa (Lv.1 +5% → Lv.5 +20%).", "passive", SkillPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_001"),
+        new("phan_cot", "hoa", "Phần Cốt", "Bị động", 1, 2, 5, 0, 1, new[] { "hoa_tu:1" },
+            "Hỏa độc bám xương: từ lượt 2, mỗi lượt có 30% cơ hội thiêu đốt quái (Lv.1 1% → Lv.5 5% công), bỏ qua phòng thủ.", "passive", BurnPct: 1, Code: "FIRE_PASSIVE_007"),
         new("nhiet_huyet", "hoa", "Nhiệt Huyết", "Bị động", 2, 0, 5, 0, 1, new[] { "hoa_tu:2" },
             "Máu nóng sục sôi: tăng tỉ lệ chí mạng Hỏa (Lv.1 +3% → Lv.5 +15%).", "passive", Crit: 3, Code: "FIRE_PASSIVE_002"),
         new("hoa_the", "hoa", "Hỏa Thể", "Bị động", 2, 1, 5, 0, 1, new[] { "hoa_tu:2" },
@@ -127,18 +130,24 @@ public static class SkillData
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);
 
-    /// <summary>2 ô chiến đấu: ô 0 = đòn đánh thường (mỗi lượt), ô 1 = kỹ năng có hồi chiêu (Công hoặc Tuyệt kỹ).</summary>
+    /// <summary>2 ô chiến đấu: ô 0 = đòn đánh thường (mỗi lượt), ô 1 = kỹ năng chủ động (Công hoặc Tuyệt kỹ), thi triển khi đầy nộ.</summary>
     public const int SkillSlotCount = 2, BasicSlot = 0, UltimateSlot = 1;
+
+    /// <summary>Nộ: mỗi đòn đánh thường tích RagePerHit, đủ RageMax thì lượt kế tiếp tung kỹ năng chủ động THAY cho đòn thường, nộ về 0 (4 đòn thường → 1 kỹ năng).</summary>
+    public const int RagePerHit = 25, RageMax = 100;
+
+    /// <summary>Thiêu đốt (Phần Cốt): % cơ hội kích hoạt mỗi lượt, từ lượt 2.</summary>
+    public const int BurnChance = 30;
     public static bool FitsSlot(SkillDef s, int slot) =>
         slot == BasicSlot ? s.Category == "Đòn thường" : s.Category is "Công" or "Tuyệt kỹ" or "Khống" or "Thủ" or "Thân pháp";
 
     /// <summary>
     /// Hiệu ứng khi kỹ năng được đặt vào ô và tự thi triển trong trận (cấp lv):
-    /// Every = mấy lượt dùng một lần (0 = chỉ lượt đầu), Shield = % giảm sát thương nhận, Stun = số lượt quái bị khống,
+    /// Chiêu công không còn theo hồi chiêu mà thi triển khi đầy nộ (xem RagePerHit / RageMax). Shield = % giảm sát thương nhận, Stun = số lượt quái bị khống,
     /// Dodge = % né đòn, Burn = % sát thương thiêu đốt mỗi lượt.
     /// </summary>
     public static (int every, int first, double shield, int stun, double dodge, double burn) Active(SkillDef s, int lv) =>
-        s.Every > 0 ? (s.Every, 1, 0, 0, 0, 0) : (0, 0, 0, 0, 0, 0);   // thi triển lần đầu ở lượt 2, sau đó cứ Every lượt
+        (0, 0, 0, 0, 0, 0);
 
     /// <summary>Sát thương (% công) của kỹ năng ở cấp lv.</summary>
     public static int Damage(SkillDef s, int lv) => s.DmgBase == 0 ? 0 : s.DmgBase + s.DmgPerLv * Math.Max(0, lv - 1);
