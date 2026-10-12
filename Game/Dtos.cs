@@ -22,7 +22,7 @@ public record CostDto(string Item, int Need, int Have);
 
 /// <summary>Bản đồ cảnh giới hiện tại: ải đang đánh, ải đã mở, dự đoán thắng/thua từng ải, chìa khóa và yêu hạch Boss.</summary>
 public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, string BossLair, double KeyChanceMin, double KeyChanceMax,
-    List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem);
+    List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem, int Realm = 0);
 
 public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open);
 
@@ -31,7 +31,7 @@ public record SynthStateDto(string From, int Max);
 /// <summary>Đột phá: tỉ lệ gốc, thời gian điều tức sau thất bại, thời gian suy yếu (tẩu hỏa nhập ma), thay đổi khi thành công.</summary>
 public record BreakStateDto(double BaseChance, long CooldownMs, long DebuffMs, BreakPreviewDto Preview);
 
-public record BreakPreviewDto(int Hp, int Atk, int Def, double RatePct, int BagSlots, string[] NewSlots, string[] NewStats);
+public record BreakPreviewDto(int Hp, int Atk, int Def, double RatePct, int BagSlots, string[] NewSlots, string[] NewStats, int SkillPoints = 0);
 
 public record LogDto(DateTime At, string Text, string Kind);
 
@@ -98,7 +98,7 @@ public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg)
 
 /// <summary>Kết quả một lần luyện chế/hợp thành: thành phẩm và nguyên liệu đã tiêu hao (dùng chung cho mọi công thức).</summary>
 public record ItemQtyDto(string Item, int Qty);
-public record CraftResultDto(string Recipe, ItemQtyDto Output, List<ItemQtyDto> Inputs);
+public record CraftResultDto(string Recipe, ItemQtyDto Output, List<ItemQtyDto> Inputs, List<ItemQtyDto>? Outputs = null);
 
 public record ActionResponse(StateDto State, string? Message = null, string? Kind = null, CraftResultDto? Craft = null);
 

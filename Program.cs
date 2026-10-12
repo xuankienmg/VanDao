@@ -105,8 +105,8 @@ public static class Program
         api.MapPost("/players/{id:guid}/equip/{itemId}", (Guid id, string itemId, string? slot, GameService game) =>
             Run(id, game, p => game.Equip(p, itemId, slot)));
 
-        api.MapPost("/players/{id:guid}/use/{itemId}", (Guid id, string itemId, GameService game) =>
-            RunCraft(id, game, p => game.UseItem(p, itemId)));
+        api.MapPost("/players/{id:guid}/use/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
+            RunCraft(id, game, p => game.UseItem(p, itemId, n ?? 1)));
 
         api.MapPost("/players/{id:guid}/drop/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             Run(id, game, p => game.Drop(p, itemId, n ?? 1)));
@@ -136,6 +136,10 @@ public static class Program
         // bản đồ: chọn ải 1..20, 21 = Boss (cần chìa khóa)
         api.MapPost("/players/{id:guid}/area/{area:int}", (Guid id, int area, GameService game) =>
             Run(id, game, p => game.SelectArea(p, area)));
+
+        // bản đồ: chọn cảnh giới (quay lại bản đồ cảnh giới trước)
+        api.MapPost("/players/{id:guid}/map/{realm:int}", (Guid id, int realm, GameService game) =>
+            Run(id, game, p => game.SelectMap(p, realm)));
 
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
