@@ -82,7 +82,7 @@ public class RealmDef
     /// <summary>Quái vật chặn đường khi thám hiểm: chỉ số gốc (tên/ảnh mặc định nếu không có MonsterNames).</summary>
     public required MonsterDef Monster { get; init; }
 
-    /// <summary>Tên 7 loài quái theo thứ tự GameData.MonsterImages (ải 1-20 chia đều, mạnh dần); null = dùng Monster.</summary>
+    /// <summary>Tên 7 loài quái theo thứ tự GameData.MonsterImages (ải 1-15 chia đều, mạnh dần); null = dùng Monster.</summary>
     public string[]? MonsterNames { get; init; }
     public required string[] Places { get; init; }
 
@@ -106,6 +106,13 @@ public static class GameData
     public static readonly IReadOnlyList<ItemDef> Items = new[]
     {
         new ItemDef("linh_thach",    "Linh thạch",       "stone", "#8fd0c9", "Tiền tệ chung của giới tu tiên: dùng để tu luyện, hợp thành đan và đột phá.", Rarity: "common", Kind: "Linh thạch"),
+        // ---- rương: rơi khi diệt yêu, mở ra nhận 1 phần thưởng ngẫu nhiên theo cảnh giới (GameService.OpenChest) ----
+        new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
+            Use: "Mở ra nhận ngẫu nhiên trang bị hoặc đan dược của cảnh giới hiện tại · 10% ra pháp bảo."),
+        new ItemDef("ruong_hiem",   "Rương hiếm",   "chest", "#5aa2e6", "Rương lam khảm ngọc, phù văn còn sáng. Chỉ rơi ở ải 10–15.", Rarity: "rare", Kind: "Rương",
+            Use: "Mở ra nhận ngẫu nhiên trang bị phẩm cao nhất hoặc nhiều đan dược của cảnh giới hiện tại · 20% ra pháp bảo."),
+        new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
+            Use: "Mở ra nhận ngẫu nhiên trang bị phẩm cao nhất hoặc nhiều đan dược của cảnh giới hiện tại · 40% ra pháp bảo."),
         // ---- chuỗi đan 9→1: đan chỉ dùng để lên tầng và đột phá ----
         new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, rơi từ yêu thú vùng Luyện Khí.", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. 9 viên hợp thành 1 Trúc Cơ Đan."),
@@ -115,7 +122,7 @@ public static class GameData
             Use: "Dùng để đột phá đại cảnh giới Trúc Cơ → Kim Đan, và lên kỳ trong Kim Đan."),
         new ItemDef("ket_anh_dan",   "Kết Anh Đan",      "pill",  "#c58cff", "Đan phá đan thành anh, cực kỳ hiếm có.", Rarity: "legendary", Kind: "Đan dược", Tier: 4,
             Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
-        // ---- chìa khóa vào ải Boss (rơi ở ải 1–20) ----
+        // ---- chìa khóa vào ải Boss (rơi ở ải 1–15) ----
         new ItemDef("hu_thien_tan_do", "Hư Thiên Tàn Đồ",  "key", "#c9a86a", "Mảnh bản đồ cổ dẫn tới Hư Thiên Điện, nơi Hắc Lân Mãng ẩn mình.", Rarity: "epic", Kind: "Chìa khóa",
             Use: "Cần để vào ải Boss 1-21 · Hư Thiên Điện. Chỉ mất khi thắng Boss."),
         new ItemDef("huyet_sac_lenh",  "Huyết Sắc Lệnh Bài", "key", "#c0463a", "Lệnh bài đỏ thẫm mở cửa trung tâm Huyết Sắc Cấm Địa.", Rarity: "epic", Kind: "Chìa khóa",
@@ -191,7 +198,7 @@ public static class GameData
     /// <summary>Vật phẩm có ảnh pixel 48×48 trong wwwroot/img/{id}.png.</summary>
     private static readonly HashSet<string> PixelIcons = new()
     {
-        "linh_thach", "tu_khi_dan", "truc_co_dan", "ngung_kim_dan", "ket_anh_dan",
+        "linh_thach", "tu_khi_dan", "truc_co_dan", "ngung_kim_dan", "ket_anh_dan", "ruong_thuong", "ruong_hiem", "ruong_boss",
         "hu_thien_tan_do", "huyet_sac_lenh", "con_ngo_lenh", "hac_lan_yeu_hach", "huyet_giao_hach", "kim_o_tinh_hach" };
 
     /// <summary>Giá gốc theo độ hiếm; trang bị cảnh giới cao bán đắt hơn (×5 mỗi cảnh giới).</summary>
@@ -237,7 +244,25 @@ public static class GameData
     public const double BreakCritBonus = .10;
 
     /// <summary>Số ải thường mỗi cảnh giới; ải kế tiếp (21) là ải Boss.</summary>
-    public const int Areas = 20;
+    public const int Areas = 15;
+
+    // ---- rương ----
+    /// <summary>Tỉ lệ rơi mỗi trận thắng: rương thường ở mọi ải, rương hiếm chỉ từ ải RareChestMinArea.</summary>
+    public const double ChestChance = 0.5, RareChestChance = 0.3;
+    public const int RareChestMinArea = 10;
+    /// <summary>Hạ Boss: chắc chắn rơi 1 Rương Boss.</summary>
+    public const string BossChest = "ruong_boss";
+
+    /// <summary>
+    /// Phần thưởng khi mở rương (1 món): Treasure = tỉ lệ ra pháp bảo (pháp bảo chỉ có từ rương);
+    /// phần còn lại: GearShare ra trang bị (TopGear = chỉ phẩm cao nhất), còn lại ra đan lên tầng PillMin–PillMax viên.
+    /// </summary>
+    public record ChestDef(double Treasure, double GearShare, bool TopGear, int PillMin, int PillMax, bool AllTreasures);
+    public static readonly IReadOnlyDictionary<string, ChestDef> Chests = new Dictionary<string, ChestDef>
+    {
+        ["ruong_thuong"] = new(0.10, 0.4, false, 1, 2, false),
+        ["ruong_hiem"]   = new(0.20, 0.5, true,  2, 4, true),
+        ["ruong_boss"]   = new(0.40, 0.6, true,  4, 7, true) };
     public const int BossArea = Areas + 1;
 
     /// <summary>Quái ở ải s (1..20): mạnh dần từ ×0.6 đến ×2.6 so với quái gốc của cảnh giới.</summary>
@@ -316,12 +341,10 @@ public static class GameData
             Boss = new MonsterDef("Huyết Giao", "img/boss_huyet_giao.png", Hp: 940, Atk: 172, Def: 52),
             BossLair = "Cấm Địa Trung Tâm", KeyItem = "huyet_sac_lenh", BossItem = "huyet_giao_hach",
             Drops = new[] { new DropDef("linh_thach", 30, 80, 1), new DropDef("tu_khi_dan", 1, 3, .8), new DropDef("truc_co_dan", 1, 1, .05),
-                // pháp bảo nhập môn (ô Pháp bảo mở ở Trúc Cơ)
-                new DropDef("pb_holo", 1, 1, .012), new DropDef("pb_guong", 1, 1, .012), new DropDef("pb_kiem", 1, 1, .008),
-                // bộ Huyền Băng (Bảo phẩm): hiếm hơn pháp bảo nhập môn
+                                // bộ Huyền Băng (Bảo phẩm). Pháp bảo không rơi từ quái: chỉ có khi mở rương
                 new DropDef("tc_ao", 1, 1, .006), new DropDef("tc_mu", 1, 1, .006), new DropDef("tc_gang", 1, 1, .006), new DropDef("tc_quan", 1, 1, .006),
                 new DropDef("tc_giay", 1, 1, .006), new DropDef("tc_kiem", 1, 1, .004), new DropDef("tc_thuong", 1, 1, .004),
-                new DropDef("tc_day", 1, 1, .004), new DropDef("tc_nhan", 1, 1, .004), new DropDef("tc_chau", 1, 1, .003) },
+                new DropDef("tc_day", 1, 1, .004), new DropDef("tc_nhan", 1, 1, .004) },
             Resources = new[] { "linh_thach", "tu_khi_dan", "truc_co_dan", "huyet_sac_lenh", "huyet_giao_hach" } },
         new RealmDef
         {

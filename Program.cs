@@ -106,7 +106,7 @@ public static class Program
             Run(id, game, p => game.Equip(p, itemId, slot)));
 
         api.MapPost("/players/{id:guid}/use/{itemId}", (Guid id, string itemId, GameService game) =>
-            Run(id, game, p => game.Use(p, itemId)));
+            RunCraft(id, game, p => game.UseItem(p, itemId)));
 
         api.MapPost("/players/{id:guid}/drop/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             Run(id, game, p => game.Drop(p, itemId, n ?? 1)));

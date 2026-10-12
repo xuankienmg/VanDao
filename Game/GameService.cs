@@ -163,6 +163,60 @@ public class GameService(GameDbContext db)
         return ($"Đã trang bị {def.Name}.", "good");
     }
 
+    /// <summary>Dùng vật phẩm: rương thì mở (kèm kết quả cho thông báo), còn lại như Use.</summary>
+    public (string msg, string kind, CraftResultDto? craft) UseItem(Player p, string itemId)
+    {
+        if (GameData.ItemById.TryGetValue(itemId, out var d) && d.Type == "chest") return OpenChest(p, d);
+        var (m, k) = Use(p, itemId);
+        return (m, k, null);
+    }
+
+    /// <summary>
+    /// Mở rương: 1 phần thưởng. Pháp bảo (ô offhand) với tỉ lệ nhỏ; còn lại chia giữa trang bị
+    /// trong bảng rơi của cảnh giới hiện tại và đan dược dùng để lên tầng/kỳ của cảnh giới đó.
+    /// Rương hiếm: pháp bảo nhiều hơn, trang bị chỉ lấy phẩm cao nhất, đan nhiều hơn.
+    /// </summary>
+    private (string msg, string kind, CraftResultDto craft) OpenChest(Player p, ItemDef chest)
+    {
+        if (p.Count(chest.Id) < 1) throw new GameException("Không có rương này trong hành trang.");
+        var cd = GameData.Chests[chest.Id];
+        var r = Realm(p);
+        var rng = Random.Shared;
+        string item; int n = 1;
+        var treasures = GameData.AllItems.Where(i => i.Slot == "offhand" && i.MinRealm <= Math.Max(1, p.Realm)
+            && (cd.AllTreasures || i.Rarity == "uncommon")).ToList();
+        var gear = r.Drops.Select(dd => (def: GameData.ItemById[dd.Item], w: dd.Chance))
+            .Where(x => x.def.Slot is not null && x.def.Slot != "offhand").ToList();
+        if (cd.TopGear && gear.Count > 0)
+        {
+            var top = gear.Max(x => Array.IndexOf(GameData.RarityOrder, x.def.Rarity));
+            gear = gear.Where(x => Array.IndexOf(GameData.RarityOrder, x.def.Rarity) == top).Select(x => (x.def, 1.0)).ToList();
+        }
+        if (rng.NextDouble() < cd.Treasure && treasures.Count > 0)
+            item = treasures[rng.Next(treasures.Count)].Id;
+        else if (gear.Count > 0 && rng.NextDouble() < cd.GearShare)
+        {
+            var x = rng.NextDouble() * gear.Sum(g => g.w);     // chọn theo trọng số = tỉ lệ rơi gốc
+            item = gear[^1].def.Id;
+            foreach (var g in gear) { if ((x -= g.w) < 0) { item = g.def.Id; break; } }
+        }
+        else
+        {
+            item = r.StageCost(0).Keys.First(k => k != "linh_thach");     // đan lên tầng/kỳ của cảnh giới hiện tại
+            n = rng.Next(cd.PillMin, cd.PillMax + 1);
+        }
+        p.Add(chest.Id, -1);
+        if (TryAddLoot(p, item, n) < n)
+        {
+            p.Add(chest.Id, 1);
+            throw new GameException("Hành trang đầy, dọn bớt rồi mở rương.");
+        }
+        var def = GameData.ItemById[item];
+        var (msg, kind) = Log(p, $"Mở {chest.Name}: nhận {n} {def.Name}{(def.Slot == "offhand" ? " (pháp bảo)" : "")}.",
+            def.Slot == "offhand" || Array.IndexOf(GameData.RarityOrder, def.Rarity) >= 2 ? "gold" : "loot");
+        return (msg, kind, new CraftResultDto("chest:" + chest.Id, new(item, n), new() { new(chest.Id, 1) }));
+    }
+
     /// <summary>Dùng vật phẩm tiêu hao (đan dược hồi linh khí).</summary>
     public (string msg, string kind) Use(Player p, string itemId)
     {
@@ -525,9 +579,9 @@ public class GameService(GameDbContext db)
     private static int MaxSynth(Player p, SynthDef sd) =>
         Math.Min(p.Count(sd.From) / sd.Count, sd.Stones > 0 ? p.Count("linh_thach") / sd.Stones : int.MaxValue);
 
-    // ================= Bản đồ: 20 ải + ải Boss =================
+    // ================= Bản đồ: 15 ải + ải Boss =================
 
-    /// <summary>Chọn ải để tự động thám hiểm. Ải 21 (Boss) cần chìa khóa và đã mở ải 20.</summary>
+    /// <summary>Chọn ải để tự động thám hiểm. Ải Boss (BossArea) cần chìa khóa và đã mở ải cuối.</summary>
     public (string msg, string kind) SelectArea(Player p, int area)
     {
         var r = Realm(p);
@@ -571,6 +625,7 @@ public class GameService(GameDbContext db)
             inv.Count = 0;
         }
         p.RefineRecipe = -1;
+        if (p.AreaMax > GameData.Areas && p.Area >= GameData.BossArea) p.Area = GameData.Areas;   // bản đồ cũ 20 ải → 15 ải
         p.Area = Math.Clamp(p.Area, 1, GameData.BossArea);
         p.AreaMax = Math.Clamp(p.AreaMax, 1, GameData.Areas);
     }
@@ -641,7 +696,9 @@ public class GameService(GameDbContext db)
                         p.Add(r.BossItem, 1);
                         p.BossKills++;
                         p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p) * 5);
-                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}! Nhận {GameData.ItemById[r.BossItem].Name}, tiêu hao {GameData.ItemById[r.KeyItem].Name}.";
+                        var chestOk = TryAddLoot(p, GameData.BossChest, 1) > 0;   // Boss chắc chắn rơi rương
+                        if (chestOk) loot[GameData.BossChest] = loot.GetValueOrDefault(GameData.BossChest) + 1;
+                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}! Nhận {GameData.ItemById[r.BossItem].Name}{(chestOk ? $", {GameData.ItemById[GameData.BossChest].Name}" : " (hành trang đầy, bỏ lại Rương Boss)")}, tiêu hao {GameData.ItemById[r.KeyItem].Name}.";
                     }
                     else
                     {
@@ -674,6 +731,13 @@ public class GameService(GameDbContext db)
                 }
                 if (Random.Shared.NextDouble() < GameData.KeyChance(area) * luck && TryAddLoot(p, r.KeyItem, 1) > 0)
                     loot[r.KeyItem] = loot.GetValueOrDefault(r.KeyItem) + 1;
+                // rương: thường ở mọi ải, hiếm từ ải RareChestMinArea
+                foreach (var (chest, chance) in new[] { ("ruong_thuong", GameData.ChestChance),
+                             ("ruong_hiem", area >= GameData.RareChestMinArea ? GameData.RareChestChance : 0) })
+                {
+                    if (chance <= 0 || Random.Shared.NextDouble() >= chance) continue;
+                    if (TryAddLoot(p, chest, 1) > 0) loot[chest] = loot.GetValueOrDefault(chest) + 1; else lost++;
+                }
                 p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p));
                 // thắng ở ải cao nhất → mở và tiến sang ải kế
                 if (area == p.AreaMax && p.AreaMax < GameData.Areas) { p.AreaMax++; p.Area = p.AreaMax; }
