@@ -8,7 +8,7 @@ from scipy import ndimage
 src, out = sys.argv[1], sys.argv[2]
 im = np.array(Image.open(src).convert('RGB')).astype(int)
 BOX = {   # id: (x0, y0, x1, y1) trong ảnh 1024×882
-    'lk_mu':   (128, 148, 272, 262), 'lk_ao':  (318, 98, 502, 382),  'lk_bua':  (543, 98, 692, 272),
+    'lk_mu':   (128, 148, 272, 262), 'lk_ao':  (318, 98, 502, 382),
     'lk_nhan': (558, 318, 642, 405), 'lk_kiem': (72, 342, 308, 578), 'lk_gang': (323, 443, 482, 598),
     'lk_giay': (528, 468, 667, 607), 'pb_holo': (738, 448, 837, 567), 'pb_guong': (848, 448, 967, 577),
     'pb_kiem': (788, 558, 977, 746),

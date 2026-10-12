@@ -45,6 +45,13 @@ public class GameService(GameDbContext db)
     {
         var p = await db.Players.Include(x => x.Inventory).Include(x => x.Equipment).FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new KeyNotFoundException();
+        // món đang mặc đã bị bỏ khỏi game → tháo vào túi để ConvertLegacy quy đổi ra linh thạch
+        foreach (var e in p.Equipment.Where(e => !GameData.ItemById.ContainsKey(e.ItemId)).ToList())
+        {
+            p.Add(e.ItemId, 1);
+            p.Equipment.Remove(e);
+            db.Equipment.Remove(e);
+        }
         ConvertLegacy(p);
         Tick(p, DateTime.UtcNow);
         // ô trang bị chưa mở ở cảnh giới hiện tại (dữ liệu bản cũ) → trả món về túi
@@ -225,7 +232,6 @@ public class GameService(GameDbContext db)
 
     /// <summary>Cấp hiển thị: đếm liên tục qua các tầng/kỳ của mọi cảnh giới.</summary>
     public static int Level(Player p) => GameData.Realms.Take(p.Realm).Sum(r => r.Stages.Length) + p.Stage + 1;
-    public static int LevelOf(int realm) => GameData.Realms.Take(realm).Sum(r => r.Stages.Length) + 1;
 
     public (string msg, string kind) Unequip(Player p, string slotId)
     {
@@ -496,7 +502,7 @@ public class GameService(GameDbContext db)
     // ================= Đan dược: hợp thành 9 → 1 =================
 
     /// <summary>Hợp thành n lần (0 = tối đa): mỗi lần 9 viên bậc dưới + phí linh thạch → 1 viên bậc trên. Luôn thành công.</summary>
-    public (string msg, string kind) Synthesize(Player p, string fromId, int n)
+    public (string msg, string kind, CraftResultDto craft) Synthesize(Player p, string fromId, int n)
     {
         var sd = GameData.Synths.FirstOrDefault(x => x.From == fromId) ?? throw new GameException("Đan này không hợp thành tiếp được.");
         var max = MaxSynth(p, sd);
@@ -510,7 +516,10 @@ public class GameService(GameDbContext db)
         p.Add(sd.From, -sd.Count * n);
         p.Add("linh_thach", -sd.Stones * n);
         p.Add(sd.To, n);
-        return Log(p, $"Hợp thành {sd.Count * n} {GameData.ItemById[sd.From].Name} → {n} {GameData.ItemById[sd.To].Name}.", "gold");
+        var (msg, kind) = Log(p, $"Hợp thành {sd.Count * n} {GameData.ItemById[sd.From].Name} → {n} {GameData.ItemById[sd.To].Name}.", "gold");
+        var inputs = new List<ItemQtyDto> { new(sd.From, sd.Count * n) };
+        if (sd.Stones > 0) inputs.Add(new("linh_thach", sd.Stones * n));
+        return (msg, kind, new CraftResultDto($"{sd.From}>{sd.To}", new(sd.To, n), inputs));
     }
 
     private static int MaxSynth(Player p, SynthDef sd) =>

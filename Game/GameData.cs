@@ -131,13 +131,8 @@ public static class GameData
             Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
 
         // ---- trang bị (ảnh trong wwwroot/img) ----
-        new ItemDef("thiet_kiem", "Thiết kiếm",     "equip", "#9aa0a8", "Kiếm sắt thường, chuôi quấn vải, đốc ngọc thô.",       "img/thiet_kiem.png", "weapon", Atk: 6, Rarity: "common", Kind: "Kiếm", CritPct: 4, Special: "Kiếm pháp: +4% Bạo kích"),
         new ItemDef("hac_dao",    "Hắc đao",        "equip", "#7f8794", "Đao bản rộng rèn từ sắt đen, khắc phù văn mờ.",       "img/hac_dao.png",    "weapon", Atk: 10, LuckPct: 5, Rarity: "uncommon", Kind: "Đao", CritPct: 2, Special: "Đao thế nặng: tăng may mắn khi nhặt đồ"),
-        new ItemDef("non_vai",    "Nón vải rách",   "equip", "#6d7078", "Nón vải sờn mép, gắn mảnh linh thạch nhỏ.",           "img/non_vai.png",    "head",   Hp: 15, Def: 1, Rarity: "common", Kind: "Nón"),
-        new ItemDef("ao_vai",     "Áo vải thô",     "equip", "#6d7078", "Áo giao lĩnh vá chằng vá đụp của tán tu.",            "img/ao_vai.png",     "body",   Hp: 40, Def: 2, Rarity: "common", Kind: "Đạo bào"),
-        new ItemDef("gang_vai",   "Găng tay vải",   "equip", "#5c5f66", "Găng vải dày buộc dây gai.",                          "img/gang_vai.png",   "hands",  Atk: 2, Def: 1, Rarity: "common", Kind: "Găng tay"),
         new ItemDef("gang_da",    "Găng tay da",    "equip", "#7a6a55", "Găng da thú, mu tay đính linh thạch.",                "img/gang_da.png",    "hands",  Atk: 3, Def: 2, Rarity: "uncommon", Kind: "Găng tay"),
-        new ItemDef("quan_vai",   "Quần vải thô",   "equip", "#6d7078", "Quần vải buộc dây thừng, gối vá.",                    "img/quan_vai.png",   "legs",   Hp: 25, Def: 1, Rarity: "common", Kind: "Quần"),
         new ItemDef("nhan_ngoc",  "Nhẫn ngọc thô",  "equip", "#4f7a64", "Nhẫn ngọc xanh khắc phù văn, linh khí yếu ớt.",       "img/nhan_ngoc.png",  "ring",   QiPct: 5, LuckPct: 8, Rarity: "uncommon", Kind: "Nhẫn"),
         // trang bị Trúc Cơ / Kim Đan: sẽ thêm bộ mới có ảnh riêng (bản cũ dùng lại ảnh Luyện Khí đổi màu đã bỏ)
     };
@@ -146,7 +141,6 @@ public static class GameData
     public static readonly ItemDef[] ExtraItems =
     {
         new("truong_thuong", "Trường thương",     "equip", "#a07a50", "Thương gỗ cán dài, mũi sắt, buộc tua đỏ.",            "img/truong_thuong.png", "weapon", Atk: 8, CritPct: 3, Rarity: "uncommon", Kind: "Thương", Special: "Đâm xa: +3% Bạo kích"),
-        new("giay_vai",      "Giày vải",          "equip", "#5c5f66", "Giày vải đế mỏng, đi đường núi đỡ mỏi.",              "img/giay_vai.png", "feet", Def: 1, MovePct: 6, Rarity: "common", Kind: "Giày"),
         new("ngoc_boi",      "Ngọc bội thô",      "equip", "#50aa78", "Ngọc bội đeo hông, linh khí mỏng manh.",               "img/ngoc_boi.png", "necklace", Hp: 20, QiPct: 3, Rarity: "uncommon", Kind: "Dây chuyền"),
 
         // ---- bộ Luyện Khí Giới (Linh phẩm, nền xanh lục): bậc trên đồ vải thường của Luyện Khí. Ảnh: tools/cut_items.py ----
@@ -155,12 +149,23 @@ public static class GameData
         new("lk_ao",   "Giới Bào",  "equip", "#5fbf6a", "Đạo bào lam thẫm viền chỉ đỏ, dệt lẫn sợi linh tơ.",        "img/lk_ao.png",   "body",     Hp: 85, Def: 5, Rarity: "uncommon", Kind: "Đạo bào", Set: "Luyện Khí Giới"),
         new("lk_gang", "Giới Thủ Sáo", "equip", "#5fbf6a", "Găng hở ngón tán đinh bạc, ra quyền nhanh mà chắc.",     "img/lk_gang.png", "hands",    Atk: 4, Def: 3, Rarity: "uncommon", Kind: "Găng tay", Set: "Luyện Khí Giới"),
         new("lk_giay", "Giới Hài",  "equip", "#5fbf6a", "Ủng vải cổ cao bọc da, đi đường núi không mỏi.",            "img/lk_giay.png", "feet",     Hp: 20, Def: 3, MovePct: 9, Rarity: "uncommon", Kind: "Giày", Set: "Luyện Khí Giới"),
-        new("lk_bua",  "Giới Phù",  "equip", "#5fbf6a", "Xâu bùa giấy vẽ phù văn ngọc quang, đeo bên hông hộ thân.", "img/lk_bua.png",  "necklace", Hp: 30, QiPct: 5, LuckPct: 3, Rarity: "uncommon", Kind: "Bùa", Set: "Luyện Khí Giới"),
         new("lk_nhan", "Giới Nhẫn", "equip", "#5fbf6a", "Nhẫn đồng khảm lam ngọc, tụ linh khí quanh ngón tay.",      "img/lk_nhan.png", "ring",     QiPct: 7, LuckPct: 10, Rarity: "uncommon", Kind: "Nhẫn", Set: "Luyện Khí Giới"),
         // pháp bảo nhập môn: ô Pháp bảo mở từ Trúc Cơ
         new("pb_holo",  "Linh Hồ Lô",     "equip", "#5fbf6a", "Hồ lô gỗ khắc phù, nuốt linh khí rồi phun ra thành kình lực.", "img/pb_holo.png",  "offhand", Atk: 22, QiPct: 6, MinRealm: 1, Rarity: "uncommon", Kind: "Pháp bảo"),
         new("pb_guong", "Hộ Tâm Kính",    "equip", "#5fbf6a", "Gương đồng soi tâm, phản lại một phần yêu khí.",               "img/pb_guong.png", "offhand", Hp: 160, Def: 14, MinRealm: 1, Rarity: "uncommon", Kind: "Pháp bảo"),
-        new("pb_kiem",  "Thanh Văn Kiếm", "equip", "#5fbf6a", "Đoản kiếm vân xanh, ngự khí bay quanh thân hộ chủ.",           "img/pb_kiem.png",  "offhand", Atk: 18, CritPct: 4, MinRealm: 1, Rarity: "uncommon", Kind: "Pháp bảo", Special: "Ngự kiếm: +4% Bạo kích") };
+        new("pb_kiem",  "Thanh Văn Kiếm", "equip", "#5fbf6a", "Đoản kiếm vân xanh, ngự khí bay quanh thân hộ chủ.",           "img/pb_kiem.png",  "offhand", Atk: 18, CritPct: 4, MinRealm: 1, Rarity: "uncommon", Kind: "Pháp bảo", Special: "Ngự kiếm: +4% Bạo kích"),
+
+        // ---- bộ Huyền Băng (Bảo phẩm, nền lam): trang bị cảnh giới Trúc Cơ, rơi ở Huyết Sắc Cấm Địa ----
+        new("tc_kiem",   "Huyền Văn Kiếm",   "equip", "#5aa2e6", "Trường kiếm lưỡi đen khắc phù văn lam, hàn khí quấn quanh thân kiếm.", "img/tc_kiem.png",   "weapon",   Atk: 70, CritPct: 6, MinRealm: 1, Rarity: "rare", Kind: "Kiếm", Special: "Kiếm pháp: +6% Bạo kích", Set: "Huyền Băng"),
+        new("tc_thuong", "Huyền Băng Thương", "equip", "#5aa2e6", "Thương bạc mũi băng tinh, đâm ra kéo theo một dải hàn quang.",          "img/tc_thuong.png", "weapon",   Atk: 62, CritPct: 9, MinRealm: 1, Rarity: "rare", Kind: "Thương", Special: "Đâm xa: +9% Bạo kích", Set: "Huyền Băng"),
+        new("tc_mu",     "Huyền Khôi",       "equip", "#5aa2e6", "Mũ giáp bạc gắn lam ngọc, giữ thần thức thanh minh.",                  "img/tc_mu.png",     "head",     Hp: 160, Def: 16, QiPct: 3, MinRealm: 1, Rarity: "rare", Kind: "Mũ", Set: "Huyền Băng"),
+        new("tc_ao",     "Huyền Băng Giáp",  "equip", "#5aa2e6", "Giáp bạc khảm linh thạch lam, vai giáp chạm vân mây.",                 "img/tc_ao.png",     "body",     Hp: 460, Def: 27, MinRealm: 1, Rarity: "rare", Kind: "Giáp", Set: "Huyền Băng"),
+        new("tc_gang",   "Huyền Thủ Giáp",   "equip", "#5aa2e6", "Găng giáp bạc nối khớp, mu tay khảm lam ngọc.",                        "img/tc_gang.png",   "hands",    Atk: 22, Def: 16, MinRealm: 1, Rarity: "rare", Kind: "Găng tay", Set: "Huyền Băng"),
+        new("tc_quan",   "Huyền Giáp Khố",   "equip", "#5aa2e6", "Quần giáp vạt dài, đầu gối bọc bạc khảm ngọc bích.",                   "img/tc_quan.png",   "legs",     Hp: 220, Def: 14, MinRealm: 1, Rarity: "rare", Kind: "Quần", Set: "Huyền Băng"),
+        new("tc_giay",   "Huyền Hài",        "equip", "#5aa2e6", "Ủng bạc cổ cao khảm ngọc lục, bước đi nhẹ như gió.",                   "img/tc_giay.png",   "feet",     Hp: 110, Def: 16, MovePct: 11, MinRealm: 1, Rarity: "rare", Kind: "Giày", Set: "Huyền Băng"),
+        new("tc_day",    "Huyền Băng Trụy",  "equip", "#5aa2e6", "Mặt dây băng tinh khắc phù văn, tỏa hàn khí nhè nhẹ.",                 "img/tc_day.png",    "necklace", Hp: 160, QiPct: 6, LuckPct: 4, MinRealm: 1, Rarity: "rare", Kind: "Dây chuyền", Set: "Huyền Băng"),
+        new("tc_nhan",   "Huyền Ngọc Giới",  "equip", "#5aa2e6", "Nhẫn bạc khắc phù văn, lam ngọc ở giữa tụ linh khí.",                  "img/tc_nhan.png",   "ring",     QiPct: 9, LuckPct: 12, MinRealm: 1, Rarity: "rare", Kind: "Nhẫn", Set: "Huyền Băng"),
+        new("tc_chau",   "Huyền Thiên Châu", "equip", "#5aa2e6", "Linh châu lam lơ lửng giữa hai vòng phù văn, nuốt nhả linh khí.",      "img/tc_chau.png",   "offhand",  Atk: 35, QiPct: 8, MinRealm: 1, Rarity: "rare", Kind: "Pháp bảo", Set: "Huyền Băng") };
 
     /// <summary>Chỉ số phụ mở theo cảnh giới (hiện mờ khi chưa mở).</summary>
     public static readonly IReadOnlyList<StatDef> ExtraStats = new[]
@@ -217,7 +222,10 @@ public static class GameData
         ["hoi_khi_dan"] = ("linh_thach", 20), ["luyen_the_dan"] = ("linh_thach", 30), ["hoa_tinh"] = ("linh_thach", 20),
         ["linh_thao"] = ("linh_thach", 2), ["huyet_sam"] = ("linh_thach", 20), ["hoa_linh_chi"] = ("linh_thach", 300),
         ["yeu_dan_1"] = ("linh_thach", 10), ["yeu_dan_2"] = ("linh_thach", 100), ["yeu_dan_3"] = ("linh_thach", 1000),
-        ["canh_kim"] = ("linh_thach", 150), ["lenh_bai"] = ("linh_thach", 50) };
+        ["canh_kim"] = ("linh_thach", 150), ["lenh_bai"] = ("linh_thach", 50),
+        // đã bỏ: bộ đồ vải thường (phẩm trắng) và Giới Phù → hoàn linh thạch bằng giá bán
+        ["thiet_kiem"] = ("linh_thach", 3), ["non_vai"] = ("linh_thach", 3), ["ao_vai"] = ("linh_thach", 3), ["gang_vai"] = ("linh_thach", 3),
+        ["quan_vai"] = ("linh_thach", 3), ["giay_vai"] = ("linh_thach", 3), ["lk_bua"] = ("linh_thach", 12) };
 
     /// <summary>Đột phá đại cảnh giới: phần tỉ lệ đại thành công trong thành công, phần tẩu hỏa nhập ma trong thất bại.</summary>
     public const double BreakCritShare = .2, BreakMajorShare = .25;
@@ -285,12 +293,10 @@ public static class GameData
             Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 140, Atk: 23, Def: 5),
             BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
             Drops = new[] { new DropDef("linh_thach", 3, 8, 1), new DropDef("tu_khi_dan", 1, 1, .4),
-                new DropDef("ao_vai", 1, 1, .04), new DropDef("quan_vai", 1, 1, .04), new DropDef("non_vai", 1, 1, .03),
-                new DropDef("gang_vai", 1, 1, .03), new DropDef("thiet_kiem", 1, 1, .02), new DropDef("nhan_ngoc", 1, 1, .01),
-                new DropDef("truong_thuong", 1, 1, .02), new DropDef("giay_vai", 1, 1, .03), new DropDef("ngoc_boi", 1, 1, .015),
+                new DropDef("nhan_ngoc", 1, 1, .01), new DropDef("truong_thuong", 1, 1, .02), new DropDef("ngoc_boi", 1, 1, .015),
                 // bộ Luyện Khí Giới (Linh phẩm): hiếm hơn đồ vải ~4–5 lần
                 new DropDef("lk_ao", 1, 1, .008), new DropDef("lk_mu", 1, 1, .008), new DropDef("lk_gang", 1, 1, .008), new DropDef("lk_giay", 1, 1, .008),
-                new DropDef("lk_kiem", 1, 1, .006), new DropDef("lk_bua", 1, 1, .006), new DropDef("lk_nhan", 1, 1, .005) },
+                new DropDef("lk_kiem", 1, 1, .006), new DropDef("lk_nhan", 1, 1, .005) },
             Resources = new[] { "linh_thach", "tu_khi_dan", "hu_thien_tan_do", "hac_lan_yeu_hach" } },
         new RealmDef
         {
@@ -311,7 +317,11 @@ public static class GameData
             BossLair = "Cấm Địa Trung Tâm", KeyItem = "huyet_sac_lenh", BossItem = "huyet_giao_hach",
             Drops = new[] { new DropDef("linh_thach", 30, 80, 1), new DropDef("tu_khi_dan", 1, 3, .8), new DropDef("truc_co_dan", 1, 1, .05),
                 // pháp bảo nhập môn (ô Pháp bảo mở ở Trúc Cơ)
-                new DropDef("pb_holo", 1, 1, .012), new DropDef("pb_guong", 1, 1, .012), new DropDef("pb_kiem", 1, 1, .008) },
+                new DropDef("pb_holo", 1, 1, .012), new DropDef("pb_guong", 1, 1, .012), new DropDef("pb_kiem", 1, 1, .008),
+                // bộ Huyền Băng (Bảo phẩm): hiếm hơn pháp bảo nhập môn
+                new DropDef("tc_ao", 1, 1, .006), new DropDef("tc_mu", 1, 1, .006), new DropDef("tc_gang", 1, 1, .006), new DropDef("tc_quan", 1, 1, .006),
+                new DropDef("tc_giay", 1, 1, .006), new DropDef("tc_kiem", 1, 1, .004), new DropDef("tc_thuong", 1, 1, .004),
+                new DropDef("tc_day", 1, 1, .004), new DropDef("tc_nhan", 1, 1, .004), new DropDef("tc_chau", 1, 1, .003) },
             Resources = new[] { "linh_thach", "tu_khi_dan", "truc_co_dan", "huyet_sac_lenh", "huyet_giao_hach" } },
         new RealmDef
         {

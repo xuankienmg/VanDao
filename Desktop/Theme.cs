@@ -10,12 +10,6 @@ internal static class Theme
     public static readonly Color Muted = Color.FromArgb(151, 165, 162);
     public static readonly Color Gold = Color.FromArgb(230, 196, 106);
 
-    /// <summary>
-    /// Màu "khoá" cho nền trong suốt. Chọn gần đen để viền mờ của nhân vật
-    /// hoà thành bóng tối nhẹ thay vì viền màu loè.
-    /// </summary>
-    public static readonly Color TransparentKey = Color.FromArgb(1, 0, 1);
-
     public static ToolStripRenderer Renderer { get; } = new DarkRenderer();
 
     private sealed class DarkRenderer : ToolStripProfessionalRenderer

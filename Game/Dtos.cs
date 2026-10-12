@@ -96,7 +96,11 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
 public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
 
-public record ActionResponse(StateDto State, string? Message = null, string? Kind = null);
+/// <summary>Kết quả một lần luyện chế/hợp thành: thành phẩm và nguyên liệu đã tiêu hao (dùng chung cho mọi công thức).</summary>
+public record ItemQtyDto(string Item, int Qty);
+public record CraftResultDto(string Recipe, ItemQtyDto Output, List<ItemQtyDto> Inputs);
+
+public record ActionResponse(StateDto State, string? Message = null, string? Kind = null, CraftResultDto? Craft = null);
 
 public record CreatePlayerRequest(string? Name);
 
