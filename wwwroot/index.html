@@ -386,11 +386,17 @@ body.panel .sell-btn{padding:0 6px}
 .iv-cell .arm{position:absolute;inset:auto 0 0 0;padding:1px 0;background:rgba(58,30,20,.92);color:#ffc0a0;font-size:8px;line-height:1.1;text-align:center}
 .iv-cell:focus-visible,.iv-slot:focus-visible,.iv-cats button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .r-common{border-color:#6b7076} .r-uncommon{border-color:#4f9f58} .r-rare{border-color:#3f78c4} .r-epic{border-color:#8a52c8} .r-legendary{border-color:#d4a23c;box-shadow:inset 0 0 0 1px #0b0806,0 0 0 1px rgba(230,184,76,.35)}
-/* Linh phẩm: nền xanh lục để nổi hơn đồ thường */
+/* nền theo phẩm trang bị: Trắng xám · Lục xanh lục · Lam xanh lam · Tím */
+.iv-cell.eq.r-common,.iv-slot.r-common{background:radial-gradient(circle at 50% 42%,#5a5e63 0%,#36393d 55%,#202225 100%)}
 .iv-cell.r-uncommon,.iv-slot.r-uncommon,.dd-fr.r-uncommon{background:radial-gradient(circle at 50% 42%,#3a7a44 0%,#21492a 55%,#142a19 100%)}
 .iv-cell.eq.r-rare,.iv-slot.r-rare{background:radial-gradient(circle at 50% 42%,#2f5f9e 0%,#1b3a66 55%,#10213d 100%)}
+.iv-cell.eq.r-epic,.iv-slot.r-epic{background:radial-gradient(circle at 50% 42%,#6b3f9e 0%,#40235f 55%,#24133a 100%)}
 .rc-common{color:#b9bec4} .rc-uncommon{color:#6fd47a} .rc-rare{color:#6fa6f2} .rc-epic{color:#b98cf0} .rc-legendary{color:#f0c860}
 
+.iv-odds{margin-top:4px;padding:5px 7px;border:1px dashed #c0631e;background:rgba(255,138,96,.08);font-size:11px;line-height:1.45}
+.iv-odds .t{font-weight:700;color:#b04a14;margin:0 0 2px}
+.iv-odds p{margin:0}
+.iv-odds .rc-common{color:#6b7076} .iv-odds .rc-uncommon{color:#2f8a3e} .iv-odds .rc-rare{color:#2f66b8} .iv-odds .rc-epic{color:#7a3fc0}
 .iv-card{background:var(--parch);color:var(--ink2);border:2px solid var(--bronze);box-shadow:inset 0 0 0 1px #f0e4c4;padding:7px 9px;display:flex;flex-direction:column;gap:2px}
 .iv-card p{margin:0}
 .iv-card .nm{font-family:var(--f-display);font-weight:700;font-size:16px;text-shadow:0 1px 0 rgba(0,0,0,.35);filter:brightness(.7) saturate(1.4)}
@@ -537,8 +543,6 @@ body.panel .rq .row{border-color:#3b3127}
 .mp-hd .mp-back{font-family:inherit;font-size:11px;color:#c9a86a;letter-spacing:.04em}
 .mp-hd b{display:block;font-family:var(--f-display);font-size:18px;color:var(--parch)}
 .mp-hd span{font-size:11px;color:#a9b4ae}
-.mp-key{display:flex;align-items:center;gap:5px;padding:3px 8px;background:#20160e;border:1px solid #6b5a3e}
-.mp-key img{width:28px;height:28px} .mp-key span{font-size:11px;color:#d8c9a3} .mp-key b{color:var(--gold);font-size:13px}
 .mp-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:6px;background:var(--ink3);border:2px solid var(--bz);box-shadow:inset 0 0 0 2px #0b0806}
 .mp-t{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;border:2px solid #3e4247;box-shadow:inset 0 0 0 1px #0b0806;color:var(--parch);font:inherit}
 .mp-t b{font-size:13px;font-variant-numeric:tabular-nums} .mp-t small{font-size:9.5px;color:#9fb0a8;display:flex;align-items:center;gap:2px}
@@ -898,10 +902,17 @@ const fmt = n => Math.floor(n).toLocaleString('vi-VN');
 const $ = id => document.getElementById(id);
 
 let lastPull = 0;
+/** Các loại rương, quý → thường (thứ tự hiện trong thông báo nhận rương). */
+const CHEST_IDS = ['ruong_boss', 'ruong_hiem', 'ruong_thuong'];
 let lastLogKey = '';
 function setState(st){
-  const prevKey = lastLogKey;
+  const prevKey = lastLogKey, prev = S;
   S = st; recvAt = performance.now();
+  // rương rơi từ quái: số rương trong túi tăng so với lần trước → thông báo
+  if (prev && prev.id === S.id){
+    const got = CHEST_IDS.map(k => [k, (S.inventory[k] || 0) - (prev.inventory?.[k] || 0)]).filter(([, n]) => n > 0);
+    if (got.length && typeof showChestDrop === 'function') showChestDrop(got);
+  }
   const top = S.logs[0]; lastLogKey = top ? top.at + top.text : '';
   if (prevKey && top && lastLogKey !== prevKey && (top.kind === 'loot' || top.kind === 'gold') && typeof floats !== 'undefined'){
     const loot = (top.text.split(': ')[1] || '').replace(/\.$/, '').split(', ').filter(x => x.startsWith('+')).slice(0, 3);
@@ -1271,15 +1282,17 @@ const RARITY = {
 };
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','ring','ring2','weapon','offhand'];
-const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['spiritPct','Linh lực','%'],['qiPct','Tu vi','%'],['luckPct','Thần thức','%']];
+const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
 const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest');
 const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
 const reqLevel = it => levelOf(it.minRealm || 0);
+/** Cấp trang bị (1 Luyện Khí · 10 Trúc Cơ · 15 Kim Đan) hiện ở góc ô; món không có cấp thì hiện cấp nhân vật tối thiểu của cảnh giới yêu cầu. */
+const itemLv = it => it.itemLevel || reqLevel(it);
 const RAR_KEYS = ['common','uncommon','rare','epic','legendary'];
-const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a', 'Huyền Băng': '#3a7fc8'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
+const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
 let bulkScope = 'all', bulkGear = true;
@@ -1289,15 +1302,40 @@ const slotsFor = it => !it.slot ? [] : it.slot === 'ring' ? ['ring','ring2'] : [
 function itemStats(it){ return STAT_KEYS.filter(([k]) => it[k]).map(([k, n, u]) => `${n} +${it[k]}${u}`); }
 // tooltip khi rê chuột (dùng chung cho các tab)
 function itemTip(k, hint){
-  const it = ITEM[k], lines = [it.name, `${rar(it).n} · ${it.kind || ''}`];
-  if (it.slot) lines.push(`Yêu cầu: ${DATA.realms[it.minRealm||0].name} · Cấp ${reqLevel(it)}`);
+  const it = ITEM[k], lines = [it.name, `${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${rar(it).n} · ${it.kind || ''}`];
+  if (it.slot) lines.push(`Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}`);
   const sts = itemStats(it); if (sts.length) lines.push(sts.join(' · '));
   if (it.special) lines.push(it.special);
   if (it.use) lines.push(it.use);
+  if (adminOn && it.type === 'chest') lines.push(...chestOddsLines(k));
   if (it.set) lines.push(`Bộ ${it.set}`);
   lines.push(it.desc);
   if (hint) lines.push(hint);
   return lines.join('\n').replace(/"/g, '&quot;');
+}
+// ---- admin: tỉ lệ phần thưởng khi mở rương (S.chestOdds, tính ở server đúng như lúc mở) ----
+const Q_NAMES = ['Trắng', 'Lục', 'Lam', 'Tím'];
+const pctS = v => (Math.round(v * 100) / 100) + '%';
+function chestOdds(k){ return (S.chestOdds || []).find(o => o.chest === k); }
+/** Tên món gốc (pháp bảo / trang bị) kèm cấp, lấy từ món sinh ra cùng gốc. */
+const gearName = base => { const v = DATA.items.find(i => i.base === base); return v ? `${v.name} (cấp ${v.itemLevel})` : base; };
+function chestOddsLines(k){
+  const o = chestOdds(k); if (!o) return [];
+  const pt = o.treasure.reduce((a, x) => a + x.pct, 0), pg = o.gear.reduce((a, x) => a + x.pct, 0);
+  return [`[Admin] Tỉ lệ mỗi lần mở`,
+    `Phẩm: ${o.quality.map((q, i) => `${Q_NAMES[i]} ${pctS(q)}`).join(' · ')}`,
+    `Pháp bảo ${pctS(pt)} · Trang bị ${pctS(pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
+    `Ra đồ Tím: ${pctS((pt + pg) * o.quality[3] / 100)}`];
+}
+function chestOddsHtml(k){
+  const o = chestOdds(k); if (!o) return '';
+  const pt = o.treasure.reduce((a, x) => a + x.pct, 0), pg = o.gear.reduce((a, x) => a + x.pct, 0);
+  const list = xs => xs.map(x => `${gearName(x.item)} <b>${pctS(x.pct)}</b>`).join(' · ') || '—';
+  return `<div class="iv-odds"><p class="t">Tỉ lệ mỗi lần mở (admin)</p>
+    <p>Phẩm: ${o.quality.map((q, i) => `<span class="rc-${RAR_KEYS[i]}">${Q_NAMES[i]} ${pctS(q)}</span>`).join(' · ')} · <i>ra đồ Tím ${pctS((pt + pg) * o.quality[3] / 100)}</i></p>
+    <p><b>Pháp bảo ${pctS(pt)}</b>: ${list(o.treasure)}</p>
+    <p><b>Trang bị ${pctS(pg)}</b>: ${list(o.gear)}</p>
+    <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p></div>`;
 }
 function itemImg(k, cls = ''){
   const it = ITEM[k];
@@ -1322,7 +1360,7 @@ function bagList(){
   // trang bị: mỗi món một ô; vật phẩm: một ô kèm số lượng
   return owned.flatMap(k => ITEM[k].slot ? Array.from({length: S.inventory[k]}, () => ({k, n: 1})) : [{k, n: S.inventory[k]}]);
 }
-function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed + st.move + st.spirit + st.sense)*4); }
+function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed + st.move)*4); }
 
 /** Vẽ lại Hành trang mà giữ nguyên vị trí cuộn (túi, khung thông tin): renderInv chạy lại mỗi lần trạng thái đổi. */
 function renderInv(){
@@ -1347,15 +1385,15 @@ function renderInvInner(){
       return `<div class="iv-slot locked" data-tip="${sd.name}&#10;Mở ở cảnh giới ${opens ? opens.name : 'cao hơn'}">${LOCK_SVG}<span class="nm">${sd.name}</span></div>`;
     }
     const cls = `${compat.has(id) ? 'compat' : ''} ${invSel?.src === 'slot' && invSel.slot === id ? 'sel' : ''}`;
-    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${reqLevel(ITEM[k])}</span></button>`;
+    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${itemLv(ITEM[k])}</span></button>`;
     return `<button class="iv-slot empty ${cls}" data-slot="${id}" aria-label="${sd.name} (trống)" data-tip="${sd.name}&#10;Trống · kéo trang bị vào đây"><span class="nm">${sd.name}</span></button>`;
   };
 
   // ---- chỉ số ----
   const statRows = [
     ['Tấn công', fmt(st.atk), 0], ['Phòng thủ', fmt(st.def), 0], ['Máu', fmt(st.hp), 0],
-    ['Linh lực', `${Math.round(st.spirit)}%`, 2], ['Bạo kích', `${Math.round(st.crit)}%`, 0],
-    ['Tốc đánh', `${Math.round(st.speed)}%`, 1], ['Tốc chạy', `${Math.round(st.move)}%`, 0], ['Thần thức', `${Math.round(st.sense)}%`, 1],
+    ['Bạo kích', `${Math.round(st.crit)}%`, 0],
+    ['Tốc đánh', `${Math.round(st.speed)}%`, 1], ['Tốc chạy', `${Math.round(st.move)}%`, 0],
   ].map(([n, v, need]) => S.realm >= need
       ? `<div class="st"><span>${n}</span><b>${v}</b></div>`
       : `<div class="st off" data-tip="${n}&#10;Mở ở cảnh giới ${DATA.realms[need].name}"><span>${n}</span><b>${DATA.realms[need].name}</b></div>`).join('');
@@ -1373,7 +1411,7 @@ function renderInvInner(){
     if (i >= shown) return '<div class="iv-cell empty void"></div>';            // giữ lưới đủ 7 hàng ở trang cuối
     if (!c) return `<div class="iv-cell empty ${invCat === 'all' && i >= cap ? 'over' : ''}"></div>`;
     const it = ITEM[c.k], isSel = invSel?.src === 'bag' && invSel.idx === i;
-    return `<button class="iv-cell r-${it.rarity} ${it.slot ? 'eq' : ''} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : canUse(it) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${reqLevel(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
+    return `<button class="iv-cell r-${it.rarity} ${it.slot ? 'eq' : ''} ${isSel ? 'sel' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : canUse(it) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${itemLv(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
   }).join('');
   const counts = Object.fromEntries(CATS.map(([id]) => [id, 0]));
   for (const k of DATA.items.map(i => i.id)) if ((S.inventory[k]||0) > 0){ counts.all++; counts[catOf(ITEM[k])]++; }
@@ -1465,15 +1503,15 @@ function itemCardHtml(k, src){
     : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : it.type === 'chest' ? 'Nhấp đúp hoặc chuột phải để mở · Ctrl + chuột phải mở hết · Del bỏ' : canUse(it) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
-    <p class="sub">${rar(it).n} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
-    ${it.slot ? `<p class="req ${okRealm ? '' : 'bad'}">Cảnh giới: ${DATA.realms[it.minRealm||0].name} · Cấp ${reqLevel(it)}</p>` : ''}
+    <p class="sub">${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${rar(it).n} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
+    ${it.slot ? `<p class="req ${okRealm ? '' : 'bad'}">Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}</p>` : ''}
     ${itemStats(it).length ? `<p class="sts">${itemStats(it).join('<br>')}</p>` : ''}
     ${it.special ? `<p class="spc">${it.special}</p>` : ''}
     ${it.use ? `<p class="spc">${it.use}</p>` : ''}
     ${it.set ? `<p class="set" style="--sc:${SET_COLOR[it.set] || '#2e8b6a'}">◆ Bộ ${it.set}</p>` : ''}
     <p class="ds">“${it.desc}”</p>
     <p class="sv">${it.sell ? `Giá bán: ${fmt(it.sell)} linh thạch` : 'Không bán được'}</p>
-    ${cmp}${hint ? `<p class="hn">${hint}</p>` : ''}</div>`;
+    ${adminOn && it.type === 'chest' ? chestOddsHtml(k) : ''}${cmp}${hint ? `<p class="hn">${hint}</p>` : ''}</div>`;
 }
 function liveInv(){
   const f = $('ivQiFill'); if (!f || !S) return;
@@ -1805,6 +1843,17 @@ function showCraft(c){
   clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, ms);
 }
 
+// Thông báo nhận rương (rơi khi diệt yêu / hạ Boss): rương quý nhất lên đầu
+function showChestDrop(got){
+  const el = $('craftToast'); if (!el || !ITEM[got[0][0]]) return;
+  const list = got.map(([k, n]) => `<b class="rc-${ITEM[k].rarity}">${ITEM[k].name}</b> × ${fmt(n)}`).join(' · ');
+  el.innerHTML = `<span class="ct-ic">${itemImg(got[0][0])}</span><span class="ct-t">Nhận rương</span>
+    <span class="ct-o">${list}</span><span class="ct-u"><span>Nhấp đúp trong Hành trang để mở</span></span>`;
+  el.classList.add('fast');
+  el.hidden = true; void el.offsetWidth; el.hidden = false;
+  clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, 1800);
+}
+
 async function ddSynth(n){
   const k = ddCur(), sd = synthOf(k); if (!sd) return;
   const before = S.inventory[sd.to] || 0;
@@ -1854,8 +1903,7 @@ function renderMap(){
   const why = !bossOpen ? `Mở ải ${R}-${DATA.areas} trước` : keyN < 1 ? `Cần ${ITEM[m.keyItem].name}` : '';
   $('pane-map').innerHTML = `<div class="mp">
     ${realmTabs}
-    <header class="mp-hd"><div><b>Bản đồ · ${r.name}${back ? ' <small class="mp-back">cảnh giới trước</small>' : ''}</b><span>${m.area > DATA.areas ? `Đang khiêu chiến Boss · ${r.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${cur.place}`}</span></div>
-      <div class="mp-key" data-tip="${itemTip(m.keyItem)}">${itemImg(m.keyItem)}<span>${ITEM[m.keyItem].name}</span><b>× ${keyN}</b></div></header>
+    <header class="mp-hd"><div><b>Bản đồ · ${r.name}${back ? ' <small class="mp-back">cảnh giới trước</small>' : ''}</b><span>${m.area > DATA.areas ? `Đang khiêu chiến Boss · ${r.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${cur.place}`}</span></div></header>
     <div class="mp-grid">${m.areas.slice(0, DATA.areas).map(tile).join('')}</div>
     <div class="mp-boss ${m.area > DATA.areas ? 'cur' : ''}">
       <div class="mp-bimg"><img src="${r.bossImage.replace('.png', '_hd.png')}" onerror="this.onerror=null;this.className='px';this.src=this.src.replace('_hd.png','_48.png')" alt=""></div>
@@ -1913,7 +1961,7 @@ function hcFlash(img){                                          // bóng sáng c
   hcFlashCache.set(img, c); return c;
 }
 let skEl = 'hoa', skSel = 'liet_diem', skFade = 0, skPick = null, skAnimT0 = 0;
-// Chiến đấu: ô 0 = ĐÒN THƯỜNG (Hỏa Cầu / Hỏa Tiễn, luôn sẵn có, không dùng điểm) · ô 1 = KỸ NĂNG chủ động (tung khi đầy nộ)
+// Chiến đấu: ô 0 = ĐÒN THƯỜNG (Hỏa Cầu / Thủy Cầu, luôn sẵn có, không dùng điểm) · ô 1 = KỸ NĂNG chủ động (tung khi đầy nộ)
 // Nộ: mỗi đòn đánh thường +RAGE_HIT, đủ RAGE_MAX thì tung kỹ năng ở ô 1 (khớp SkillData.RagePerHit / RageMax ở server)
 const RAGE_HIT = 25, RAGE_MAX = 100, RAGE_HITS = Math.ceil(RAGE_MAX / RAGE_HIT);
 const SLOT_NAMES = ['Đòn thường', 'Kỹ năng'], SLOT_IDX = [0, 1];
@@ -1953,8 +2001,148 @@ function skState(s){
   return {lv, st, why, reqs, cost, max, reqOk, learned: lv > 0};
 }
 const pct1 = v => (Math.round(v * 10) / 10) + '%';
+/** Bảng màu nước (tối → sáng) cho hoạt ảnh hệ Thủy. */
+const WP = ['#0a2350', '#1a52a8', '#3189e6', '#79c6ff', '#e4f6ff'];
+// ---- Thương Hải Quyết: thủy long theo bản thiết kế (img/fx_thuy_long.png, 20 khung 285×157 xếp ngang) ----
+// 0–5 xoáy nước tụ · 6–11 rồng trồi lên · 12–14 rồng lao tới · 15–17 phun thủy triều · 18–19 tan biến
+const TL = {src: 'img/fx_thuy_long.png', fw: 285, fh: 157};
+const tlImg = new Image(); tlImg.src = TL.src;
+/** Khung thủy long ở tiến độ s của lượt (0–1): f = khung, at = 'hero' (trước mặt tu sĩ) · 'fly' (k: 0→1 lao tới) · 'target' (trước quái). */
+function tlFrame(s){
+  if (s < 0) return null;
+  if (s < .2) return {f: Math.min(5, Math.floor(s / .2 * 6)), at: 'hero'};
+  if (s < .38) return {f: 6 + Math.min(5, Math.floor((s - .2) / .18 * 6)), at: 'hero'};
+  if (s < .5) return {f: 12 + Math.min(2, Math.floor((s - .38) / .12 * 3)), at: 'fly', k: (s - .38) / .12};
+  if (s < .75) return {f: 15 + Math.min(2, Math.floor((s - .5) / .25 * 3)), at: 'target'};
+  if (s < .9) return {f: 18 + Math.min(1, Math.floor((s - .75) / .15 * 2)), at: 'target'};
+  return null;
+}
+/** Vẽ thủy long: hx = mép trước tu sĩ, tx = tâm quái, cy = ngang ngực (cùng hệ toạ độ của g2), h = chiều cao nhân vật. */
+function tlDraw(g2, s, hx, tx, cy, h){
+  const fr = tlFrame(s); if (!fr || !tlImg.complete || !tlImg.naturalWidth) return false;
+  const k = h * 1.45 / TL.fh, w = TL.fw * k, hh = TL.fh * k;
+  const tgtX = tx - w * .3;                                       // khung phun nước: đầu rồng bên trái, thủy triều bên phải đập vào quái
+  const x = fr.at === 'hero' ? hx + w * .25 : fr.at === 'fly' ? hx + w * .25 + (tgtX - hx - w * .25) * fr.k : tgtX;
+  g2.save(); g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = 'high';
+  g2.drawImage(tlImg, fr.f * TL.fw, 0, TL.fw, TL.fh, x - w / 2, cy - hh / 2, w, hh);
+  g2.restore();
+  return true;
+}
+// ---- Thủy Lao Bạo: lao cầu phù văn theo bản thiết kế (img/fx_thuy_lao.png, 25 khung 160×160 xếp ngang) ----
+// 0–4 xoáy nước tụ · 5–6 lưỡi nước khép lại · 7–10 lao cầu phù văn giam quái · 11–12 dồn nén · 13–21 nổ băng · 22–24 tan biến
+const TLAO = {src: 'img/fx_thuy_lao.png', fw: 160, fh: 160};
+const tlaoImg = new Image(); tlaoImg.src = TLAO.src;
+const TLAO_SEG = [[0, .12, 0, 4], [.12, .22, 5, 6], [.22, .5, 7, 10], [.5, .6, 11, 12], [.6, .82, 13, 21], [.82, .95, 22, 24]];
+/** Khung Thủy Lao ở tiến độ s của lượt (0–1), −1 = không vẽ. */
+function tlaoFrame(s){
+  const g = TLAO_SEG.find(([a, b]) => s >= a && s < b); if (!g) return -1;
+  const [a, b, f0, f1] = g, n = f1 - f0 + 1;
+  return f0 + Math.min(n - 1, Math.floor((s - a) / (b - a) * n));
+}
+/** Vẽ Thủy Lao bao lấy quái: tx, cy = tâm quái, h = chiều cao nhân vật (cùng hệ toạ độ của g2). */
+function tlaoDraw(g2, s, tx, cy, h){
+  const f = tlaoFrame(s); if (f < 0 || !tlaoImg.complete || !tlaoImg.naturalWidth) return false;
+  const d = h * 1.7;
+  g2.save(); g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = 'high';
+  g2.drawImage(tlaoImg, f * TLAO.fw, 0, TLAO.fw, TLAO.fh, tx - d / 2, cy - d / 2, d, d);
+  g2.restore();
+  return true;
+}
+// ---- Vạn Thủy Tiễn: mưa tên nước theo bản thiết kế ----
+// img/fx_thuy_tien.png (8 khung 160×160): 0–5 xoáy nước tụ · 6–7 năm tên nước hiện hình quạt
+// img/fx_thuy_tien_x.png: tách riêng từng mũi tên (5 hàng = 5 mũi, từ trên xuống; đã xoay nằm ngang quanh tâm quạt px, py)
+//   cột 0–1 quạt quay ngang · 2–5 tên lấp lánh chờ bắn · 6–9 tên kéo sóng nước khi bay · 10–12 đâm trúng · 13–16 tan biến
+const TTIEN = {src: 'img/fx_thuy_tien.png', fw: 160, fh: 160};
+const ttienImg = new Image(); ttienImg.src = TTIEN.src;
+const TTX = {src: 'img/fx_thuy_tien_x.png', fw: 160, fh: 160, px: 27.45, py: 79.2, th: [-27, -12, 0, 12, 27], tip: [122, 131, 148, 131, 122]};
+const ttxImg = new Image(); ttxImg.src = TTX.src;
+const TTX_ORDER = [2, 1, 3, 0, 4];                                        // thứ tự bắn: mũi giữa trước, rồi xen kẽ hai bên
+/** Vẽ Vạn Thủy Tiễn: hx = mép trước tu sĩ, tx = tâm quái, cy = ngang ngực, h = chiều cao nhân vật (cùng hệ toạ độ của g2). */
+function ttienDraw(g2, s, hx, tx, cy, h){
+  if (s < 0 || s >= .86 || !ttienImg.complete || !ttienImg.naturalWidth) return false;
+  const d = h * 1.3, heroX = hx + d * .45, sc = d / TTX.fw;
+  g2.save(); g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = 'high';
+  if (s < .25){                                                           // xoáy nước tụ → năm tên hiện hình quạt
+    const f = s < .15 ? Math.min(5, Math.floor(s / .15 * 6)) : 6 + Math.min(1, Math.floor((s - .15) / .1 * 2));
+    g2.drawImage(ttienImg, f * TTIEN.fw, 0, TTIEN.fw, TTIEN.fh, heroX - d / 2, cy - d / 2, d, d);
+  } else if (ttxImg.complete && ttxImg.naturalWidth){
+    const pvX = heroX - d / 2 + TTX.px * sc, pvY = cy - d / 2 + TTX.py * sc;      // tâm quạt trước mặt tu sĩ
+    const lay = (col, k, x, y, ang, a = 1) => {
+      g2.save(); g2.globalAlpha = a; g2.translate(x, y); g2.rotate(ang);
+      g2.drawImage(ttxImg, col * TTX.fw, k * TTX.fh, TTX.fw, TTX.fh, -TTX.px * sc, -TTX.py * sc, d, d);
+      g2.restore();
+    };
+    TTX_ORDER.forEach((k, n) => {
+      const L = .3 + n * .05, FLY = .13, HIT = .18, th = TTX.th[k] * Math.PI / 180, tipLen = (TTX.tip[k] - TTX.px) * sc;
+      const ay = cy + h * .1 + (k - 2) * h * .05, aim = Math.atan2(ay - pvY, tx - pvX);     // mỗi mũi nhắm một điểm trên thân quái
+      const ex = tx - Math.cos(aim) * tipLen, ey = ay - Math.sin(aim) * tipLen;             // vị trí tâm quạt khi mũi tên cắm vào quái
+      if (s < L){                                                         // chờ trong đội hình quạt
+        const col = s < .275 ? 0 : s < .3 ? 1 : 2 + (Math.floor(s * 40) + k) % 4;
+        lay(col, k, pvX, pvY, th);
+      } else if (s < L + FLY){                                            // lần lượt từng mũi lao đi, quay mũi về phía quái, kéo sóng nước
+        const q = (s - L) / FLY, e = q * q * (3 - 2 * q), ang = th + (aim - th) * Math.min(1, q * 3);
+        lay(6 + Math.min(3, Math.floor(q * 4)), k, pvX + (ex - pvX) * e, pvY + (ey - pvY) * e, ang);
+      } else if (s < L + FLY + HIT){                                      // cắm vào quái: sóng nước vỡ rồi tan
+        const q = (s - L - FLY) / HIT;
+        lay(10 + Math.min(6, Math.floor(q * 7)), k, ex, ey, aim, 1 - q * .4);
+      }
+    });
+  }
+  g2.restore();
+  return true;
+}
+// ---- Thủy Nguyệt Trảm: trăng nước lưỡi liềm (img/fx_thuy_nguyet.png, 22 khung 160×160 xếp ngang) ----
+// 0–5 xoáy nước tụ · 6–9 trăng lưỡi liềm ngưng hình · 10–13 trăng bay (lặp, kéo bóng mờ) · 14–21 nổ băng nước trên quái
+const TNG = {src: 'img/fx_thuy_nguyet.png', fw: 160, fh: 160};
+const tngImg = new Image(); tngImg.src = TNG.src;
+const TNG_SEG = [[0, .15, 0, 5, 'hero'], [.15, .27, 6, 9, 'hero'], [.27, .47, 10, 13, 'fly'], [.47, .85, 14, 21, 'target']];
+/** Vẽ Thủy Nguyệt Trảm: hx = mép trước tu sĩ, tx = tâm quái, cy = ngang ngực, h = chiều cao nhân vật (cùng hệ toạ độ của g2). */
+function tngDraw(g2, s, hx, tx, cy, h){
+  const seg = TNG_SEG.find(([a, b]) => s >= a && s < b); if (!seg || !tngImg.complete || !tngImg.naturalWidth) return false;
+  const [a, b, f0, f1, at] = seg, n = f1 - f0 + 1, k = (s - a) / (b - a);
+  const d = h * (at === 'target' ? 1.4 : 1.1), heroX = hx + d * .4, tgtX = tx - d * .1;
+  const blit = (f, x, y, alpha = 1) => { g2.globalAlpha = alpha; g2.drawImage(tngImg, f * TNG.fw, 0, TNG.fw, TNG.fh, x - d / 2, y - d / 2, d, d); };
+  g2.save(); g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = 'high';
+  if (at === 'fly'){                                                // trăng lao tới, xoay vân nước, kéo 3 bóng mờ phía sau
+    const e = k * k * (3 - 2 * k), f = f0 + Math.floor(k * n * 2) % n, pos = q => heroX + (tgtX - heroX) * q;
+    g2.globalCompositeOperation = 'lighter';
+    for (let i = 3; i >= 1; i--) if (e - i * .07 > 0) blit(f0 + (f - f0 + i) % n, pos(e - i * .07), cy, .22 / i);
+    g2.globalCompositeOperation = 'source-over';
+    blit(f, pos(e), cy);
+  } else blit(f0 + Math.min(n - 1, Math.floor(k * n)), at === 'hero' ? heroX : tx, cy);
+  g2.restore();
+  return true;
+}
+// ---- Đòn thường hệ Thủy theo bản thiết kế (img/fx_thuy_thuong.png, 14 khung 128×128 xếp ngang) ----
+// Thủy Cầu: 0–3 xoáy tụ cầu · 4–7 cầu nước xoay khi bay · 8–13 vỡ băng nước
+// nhịp đòn thường: tụ .00–.30 · bay .30–.45 · trúng .45
+const TBASIC = {src: 'img/fx_thuy_thuong.png', fw: 128, fh: 128};
+const tbImg = new Image(); tbImg.src = TBASIC.src;
+/** Vẽ đòn thường hệ Thủy: kind = water_ball · (hx, hy) tay tu sĩ · (tx, ty) tâm quái · h chiều cao nhân vật · t giây (cùng hệ toạ độ của g2). */
+function tbDraw(g2, kind, s, hx, hy, tx, ty, h, t){
+  if (s < 0 || !tbImg.complete || !tbImg.naturalWidth) return false;
+  const blit = (f, x, y, d, a = 1, dx = 0) => { g2.globalAlpha = a; g2.drawImage(tbImg, f * TBASIC.fw, 0, TBASIC.fw, TBASIC.fh, x - d / 2 - dx, y - d / 2, d, d); };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  g2.save(); g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = 'high';
+  if (kind === 'water_ball'){                                              // Thủy Cầu: xoáy tụ cầu → cầu nước xoay bay thẳng → vỡ băng nước
+    const d = h * 1.3, sx = hx + d * .2;
+    if (s < .3) blit(Math.min(3, Math.floor(s / .3 * 4)), sx, hy, d);
+    else if (s < .45){
+      const k = (s - .3) / .15, f = 4 + Math.floor(t * 16) % 4, x = lerp(sx, tx, k), y = lerp(hy, ty, k);
+      g2.globalCompositeOperation = 'lighter';
+      for (let i = 3; i >= 1; i--) if (k - i * .12 > 0) blit(f, lerp(sx, tx, k - i * .12), lerp(hy, ty, k - i * .12), d * (1 - i * .12), .25 / i);
+      g2.globalCompositeOperation = 'source-over';
+      blit(f, x, y, d);
+    } else if (s < .72) blit(8 + Math.min(5, Math.floor((s - .45) / .27 * 6)), tx, ty, h * 1.15);
+  }
+  g2.restore();
+  return true;
+}
+/** Bộ lọc màu đổi hiệu ứng lửa (fx_hoa_*) sang lam cho chiêu hệ Thủy. */
+const WET_FILTER = 'hue-rotate(185deg) saturate(1.15)';
 function skPassive(s, lv){
-  const P = [['atkPct','Tấn công'],['defPct','Phòng thủ (kháng Hỏa)'],['hpPct','Máu'],['crit','Chí mạng Hỏa'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct','Sát thương Hỏa'],['pen','Xuyên thấu Hỏa'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
+  const fire = s.element === 'hoa';
+  const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
   return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1))]);
 }
 
@@ -1962,7 +2150,8 @@ function renderSkill(){
   const pane = $('pane-skill'); if (!pane || !S) return;
   const el = elOf(skEl) || DATA.elements[0], list = skOfEl(el.id);
   if (!skById(skSel) || skById(skSel).element !== el.id) skSel = (list.find(s => skTree(s) === 'active') || list[0]).id;
-  const basics = list.filter(s => skTree(s) === 'basic'), act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
+  // đòn thường dùng chung mọi hệ (Hỏa Cầu): hệ chưa có đòn thường riêng thì hiện đòn thường chung
+  const basics = (list.some(s => skTree(s) === 'basic') ? list : DATA.skillTree).filter(s => skTree(s) === 'basic'), act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
   const sel = skById(skSel), st = skState(sel), tree = skTree(sel);
   const WX = {hoa: '&#10;Ngũ hành: Hỏa khắc Mộc +15% sát thương · Hỏa bị Thủy khắc −15%'};
   // thanh gọn: điểm · đòn thường · kỹ năng trong trận · thao tác cho kỹ năng đang chọn (chi tiết nằm trong tooltip)
@@ -2042,7 +2231,7 @@ function liveSkill(){
 
 // ---- Hỏa hệ: animation 8 khung cắt từ bảng thiết kế (img/fx_hoa_skills.png, mỗi khung 124×64; sinh lại: tools/cut_skills.py) ----
 const SK_FX = {src: 'img/fx_hoa_skills.png', fw: 124, fh: 64, bg: '#0c1019', dur: [.3, .25, .25, .25, .35, .3, .3, .3], rest: .6};
-const SK_FX_ROW = {hoa_tien: 1, liet_diem: 2, hoa_long: 3, phan_thien: 4, xich_diem_thien: 5, hoa_thuan: 6, hoa_giap: 7};
+const SK_FX_ROW = {liet_diem: 2, hoa_long: 3, phan_thien: 4, xich_diem_thien: 5, hoa_thuan: 6, hoa_giap: 7};
 /** Phát 8 khung của chiêu theo nhịp thiết kế, chuyển khung mờ dần cho mượt. */
 function skFlip(g, now, s){
   const img = skImg(SK_FX.src), row = SK_FX_ROW[s.id], D = SK_FX.dur, total = D.reduce((a, b) => a + b, 0) + SK_FX.rest;
@@ -2064,7 +2253,8 @@ function skPassiveFx(g, now, s){
   g.fillStyle = SK_FX.bg; g.fillRect(0, 0, 120, 60);
   const pulse = .5 + .5 * Math.sin(t * 2.4);
   const gr = g.createRadialGradient(60, 30, 4, 60, 30, 30);
-  gr.addColorStop(0, `rgba(255,140,40,${.35 + .25 * pulse})`); gr.addColorStop(1, 'rgba(255,90,30,0)');
+  const wet = s.element === 'thuy';
+  gr.addColorStop(0, wet ? `rgba(70,160,255,${.35 + .25 * pulse})` : `rgba(255,140,40,${.35 + .25 * pulse})`); gr.addColorStop(1, wet ? 'rgba(40,110,230,0)' : 'rgba(255,90,30,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 120, 60);
   for (let i = 0; i < 14; i++){
     const h = Math.sin(i * 91.7) * 1e4 % 1, p = (t * .35 + Math.abs(h)) % 1;
@@ -2143,7 +2333,7 @@ function skFrame(now){
   if (!c._sized){ const w = c.parentElement.getBoundingClientRect().width; if (w){ const sc = Math.max(1, Math.floor(w / 120)); c.style.width = 120 * sc + 'px'; c.style.height = 60 * sc + 'px'; c._sized = true; } }
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
   const s = skById(skSel), el = elOf(s.element), open = el.open;
-  const res = open && s.element === 'hoa' ? HC_RES : 1;                         // Hỏa Cầu dùng ảnh gốc, cần canvas nét hơn
+  const res = open && (s.element === 'hoa' || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;                         // Hỏa Cầu dùng ảnh gốc, cần canvas nét hơn
   if (c.width !== 120 * res){ c.width = 120 * res; c.height = 60 * res; }
   g.setTransform(res, 0, 0, res, 0, 0); g.imageSmoothingEnabled = false;
   const fps = 8, cycle = 12, t = now / 1000, f = Math.floor(t * fps) % cycle;    // 8 khung + 4 khung nghỉ
@@ -2159,18 +2349,44 @@ function skFrame(now){
   if (hero) g.drawImage(hero, 2 + cast, 6);
   if (mon) g.drawImage(mon, 72, 6);
   if (!open){ g.globalAlpha = .6; g.fillStyle = '#000'; g.fillRect(0, 0, 120, 60); g.globalAlpha = 1; return; }
-  const FX = (i, cx, cy) => { if (sheet) g.drawImage(sheet, (i % 4) * 48, Math.floor(i / 4) * 48, 48, 48, Math.round(cx - 24), Math.round(cy - 24), 48, 48); };
+  const wet = s.element === 'thuy';
+  const FX = (i, cx, cy) => { if (!sheet) return; if (wet) g.filter = WET_FILTER; g.drawImage(sheet, (i % 4) * 48, Math.floor(i / 4) * 48, 48, 48, Math.round(cx - 24), Math.round(cy - 24), 48, 48); g.filter = 'none'; };
   const handX = 36, handY = 28, tx = 94, ty = 34;
   const k = s.anim;
+  if (wet && k === 'water_dragon'){                                              // Thương Hải Quyết: thủy long theo bản thiết kế
+    const sp = (t * fps % cycle) / 8;
+    if (sp < 1) tlDraw(g, sp, 50, 94, 30, 46);
+    return;
+  }
+  if (wet && k === 'water_moon'){                                               // Thủy Nguyệt Trảm: trăng nước theo bản thiết kế
+    const sp = (t * fps % cycle) / 8;
+    if (sp < 1) tngDraw(g, sp, 44, 96, 30, 46);
+    return;
+  }
+  if (wet && k === 'water_arrows'){                                             // Vạn Thủy Tiễn: mưa tên nước theo bản thiết kế
+    const sp = (t * fps % cycle) / 8;
+    if (sp < 1) ttienDraw(g, sp, 44, 96, 30, 46);
+    return;
+  }
+  if (wet && k === 'water_prison'){                                             // Thủy Lao Bạo: lao cầu theo bản thiết kế
+    const sp = (t * fps % cycle) / 8;
+    if (sp < 1) tlaoDraw(g, sp, 96, 30, 46);
+    return;
+  }
+  if (wet && k === 'water_ball'){                  // đòn thường hệ Thủy theo bản thiết kế
+    const sp = (t * fps % cycle) / 8;
+    if (sp < 1) tbDraw(g, k, sp, 40, 28, 94, 32, 46, t);
+    return;
+  }
   if (f < 8){
-    if (['bolt','arrow','dragon'].includes(k)){
+    if (['bolt','dragon'].includes(k)){
       if (f <= 2) FX(f, handX, handY);
-      else if (f <= 4){ const x = handX + (f - 2) * 18; FX(f, x, handY + 2); if (k === 'arrow'){ FX(4, x - 12, handY - 5); FX(4, x - 22, handY + 6); } if (k === 'dragon') for (let i = 0; i < 14; i++) P(x - 10 - i, handY + 2 + Math.round(Math.sin(i * .8 + t * 10) * 3), FIRE[2 + (i % 3)]); }
+      else if (f <= 4){ const x = handX + (f - 2) * 18; FX(f, x, handY + 2); if (k === 'dragon') for (let i = 0; i < 14; i++) P(x - 10 - i, handY + 2 + Math.round(Math.sin(i * .8 + t * 10) * 3), FIRE[2 + (i % 3)]); }
       else FX(f, tx, ty);
     } else if (['burst','pillar','ultimate'].includes(k)){
       if (f <= 2) FX(f, handX, handY);
       else {
-        if (k === 'ultimate'){ g.globalAlpha = .18 + .06 * (f % 2); g.fillStyle = '#b02a1a'; g.fillRect(0, 0, 120, 52); g.globalAlpha = 1; for (let i = 0; i < 10; i++) P((i * 13 + f * 7) % 120, (f - 3) * 9 % 50, FIRE[3 + (i % 3)]); }
+        if (k === 'ultimate'){ g.globalAlpha = .18 + .06 * (f % 2); g.fillStyle = wet ? '#1a4ab0' : '#b02a1a'; g.fillRect(0, 0, 120, 52); g.globalAlpha = 1; for (let i = 0; i < 10; i++) P((i * 13 + f * 7) % 120, (f - 3) * 9 % 50, FIRE[3 + (i % 3)]); }
         if (k === 'pillar') for (let y = 52; y > 52 - (f - 2) * 9; y--) for (let dx = -3; dx <= 3; dx++) P(tx + dx, y, FIRE[Math.max(1, 5 - Math.abs(dx) - (y % 3 ? 0 : 1))]);
         FX(Math.min(7, f + 3), tx, ty);
       }
@@ -2662,7 +2878,6 @@ function skBattlePlan(casts, s, basic){
   const def = casts.find(c => c.dmg === 0 && SK_FX_ROW[c.skill] !== undefined);
   let row, f, isMain = false;
   if (main && s < .75){ row = SK_FX_ROW[main.skill]; f = Math.min(7, Math.floor(s / .75 * 8)); isMain = true; }
-  else if (basic === 'hoa_tien' && s < .75){ row = SK_FX_ROW.hoa_tien; f = Math.min(7, Math.floor(s / .75 * 8)); isMain = true; }   // đòn thường Hỏa Tiễn
   else if (def && s < .3){ row = SK_FX_ROW[def.skill]; f = Math.min(7, Math.floor(s / .3 * 8)); }
   else return null;
   const onTarget = f > 0 && (row === 2 || row === 5 || (row === 4 && f >= 3));       // Liệt Diễm, Xích Diễm Thiên, Phần Thiên giáng xuống
@@ -2686,7 +2901,10 @@ function skBattleDraw(p, o){
 function hcBattleDraw(ref, o){
   const {fw, fh} = HC_REF, {ph, sx, sy, g, sz, t} = o, s = ph.name === 'fight' ? ph.s : -1;
   const kH = sz * sy * 1.05 / 150;                                 // 150px = chiều cao nhân vật trong ảnh gốc
-  const pose = s < 0 || s >= .5 ? 0 : s < .1 ? 0 : s < .2 ? 1 : s < .3 ? 2 : s < .36 ? 3 : 7;
+  // lượt hệ Thủy (đòn thường Thủy hoặc chiêu Thủy): không dùng tư thế tụ lửa trong tay (khung 1–3) của bản thiết kế Hỏa Cầu
+  const dmgCasts = (o.casts || []).filter(c => c.dmg > 0);
+  const wetTurn = dmgCasts.length ? dmgCasts.some(c => skById(c.skill)?.element === 'thuy') : skById(o.basic)?.element === 'thuy';
+  const pose = s < 0 || s >= .5 ? 0 : s < .1 ? 0 : wetTurn ? (s < .3 ? 0 : 7) : s < .2 ? 1 : s < .3 ? 2 : s < .36 ? 3 : 7;
   const q = kH * HC_REF.scale[pose], fx = o.hx * sx, fy = (g + 1 + o.hy) * sy, ft = HC_REF.feet[pose];
   ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   // chiêu trong ô thi triển lượt này: chiêu công mạnh nhất thay cho hỏa cầu thường, chiêu thủ diễn đầu lượt 0
@@ -2698,7 +2916,7 @@ function hcBattleDraw(ref, o){
   }
   ctx.globalAlpha = 1;
   if (plan) skBattleDraw(plan, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, hAlpha: o.hAlpha});
-  if (s >= .3 && s < .78 && !(plan && plan.main)){
+  if (s >= .3 && s < .78 && !(plan && plan.main) && !wetTurn){                 // lượt hệ Thủy: không vẽ cầu lửa (nước vẽ bằng tbDraw / tngDraw / ttienDraw / tlaoDraw / tlDraw)
     const tier = o.cast ? Math.min(2, S.realm) : 0;                                  // đòn thường Hỏa Cầu: biến thể theo cảnh giới
     const fk = kH * HC_FX_SCALE[tier];
     const L = HC_REF.feet[3], B = HC_REF.fire[3], q3 = kH * HC_REF.scale[3];
@@ -2737,8 +2955,8 @@ function drawPixelBattle(t, dt, ph, r){
 
   // ---- vị trí ----
   const sz = SPR(), u = sz/48, hs = sz/2, U = v => Math.max(1, Math.round(v*u));
-  // ải Boss: Boss to gấp đôi quái thường (msz = ô sprite của quái, đáy vẫn chạm đất)
-  const isBoss = /\/boss_/.test(b.image), ms = isBoss ? 2 : 1, msz = sz * ms, mhs = msz / 2;
+  // ải Boss: Boss to gấp 1.5 quái thường (đã giảm 25% từ ×2; msz = ô sprite của quái, đáy vẫn chạm đất)
+  const isBoss = /\/boss_/.test(b.image), ms = isBoss ? 1.5 : 1, msz = sz * ms, mhs = msz / 2;
   const heroX = Math.round(w*.27), wolfX = Math.round(w*(isBoss ? .72 : .70)), strikeX = wolfX - U(30) - (msz - sz) / 2;
   let hx = heroX, hy = 0, wx = null, wy = 0, wFlash = false, hFlash = false, wAlpha = 1, hAlpha = 1, sword = null;
   const fxAfter = [];                                                                 // hiệu ứng đòn quái vẽ đè lên sprite
@@ -2792,7 +3010,8 @@ function drawPixelBattle(t, dt, ph, r){
         if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
           const hc = castsNow.filter(c => c.skill === 'hoa_cau' && c.dmg > 0).reduce((a, c) => a + c.dmg, 0);   // cùng một quả cầu → một con số
           pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.heroDmg + hc), col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
-          for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(4), y: g - U(22), vx: (Math.random()-.3)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.25, col: FIRE[2 + Math.floor(Math.random()*4)]});
+          const wetB = skById(b.basic)?.element === 'thuy';
+          for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(4), y: g - U(22), vx: (Math.random()-.3)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.25, col: wetB ? WP[2 + Math.floor(Math.random()*3)] : FIRE[2 + Math.floor(Math.random()*4)]});
         }
       }
     }
@@ -2929,9 +3148,12 @@ function drawPixelBattle(t, dt, ph, r){
   // ---- chiêu thức trong ô tự thi triển (sprite sheet Hỏa Cầu 8 khung) ----
   if (castsNow.length && fxSheet.complete && fxSheet.naturalWidth){
     const s = ph.s, FC = ['#b02a1a','#e0521e','#f08a2a','#f8d25a'];
-    const FX = (f, x, y, k = 1) => { const d = Math.round(sz * k); pctx.drawImage(fxSheet, (f % 4) * 48, Math.floor(f / 4) * 48, 48, 48, Math.round(x - d / 2), Math.round(y - d / 2), d, d); };
+    let fxWet = false;                                             // chiêu hệ Thủy: đổi màu hiệu ứng lửa sang lam
+    const FX = (f, x, y, k = 1) => { const d = Math.round(sz * k); if (fxWet) pctx.filter = WET_FILTER; pctx.drawImage(fxSheet, (f % 4) * 48, Math.floor(f / 4) * 48, 48, 48, Math.round(x - d / 2), Math.round(y - d / 2), d, d); pctx.filter = 'none'; };
     const handY = g - Math.round(sz * .55), tgtY = g - Math.round(sz * .45);
     castsNow.forEach((c, n) => {
+      fxWet = skById(c.skill)?.element === 'thuy';
+      if (c.anim === 'water_dragon' || c.anim === 'water_prison' || c.anim === 'water_arrows' || c.anim === 'water_moon') return;                       // Thương Hải Quyết: vẽ bằng ảnh thiết kế (tlDraw) sau khi phóng to
       if (refHero && (c.skill === 'hoa_cau' || SK_FX_ROW[c.skill] !== undefined)) return;   // vẽ nét ở skBattleDraw
       if (c.skill === 'hoa_cau' && c.dmg > 0 && hcSheet.complete && hcSheet.naturalWidth){
         // Hỏa Cầu: ánh xạ nhịp lượt đánh (tụ 0–.15 · bay .15–.45 · nổ .45–.75) sang 8 pha thiết kế
@@ -2950,7 +3172,7 @@ function drawPixelBattle(t, dt, ph, r){
         if (s < .15) FX(Math.min(2, Math.floor(s / .05)), heroX + U(10), handY - n * U(6), big);
         else if (s < .45){ const k = (s - .15) / .3; FX(s < .3 ? 3 : 4, heroX + U(10) + (wolfX - heroX - U(10)) * k, handY - n * U(6), big); }
         else if (s < .75) FX(s < .55 ? 5 : s < .66 ? 6 : 7, wolfX, tgtY, big);
-        if (c.anim === 'ultimate' && s >= .3 && s < .8){ pctx.globalAlpha = .18; pctx.fillStyle = '#b02a1a'; pctx.fillRect(0, 0, w, g); pctx.globalAlpha = 1; }
+        if (c.anim === 'ultimate' && s >= .3 && s < .8){ pctx.globalAlpha = .18; pctx.fillStyle = fxWet ? '#1a4ab0' : '#b02a1a'; pctx.fillRect(0, 0, w, g); pctx.globalAlpha = 1; }
       } else if (s < .7){
         // chiêu thủ / khống / thân pháp: vòng lửa quanh người hoặc quanh quái
         const onHero = ['shield','aura','dash'].includes(c.anim), cx = onHero ? hx : wolfX, rx = U(onHero ? 14 : 18), ry = U(onHero ? 20 : 6);
@@ -2980,6 +3202,17 @@ function drawPixelBattle(t, dt, ph, r){
   }
   if (refHero) hcBattleDraw(refHero, {ph, hx, hy, hAlpha, hFlash, g, sz, sx, sy, wolfX, t, casts: castsNow, basic: b.basic,
     cast: b.basic === 'hoa_cau'});
+  { const bdef = skById(b.basic);                                                 // đòn thường hệ Thủy (lượt không tung kỹ năng): nét cao
+    if (ph.name === 'fight' && bdef?.element === 'thuy' && !castsNow.some(c => c.dmg > 0))
+      tbDraw(ctx, bdef.anim, ph.s, (heroX + U(10)) * sx, (g - sz * .55) * sy, wolfX * sx, (g - sz * .45) * sy, sz * sy, t); }
+  if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_moon' && c.dmg > 0))      // Thủy Nguyệt Trảm: trăng nước nét cao
+    tngDraw(ctx, ph.s, (heroX + sz * .3) * sx, wolfX * sx, (g - sz * .55) * sy, sz * sy);
+  if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_arrows' && c.dmg > 0))    // Vạn Thủy Tiễn: mưa tên nước nét cao
+    ttienDraw(ctx, ph.s, (heroX + sz * .3) * sx, wolfX * sx, (g - sz * .55) * sy, sz * sy);
+  if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_prison' && c.dmg > 0))    // Thủy Lao Bạo: lao cầu nét cao bao lấy quái
+    tlaoDraw(ctx, ph.s, wolfX * sx, (g - sz * .45) * sy, sz * sy);
+  if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_dragon' && c.dmg > 0))     // Thương Hải Quyết: thủy long nét cao
+    tlDraw(ctx, ph.s, (heroX + sz * .3) * sx, wolfX * sx, (g - sz * .55) * sy, sz * sy);
   ctx.textAlign = 'center';
   if (big && wx !== null && wAlpha > .5){
     ctx.font = '600 12px "Be Vietnam Pro", system-ui, sans-serif';

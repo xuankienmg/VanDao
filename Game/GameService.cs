@@ -45,6 +45,8 @@ public class GameService(GameDbContext db)
     {
         var p = await db.Players.Include(x => x.Inventory).Include(x => x.Equipment).FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new KeyNotFoundException();
+        // trang bị bản cũ (chưa có phẩm / sai cấp) đang mặc → món đúng cấp cùng phẩm, mặc nguyên tại chỗ
+        foreach (var e in p.Equipment) if (GameData.UpgradeGear(e.ItemId) is { } up) e.ItemId = up;
         // món đang mặc đã bị bỏ khỏi game → tháo vào túi để ConvertLegacy quy đổi ra linh thạch
         foreach (var e in p.Equipment.Where(e => !GameData.ItemById.ContainsKey(e.ItemId)).ToList())
         {
@@ -53,6 +55,9 @@ public class GameService(GameDbContext db)
             db.Equipment.Remove(e);
         }
         ConvertLegacy(p);
+        // đòn thường đã bỏ (Hỏa Tiễn, Thủy Châm) → đổi sang đòn thường còn lại cùng hệ
+        if (p.SkillSlots.Length > 0)
+            p.SkillSlots = string.Join(',', p.SkillSlots.Split(',').Select(x => SkillData.RemovedBasics.TryGetValue(x.Trim(), out var to) ? to : x));
         Tick(p, DateTime.UtcNow);
         // ô trang bị chưa mở ở cảnh giới hiện tại (dữ liệu bản cũ) → trả món về túi
         foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList())
@@ -112,7 +117,7 @@ public class GameService(GameDbContext db)
             (long)(ExploreSeconds(p) * 1000),
             ExploreQi(p),
             p.Equipment.ToDictionary(e => e.Slot, e => e.ItemId),
-            new BonusDto(Bonus(p, i => i.QiPct), Bonus(p, i => i.LuckPct), Bonus(p, i => i.SpeedPct)),
+            new BonusDto(Bonus(p, i => i.QiPct), Bonus(p, i => i.SpeedPct)),
             Stats(p),
             Battle(p),
             r.Cn, next?.Name ?? GameData.LockedRealms[0], next?.Cn ?? GameData.LockedRealmsCn[0], next is null && peak,
@@ -122,7 +127,29 @@ public class GameService(GameDbContext db)
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills),
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), p.Admin);
+            logs.Take(LogShow).ToList(), p.Admin, ChestOdds(p));
+    }
+
+    /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
+    public static List<ChestOddsDto> ChestOdds(Player p)
+    {
+        var r = Realm(p);
+        var treasures = GameData.GearBases.Where(b => b.Slot == "offhand" && b.MinRealm <= Math.Max(1, p.Realm)).ToList();
+        var gear = r.Drops.Where(dd => GameData.GearBaseById.TryGetValue(dd.Item, out var b) && b.Slot != "offhand").ToList();
+        var gw = gear.Sum(g => g.Chance);
+        var pill = r.StageCost(0).Keys.First(k => k != "linh_thach");
+        return GameData.Chests.Select(kv =>
+        {
+            var cd = kv.Value;
+            var pt = treasures.Count > 0 ? cd.Treasure : 0;
+            var pg = gear.Count > 0 ? (1 - pt) * cd.GearShare : 0;
+            var qs = cd.Quality.Sum();
+            return new ChestOddsDto(kv.Key, GameData.GearLevels[Math.Clamp(p.Realm, 0, GameData.GearLevels.Length - 1)],
+                cd.Quality.Select(q => Math.Round(q / qs * 100, 2)).ToArray(),
+                treasures.Select(t => new ItemQtyPctDto(t.Id, Math.Round(pt / treasures.Count * 100, 2))).ToList(),
+                gear.Select(g => new ItemQtyPctDto(g.Item, Math.Round(pg * g.Chance / gw * 100, 2))).ToList(),
+                pill, cd.PillMin, cd.PillMax, Math.Round((1 - pt - pg) * 100, 2));
+        }).ToList();
     }
 
     // ================= Hành động =================
@@ -197,7 +224,7 @@ public class GameService(GameDbContext db)
         int Rank(ItemQtyDto x) { var d = GameData.ItemById[x.Item]; return (d.Slot == "offhand" ? 10 : 0) + Array.IndexOf(GameData.RarityOrder, d.Rarity); }
         got = got.OrderByDescending(Rank).ToList();
         var best = GameData.ItemById[got[0].Item];
-        var text = string.Join(", ", got.Select(g => $"{g.Qty} {GameData.ItemById[g.Item].Name}{(GameData.ItemById[g.Item].Slot == "offhand" ? " (pháp bảo)" : "")}"));
+        var text = string.Join(", ", got.Select(g => $"{g.Qty} {GameData.Label(GameData.ItemById[g.Item])}{(GameData.ItemById[g.Item].Slot == "offhand" ? " (pháp bảo)" : "")}"));
         var (msg, kind) = Log(p, $"Mở {(opened > 1 ? $"{opened} " : "")}{chest.Name}: nhận {text}.{(full ? " Hành trang đầy, dừng lại." : "")}",
             best.Slot == "offhand" || Array.IndexOf(GameData.RarityOrder, best.Rarity) >= 2 ? "gold" : "loot");
         return (msg, kind, new CraftResultDto("chest:" + chest.Id, got[0], new() { new(chest.Id, opened) }, got));
@@ -210,22 +237,16 @@ public class GameService(GameDbContext db)
         var r = Realm(p);
         var rng = Random.Shared;
         string item; int n = 1;
-        var treasures = GameData.AllItems.Where(i => i.Slot == "offhand" && i.MinRealm <= Math.Max(1, p.Realm)
-            && (cd.AllTreasures || i.Rarity == "uncommon")).ToList();
-        var gear = r.Drops.Select(dd => (def: GameData.ItemById[dd.Item], w: dd.Chance))
-            .Where(x => x.def.Slot is not null && x.def.Slot != "offhand").ToList();
-        if (cd.TopGear && gear.Count > 0)
-        {
-            var top = gear.Max(x => Array.IndexOf(GameData.RarityOrder, x.def.Rarity));
-            gear = gear.Where(x => Array.IndexOf(GameData.RarityOrder, x.def.Rarity) == top).Select(x => (x.def, 1.0)).ToList();
-        }
+        var treasures = GameData.GearBases.Where(b => b.Slot == "offhand" && b.MinRealm <= Math.Max(1, p.Realm)).ToList();
+        var gear = r.Drops.Where(dd => GameData.GearBaseById.TryGetValue(dd.Item, out var b) && b.Slot != "offhand").ToList();
         if (rng.NextDouble() < cd.Treasure && treasures.Count > 0)
-            item = treasures[rng.Next(treasures.Count)].Id;
+            item = GameData.RollGear(treasures[rng.Next(treasures.Count)].Id, cd.Quality);
         else if (gear.Count > 0 && rng.NextDouble() < cd.GearShare)
         {
-            var x = rng.NextDouble() * gear.Sum(g => g.w);     // chọn theo trọng số = tỉ lệ rơi gốc
-            item = gear[^1].def.Id;
-            foreach (var g in gear) { if ((x -= g.w) < 0) { item = g.def.Id; break; } }
+            var x = rng.NextDouble() * gear.Sum(g => g.Chance);     // chọn món theo trọng số = tỉ lệ rơi gốc, rồi gieo phẩm
+            var pick = gear[^1].Item;
+            foreach (var g in gear) { if ((x -= g.Chance) < 0) { pick = g.Item; break; } }
+            item = GameData.RollGear(pick, cd.Quality);
         }
         else
         {
@@ -551,7 +572,7 @@ public class GameService(GameDbContext db)
         if (s.Tree != "basic" && SkillLevels(p).GetValueOrDefault(skill) < 1) throw new GameException($"Chưa lĩnh ngộ {s.Name}.");
         if (!SkillData.FitsSlot(s, slot))
             throw new GameException(s.Category is "Căn cơ" or "Bị động" ? $"{s.Name} là bị động, luôn có hiệu lực, không cần đặt vào ô."
-                : slot == SkillData.BasicSlot ? "Ô đòn thường chỉ đặt Hỏa Cầu hoặc Hỏa Tiễn." : $"{s.Name} là đòn đánh thường, đặt ở ô Đòn thường.");
+                : slot == SkillData.BasicSlot ? "Ô đòn thường chỉ đặt đòn đánh thường (Hỏa Cầu, Thủy Cầu)." : $"{s.Name} là đòn đánh thường, đặt ở ô Đòn thường.");
         var at = Array.IndexOf(slots, skill);
         if (at >= 0 && at != slot) slots[at] = SkillData.FitsSlot(SkillData.ById.GetValueOrDefault(slots[slot]) ?? s, at) ? slots[slot] : "";
         slots[slot] = skill;
@@ -659,7 +680,8 @@ public class GameService(GameDbContext db)
         {
             var id = inv.ItemId;
             var q = id.LastIndexOf("_q", StringComparison.Ordinal);
-            if (q > 0 && GameData.ItemById.ContainsKey(id[..q])) p.Add(id[..q], inv.Count);              // đan phẩm chất → đan gốc
+            if (GameData.UpgradeGear(id) is { } up) p.Add(up, inv.Count);                                      // trang bị bản cũ → đúng cấp, cùng phẩm
+            else if (q > 0 && GameData.ItemById.ContainsKey(id[..q])) p.Add(id[..q], inv.Count);              // đan phẩm chất → đan gốc
             else if (q > 0 && GameData.Legacy.TryGetValue(id[..q], out var lq)) p.Add(lq.To, inv.Count * lq.Factor);
             else if (GameData.Legacy.TryGetValue(id, out var l)) p.Add(l.To, inv.Count * l.Factor);
             inv.Count = 0;
@@ -720,11 +742,11 @@ public class GameService(GameDbContext db)
             p.ExploreReadyAt = now.AddSeconds(ExploreSeconds(p));
         }
         string? special = null, specialKind = "gold";
+        var bossWins = 0;                                            // số lần hạ Boss trong lượt cập nhật này (khiêu chiến liên tục đến hết chìa khóa)
         var startArea = p.Area;
         var mapTag = MapIdx(p) + 1;
         {
             var r = MapRealm(p);
-            var luck = 1 + Stats(p).Sense / 100;
             var t = p.ExploreReadyAt < now.AddSeconds(-GameData.MaxOfflineSeconds) ? now.AddSeconds(-GameData.MaxOfflineSeconds) : p.ExploreReadyAt;
             while (t <= now)
             {
@@ -734,16 +756,22 @@ public class GameService(GameDbContext db)
                 place = GameData.AreaPlace(r, area);
                 if (area == GameData.BossArea)
                 {
-                    // ải Boss: thắng thì mất chìa khóa và nhận yêu hạch; thua thì giữ chìa khóa
+                    // ải Boss: thắng thì mất chìa khóa và nhận yêu hạch, còn chìa khóa thì tự khiêu chiến tiếp; thua thì giữ chìa khóa và rút lui
                     if (battle.Win && p.Count(r.KeyItem) > 0)
                     {
+                        bossWins++;
                         p.Add(r.KeyItem, -1);
                         p.Add(r.BossItem, 1);
                         p.BossKills++;
                         p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p) * 5);
                         var chestOk = TryAddLoot(p, GameData.BossChest, 1) > 0;   // Boss chắc chắn rơi rương
                         if (chestOk) loot[GameData.BossChest] = loot.GetValueOrDefault(GameData.BossChest) + 1;
-                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}! Nhận {GameData.ItemById[r.BossItem].Name}{(chestOk ? $", {GameData.ItemById[GameData.BossChest].Name}" : " (hành trang đầy, bỏ lại Rương Boss)")}, tiêu hao {GameData.ItemById[r.KeyItem].Name}.";
+                        var keysLeft = p.Count(r.KeyItem);
+                        var times = bossWins > 1 ? $" (lần {bossWins})" : "";
+                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}{times}! Nhận {GameData.ItemById[r.BossItem].Name}{(chestOk ? $", {GameData.ItemById[GameData.BossChest].Name}" : " (hành trang đầy, bỏ lại Rương Boss)")}, tiêu hao {GameData.ItemById[r.KeyItem].Name}."
+                            + (keysLeft > 0 ? $" Còn {keysLeft} {GameData.ItemById[r.KeyItem].Name}, tiếp tục khiêu chiến." : $" Đã hết {GameData.ItemById[r.KeyItem].Name}, trở về ải {GameData.Areas}.");
+                        specialKind = "gold";
+                        if (keysLeft > 0) { t = t.AddSeconds(ExploreSeconds(p)); continue; }   // còn chìa khóa: ở lại ải Boss, đánh tiếp
                     }
                     else
                     {
@@ -768,13 +796,15 @@ public class GameService(GameDbContext db)
                 foreach (var d in r.Drops)
                 {
                     var isStone = d.Item == "linh_thach";
-                    if (Random.Shared.NextDouble() >= Math.Min(1, d.Chance * luck * (isStone || d.Chance >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
+                    if (Random.Shared.NextDouble() >= Math.Min(1, d.Chance * (isStone || d.Chance >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
                     var n = (int)Math.Round(Random.Shared.Next(d.Min, d.Max + 1) * (isStone ? scale : 1));
-                    var got = TryAddLoot(p, d.Item, n);
-                    if (got > 0) loot[d.Item] = loot.GetValueOrDefault(d.Item) + got;
+                    // trang bị: cấp theo cảnh giới yêu cầu của món, phẩm Trắng 60 · Lục 28 · Lam 10 · Tím 2 (%)
+                    var dropId = GameData.GearBaseById.ContainsKey(d.Item) ? GameData.RollGear(d.Item) : d.Item;
+                    var got = TryAddLoot(p, dropId, n);
+                    if (got > 0) loot[dropId] = loot.GetValueOrDefault(dropId) + got;
                     lost += n - got;
                 }
-                if (Random.Shared.NextDouble() < GameData.KeyChance(area) * luck && TryAddLoot(p, r.KeyItem, 1) > 0)
+                if (Random.Shared.NextDouble() < GameData.KeyChance(area) && TryAddLoot(p, r.KeyItem, 1) > 0)
                     loot[r.KeyItem] = loot.GetValueOrDefault(r.KeyItem) + 1;
                 // rương: thường ở mọi ải, hiếm từ ải RareChestMinArea
                 foreach (var (chest, chance) in new[] { ("ruong_thuong", GameData.ChestChance),
@@ -792,7 +822,7 @@ public class GameService(GameDbContext db)
 
         var gained = Math.Floor(p.Qi - before);
         var qiText = p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy bình cảnh, cần đột phá" : $"+{gained:N0} tu vi";
-        var lootText = string.Join(", ", loot.Select(kv => $"+{kv.Value} {GameData.ItemById[kv.Key].Name}"))
+        var lootText = string.Join(", ", loot.Select(kv => $"+{kv.Value} {GameData.Label(GameData.ItemById[kv.Key])}"))
             + (lost > 0 ? $"{(loot.Count > 0 ? ", " : "")}hành trang đầy nên bỏ lại {lost} món" : "");
         var gotEquip = loot.Keys.Any(k => GameData.ItemById[k].Slot is not null || GameData.ItemById[k].Type == "key");
         if (special is not null) AddLog(p, special, specialKind);
@@ -831,15 +861,13 @@ public class GameService(GameDbContext db)
         var b = GameData.BaseStats(Realm(p), p.Stage);
         int Sum(Func<ItemDef, int> f) => p.Equipment.Sum(e => GameData.ItemById.TryGetValue(e.ItemId, out var d) ? f(d) : 0);
         double SumD(Func<ItemDef, double> f) => p.Equipment.Sum(e => GameData.ItemById.TryGetValue(e.ItemId, out var d) ? f(d) : 0);
-        var ex = GameData.BaseExtra[Math.Min(p.Realm, GameData.BaseExtra.Length - 1)];
+        var baseSpeed = GameData.BaseSpeed[Math.Min(p.Realm, GameData.BaseSpeed.Length - 1)];
         bool On(string id) => p.Realm >= GameData.ExtraStats.First(x => x.Id == id).MinRealm;
         var weak = DateTime.UtcNow < p.DebuffUntil ? GameData.DebuffStat : 1;   // tẩu hỏa nhập ma
         var sk = SkillBonus(p);                                                  // công pháp bị động
         return new CombatStats((int)((b.Atk + Sum(i => i.Atk)) * weak * (1 + sk.atk / 100)), (int)((b.Hp + Sum(i => i.Hp) + p.BodyHp) * (1 + sk.hp / 100)),
             (int)((b.Def + Sum(i => i.Def) + p.BodyDef) * weak * (1 + sk.def / 100)),
-            (On("speed") ? ex.Speed + SumD(i => i.SpeedPct) : 0) + sk.speed,
-            On("sense") ? ex.Sense + SumD(i => i.LuckPct) : 0,
-            On("spirit") ? ex.Spirit + SumD(i => i.SpiritPct) : 0,
+            (On("speed") ? baseSpeed + SumD(i => i.SpeedPct) : 0) + sk.speed,
             5 + SumD(i => i.CritPct) + sk.crit,
             SumD(i => i.MovePct) + sk.move);
     }
@@ -863,14 +891,14 @@ public class GameService(GameDbContext db)
         var (skillPct, pen, burnPct) = SkillExtra(p);                   // Hỏa Tụ / Liệt Diễm Tâm / Xích Diễm Đạo Thể · Hỏa Linh Chân Ý
         if (pen > 0) m = m with { Def = (int)Math.Round(m.Def * (1 - pen / 100)) };
         var crit = Math.Min(100, st.Crit) / 100;
-        var power = st.Atk * (1 + st.Spirit / 100) * (1 + crit * 0.5);
-        // đòn đánh thường = chiêu ở ô 1 (Hỏa Cầu / Hỏa Tiễn), chưa đặt thì đánh 100% công
+        var power = st.Atk * (1 + crit * 0.5);
+        // đòn đánh thường = chiêu ở ô 1 (Hỏa Cầu / Thủy Cầu), chưa đặt thì đánh 100% công
         var lv = SkillLevels(p);
         var basicId = p.Slots()[SkillData.BasicSlot];
         var basicOk = SkillData.ById.TryGetValue(basicId, out var bdef) && bdef.Tree == "basic";
         if (!basicOk) { basicId = "hoa_cau"; bdef = SkillData.ById[basicId]; }        // mặc định: Hỏa Cầu
-        var bcrit = Math.Min(100, st.Crit + bdef!.Crit) / 100;                       // Hỏa Tiễn: bộc phát, dễ chí mạng
-        var bpower = st.Atk * (1 + st.Spirit / 100) * (1 + bcrit * 0.5);
+        var bcrit = Math.Min(100, st.Crit + bdef!.Crit) / 100;                       // đòn thường có thể cộng thêm chí mạng riêng
+        var bpower = st.Atk * (1 + bcrit * 0.5);
         var heroDmg = Math.Max(1, (int)Math.Round(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100) - m.Def);
 
         // kỹ năng trong ô: chiêu công tự thi triển theo lượt, chiêu thủ giảm sát thương, khống làm quái đứng yên, thân pháp né đòn

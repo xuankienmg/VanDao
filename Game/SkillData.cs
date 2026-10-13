@@ -36,7 +36,7 @@ public static class SkillData
     public static readonly IReadOnlyList<ElementDef> Elements = new[]
     {
         new ElementDef("hoa",  "Hỏa",  "#e0521e", "#f8d25a", true,  "Hỏa Linh Căn",  "Lửa linh khí do tu sĩ khống chế: công mạnh, có thủ, có khống, có thân pháp."),
-        new ElementDef("thuy", "Thủy", "#3f8fd8", "#6fe0e0", false, "Thủy Linh Căn", "Nước nhu mà bền: phòng ngự, hồi phục, nhấn chìm kẻ địch."),
+        new ElementDef("thuy", "Thủy", "#3f8fd8", "#6fe0e0", true,  "Thủy Linh Căn", "Nước nhu mà bền: phòng ngự, hồi phục, nhấn chìm kẻ địch."),
         new ElementDef("moc",  "Mộc",  "#4f9a5a", "#9fe6a8", false, "Mộc Linh Căn",  "Cỏ cây sinh trưởng: trói buộc, chữa thương, trường sinh."),
         new ElementDef("tho",  "Thổ",  "#b08a4a", "#e6c46a", false, "Thổ Linh Căn",  "Đất đá vững chãi: tường đá, giáp đất, sơn nhạc."),
         new ElementDef("loi",  "Lôi",  "#a46ae6", "#6fb8ff", false, "Lôi Linh Căn",  "Lôi điện nhanh như chớp: lôi bộ, xích điện, thiên lôi."),
@@ -46,15 +46,12 @@ public static class SkillData
 
     public static readonly IReadOnlyList<SkillDef> Skills = new SkillDef[]
     {
-        // ===== HỎA: Đánh thường (2, không dùng điểm) + Chủ động (4) + Bị động (7). Mọi hệ sau dùng cùng khung =====
+        // ===== HỎA: Đánh thường (1, không dùng điểm) + Chủ động (4) + Bị động (7). Mọi hệ sau dùng cùng khung =====
         // Row/Col: vị trí trong cây của chính nó (chủ động 3 hàng × 3 cột, bị động 5 hàng × 3 cột).
         // ---- ĐÁNH THƯỜNG: luôn có, không có cấp, mạnh lên theo cảnh giới / chỉ số / trang bị / công pháp bị động ----
         new("hoa_cau", "hoa", "Hỏa Cầu", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
             "Ngưng tụ hỏa cầu nhỏ bắn thẳng vào một mục tiêu. Đơn mục tiêu, tầm xa.", "bolt", 0, 115, 0,
             Code: "FIRE_BASIC_001", AnimId: "FIRE_BOLT_001"),
-        new("hoa_tien", "hoa", "Hỏa Tiễn", "Đòn thường", 0, 1, 0, 0, 0, Array.Empty<string>(),
-            "Bắn liên tiếp nhiều hỏa tiễn nhỏ, dễ trúng chỗ hiểm. Đa mục tiêu / bộc phát, tầm xa.", "arrow", 0, 105, 0, Crit: 15,
-            Code: "FIRE_BASIC_002", AnimId: "FIRE_ARROW_001"),
         // ---- CHỦ ĐỘNG ----
         new("liet_diem", "hoa", "Liệt Diễm", "Công", 0, 1, 5, 0, 1, Array.Empty<string>(),
             "Ngưng tụ linh lực Hỏa hệ thành một vụ bùng cháy dữ dội, thiêu đốt kẻ địch xung quanh.", "burst", 6, 150, 15, AtkPct: 2, Every: 3,
@@ -87,11 +84,38 @@ public static class SkillData
             "Bị động cao cấp: chiêu Hỏa +20% sát thương, +10% xuyên thấu.", "passive", SkillPct: 20, Pen: 10, Code: "FIRE_PASSIVE_006"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
-        new("thuy_linh_can", "thuy", "Thủy Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Thủy.", "root"),
-        new("thuy_nhan", "thuy", "Thủy Nhận", "Công", 2, 1, 5, 0, 1, new[] { "thuy_linh_can:1" }, "Lưỡi nước chém địch.", "bolt"),
-        new("thuy_thuan", "thuy", "Thủy Thuẫn", "Thủ", 2, 3, 5, 0, 1, new[] { "thuy_linh_can:1" }, "Màn nước chắn đòn.", "shield"),
-        new("hong_thuy", "thuy", "Hồng Thủy", "Khống", 4, 2, 5, 1, 2, new[] { "thuy_nhan:3", "thuy_thuan:3" }, "Nước dâng cuốn trôi kẻ địch.", "field"),
-        new("thuong_hai", "thuy", "Thương Hải Quyết", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "hong_thuy:3" }, "Sức mạnh biển cả.", "ultimate"),
+        // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
+        // Thủy nhu mà bền: sát thương chủ động thấp hơn Hỏa một chút, bù lại làm yếu đòn quái, thêm máu và phòng thủ.
+        // ---- ĐÁNH THƯỜNG Thủy: không dùng điểm, luôn sẵn có (như Hỏa Cầu) ----
+        new("thuy_cau", "thuy", "Thủy Cầu", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
+            "Xoáy nước ngưng thành cầu thủy linh, xoay tít bắn thẳng vào mục tiêu rồi vỡ tung thành băng nước.", "water_ball", 0, 115, 0,
+            Code: "WATER_BASIC_001", AnimId: "WATER_BALL_001"),
+        // ---- CHỦ ĐỘNG (hoạt ảnh nước riêng: water_moon (tngDraw, ảnh fx_thuy_nguyet.png) · water_arrows (ttienDraw, ảnh fx_thuy_tien.png) · water_prison (tlaoDraw, ảnh fx_thuy_lao.png) · water_dragon (tlDraw, ảnh fx_thuy_long.png) trong index.html) ----
+        new("thuy_nguyet", "thuy", "Thủy Nguyệt Trảm", "Công", 0, 1, 5, 0, 1, Array.Empty<string>(),
+            "Xoáy thủy linh ngưng thành vầng trăng lưỡi liềm, lao vút tới chém vỡ thành muôn mảnh băng nước.", "water_moon", 6, 140, 14, HpPct: 2,
+            Code: "WATER_ACTIVE_001", AnimId: "WATER_MOON_002"),
+        new("van_thuy_tien", "thuy", "Vạn Thủy Tiễn", "Công", 1, 0, 5, 1, 3, new[] { "thuy_nguyet:3" },
+            "Xoáy nước ngưng tụ thành hàng loạt mũi tên nước, đồng loạt phóng tới kéo theo sóng dữ đâm xuyên kẻ địch, làm đòn của chúng yếu đi.", "water_arrows", 10, 185, 18, MonAtkDown: 1.5,
+            Code: "WATER_ACTIVE_002", AnimId: "WATER_ARROWS_002"),
+        new("thuy_lao", "thuy", "Thủy Lao Bạo", "Công", 1, 2, 5, 1, 5, new[] { "thuy_nguyet:5" },
+            "Xoáy nước cuộn lên hóa thành lao cầu phù văn giam kẻ địch, dồn nén rồi nổ tung thành muôn mảnh băng.", "water_prison", 14, 225, 24, HpPct: 2,
+            Code: "WATER_ACTIVE_003", AnimId: "WATER_PRISON_001"),
+        new("thuong_hai", "thuy", "Thương Hải Quyết", "Tuyệt kỹ", 2, 1, 5, 2, 10, new[] { "van_thuy_tien:5", "thuy_lao:5" },
+            "Triệu hồi thủy long từ xoáy nước, lao tới phun thủy triều nhấn chìm kẻ địch: sát thương cực cao, đòn quái yếu hẳn đi.", "water_dragon", 30, 330, 38, HpPct: 3, MonAtkDown: 2,
+            Code: "WATER_ULTIMATE_001", AnimId: "WATER_DRAGON_001"),
+        // ---- BỊ ĐỘNG ----
+        new("thuy_linh_can", "thuy", "Thủy Linh Căn", "Căn cơ", 0, 1, 5, 0, 1, Array.Empty<string>(),
+            "Linh căn hệ Thủy: tăng máu và tốc độ hấp thu linh khí.", "root", HpPct: 2, QiPct: 2, Code: "WATER_ROOT_001"),
+        new("nhu_thuy", "thuy", "Nhu Thủy", "Bị động", 1, 1, 5, 0, 1, new[] { "thuy_linh_can:1" },
+            "Nước mềm mà bền: tăng phòng thủ (Lv.1 +5% → Lv.5 +20%).", "passive", DefPct: 3.75, Lead: 1.0 / 3, Code: "WATER_PASSIVE_001"),
+        new("thuy_thuan", "thuy", "Thủy Thuẫn", "Bị động", 2, 0, 5, 0, 1, new[] { "nhu_thuy:2" },
+            "Màn nước bao quanh thân: tăng máu (Lv.1 +3% → Lv.5 +15%).", "passive", HpPct: 3, Code: "WATER_PASSIVE_002"),
+        new("tinh_thuy", "thuy", "Tĩnh Thủy", "Bị động", 2, 2, 5, 0, 1, new[] { "nhu_thuy:2" },
+            "Tâm lặng như nước: đòn của quái yếu đi (Lv.1 −2% → Lv.5 −10%).", "passive", MonAtkDown: 2, Code: "WATER_PASSIVE_003"),
+        new("han_trieu", "thuy", "Hàn Triều", "Bị động", 3, 1, 5, 1, 2, new[] { "thuy_thuan:3", "tinh_thuy:3" },
+            "Thủy triều lạnh buốt: chiêu thức +2% sát thương mỗi cấp (Lv.5 +10%).", "passive", SkillPct: 2, Code: "WATER_PASSIVE_004"),
+        new("thuy_linh_chan_y", "thuy", "Thủy Linh Chân Ý", "Bị động", 4, 1, 1, 2, 5, new[] { "van_thuy_tien:3", "han_trieu:5" },
+            "Bị động cao cấp: chiêu thức +15% sát thương, đòn quái −5%, máu +10%.", "passive", SkillPct: 15, MonAtkDown: 5, HpPct: 10, Code: "WATER_PASSIVE_005"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Mộc.", "root"),
         new("dang_man", "moc", "Đằng Mạn", "Khống", 2, 1, 5, 0, 1, new[] { "moc_linh_can:1" }, "Dây leo trói địch.", "bind"),
         new("hoi_xuan", "moc", "Hồi Xuân", "Thủ", 2, 3, 5, 0, 1, new[] { "moc_linh_can:1" }, "Chữa thương.", "aura"),
@@ -120,6 +144,12 @@ public static class SkillData
     };
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);
+
+    /// <summary>Đòn thường đã bỏ (mỗi hệ chỉ còn 1 đòn thường) → đòn thường thay thế khi nạp dữ liệu cũ.</summary>
+    public static readonly IReadOnlyDictionary<string, string> RemovedBasics = new Dictionary<string, string>
+    {
+        ["hoa_tien"] = "hoa_cau", ["thuy_cham"] = "thuy_cau",
+    };
 
     /// <summary>2 ô chiến đấu: ô 0 = đòn đánh thường (mỗi lượt), ô 1 = kỹ năng chủ động (Công hoặc Tuyệt kỹ), thi triển khi đầy nộ.</summary>
     public const int SkillSlotCount = 2, BasicSlot = 0, UltimateSlot = 1;

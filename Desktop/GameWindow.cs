@@ -18,7 +18,8 @@ namespace VanDao.Desktop;
 /// </summary>
 public sealed class GameWindow : Form
 {
-    private static readonly Size BaseSize = new(280, 200);
+    /// <summary>Kích thước 100% (bằng 150% của bản cũ 280×200).</summary>
+    private static readonly Size BaseSize = new(420, 300);
     private const int HotkeyResetPos = 1, HotkeyResetScale = 2;
 
     private readonly string _url;
@@ -96,6 +97,10 @@ public sealed class GameWindow : Form
     private void ApplySize()
     {
         var size = LogicalToDeviceUnits(new Size((int)(BaseSize.Width * _s.Scale), (int)(BaseSize.Height * _s.Scale)));
+        // ×3 / ×4 có thể lớn hơn màn hình: thu lại vừa vùng làm việc, giữ tỉ lệ khung
+        var area = TargetScreen().WorkingArea;
+        var fit = Math.Min(1.0, Math.Min((double)area.Width / size.Width, (double)area.Height / size.Height));
+        if (fit < 1) size = new Size((int)(size.Width * fit), (int)(size.Height * fit));
         _placing = true;
         Size = size;
         _placing = false;
@@ -271,10 +276,10 @@ public sealed class GameWindow : Form
         _menu.Items.Add(layout);
 
         var size = new ToolStripMenuItem("Kích thước");
-        foreach (var k in new[] { 0.75, 1.0, 1.25, 1.5, 2.0 })
+        foreach (var k in new[] { 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0 })
         {
             var v = k;
-            size.DropDownItems.Add(new ToolStripMenuItem($"{k * 100:0}%", null, (_, _) => { _s.Scale = v; _s.Save(); ApplySize(); })
+            size.DropDownItems.Add(new ToolStripMenuItem(k >= 2 ? $"×{k:0}" : $"{k * 100:0}%", null, (_, _) => { _s.Scale = v; _s.Save(); ApplySize(); })
                 { Checked = Math.Abs(_s.Scale - k) < 0.001 });
         }
         _menu.Items.Add(size);
