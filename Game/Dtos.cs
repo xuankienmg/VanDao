@@ -77,9 +77,16 @@ public record StateDto(
     int SkillPointsTotal,
     BreakStateDto Break,
     List<LogDto> Logs,
-    string Admin = "");   // cờ admin mode đang bật
+    string Admin = "",    // cờ admin mode đang bật
+    List<ChestOddsDto>? ChestOdds = null);   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
 
-public record BonusDto(double QiPct, double LuckPct, double SpeedPct);
+/// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % phẩm Trắng → Tím,
+/// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>
+public record ChestOddsDto(string Chest, int Level, double[] Quality, List<ItemQtyPctDto> Treasure, List<ItemQtyPctDto> Gear,
+    string PillItem, int PillMin, int PillMax, double Pill);
+public record ItemQtyPctDto(string Item, double Pct);
+
+public record BonusDto(double QiPct, double SpeedPct);
 
 /// <summary>
 /// Kết quả trận đánh của chuyến thám hiểm (tính sẵn từ chỉ số, không ngẫu nhiên)
