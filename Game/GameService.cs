@@ -143,9 +143,9 @@ public class GameService(GameDbContext db)
             var cd = kv.Value;
             var pt = treasures.Count > 0 ? cd.Treasure : 0;
             var pg = gear.Count > 0 ? (1 - pt) * cd.GearShare : 0;
-            var qs = cd.Quality.Sum();
+            var cq = cd.QualityAt(p.Realm); var qs = cq.Sum();
             return new ChestOddsDto(kv.Key, GameData.GearLevels[Math.Clamp(p.Realm, 0, GameData.GearLevels.Length - 1)],
-                cd.Quality.Select(q => Math.Round(q / qs * 100, 2)).ToArray(),
+                cq.Select(q => Math.Round(q / qs * 100, 2)).ToArray(),
                 treasures.Select(t => new ItemQtyPctDto(t.Id, Math.Round(pt / treasures.Count * 100, 2))).ToList(),
                 gear.Select(g => new ItemQtyPctDto(g.Item, Math.Round(pg * g.Chance / gw * 100, 2))).ToList(),
                 pill, cd.PillMin, cd.PillMax, Math.Round((1 - pt - pg) * 100, 2));
@@ -240,13 +240,13 @@ public class GameService(GameDbContext db)
         var treasures = GameData.GearBases.Where(b => b.Slot == "offhand" && b.MinRealm <= Math.Max(1, p.Realm)).ToList();
         var gear = r.Drops.Where(dd => GameData.GearBaseById.TryGetValue(dd.Item, out var b) && b.Slot != "offhand").ToList();
         if (rng.NextDouble() < cd.Treasure && treasures.Count > 0)
-            item = GameData.RollGear(treasures[rng.Next(treasures.Count)].Id, cd.Quality);
+            item = GameData.RollGear(treasures[rng.Next(treasures.Count)].Id, cd.QualityAt(p.Realm));
         else if (gear.Count > 0 && rng.NextDouble() < cd.GearShare)
         {
             var x = rng.NextDouble() * gear.Sum(g => g.Chance);     // chọn món theo trọng số = tỉ lệ rơi gốc, rồi gieo phẩm
             var pick = gear[^1].Item;
             foreach (var g in gear) { if ((x -= g.Chance) < 0) { pick = g.Item; break; } }
-            item = GameData.RollGear(pick, cd.Quality);
+            item = GameData.RollGear(pick, cd.QualityAt(p.Realm));
         }
         else
         {
@@ -298,11 +298,12 @@ public class GameService(GameDbContext db)
         return Log(p, $"Bán {(n > 1 ? n + " " : "")}{def.Name}: +{def.Sell * n:N0} linh thạch.", "loot");
     }
 
-    /// <summary>Bán hết trang bị trong hành trang có độ hiếm từ maxRarity trở xuống (0 = Phàm phẩm … 4 = Tiên phẩm).</summary>
+    /// <summary>Bán hết trang bị trong hành trang có độ hiếm từ maxRarity trở xuống (0 = Phàm cấp … 4 = Thiên cấp).</summary>
     /// <summary>Bán hàng loạt theo độ hiếm (≤ maxRarity). gearOnly: chỉ trang bị.
     /// items: giới hạn trong các món "id:số,id:số" (vd. trang hành trang đang xem); null = cả hành trang.
     /// Đồ đang mặc không nằm trong hành trang nên không bao giờ bị bán.</summary>
-    public (string msg, string kind) SellBulk(Player p, int maxRarity, bool gearOnly = false, string? items = null)
+    /// pick: các món người chơi tự chọn (chọn nhiều trong hành trang).
+    public (string msg, string kind) SellBulk(Player p, int maxRarity, bool gearOnly = false, string? items = null, bool pick = false)
     {
         Dictionary<string, int>? scope = null;
         if (!string.IsNullOrWhiteSpace(items))
@@ -328,7 +329,7 @@ public class GameService(GameDbContext db)
         }
         if (count == 0) throw new GameException(gearOnly ? "Không có trang bị nào để bán." : "Không có món nào để bán.");
         p.Add("linh_thach", gain);
-        return Log(p, $"Bán {count} {(gearOnly ? "món trang bị" : "món")}{(scope is null ? "" : " (trang đang xem)")}: +{gain:N0} linh thạch.", "loot");
+        return Log(p, $"Bán {count} {(gearOnly ? "món trang bị" : "món")}{(scope is null ? "" : pick ? " đã chọn" : " (trang đang xem)")}: +{gain:N0} linh thạch.", "loot");
     }
 
     /// <summary>Cấp hiển thị: đếm liên tục qua các tầng/kỳ của mọi cảnh giới.</summary>
@@ -422,7 +423,9 @@ public class GameService(GameDbContext db)
 
     // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
 
-    public static readonly string[] AdminFlags = { "god", "break", "fast" };
+    public static readonly string[] AdminFlags = { "god", "break", "fast", "fast2", "fast3", "fast5", "boss" };
+    /// <summary>Admin thám hiểm nhanh: hệ số tăng tốc chuyến thám hiểm (×2 · ×3 · ×5; cờ cũ "fast" = ×3), 1 = tắt.</summary>
+    private static double FastMult(Player p) => p.Cheat("fast5") ? 5 : p.Cheat("fast3") || p.Cheat("fast") ? 3 : p.Cheat("fast2") ? 2 : 1;
 
     /// <summary>Lệnh admin: give · stones · qi · realm · clearcd · points · maxfire · resetskills · resetall · unlock · explore · flag.</summary>
     public (string msg, string kind) AdminAction(Player p, string action, string? arg, int n)
@@ -433,7 +436,17 @@ public class GameService(GameDbContext db)
             case "give":
                 if (arg is null || !GameData.ItemById.TryGetValue(arg, out var it)) throw new GameException("Vật phẩm không tồn tại.");
                 p.Add(arg, n);
-                return Log(p, $"[Admin] +{n:N0} {it.Name}.", "good");
+                return Log(p, $"[Admin] +{n:N0} {GameData.Label(it)}.", "good");
+            case "giveset":
+            {
+                // arg = "<tên bộ>|<phẩm 0–3>": nhận n món mỗi loại của cả bộ (kể cả pháp bảo trong bộ) ở phẩm đã chọn
+                var parts = (arg ?? "").Split('|');
+                if (parts.Length != 2 || !int.TryParse(parts[1], out var q) || q < 0 || q >= GameData.QualityMult.Length) throw new GameException("Bộ / phẩm không hợp lệ.");
+                var bases = GameData.GearBases.Where(b => b.Set == parts[0]).ToList();
+                if (bases.Count == 0) throw new GameException("Bộ trang bị không tồn tại.");
+                foreach (var b in bases) p.Add(GameData.GearId(b, q), n);
+                return Log(p, $"[Admin] +{n:N0} bộ {parts[0]} [cấp {GameData.GearLevelOf(bases[0])} · {GameData.QualityName[q]}] ({bases.Count} món).", "good");
+            }
             case "stones":
                 p.Add("linh_thach", n);
                 return Log(p, $"[Admin] +{n:N0} linh thạch.", "good");
@@ -505,9 +518,13 @@ public class GameService(GameDbContext db)
                 if (arg is null || !AdminFlags.Contains(arg)) throw new GameException("Cờ admin không hợp lệ.");
                 var set = p.Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
                 var on = set.Add(arg); if (!on) set.Remove(arg);
+                var fast = arg.StartsWith("fast");
+                if (fast && on) set.RemoveWhere(f => f.StartsWith("fast") && f != arg);   // ×2 / ×3 / ×5: chỉ bật một mức
                 p.Admin = string.Join(',', set);
-                if (arg == "fast") p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
-                return Log(p, $"[Admin] {(arg == "god" ? "Bất tử" : arg == "break" ? "Đột phá luôn thành công" : "Thám hiểm nhanh")}: {(on ? "BẬT" : "TẮT")}.", on ? "good" : "");
+                if (fast) p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
+                var name = arg == "god" ? "Bất tử" : arg == "break" ? "Đột phá luôn thành công" : arg == "boss" ? "Đánh Boss không cần chìa khóa"
+                    : $"Thám hiểm nhanh ×{(arg == "fast" ? "3" : arg[4..])}";
+                return Log(p, $"[Admin] {name}: {(on ? "BẬT" : "TẮT")}.", on ? "good" : "");
             }
             default: throw new GameException("Lệnh admin không tồn tại.");
         }
@@ -637,14 +654,14 @@ public class GameService(GameDbContext db)
         if (area == GameData.BossArea)
         {
             if (MapAreaMax(p) < GameData.Areas) throw new GameException($"Mở ải {R}-{GameData.Areas} trước khi khiêu chiến Boss.");
-            if (p.Count(r.KeyItem) < 1) throw new GameException($"Cần {GameData.ItemById[r.KeyItem].Name} để vào {r.BossLair}. Rơi ở ải {R}-1 đến {R}-{GameData.Areas}.");
+            if (p.Count(r.KeyItem) < 1 && !p.Cheat("boss")) throw new GameException($"Cần {GameData.ItemById[r.KeyItem].Name} để vào {r.BossLair}. Rơi ở ải {R}-1 đến {R}-{GameData.Areas}.");
         }
         else if (area < 1 || area > MapAreaMax(p)) throw new GameException("Ải này chưa mở.");
         if (p.Area == area) return ("", "");
         p.Area = area;
         p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));   // bắt đầu chuyến mới ở ải vừa chọn
         return area == GameData.BossArea
-            ? Log(p, $"Cầm {GameData.ItemById[r.KeyItem].Name} tiến vào {r.BossLair}, khiêu chiến {r.Boss.Name}!", "gold")
+            ? Log(p, p.Count(r.KeyItem) > 0 ? $"Cầm {GameData.ItemById[r.KeyItem].Name} tiến vào {r.BossLair}, khiêu chiến {r.Boss.Name}!" : $"[Admin] Vào {r.BossLair} không cần chìa khóa, khiêu chiến {r.Boss.Name}!", "gold")
             : ($"Chuyển sang ải {R}-{area} · {GameData.AreaPlace(r, area)}.", "");
     }
 
@@ -666,11 +683,15 @@ public class GameService(GameDbContext db)
         var areas = Enumerable.Range(1, GameData.BossArea).Select(a =>
         {
             var b = BattleAt(p, a);
+            var ws = GameData.AreaWaves(r, a);
             return new AreaDto(a, b.Monster, GameData.AreaPlace(r, a),
-                b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= amax || (a == GameData.BossArea && amax >= GameData.Areas));
+                b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= amax || (a == GameData.BossArea && amax >= GameData.Areas), b.Image,
+                ws.Select(w => new WaveInfoDto(w.Name, w.Image, w.Tier, w.Hp, w.Atk, w.Def)).ToList(), ws.Any(w => w.Tier == "elite"));
         }).ToList();
         return new MapDto(p.Area, amax, r.KeyItem, r.BossItem, r.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
-            GameData.Synths.Select(sd => new SynthStateDto(sd.From, MaxSynth(p, sd))).ToList(), p.Count(r.BossItem) > 0, MapIdx(p));
+            GameData.Synths.Select(sd => new SynthStateDto(sd.From, MaxSynth(p, sd))).ToList(), p.Count(r.BossItem) > 0, MapIdx(p),
+            r.Drops.Select(d => new DropInfoDto(d.Item, d.Min, d.Max, d.Chance, GameData.GearBaseById.ContainsKey(d.Item))).ToList(),
+            GameData.ChestChance, GameData.RareChestChance, GameData.RareChestMinArea, GameData.BossChest);
     }
 
     /// <summary>Quy đổi vật phẩm của bản cũ (3 loại linh thạch, nguyên liệu luyện đan, đan phẩm chất…).</summary>
@@ -694,6 +715,8 @@ public class GameService(GameDbContext db)
         if (p.AreaMax > GameData.Areas && p.Area >= GameData.BossArea) p.Area = GameData.Areas;   // bản đồ cũ 20 ải → 15 ải
         p.Area = Math.Clamp(p.Area, 1, GameData.BossArea);
         p.AreaMax = Math.Clamp(p.AreaMax, 1, GameData.Areas);
+        // bỏ kỳ "Đại viên mãn" (Trúc Cơ, Kim Đan còn 3 kỳ): tu sĩ đang ở kỳ cũ cuối → Hậu kỳ, giữ tu vi tối đa đủ đột phá
+        if (p.Stage > Realm(p).Stages.Length - 1) { p.Stage = Realm(p).Stages.Length - 1; p.Qi = Math.Min(p.Qi, QiReq(p)); }
     }
 
     public async Task<Player> ResetAsync(Player p)
@@ -742,7 +765,8 @@ public class GameService(GameDbContext db)
             p.ExploreReadyAt = now.AddSeconds(ExploreSeconds(p));
         }
         string? special = null, specialKind = "gold";
-        var bossWins = 0;                                            // số lần hạ Boss trong lượt cập nhật này (khiêu chiến liên tục đến hết chìa khóa)
+        var bossWins = 0;
+        string? lostTo = null;                                      // quái (đợt) đã khiến chuyến thua                                            // số lần hạ Boss trong lượt cập nhật này (khiêu chiến liên tục đến hết chìa khóa)
         var startArea = p.Area;
         var mapTag = MapIdx(p) + 1;
         {
@@ -757,10 +781,11 @@ public class GameService(GameDbContext db)
                 if (area == GameData.BossArea)
                 {
                     // ải Boss: thắng thì mất chìa khóa và nhận yêu hạch, còn chìa khóa thì tự khiêu chiến tiếp; thua thì giữ chìa khóa và rút lui
-                    if (battle.Win && p.Count(r.KeyItem) > 0)
+                    var freeBoss = p.Cheat("boss") && p.Count(r.KeyItem) < 1;            // admin: không cần chìa khóa (không tiêu hao, đánh liên tục)
+                    if (battle.Win && (p.Count(r.KeyItem) > 0 || freeBoss))
                     {
                         bossWins++;
-                        p.Add(r.KeyItem, -1);
+                        if (!freeBoss) p.Add(r.KeyItem, -1);
                         p.Add(r.BossItem, 1);
                         p.BossKills++;
                         p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p) * 5);
@@ -768,10 +793,11 @@ public class GameService(GameDbContext db)
                         if (chestOk) loot[GameData.BossChest] = loot.GetValueOrDefault(GameData.BossChest) + 1;
                         var keysLeft = p.Count(r.KeyItem);
                         var times = bossWins > 1 ? $" (lần {bossWins})" : "";
-                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}{times}! Nhận {GameData.ItemById[r.BossItem].Name}{(chestOk ? $", {GameData.ItemById[GameData.BossChest].Name}" : " (hành trang đầy, bỏ lại Rương Boss)")}, tiêu hao {GameData.ItemById[r.KeyItem].Name}."
-                            + (keysLeft > 0 ? $" Còn {keysLeft} {GameData.ItemById[r.KeyItem].Name}, tiếp tục khiêu chiến." : $" Đã hết {GameData.ItemById[r.KeyItem].Name}, trở về ải {GameData.Areas}.");
+                        special = $"Đánh bại {r.Boss.Name} ở {r.BossLair}{times}! Nhận {GameData.ItemById[r.BossItem].Name}{(chestOk ? $", {GameData.ItemById[GameData.BossChest].Name}" : " (hành trang đầy, bỏ lại Rương Boss)")}"
+                            + (freeBoss ? " [Admin: không cần chìa khóa], tiếp tục khiêu chiến." : $", tiêu hao {GameData.ItemById[r.KeyItem].Name}."
+                            + (keysLeft > 0 ? $" Còn {keysLeft} {GameData.ItemById[r.KeyItem].Name}, tiếp tục khiêu chiến." : p.Cheat("boss") ? " [Admin] Đánh tiếp không cần chìa khóa." : $" Đã hết {GameData.ItemById[r.KeyItem].Name}, trở về ải {GameData.Areas}."));
                         specialKind = "gold";
-                        if (keysLeft > 0) { t = t.AddSeconds(ExploreSeconds(p)); continue; }   // còn chìa khóa: ở lại ải Boss, đánh tiếp
+                        if (keysLeft > 0 || p.Cheat("boss")) { t = t.AddSeconds(ExploreSeconds(p)); continue; }   // còn chìa khóa: ở lại ải Boss, đánh tiếp
                     }
                     else
                     {
@@ -788,17 +814,19 @@ public class GameService(GameDbContext db)
                 {
                     // thua trận: rút lui về ải trước, chỉ nhận nửa tu vi
                     losses++;
+                    lostTo = battle.Waves is { Count: > 0 } lw ? lw[^1].Name : battle.Monster;
                     p.Qi = Math.Min(QiReq(p), p.Qi + ExploreQi(p) / 2);
                     if (p.Area > 1) p.Area--;
                     continue;
                 }
-                var scale = 1 + (area - 1) * 0.05;
+                var eliteTrip = area >= GameData.EliteMinArea;                // chuyến có tinh anh: linh thạch ×1.5, rương hiếm 20%
+                var scale = (1 + (area - 1) * 0.05) * (eliteTrip ? GameData.EliteStoneMult : 1);
                 foreach (var d in r.Drops)
                 {
                     var isStone = d.Item == "linh_thach";
                     if (Random.Shared.NextDouble() >= Math.Min(1, d.Chance * (isStone || d.Chance >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
                     var n = (int)Math.Round(Random.Shared.Next(d.Min, d.Max + 1) * (isStone ? scale : 1));
-                    // trang bị: cấp theo cảnh giới yêu cầu của món, phẩm Trắng 60 · Lục 28 · Lam 10 · Tím 2 (%)
+                    // trang bị: cấp theo cảnh giới yêu cầu của món, cấp bậc theo GameData.DropQuality
                     var dropId = GameData.GearBaseById.ContainsKey(d.Item) ? GameData.RollGear(d.Item) : d.Item;
                     var got = TryAddLoot(p, dropId, n);
                     if (got > 0) loot[dropId] = loot.GetValueOrDefault(dropId) + got;
@@ -808,7 +836,7 @@ public class GameService(GameDbContext db)
                     loot[r.KeyItem] = loot.GetValueOrDefault(r.KeyItem) + 1;
                 // rương: thường ở mọi ải, hiếm từ ải RareChestMinArea
                 foreach (var (chest, chance) in new[] { ("ruong_thuong", GameData.ChestChance),
-                             ("ruong_hiem", area >= GameData.RareChestMinArea ? GameData.RareChestChance : 0) })
+                             ("ruong_hiem", eliteTrip ? GameData.EliteRareChestChance : area >= GameData.RareChestMinArea ? GameData.RareChestChance : 0) })
                 {
                     if (chance <= 0 || Random.Shared.NextDouble() >= chance) continue;
                     if (TryAddLoot(p, chest, 1) > 0) loot[chest] = loot.GetValueOrDefault(chest) + 1; else lost++;
@@ -835,25 +863,59 @@ public class GameService(GameDbContext db)
                 : $"Vắng mặt {Math.Round(gap / 60)} phút, thu được {gained:N0} tu vi.", "gold");
         else if (special is not null && trips == 1) { }
         else if (trips > 0 && losses == trips)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {GameData.AreaMonster(MapRealm(p), startArea).Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: bị {lostTo ?? GameData.AreaMonster(MapRealm(p), startArea).Name} đánh trọng thương, phải rút lui. Cần thêm tấn công, máu hoặc phòng thủ.", "bad");
         else if (trips > 0)
-            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {GameData.AreaMonster(MapRealm(p), startArea).Name}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
+            AddLog(p, $"Thám hiểm {areaTag} · {place}: hạ {WaveNames(MapRealm(p), startArea)}: {(p.Qi >= QiReq(p) && gained <= 0 ? "tu vi đã đầy" : $"+{gained:N0} tu vi")}{(lootText.Length > 0 ? ", " + lootText : "")}.", gotEquip ? "gold" : "loot");
     }
+
+    /// <summary>Tên các đợt quái của ải, gộp loài trùng: "Yêu Lang ×2, Độc Xà" · tinh anh ghi kèm.</summary>
+    private static string WaveNames(RealmDef r, int area) =>
+        string.Join(", ", GameData.AreaWaves(r, area).GroupBy(w => w.Name)
+            .Select(g => g.First().Name + (g.Count() > 1 ? $" ×{g.Count()}" : "") + (g.First().Tier == "elite" ? " (tinh anh)" : "")));
 
     /// <summary>Tổng chỉ số % từ trang bị đang mặc.</summary>
     private static double Bonus(Player p, Func<ItemDef, double> stat) =>
         p.Equipment.Sum(e => GameData.ItemById.TryGetValue(e.ItemId, out var d) ? stat(d) : 0);
 
-    /// <summary>Tu vi mỗi giây đã tính trang bị.</summary>
+    /// <summary>Tu vi mỗi giây đã tính trang bị (gồm Hấp linh).</summary>
     private static double Rate(Player p) =>
-        GameData.QiRate(Realm(p), p.Stage) * (1 + (Bonus(p, i => i.QiPct) + SkillBonus(p).qi) / 100) * (DateTime.UtcNow < p.DebuffUntil ? GameData.DebuffRate : 1);
+        GameData.QiRate(Realm(p), p.Stage) * (1 + (Bonus(p, i => i.QiPct) + SkillBonus(p).qi + GearEffects(p).Qi) / 100) * (DateTime.UtcNow < p.DebuffUntil ? GameData.DebuffRate : 1);
+
+    /// <summary>Tổng hiệu ứng riêng của trang bị đang mặc, đã áp trần (xem plan "Hiệu ứng riêng theo cấp trang bị").</summary>
+    public record GearFx(double Qi, double ExploreQi, double Pen, double SkillPct, double Rage, double Guard, double ExtraHit, double HpPct,
+        double Dodge, double Regen, double Shield, double FirstHit, double Reflect, double Lightning, double LightningPct, double MonAtkDown,
+        double CritBonus, int Thien, double SetPct);
+    public static GearFx GearEffects(Player p)
+    {
+        var sum = new Dictionary<string, double>(); double boltPct = 0; var thien = 0;
+        foreach (var e in p.Equipment)
+        {
+            if (!GameData.ItemById.TryGetValue(e.ItemId, out var d)) continue;
+            if (d.Slot is not null && d.Rarity == "legendary") thien++;
+            foreach (var f in d.Effects ?? Array.Empty<ItemEffect>())
+            {
+                sum[f.Id] = sum.GetValueOrDefault(f.Id) + f.Value;
+                if (f.Id == "thien_loi") boltPct = Math.Max(boltPct, f.Value2);
+            }
+        }
+        double S(string id) => sum.GetValueOrDefault(id);
+        var set = thien >= Realm(p).EquipSlots.Length ? GameData.ThienSetFull : thien >= 5 ? GameData.ThienSet5 : thien >= 3 ? GameData.ThienSet3 : 0;
+        return new GearFx(S("hap_linh"), S("tu_linh"), S("pha_giap"), S("linh_ap"), Math.Min(75, S("tinh_tam")), S("ho_the"), Math.Min(30, S("lien_kich")),
+            S("vung_than"), S("than_phap"), S("hoi_khi"), Math.Min(20, S("tho_thuan")), S("dia_chan"), Math.Min(15, S("dia_mach")),
+            Math.Min(50, S("thien_loi")), boltPct, S("thien_uy"), S("thien_menh"), thien, set);
+    }
 
     /// <summary>Thời lượng một chuyến: đi đường + số lượt đánh + kết thúc. Tấn công cao thì hạ quái nhanh hơn.</summary>
-    private static double ExploreSeconds(Player p) => p.Cheat("fast") ? 3 :   // admin: chuyến thám hiểm 3 giây
-        Math.Max(GameData.MinExploreSeconds,
+    private static double ExploreSeconds(Player p)
+    {
+        var t = Math.Max(GameData.MinExploreSeconds,
             GameData.WalkSeconds * (1 - Math.Min(60, Stats(p).Move) / 100)
             + Battle(p).Hits * GameData.HitSeconds * (1 - Math.Min(60, Stats(p).Speed) / 100)
+            + (Math.Max(1, Battle(p).Waves?.Count ?? 1) - 1) * GameData.WaveSeconds
             + GameData.EndSeconds);
+        var k = FastMult(p);                                   // admin: thám hiểm nhanh ×2 / ×3 / ×5
+        return k > 1 ? Math.Max(1, t / k) : t;
+    }
 
     /// <summary>Chỉ số chiến đấu = chỉ số gốc theo cảnh giới/tầng + trang bị.</summary>
     public static CombatStats Stats(Player p)
@@ -865,8 +927,9 @@ public class GameService(GameDbContext db)
         bool On(string id) => p.Realm >= GameData.ExtraStats.First(x => x.Id == id).MinRealm;
         var weak = DateTime.UtcNow < p.DebuffUntil ? GameData.DebuffStat : 1;   // tẩu hỏa nhập ma
         var sk = SkillBonus(p);                                                  // công pháp bị động
-        return new CombatStats((int)((b.Atk + Sum(i => i.Atk)) * weak * (1 + sk.atk / 100)), (int)((b.Hp + Sum(i => i.Hp) + p.BodyHp) * (1 + sk.hp / 100)),
-            (int)((b.Def + Sum(i => i.Def) + p.BodyDef) * weak * (1 + sk.def / 100)),
+        var fx = GearEffects(p);                                                 // Vững thân (máu) + thưởng bộ Thiên cấp
+        return new CombatStats((int)((b.Atk + Sum(i => i.Atk)) * weak * (1 + (sk.atk + fx.SetPct) / 100)), (int)((b.Hp + Sum(i => i.Hp) + p.BodyHp) * (1 + (sk.hp + fx.HpPct + fx.SetPct) / 100)),
+            (int)((b.Def + Sum(i => i.Def) + p.BodyDef) * weak * (1 + (sk.def + fx.SetPct) / 100)),
             (On("speed") ? baseSpeed + SumD(i => i.SpeedPct) : 0) + sk.speed,
             5 + SumD(i => i.CritPct) + sk.crit,
             SumD(i => i.MovePct) + sk.move);
@@ -885,21 +948,28 @@ public class GameService(GameDbContext db)
         var tripSec = (trip ?? p.ExploreReadyAt).Ticks / TimeSpan.TicksPerSecond;
         var rng = new Random(unchecked((p.Id.GetHashCode() * 31 + area) * 31 + (int)(tripSec % 1_000_000_007)));
         var st = Stats(p);
-        var m = GameData.AreaMonster(MapRealm(p), area);
-        var down = SkillBonus(p).monAtk;                       // công pháp khống chế làm yếu đòn quái
-        if (down > 0) m = m with { Atk = (int)Math.Round(m.Atk * (1 - down / 100)) };
+        var fx = GearEffects(p);                               // hiệu ứng riêng của trang bị theo cấp
+        var down = Math.Min(40, SkillBonus(p).monAtk + fx.MonAtkDown);   // công pháp khống chế + Thiên uy làm yếu đòn quái
         var (skillPct, pen, burnPct) = SkillExtra(p);                   // Hỏa Tụ / Liệt Diễm Tâm / Xích Diễm Đạo Thể · Hỏa Linh Chân Ý
-        if (pen > 0) m = m with { Def = (int)Math.Round(m.Def * (1 - pen / 100)) };
+        pen = Math.Min(80, pen + fx.Pen); skillPct += fx.SkillPct;      // Phá giáp · Linh áp
+        // các đợt quái của ải (ải thường 3 đợt, ải Boss 1): đã trừ công (khống chế) và thủ (phá giáp)
+        var waves = GameData.AreaWaves(MapRealm(p), area).Select(w => w with {
+            Atk = down > 0 ? (int)Math.Round(w.Atk * (1 - down / 100)) : w.Atk,
+            Def = pen > 0 ? (int)Math.Round(w.Def * (1 - pen / 100)) : w.Def }).ToArray();
+        var wave = 0; var m = waves[0];
         var crit = Math.Min(100, st.Crit) / 100;
-        var power = st.Atk * (1 + crit * 0.5);
+        var critMult = 0.5 + fx.CritBonus;                               // Thiên mệnh
+        var power = st.Atk * (1 + crit * critMult);
         // đòn đánh thường = chiêu ở ô 1 (Hỏa Cầu / Thủy Cầu), chưa đặt thì đánh 100% công
         var lv = SkillLevels(p);
         var basicId = p.Slots()[SkillData.BasicSlot];
         var basicOk = SkillData.ById.TryGetValue(basicId, out var bdef) && bdef.Tree == "basic";
         if (!basicOk) { basicId = "hoa_cau"; bdef = SkillData.ById[basicId]; }        // mặc định: Hỏa Cầu
         var bcrit = Math.Min(100, st.Crit + bdef!.Crit) / 100;                       // đòn thường có thể cộng thêm chí mạng riêng
-        var bpower = st.Atk * (1 + bcrit * 0.5);
-        var heroDmg = Math.Max(1, (int)Math.Round(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100) - m.Def);
+        var bpower = st.Atk * (1 + bcrit * critMult);
+        var heroBase = (int)Math.Round(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100);
+        int HeroDmgVs(MonsterDef x) => Math.Max(1, heroBase - x.Def);
+        var heroDmg = HeroDmgVs(m);
 
         // kỹ năng trong ô: chiêu công tự thi triển theo lượt, chiêu thủ giảm sát thương, khống làm quái đứng yên, thân pháp né đòn
         var equipped = p.Slots().Skip(1).Where(id => id.Length > 0 && lv.GetValueOrDefault(id) > 0 && SkillData.ById.ContainsKey(id))
@@ -911,20 +981,47 @@ public class GameService(GameDbContext db)
             shield += a.shield; dodge += a.dodge; stun += a.stun;
             burn += a.burn > 0 ? SkillData.Damage(s, l) * a.burn / 100 : 0;
         }
-        shield = Math.Min(60, shield); dodge = Math.Min(50, dodge); stun = Math.Min(4, stun);
-        var monDmg = p.Cheat("god") ? 0 : Math.Max(1, (int)Math.Round(Math.Max(1, m.Atk - st.Def) * (1 - shield / 100) * (1 - dodge / 100)));   // admin: bất tử
+        shield = Math.Min(60, shield + fx.Guard); dodge = Math.Min(50, dodge + fx.Dodge); stun = Math.Min(4, stun);   // + Hộ thể · Thân pháp
+        int MonHit(double atk) => p.Cheat("god") ? 0 : Math.Max(1, (int)Math.Round(Math.Max(1, atk - st.Def) * (1 - shield / 100) * (1 - dodge / 100)));   // admin: bất tử
+        var monDmg = MonHit(m.Atk);
+        // Boss: kỹ năng ẩn — Yêu thân (giảm sát thương nhận) · Cuồng bạo (máu thấp thì công tăng)
+        var isBoss = area >= GameData.BossArea;
+        var trait = isBoss ? GameData.BossTraits[Math.Min(MapIdx(p), GameData.BossTraits.Length - 1)] : null;
+        double TakeK(MonsterDef x) => x.Tier == "elite" ? 1 - GameData.EliteDmgReduce / 100 : trait is null ? 1 : 1 - trait.DmgReduce / 100;   // tinh anh: giảm 5% sát thương nhận
+        var takeK = TakeK(m);
+        var monDmgEnr = trait is null ? monDmg : MonHit(m.Atk * (1 + trait.EnrageAtk / 100));
+        var enraged = false; var enrageAt = -1;
 
         // thiêu đốt bị động: % công mỗi lượt, bỏ qua phòng thủ, được cộng % sát thương Hỏa
         var burnDmg = burnPct > 0 ? Math.Max(1, (int)Math.Round(power * burnPct / 100 * (1 + skillPct / 100))) : 0;
-        int monHp = m.Hp, heroHp = st.Hp, turns = 0, rage = 0; var win = false;
+        // hiệu ứng trang bị: khiên đầu trận · đòn Địa chấn · tia Thiên lôi · hồi máu mỗi lượt
+        var guard = (int)Math.Round(st.Hp * fx.Shield / 100); var guardLeft = guard;
+        var firstHit = fx.FirstHit > 0 ? Math.Max(1, (int)Math.Round(power * fx.FirstHit / 100)) : 0;
+        var boltDmg = fx.Lightning > 0 ? Math.Max(1, (int)Math.Round(power * fx.LightningPct / 100)) : 0;
+        var regen = (int)Math.Round(st.Hp * fx.Regen / 100);
+        int monHp = m.Hp, heroHp = st.Hp, turns = 0, rage = (int)fx.Rage, tw = 0; var win = false;   // Tĩnh tâm: vào trận đã có nộ · tw: lượt trong đợt
+        var waveFirst = new List<int> { 0 };                                  // lượt (thật) bắt đầu mỗi đợt
+        bool NextWave(int t)                                                  // hạ xong đợt này: quái đợt sau bước vào, máu tu sĩ giữ nguyên
+        {
+            if (wave + 1 >= waves.Length) return false;
+            wave++; m = waves[wave]; heroDmg = HeroDmgVs(m); monDmg = MonHit(m.Atk); monDmgEnr = monDmg; takeK = TakeK(m);
+            monHp = m.Hp; tw = -1; waveFirst.Add(t + 1);
+            return true;
+        }
         var monLeft = new List<int>(); var heroLeft = new List<int>(); var skip = new List<bool>(); var casts = new List<CastDto>(); var rages = new List<int>(); var burns = new List<bool>();
-        for (var t = 0; t < 60; t++)
+        var bolts = new List<bool>(); var extras = new List<bool>(); var heals = new List<int>(); var reflects = new List<int>(); var guards = new List<int>();
+        // thứ tự mỗi lượt (giữ cố định để gieo số giống nhau): thiêu đốt → thiên lôi → đòn thường / kỹ năng → liên kích → quái đánh → phản đòn → hồi máu
+        for (var t = 0; t < 150; t++, tw++)
         {
             var dmg = 0;
-            if (burn > 0 && t > 0) dmg += Math.Max(1, (int)Math.Round(power * burn / 100) - m.Def / 2);
-            var burned = burnDmg > 0 && t > 0 && rng.Next(100) < SkillData.BurnChance;   // Phần Cốt: 30% mỗi lượt, từ lượt 2
+            if (burn > 0 && tw > 0) dmg += Math.Max(1, (int)Math.Round(power * burn / 100) - m.Def / 2);
+            var burned = burnDmg > 0 && tw > 0 && rng.Next(100) < SkillData.BurnChance;   // Phần Cốt: 30% mỗi lượt, từ lượt 2 của mỗi đợt
             if (burned) dmg += burnDmg;
             burns.Add(burned);
+            var bolt = boltDmg > 0 && rng.Next(100) < fx.Lightning;           // Thiên lôi
+            if (bolt) dmg += boltDmg;
+            bolts.Add(bolt);
+            if (t == 0) dmg += firstHit;                                       // Địa chấn
             var full = rage >= SkillData.RageMax; var fired = false;          // đầu lượt đã đủ 100 nộ → lượt này tung kỹ năng chủ động
             foreach (var (s, l) in equipped)
             {
@@ -943,26 +1040,57 @@ public class GameService(GameDbContext db)
             }
             if (fired) rage = 0;                                               // tung chiêu thay cho đòn thường, nộ về 0
             else { dmg += heroDmg; rage = Math.Min(SkillData.RageMax, rage + SkillData.RagePerHit); }   // đòn đánh thường tích nộ
+            var extra = fx.ExtraHit > 0 && rng.Next(100) < fx.ExtraHit;      // Liên kích: thêm 1 đòn thường (không tích nộ)
+            if (extra) dmg += heroDmg;
+            extras.Add(extra);
             rages.Add(rage);
+            if (takeK < 1) dmg = (int)Math.Round(dmg * takeK);                // Yêu thân
             monHp -= dmg; turns = t + 1;
             monLeft.Add(Math.Max(0, monHp));
-            if (monHp <= 0) { win = true; heroLeft.Add(heroHp); skip.Add(true); break; }
-            var stunned = t < stun;
-            if (!stunned) heroHp -= monDmg;
-            heroLeft.Add(Math.Max(0, heroHp)); skip.Add(stunned);
+            if (monHp <= 0) { heroLeft.Add(heroHp); skip.Add(true); heals.Add(0); reflects.Add(0); guards.Add(guardLeft); if (NextWave(t)) continue; win = true; break; }
+            var stunned = tw < stun;                                            // khống: các lượt đầu của mỗi đợt
+            int refl = 0, heal = 0;
+            if (!stunned)
+            {
+                if (!enraged && trait is not null && trait.EnrageAtk > 0 && monHp < m.Hp * trait.EnrageAt / 100) { enraged = true; enrageAt = t; }   // Cuồng bạo
+                var hit = enraged ? monDmgEnr : monDmg;
+                if (guardLeft > 0) { var ab = Math.Min(guardLeft, hit); guardLeft -= ab; hit -= ab; }   // Thổ thuẫn đỡ trước
+                heroHp -= hit;
+                var dealt = enraged ? monDmgEnr : monDmg;
+                if (heroHp > 0 && fx.Reflect > 0 && dealt > 0) { refl = Math.Max(1, (int)Math.Round(dealt * fx.Reflect / 100 * takeK)); monHp -= refl; monLeft[^1] = Math.Max(0, monHp); }   // Địa mạch
+            }
+            if (heroHp > 0 && regen > 0) { heal = Math.Min(regen, st.Hp - heroHp); heroHp += heal; }   // Hồi khí
+            heroLeft.Add(Math.Max(0, heroHp)); skip.Add(stunned); heals.Add(heal); reflects.Add(refl); guards.Add(guardLeft);
             if (heroHp <= 0) break;
+            if (monHp <= 0) { if (NextWave(t)) continue; win = true; break; }   // quái gục vì phản đòn
         }
         // hoạt ảnh tối đa MaxHits lượt: trận dài hơn thì lấy mẫu đều các lượt
-        var hits = Math.Min(GameData.MaxHits, turns);
-        int Pick(int i) => turns <= hits ? i : (int)Math.Round((i + 1) * (double)turns / hits) - 1;
-        var idx = Enumerable.Range(0, hits).Select(Pick).ToArray();
+        // (ải 3 đợt: mỗi đợt tối đa MaxWaveHits lượt, luôn giữ lượt hạ gục để client đổi quái đúng lúc)
+        LastTurns = turns;
+        var cap = waves.Length > 1 ? GameData.MaxWaveHits : GameData.MaxHits;
+        var idxL = new List<int>(); var waveDtos = new List<WaveDto>();
+        for (var w = 0; w < waveFirst.Count; w++)
+        {
+            int s0 = waveFirst[w], n = (w + 1 < waveFirst.Count ? waveFirst[w + 1] : turns) - s0;
+            if (n <= 0) break;
+            var h = Math.Min(cap, n); var start = idxL.Count;
+            for (var i = 0; i < h; i++) idxL.Add(s0 + (n <= h ? i : (int)Math.Round((i + 1) * (double)n / h) - 1));
+            var wm = waves[w];
+            waveDtos.Add(new WaveDto(wm.Name, wm.Image, wm.Tier, wm.Hp, wm.Atk, wm.Def, HeroDmgVs(wm), MonHit(wm.Atk), start));
+        }
+        var idx = idxL.ToArray(); var hits = idx.Length; var m0 = waves[0];
         var castShown = casts.Where(c => idx.Contains(c.Turn)).Select(c => c with { Turn = Array.IndexOf(idx, c.Turn) }).ToList();
-        return new BattleDto(m.Name, m.Image, m.Hp, m.Atk, m.Def, heroDmg, monDmg, hits, win,
+        return new BattleDto(m0.Name, m0.Image, m0.Hp, m0.Atk, m0.Def, waveDtos[0].HeroDmg, waveDtos[0].MonsterDmg, hits, win,
             idx.Select(i => monLeft[i]).ToArray(), idx.Select(i => heroLeft[i]).ToArray(), idx.Select(i => skip[i]).ToArray(), castShown, st.Hp, basicId,
-            idx.Select(i => rages[i]).ToArray(), burnDmg, Math.Round(burnPct, 1), idx.Select(i => burns[i]).ToArray());
+            idx.Select(i => rages[i]).ToArray(), burnDmg, Math.Round(burnPct, 1), idx.Select(i => burns[i]).ToArray(),
+            idx.Select(i => bolts[i]).ToArray(), boltDmg, idx.Select(i => extras[i]).ToArray(), idx.Select(i => heals[i]).ToArray(),
+            idx.Select(i => reflects[i]).ToArray(), guard, idx.Select(i => guards[i]).ToArray(), firstHit,
+            enrageAt < 0 ? -1 : Array.FindIndex(idx, i => i >= enrageAt), monDmgEnr, waveDtos);
     }
+    /// <summary>Số lượt thật của trận vừa tính (công cụ mô phỏng cân bằng).</summary>
+    [ThreadStatic] public static int LastTurns;
 
-    private static double ExploreQi(Player p) => GameData.QiRate(Realm(p), p.Stage) * GameData.ExploreQiSeconds;
+    private static double ExploreQi(Player p) => GameData.QiRate(Realm(p), p.Stage) * GameData.ExploreQiSeconds * (1 + GearEffects(p).ExploreQi / 100);   // + Tụ linh
 
     private static RealmDef Realm(Player p) => GameData.Realms[p.Realm];
     /// <summary>Cảnh giới của bản đồ đang đánh (có thể quay lại bản đồ cảnh giới trước).</summary>

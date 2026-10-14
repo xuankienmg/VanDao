@@ -21,7 +21,12 @@ public record ItemDef(string Id, string Name, string Type, string Color, string 
     int Sell = 0,              // giá bán (linh thạch); chỉ trang bị bán được
     string? Set = null,        // bộ trang bị (hiện thành dòng màu riêng trong thẻ vật phẩm)
     int ItemLevel = 0,         // cấp trang bị (1 · 10 · 15) theo ải rơi; 0 = không phải trang bị
-    string? Base = null);      // id món gốc trong GearBases (trang bị sinh theo cấp + phẩm)
+    string? Base = null,       // id món gốc trong GearBases (trang bị sinh theo cấp + phẩm)
+    ItemEffect[]? Effects = null);   // hiệu ứng riêng theo cấp bậc (Linh → Thiên), xem GameData.EffectsFor
+
+/// <summary>Hiệu ứng riêng của trang bị: Grade = cấp mở ra nó (1 Linh · 2 Huyền · 3 Địa · 4 Thiên);
+/// Value cộng dồn giữa các món đang mặc (GameService.GearEffects), Value2 = thông số phụ (Thiên lôi: % công mỗi tia).</summary>
+public record ItemEffect(string Id, string Name, int Grade, double Value, double Value2, string Text);
 
 /// <summary>
 /// Chỉ số chiến đấu. Speed (Thân pháp) tính bằng %
@@ -33,7 +38,7 @@ public record CombatStats(int Atk, int Hp, int Def, double Speed = 0, double Cri
 public record StatDef(string Id, string Name, string Desc, int MinRealm);
 
 /// <summary>Quái vật gặp khi thám hiểm ở một cảnh giới.</summary>
-public record MonsterDef(string Name, string Image, int Hp, int Atk, int Def);
+public record MonsterDef(string Name, string Image, int Hp, int Atk, int Def, string Tier = "");   // Tier: "" thường · "elite" tinh anh · "boss"
 
 public record SlotDef(string Id, string Name);
 
@@ -63,6 +68,11 @@ public class RealmDef
 
     /// <summary>Ảnh nhân vật khi đi thám hiểm ở cảnh giới này.</summary>
     public required string Hero { get; init; }
+    /// <summary>Ảnh nét theo cảnh giới: đứng (Hành trang) · ngồi thiền (Đột phá) · bảng khung tung Hỏa Cầu (trận đấu cửa sổ lớn).
+    /// Cắt lại: python tools/cut_heroes.py tools wwwroot/img</summary>
+    public string? HeroStand { get; init; }
+    public string? HeroMed { get; init; }
+    public string? HeroCast { get; init; }
 
     /// <summary>Tu vi cần để đầy bình cảnh ở tầng/kỳ s (0-based).</summary>
     public required Func<int, double> QiReq { get; init; }
@@ -83,8 +93,10 @@ public class RealmDef
     /// <summary>Quái vật chặn đường khi thám hiểm: chỉ số gốc (tên/ảnh mặc định nếu không có MonsterNames).</summary>
     public required MonsterDef Monster { get; init; }
 
-    /// <summary>Tên 7 loài quái theo thứ tự GameData.MonsterImages (ải 1-15 chia đều, mạnh dần); null = dùng Monster.</summary>
+    /// <summary>Tên 10 loài quái thường theo thứ tự GameData.MonsterImages (mạnh dần); null = dùng Monster.</summary>
     public string[]? MonsterNames { get; init; }
+    /// <summary>Tên 3 quái tinh anh theo thứ tự GameData.EliteImages (đợt cuối ở ải EliteMinArea–15).</summary>
+    public string[]? EliteNames { get; init; }
     public required string[] Places { get; init; }
 
     /// <summary>Boss ở ải 21 (cần chìa khóa để vào), rơi nguyên liệu Boss cho đột phá đại cảnh giới.</summary>
@@ -109,11 +121,11 @@ public static class GameData
         new ItemDef("linh_thach",    "Linh thạch",       "stone", "#8fd0c9", "Tiền tệ chung của giới tu tiên: dùng để tu luyện, hợp thành đan và đột phá.", Rarity: "common", Kind: "Linh thạch"),
         // ---- rương: rơi khi diệt yêu, mở ra nhận 1 phần thưởng ngẫu nhiên theo cảnh giới (GameService.OpenChest) ----
         new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
-            Use: "Mở ra nhận ngẫu nhiên trang bị (phẩm Trắng → Tím) hoặc đan dược của cảnh giới hiện tại · 10% ra pháp bảo."),
+            Use: "Mở ra nhận ngẫu nhiên trang bị (Phàm → Linh cấp, cao hơn khi lên cảnh giới) hoặc đan dược của cảnh giới hiện tại · 10% ra pháp bảo."),
         new ItemDef("ruong_hiem",   "Rương hiếm",   "chest", "#5aa2e6", "Rương lam khảm ngọc, phù văn còn sáng. Chỉ rơi ở ải 10–15.", Rarity: "rare", Kind: "Rương",
-            Use: "Mở ra nhận ngẫu nhiên trang bị từ phẩm Lục trở lên hoặc nhiều đan dược của cảnh giới hiện tại · 20% ra pháp bảo."),
+            Use: "Mở ra nhận ngẫu nhiên trang bị Linh cấp trở lên hoặc nhiều đan dược của cảnh giới hiện tại · 20% ra pháp bảo."),
         new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
-            Use: "Mở ra nhận ngẫu nhiên trang bị phẩm Lam hoặc Tím, hoặc nhiều đan dược của cảnh giới hiện tại · 40% ra pháp bảo."),
+            Use: "Mở ra nhận ngẫu nhiên trang bị Huyền / Địa cấp (Kim Đan: có thể ra Thiên cấp), hoặc nhiều đan dược của cảnh giới hiện tại · 40% ra pháp bảo."),
         // ---- chuỗi đan 9→1: đan chỉ dùng để lên tầng và đột phá ----
         new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, rơi từ yêu thú vùng Luyện Khí.", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. 9 viên hợp thành 1 Trúc Cơ Đan."),
@@ -124,18 +136,18 @@ public static class GameData
         new ItemDef("ket_anh_dan",   "Kết Anh Đan",      "pill",  "#c58cff", "Đan phá đan thành anh, cực kỳ hiếm có.", Rarity: "legendary", Kind: "Đan dược", Tier: 4,
             Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
         // ---- chìa khóa vào ải Boss (rơi ở ải 1–15) ----
-        new ItemDef("hu_thien_tan_do", "Hư Thiên Tàn Đồ",  "key", "#c9a86a", "Mảnh bản đồ cổ dẫn tới Hư Thiên Điện, nơi Hắc Lân Mãng ẩn mình.", Rarity: "epic", Kind: "Chìa khóa",
+        new ItemDef("hu_thien_tan_do", "Hư Thiên Tàn Đồ",  "key", "#c9a86a", "Mảnh bản đồ cổ dẫn tới Hư Thiên Điện, nơi Băng Phượng ẩn mình.", Rarity: "epic", Kind: "Chìa khóa",
             Use: "Cần để vào ải Boss 3-16 · Hư Thiên Điện. Chỉ mất khi thắng Boss."),
         new ItemDef("huyet_sac_lenh",  "Huyết Sắc Lệnh Bài", "key", "#c0463a", "Lệnh bài đỏ thẫm mở cửa trung tâm Huyết Sắc Cấm Địa.", Rarity: "epic", Kind: "Chìa khóa",
             Use: "Cần để vào ải Boss 2-16 · Cấm Địa Trung Tâm. Chỉ mất khi thắng Boss."),
         new ItemDef("con_ngo_lenh",    "Côn Ngô Sơn Lệnh",   "key", "#e6c46a", "Lệnh bài vàng khắc phù trận phong ấn Côn Ngô Sơn.", Rarity: "epic", Kind: "Chìa khóa",
             Use: "Cần để vào ải Boss 1-16 · Côn Ngô Sơn. Chỉ mất khi thắng Boss."),
         // ---- nguyên liệu Boss: bắt buộc khi đột phá đại cảnh giới ----
-        new ItemDef("hac_lan_yeu_hach",  "Hắc Lân Yêu Hạch",  "boss", "#3d6fd8", "Yêu hạch của Hắc Lân Mãng, vảy đen bao quanh một đốm u quang.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+        new ItemDef("hac_lan_yeu_hach",  "Băng Phượng Tinh Hạch", "boss", "#3d6fd8", "Tinh hạch của Băng Phượng, hàn khí vạn năm ngưng lại quanh một đốm u quang.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
             Use: "Dùng để đột phá Kim Đan → Nguyên Anh (cảnh giới chưa khai mở)."),
-        new ItemDef("huyet_giao_hach",   "Huyết Giao Yêu Hạch", "boss", "#d8404a", "Yêu hạch của Huyết Giao, nóng như máu sôi.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
-            Use: "Bắt buộc khi đột phá Trúc Cơ Đại viên mãn → Kim Đan."),
-        new ItemDef("kim_o_tinh_hach",   "Kim Ô Tinh Hạch",    "boss", "#f2b23c", "Tinh hạch của Kim Ô yêu vương, chứa thái dương chân hỏa.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+        new ItemDef("huyet_giao_hach",   "Hắc Giao Yêu Hạch", "boss", "#d8404a", "Yêu hạch của Hắc Giao, u quang lạnh lẽo chảy trong vảy đen.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
+            Use: "Bắt buộc khi đột phá Trúc Cơ Hậu kỳ → Kim Đan."),
+        new ItemDef("kim_o_tinh_hach",   "Ma Viên Yêu Hạch",   "boss", "#f2b23c", "Yêu hạch của Tứ Tý Ma Viên, nặng như đá núi, ẩn sức bốn tay.", Rarity: "legendary", Kind: "Nguyên liệu Boss",
             Use: "Bắt buộc khi đột phá Luyện Khí Tầng 9 → Trúc Cơ."),
 
     };
@@ -216,12 +228,21 @@ public static class GameData
     /// Mỗi bộ đồ có đúng 1 cấp: Luyện Khí Giới cấp 1 · Huyền Băng và pháp bảo nhập môn cấp 10 · Xích Kim cấp 15.</summary>
     public static readonly int[] GearLevels = { 1, 10, 15 };
     public static int GearLevelOf(ItemDef b) => GearLevels[Math.Clamp(b.MinRealm, 0, GearLevels.Length - 1)];
-    /// <summary>Phẩm: 0 Trắng (Phàm) · 1 Lục (Linh) · 2 Lam (Bảo) · 3 Tím (Huyền). Hệ số chỉ số và tỉ lệ rơi (%).</summary>
-    public static readonly double[] QualityMult = { 1, 1.3, 1.7, 2.2 };
-    public static readonly double[] QualityWeight = { 60, 28, 10, 2 };
-    public static readonly string[] QualityColor = { "#8d9399", "#5fbf6a", "#4f8fe0", "#a46ae6" };
-    public static readonly string[] QualityName = { "Phàm phẩm", "Linh phẩm", "Bảo phẩm", "Huyền phẩm" };
-    /// <summary>Tên hiển thị trong nhật ký: trang bị kèm cấp + phẩm, ví dụ "Huyền Văn Kiếm [cấp 10 · Bảo phẩm]".</summary>
+    /// <summary>Cấp bậc trang bị: 0 Phàm · 1 Linh · 2 Huyền · 3 Địa · 4 Thiên (RarityOrder: common → legendary).
+    /// Thần / Tiên cấp (khí linh) và hiệu ứng riêng của từng cấp (Hấp linh, Đại địa, Hoàng thiên…) chưa làm.</summary>
+    public static readonly double[] QualityMult = { 1, 1.25, 1.55, 1.9, 2.4 };   // cân bằng 10/2026 (trước: 1 · 1.3 · 1.7 · 2.2 · 3.0)
+    public static readonly string[] QualityColor = { "#8d9399", "#5fbf6a", "#4f8fe0", "#a46ae6", "#f2c94c" };
+    public static readonly string[] QualityName = { "Phàm cấp", "Linh cấp", "Huyền cấp", "Địa cấp", "Thiên cấp" };
+    /// <summary>Tỉ lệ cấp (%) khi quái thường rơi trang bị, theo cảnh giới của món: Luyện Khí chủ yếu Phàm,
+    /// Trúc Cơ mở Huyền, Kim Đan mở Địa. Thiên cấp chỉ có từ Rương Boss Kim Đan.</summary>
+    public static readonly double[][] DropQuality =
+    {
+        new double[] { 85, 15, 0, 0, 0 },     // Luyện Khí
+        new double[] { 50, 40, 10, 0, 0 },    // Trúc Cơ
+        new double[] { 0, 50, 40, 10, 0 },    // Kim Đan
+    };
+    public static double[] DropQualityOf(int realm) => DropQuality[Math.Clamp(realm, 0, DropQuality.Length - 1)];
+    /// <summary>Tên hiển thị trong nhật ký: trang bị kèm cấp + phẩm, ví dụ "Huyền Văn Kiếm [cấp 10 · Huyền cấp]".</summary>
     public static string Label(ItemDef d) =>
         d.ItemLevel > 0 ? $"{d.Name} [cấp {d.ItemLevel} · {QualityName[Math.Clamp(Array.IndexOf(RarityOrder, d.Rarity), 0, QualityName.Length - 1)]}]" : d.Name;
     public static readonly IReadOnlyDictionary<string, ItemDef> GearBaseById = GearBases.ToDictionary(b => b.Id);
@@ -238,15 +259,70 @@ public static class GameData
         return b with { Id = GearId(b, q), Rarity = RarityOrder[q], Color = QualityColor[q], Atk = I(b.Atk), Hp = I(b.Hp), Def = I(b.Def),
             QiPct = D(b.QiPct), SpeedPct = D(b.SpeedPct), CritPct = crit, MovePct = D(b.MovePct), Special = special,
             ItemLevel = GearLevelOf(b), Base = b.Id,
-            Icon = q == QualityMult.Length - 1 && b.Icon is not null ? b.Icon.Replace(".png", "_epic.png") : b.Icon };   // phẩm Tím: ảnh thêm hào quang + linh quang
+            Icon = GradeIcon(b, q), Effects = EffectsFor(b, q) };
+    }
+
+    // ---- hiệu ứng riêng theo cấp bậc: món cấp cao giữ hiệu ứng của các cấp dưới ----
+    /// <summary>Nhóm món: vũ khí (weapon, offhand) · trang sức (necklace, ring) · giáp (còn lại).</summary>
+    public static string GearGroup(string? slot) => slot is "weapon" or "offhand" ? "weapon" : slot is "necklace" or "ring" or "ring2" ? "jewel" : "armor";
+    /// <summary>Hấp linh: % tốc độ tu luyện mỗi món theo cấp của món (Linh 2 · Huyền 3 · Địa 4 · Thiên 6).</summary>
+    public static readonly double[] HapLinh = { 0, 2, 3, 4, 6 };
+    /// <summary>Thưởng bộ Thiên cấp (% công, thủ, máu) theo số món Thiên đang mặc; "đủ bộ" = mọi ô trang bị của cảnh giới.</summary>
+    public const double ThienSet3 = 5, ThienSet5 = 10, ThienSetFull = 20;
+    private static ItemEffect? HuyenEffect(string? slot) => slot switch
+    {
+        "weapon"   => new("pha_giap",  "Phá giáp",  2, 6,   0, "Bỏ qua 6% phòng thủ quái"),
+        "offhand"  => new("linh_ap",   "Linh áp",   2, 6,   0, "+6% sát thương kỹ năng"),
+        "head"     => new("tinh_tam",  "Tĩnh tâm",  2, 25,  0, "Vào trận với 25 nộ"),
+        "body"     => new("ho_the",    "Hộ thể",    2, 4,   0, "Giảm 4% sát thương nhận"),
+        "hands"    => new("lien_kich", "Liên kích", 2, 6,   0, "6% cơ hội đánh thêm 1 đòn thường mỗi lượt"),
+        "legs"     => new("vung_than", "Vững thân", 2, 4,   0, "+4% máu tối đa"),
+        "feet"     => new("than_phap", "Thân pháp", 2, 4,   0, "4% né đòn quái"),
+        "necklace" => new("hoi_khi",   "Hồi khí",   2, 1.5, 0, "Hồi 1.5% máu tối đa mỗi lượt"),
+        "ring" or "ring2" => new("tu_linh", "Tụ linh", 2, 8, 0, "+8% tu vi nhận khi thám hiểm"),
+        _ => null };
+    private static ItemEffect DiaEffect(string group) => group switch
+    {
+        "weapon" => new("dia_chan",  "Địa chấn",  3, 40, 0, "Đòn đầu trận thêm 40% công, bỏ qua phòng thủ"),
+        "jewel"  => new("dia_mach",  "Địa mạch",  3, 6,  0, "Phản lại 6% sát thương nhận"),
+        _        => new("tho_thuan", "Thổ thuẫn", 3, 4,  0, "Khiên đầu trận bằng 4% máu tối đa") };
+    private static ItemEffect ThienEffect(string group) => group switch
+    {
+        "weapon" => new("thien_loi",  "Thiên lôi",  4, 15,   60, "Mỗi lượt 15% cơ hội giáng sét 60% công, bỏ qua phòng thủ"),
+        "jewel"  => new("thien_menh", "Thiên mệnh", 4, 0.15, 0,  "Hệ số chí mạng +0.15 (×1.5 → ×1.65)"),
+        _        => new("thien_uy",   "Thiên uy",   4, 5,    0,  "Giảm 5% công của quái") };
+    /// <summary>Hiệu ứng của món gốc b ở cấp q: Linh → Hấp linh · Huyền → theo loại món · Địa / Thiên → theo nhóm món.</summary>
+    public static ItemEffect[]? EffectsFor(ItemDef b, int q)
+    {
+        if (q < 1 || b.Slot is null) return null;
+        var list = new List<ItemEffect> { new("hap_linh", "Hấp linh", 1, HapLinh[q], 0, $"+{HapLinh[q]:0.#}% tốc độ tu luyện") };
+        if (q >= 2 && HuyenEffect(b.Slot) is { } h) list.Add(h);
+        if (q >= 3) list.Add(DiaEffect(GearGroup(b.Slot)));
+        if (q >= 4) list.Add(ThienEffect(GearGroup(b.Slot)));
+        return list.ToArray();
+    }
+    /// <summary>Ảnh bộ Thiên cấp theo loại món (tools/cut_thien.py); món chưa có ảnh riêng dùng ảnh Địa cấp.</summary>
+    private static readonly Dictionary<string, string> ThienIcons = new()
+    {
+        ["kiem"] = "img/thien_kiem.png", ["mu"] = "img/thien_mu.png", ["ao"] = "img/thien_ao.png", ["quan"] = "img/thien_quan.png",
+        ["giay"] = "img/thien_giay.png", ["gang"] = "img/thien_gang.png", ["nhan"] = "img/thien_nhan.png", ["chau"] = "img/thien_chau.png" };
+    /// <summary>Phàm → Huyền: ảnh gốc · Địa: ảnh hào quang tím (_epic) · Thiên: bộ ảnh Thiên cấp.</summary>
+    private static string? GradeIcon(ItemDef b, int q)
+    {
+        if (b.Icon is null || q < 3) return b.Icon;
+        var epic = b.Icon.Replace(".png", "_epic.png");
+        if (q == 3) return epic;
+        var kind = b.Id[(b.Id.IndexOf('_') + 1)..];
+        if (b.Slot == "offhand" && kind == "kiem") return "img/thien_phi_kiem.png";   // phi kiếm pháp bảo
+        return ThienIcons.TryGetValue(kind, out var t) ? t : epic;
     }
     public static readonly ItemDef[] GearVariants = GearBases
         .SelectMany(b => Enumerable.Range(0, QualityMult.Length).Select(q => Variant(b, q))).ToArray();
 
-    /// <summary>Gieo phẩm theo trọng số w (Trắng → Tím) cho món gốc baseId; cấp theo cảnh giới yêu cầu của món.</summary>
+    /// <summary>Gieo cấp bậc theo trọng số w (Phàm → Thiên) cho món gốc baseId; mặc định theo cảnh giới của món (DropQuality).</summary>
     public static string RollGear(string baseId, double[]? w = null)
     {
-        w ??= QualityWeight;
+        w ??= DropQualityOf(GearBaseById[baseId].MinRealm);
         var x = Random.Shared.NextDouble() * w.Sum();
         var q = w.Length - 1;
         for (var i = 0; i < w.Length; i++) { if ((x -= w[i]) < 0) { q = i; break; } }
@@ -312,41 +388,74 @@ public static class GameData
     /// <summary>
     /// Phần thưởng khi mở rương (1 món): Treasure = tỉ lệ ra pháp bảo (pháp bảo chỉ có từ rương);
     /// phần còn lại: GearShare ra trang bị, còn lại ra đan lên tầng PillMin–PillMax viên.
-    /// Trang bị / pháp bảo: phẩm gieo theo Quality (Trắng → Tím); cấp theo cảnh giới yêu cầu của món.
+    /// Trang bị / pháp bảo: cấp bậc gieo theo Quality[cảnh giới] (Phàm → Thiên); cấp món theo cảnh giới yêu cầu của món.
     /// </summary>
-    public record ChestDef(double Treasure, double GearShare, double[] Quality, int PillMin, int PillMax);
+    public record ChestDef(double Treasure, double GearShare, double[][] Quality, int PillMin, int PillMax)
+    {
+        public double[] QualityAt(int realm) => Quality[Math.Clamp(realm, 0, Quality.Length - 1)];
+    }
     public static readonly IReadOnlyDictionary<string, ChestDef> Chests = new Dictionary<string, ChestDef>
     {
-        ["ruong_thuong"] = new(0.10, 0.4, QualityWeight,              1, 2),
-        ["ruong_hiem"]   = new(0.20, 0.5, new double[] { 0, 55, 35, 10 }, 2, 4),
-        ["ruong_boss"]   = new(0.40, 0.6, new double[] { 0, 0, 70, 30 },  4, 7) };
+        ["ruong_thuong"] = new(0.10, 0.4, DropQuality, 1, 2),
+        ["ruong_hiem"]   = new(0.20, 0.5, new[] {
+            new double[] { 40, 50, 10, 0, 0 }, new double[] { 10, 50, 35, 5, 0 }, new double[] { 0, 25, 50, 25, 0 } }, 2, 4),
+        ["ruong_boss"]   = new(0.40, 0.6, new[] {                       // Boss: Luyện Khí Linh/Huyền · Trúc Cơ Huyền/Địa · Kim Đan Địa/Thiên
+            new double[] { 0, 50, 50, 0, 0 }, new double[] { 0, 0, 70, 30, 0 }, new double[] { 0, 0, 30, 65, 5 } }, 4, 7) };
     public const int BossArea = Areas + 1;
 
     /// <summary>Quái ở ải s (1..20): mạnh dần từ ×0.6 đến ×2.6 so với quái gốc của cảnh giới.</summary>
     /// <summary>Boss mạnh thêm 100%: máu, công, thủ ×2 so với chỉ số gốc khai báo ở RealmDef.Boss.</summary>
     public const double BossMult = 2;
     /// <summary>Hệ số máu chung cho mọi quái và Boss (1.875 = +87.5% so với gốc).</summary>
-    public const double MonsterHpMult = 1.875;   // 1.25 × 1.5: tăng thêm 50% máu quái
+    public const double MonsterHpMult = 3.75;    // cân bằng 10/2026: gấp đôi (trước 1.875)
 
-    /// <summary>Ảnh 7 loài quái thường, dùng chung mọi cảnh giới (tên riêng từng cảnh giới ở RealmDef.MonsterNames).
-    /// Ải 1-3 · 4-6 · 7-9 · 10-12 · 13-15 · 16-18 · 19-20.</summary>
+    /// <summary>Máu Boss nhân thêm theo cảnh giới (Luyện Khí · Trúc Cơ · Kim Đan): Boss vừa sức với đồ chuẩn của cảnh giới
+    /// (Huyền · Huyền · Địa) khi đã học kỹ năng — xem plan "Kế hoạch cân bằng chiến đấu".</summary>
+    public static readonly double[] BossHpByRealm = { 0.75, 0.5, 1.1 };   // đã tính cùng kỹ năng ẩn bên dưới
+    /// <summary>Kỹ năng ẩn của Boss (không hiện trước trận): Yêu thân giảm % mọi sát thương nhận vào;
+    /// Cuồng bạo: máu dưới EnrageAt% thì công tăng EnrageAtk%.</summary>
+    public record BossTrait(double DmgReduce, double EnrageAt, double EnrageAtk);
+    public static readonly BossTrait[] BossTraits = { new(5, 50, 0), new(5, 50, 5), new(10, 50, 10) };
+    public static int RealmIndex(RealmDef r) { for (var i = 0; i < Realms.Count; i++) if (Realms[i] == r) return i; return 0; }
+
+    /// <summary>Ảnh 10 loài quái thường (mạnh dần) và 3 quái tinh anh, dùng chung mọi cảnh giới
+    /// (tên riêng từng cảnh giới ở RealmDef.MonsterNames / EliteNames). Cắt từ tools/monsters2_design.png bằng tools/cut_monsters2.py.</summary>
     public static readonly string[] MonsterImages =
     {
-        "img/quai_yeu_lang.png", "img/quai_doc_xa.png", "img/quai_thach_quy.png", "img/quai_hoa_ho.png",
-        "img/quai_bang_lang.png", "img/quai_thiet_trung.png", "img/quai_cot_khuyen.png",
+        "img/quai_yeu_lang.png", "img/quai_doc_xa.png", "img/quai_thach_tru.png", "img/quai_bang_ho.png", "img/quai_pha_son_vien.png",
+        "img/quai_tinh_thach_tich.png", "img/quai_huyen_o.png", "img/quai_ma_dang.png", "img/quai_cot_khuyen.png", "img/quai_loi_ung.png",
     };
+    public static readonly string[] EliteImages = { "img/tinh_thiet_giap_ho.png", "img/tinh_cot_tuong.png", "img/tinh_hac_mang.png" };
 
-    /// <summary>Loài quái (0..6) ở ải s.</summary>
+    /// <summary>Mỗi chuyến ở ải thường đánh Waves đợt liên tiếp (máu tu sĩ mang qua đợt sau); từ ải EliteMinArea đợt cuối là quái tinh anh.</summary>
+    public const int Waves = 3, EliteMinArea = 10;
+    /// <summary>Chỉ số mỗi đợt so với quái ải (trước đây 1 con mỗi chuyến): quái thường máu ×0.4;
+    /// tinh anh máu ×0.8 · công ×1.3 · thủ ×1.2 và giảm EliteDmgReduce% sát thương nhận vào.</summary>
+    public const double WaveHp = 0.40, EliteHp = 0.80, EliteAtk = 1.3, EliteDef = 1.2, EliteDmgReduce = 5;
+    /// <summary>Thưởng thêm khi thắng chuyến có tinh anh: linh thạch ×EliteStoneMult, rương hiếm EliteRareChestChance.</summary>
+    public const double EliteStoneMult = 1.5, EliteRareChestChance = 0.20;
+
+    /// <summary>Loài quái chính (0..9) ở ải s.</summary>
     public static int MonsterKind(int s) => Math.Min(MonsterImages.Length - 1, (Math.Clamp(s, 1, Areas) - 1) * MonsterImages.Length / Areas);
 
-    public static MonsterDef AreaMonster(RealmDef r, int s)
+    /// <summary>Quái đầu tiên của ải (tên hiển thị / dự đoán cũ).</summary>
+    public static MonsterDef AreaMonster(RealmDef r, int s) => AreaWaves(r, s)[0];
+
+    /// <summary>Các đợt quái của ải s: ải Boss 1 đợt (Boss); ải thường 3 đợt — loài chính, loài chính (từ ải EliteMinArea: loài kế),
+    /// rồi loài kế hoặc quái tinh anh. Chỉ số theo ải: ×0.6 (ải 1) → ×2.6 (ải 15) so với quái gốc của cảnh giới.</summary>
+    public static MonsterDef[] AreaWaves(RealmDef r, int s)
     {
-        if (s >= BossArea) return r.Boss with { Hp = (int)Math.Round(r.Boss.Hp * MonsterHpMult * BossMult),
-            Atk = (int)Math.Round(r.Boss.Atk * BossMult), Def = (int)Math.Round(r.Boss.Def * BossMult) };
+        if (s >= BossArea) return new[] { r.Boss with { Hp = (int)Math.Round(r.Boss.Hp * MonsterHpMult * BossMult * BossHpByRealm[Math.Min(RealmIndex(r), BossHpByRealm.Length - 1)]),
+            Atk = (int)Math.Round(r.Boss.Atk * BossMult), Def = (int)Math.Round(r.Boss.Def * BossMult), Tier = "boss" } };
         var m = 0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1);
-        var b = r.Monster;
-        if (r.MonsterNames is { } names) { var k = MonsterKind(s); b = b with { Name = names[k], Image = MonsterImages[k] }; }
-        return b with { Hp = (int)Math.Round(b.Hp * m * MonsterHpMult), Atk = (int)Math.Round(b.Atk * m), Def = (int)Math.Round(b.Def * m) };
+        var b = r.Monster with { Hp = (int)Math.Round(r.Monster.Hp * m * MonsterHpMult), Atk = (int)Math.Round(r.Monster.Atk * m), Def = (int)Math.Round(r.Monster.Def * m) };
+        MonsterDef Common(int k) => b with { Name = r.MonsterNames is { } n ? n[k] : b.Name, Image = MonsterImages[k], Hp = Math.Max(1, (int)Math.Round(b.Hp * WaveHp)) };
+        int k0 = MonsterKind(s), k1 = Math.Min(k0 + 1, MonsterImages.Length - 1);
+        if (s < EliteMinArea) return new[] { Common(k0), Common(k0), Common(k1) };
+        var e = Math.Min(EliteImages.Length - 1, (s - EliteMinArea) / 2);
+        var elite = b with { Name = r.EliteNames is { } en ? en[e] : b.Name, Image = EliteImages[e], Hp = (int)Math.Round(b.Hp * EliteHp),
+            Atk = (int)Math.Round(b.Atk * EliteAtk), Def = (int)Math.Round(b.Def * EliteDef), Tier = "elite" };
+        return new[] { Common(k0), Common(k1), elite };
     }
 
     /// <summary>Tên vùng của ải s.</summary>
@@ -366,19 +475,21 @@ public static class GameData
             Desc = "Dẫn linh khí trời đất nhập thể, tẩy kinh phạt tủy. Mỗi tầng cần linh thạch và Tụ Khí Đan.",
             Stages = new[] { "Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5", "Tầng 6", "Tầng 7", "Tầng 8", "Tầng 9" },
             Aura = "#7fd3c4", Lotus = "#d9a3b0", Sash = "#3f8378", Hero = "img/hero_luyenkhi.png",
+            HeroStand = "img/hero_luyenkhi_stand.png", HeroMed = "img/med_luyenkhi.png", HeroCast = "img/hoa_cau_ref_luyenkhi.png",
             Cn = "", BagSlots = 60, EquipSlots = new[] { "weapon", "head", "body", "hands", "legs", "feet", "necklace", "ring" },
-            QiReq = s => Math.Round(60 * Math.Pow(1.38, s)),
+            QiReq = s => Math.Round(119.6 * Math.Pow(1.38, s)),    // cả cảnh giới ≈ 5.400 tu vi = 30 phút ở tốc độ gốc 3/giây (không đồ, không thám hiểm)
             Rate = s => 3 + s * 0.6,
             StageCost = s => new() { ["linh_thach"] = 10 + 10 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
             BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["kim_o_tinh_hach"] = 1 }, BreakChance = .55,
             StatMult = 1,
             Monster = new MonsterDef("Yêu lang", "img/quai_yeu_lang.png", Hp: 30, Atk: 8, Def: 2),
-            MonsterNames = new[] { "Yêu Lang", "Độc Xà", "Thạch Giáp Quy", "Hỏa Hồ", "Băng Lang", "Thiết Giáp Trùng", "Cốt Khuyển" },
+            MonsterNames = new[] { "Yêu Lang", "Độc Xà", "Thạch Trư", "Băng Hồ", "Phá Sơn Viên", "Tinh Thạch Tích", "Huyền Ô", "Ma Đằng", "Cốt Khuyển", "Lôi Ưng" },
+            EliteNames = new[] { "Thiết Giáp Hổ", "Cốt Tướng", "Hắc Mãng" },
             Places = new[] { "Hắc Phong Lâm", "Thanh Vân Cốc", "Hậu sơn tông môn" },
-            Boss = new MonsterDef("Kim Ô Yêu Vương", "img/boss_kim_o.png", Hp: 140, Atk: 23, Def: 5),
+            Boss = new MonsterDef("Tứ Tý Ma Viên", "img/boss_tu_ty_ma_vien.png", Hp: 140, Atk: 23, Def: 5),
             BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",
             Drops = new[] { new DropDef("linh_thach", 3, 8, 1), new DropDef("tu_khi_dan", 1, 1, .4),
-                // bộ Luyện Khí Giới: món gốc, khi rơi gieo phẩm theo QualityWeight
+                // bộ Luyện Khí Giới: món gốc, khi rơi gieo cấp bậc theo DropQuality
                 new DropDef("lk_ao", 1, 1, .008), new DropDef("lk_mu", 1, 1, .008), new DropDef("lk_gang", 1, 1, .008), new DropDef("lk_giay", 1, 1, .008),
                 new DropDef("lk_kiem", 1, 1, .006), new DropDef("lk_nhan", 1, 1, .005) },
             Resources = new[] { "linh_thach", "tu_khi_dan", "con_ngo_lenh", "kim_o_tinh_hach" } },
@@ -386,18 +497,20 @@ public static class GameData
         {
             Id = "truc_co", Name = "Trúc Cơ",
             Desc = "Linh khí hóa lỏng, xây nền đạo cơ. Mỗi kỳ cần linh thạch và Trúc Cơ Đan.",
-            Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
+            Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ" },
             Aura = "#86b6ff", Lotus = "#9fd6c8", Sash = "#3b5f9a", Hero = "img/hero_trucco.png",
+            HeroStand = "img/hero_trucco_stand.png", HeroMed = "img/med_trucco.png", HeroCast = "img/hoa_cau_ref_trucco.png",
             Cn = "", BagSlots = 100, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
-            QiReq = s => Math.Round(1500 * Math.Pow(1.6, s)),
+            QiReq = s => Math.Round(20930 * Math.Pow(1.6, s)),     // cả cảnh giới ≈ 108.000 tu vi = 2 giờ ở tốc độ gốc 15/giây (không đồ, không thám hiểm)
             Rate = s => 18 + s * 6,
             StageCost = s => new() { ["linh_thach"] = 200 * (s + 1), ["truc_co_dan"] = s + 1 },
             BreakCost = new() { ["ngung_kim_dan"] = 1, ["linh_thach"] = 3000, ["huyet_giao_hach"] = 1 }, BreakChance = .4,
             StatMult = 6,
             Monster = new MonsterDef("Huyết lang", "img/quai_yeu_lang.png", Hp: 200, Atk: 60, Def: 20),
-            MonsterNames = new[] { "Huyết Yêu Lang", "Huyết Độc Xà", "Huyết Giáp Quy", "Huyết Hỏa Hồ", "Huyết Băng Lang", "Huyết Giáp Trùng", "Huyết Cốt Khuyển" },
+            MonsterNames = new[] { "Huyết Yêu Lang", "Huyết Độc Xà", "Huyết Thạch Trư", "Huyết Băng Hồ", "Huyết Sơn Viên", "Huyết Thạch Tích", "Huyết Huyền Ô", "Huyết Ma Đằng", "Huyết Cốt Khuyển", "Huyết Lôi Ưng" },
+            EliteNames = new[] { "Huyết Giáp Hổ", "Huyết Cốt Tướng", "Huyết Hắc Mãng" },
             Places = new[] { "Huyết Sắc Cấm Địa", "Vạn Thú Sơn", "Đoạn Hồn Nhai" },
-            Boss = new MonsterDef("Huyết Giao", "img/boss_huyet_giao.png", Hp: 940, Atk: 172, Def: 52),
+            Boss = new MonsterDef("Hắc Giao", "img/boss_hac_giao.png", Hp: 940, Atk: 172, Def: 52),
             BossLair = "Cấm Địa Trung Tâm", KeyItem = "huyet_sac_lenh", BossItem = "huyet_giao_hach",
             Drops = new[] { new DropDef("linh_thach", 30, 80, 1), new DropDef("tu_khi_dan", 1, 3, .8), new DropDef("truc_co_dan", 1, 1, .05),
                                 // bộ Huyền Băng: món gốc, khi rơi gieo phẩm. Pháp bảo không rơi từ quái: chỉ có khi mở rương
@@ -409,18 +522,20 @@ public static class GameData
         {
             Id = "kim_dan", Name = "Kim Đan",
             Desc = "Ngưng tụ kim đan nơi đan điền, thọ nguyên năm trăm năm. Mỗi kỳ cần linh thạch và Ngưng Kim Đan.",
-            Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ", "Đại viên mãn" },
-            Aura = "#f2c94c", Lotus = "#f0d58a", Sash = "#9a6b1f", Hero = "img/hero_trucco.png",
+            Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ" },
+            Aura = "#f2c94c", Lotus = "#f0d58a", Sash = "#9a6b1f", Hero = "img/hero_kimdan.png",
+            HeroStand = "img/hero_kimdan_stand.png", HeroMed = "img/med_kimdan.png", HeroCast = "img/hoa_cau_ref_kimdan.png",
             Cn = "", BagSlots = 160, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "ring", "ring2" },
-            QiReq = s => Math.Round(18000 * Math.Pow(1.7, s)),
+            QiReq = s => Math.Round(580120 * Math.Pow(1.7, s)),    // cả cảnh giới ≈ 3,24 triệu tu vi = 8 giờ ở tốc độ gốc 112,6/giây
             Rate = s => 140 + s * 50,
             StageCost = s => new() { ["linh_thach"] = 1500 * (s + 1), ["ngung_kim_dan"] = s + 1 },
             BreakCost = null, BreakChance = 1, // điền khi thêm Nguyên Anh: Kết Anh Đan + Hắc Lân Yêu Hạch
             StatMult = 35,
             Monster = new MonsterDef("Lang vương", "img/quai_yeu_lang.png", Hp: 1200, Atk: 300, Def: 100),
-            MonsterNames = new[] { "Yêu Lang Vương", "Độc Xà Vương", "Thạch Quy Vương", "Hỏa Hồ Vương", "Băng Lang Vương", "Thiết Trùng Vương", "Cốt Khuyển Vương" },
+            MonsterNames = new[] { "Yêu Lang Vương", "Độc Xà Vương", "Thạch Trư Vương", "Băng Hồ Vương", "Sơn Viên Vương", "Thạch Tích Vương", "Huyền Ô Vương", "Ma Đằng Vương", "Cốt Khuyển Vương", "Lôi Ưng Vương" },
+            EliteNames = new[] { "Giáp Hổ Vương", "Cốt Tướng Vương", "Hắc Mãng Vương" },
             Places = new[] { "Hỏa Diễm Sơn", "Táng Tiên Cốc", "Đông Hải bí cảnh" },
-            Boss = new MonsterDef("Hắc Lân Mãng", "img/boss_hac_lan.png", Hp: 5600, Atk: 860, Def: 260),
+            Boss = new MonsterDef("Băng Phượng", "img/boss_bang_phuong.png", Hp: 5600, Atk: 860, Def: 260),
             BossLair = "Hư Thiên Điện", KeyItem = "hu_thien_tan_do", BossItem = "hac_lan_yeu_hach",
             Drops = new[] { new DropDef("linh_thach", 200, 500, 1), new DropDef("tu_khi_dan", 3, 6, .6), new DropDef("truc_co_dan", 1, 2, .7), new DropDef("ngung_kim_dan", 1, 1, .03),
                 // bộ Xích Kim: món gốc, khi rơi gieo phẩm. Pháp bảo chỉ có khi mở rương
@@ -468,9 +583,12 @@ public static class GameData
 
     /// <summary>Số lượt đánh tối đa của một trận (tránh trận kéo dài vô hạn khi quá yếu).</summary>
     public const int MaxHits = 10;
+    /// <summary>Ải thường 3 đợt: mỗi đợt tối đa MaxWaveHits lượt hoạt ảnh, giữa hai đợt nghỉ WaveSeconds giây (quái mới bước vào).</summary>
+    public const int MaxWaveHits = 5;
+    public const double WaveSeconds = 0.8;
 
     /// <summary>Mỗi chuyến thám hiểm cho thêm tu vi bằng tốc độ tu luyện × số giây này.</summary>
-    public const double ExploreQiSeconds = 4;
+    public const double ExploreQiSeconds = 6;   // chuyến 3 đợt dài hơn ~1.5 lần (trước 4)
 
     /// <summary>Thời gian thám hiểm tối thiểu dù trang bị tăng tốc nhiều.</summary>
     public const double MinExploreSeconds = 3;

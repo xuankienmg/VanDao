@@ -15,16 +15,25 @@ public record GameDataDto(
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
-    string Cn, int BagSlots, string[] EquipSlots, string Boss, string BossImage, string BossLair, string KeyItem, string BossItem);
+    string Cn, int BagSlots, string[] EquipSlots, string Boss, string BossImage, string BossLair, string KeyItem, string BossItem,
+    string? HeroStand = null, string? HeroMed = null, string? HeroCast = null);
 
 // ---- Trạng thái người chơi ----
 public record CostDto(string Item, int Need, int Have);
 
 /// <summary>Bản đồ cảnh giới hiện tại: ải đang đánh, ải đã mở, dự đoán thắng/thua từng ải, chìa khóa và yêu hạch Boss.</summary>
 public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, string BossLair, double KeyChanceMin, double KeyChanceMax,
-    List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem, int Realm = 0);
+    List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem, int Realm = 0,
+    List<DropInfoDto>? Drops = null, double ChestChance = 0, double RareChestChance = 0, int RareChestMinArea = 0, string BossChest = "");
 
-public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open);
+/// <summary>Bảng rơi của bản đồ (tỉ lệ gốc ở ải 1; client tự nhân theo ải giống server).</summary>
+public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear);
+
+public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open, string Image = "",
+    List<WaveInfoDto>? Waves = null, bool Elite = false);
+
+/// <summary>Một đợt quái của ải (bảng thông tin ải trên bản đồ).</summary>
+public record WaveInfoDto(string Name, string Image, string Tier, int Hp, int Atk, int Def);
 
 public record SynthStateDto(string From, int Max);
 
@@ -80,7 +89,7 @@ public record StateDto(
     string Admin = "",    // cờ admin mode đang bật
     List<ChestOddsDto>? ChestOdds = null);   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
 
-/// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % phẩm Trắng → Tím,
+/// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % cấp Phàm → Thiên,
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>
 public record ChestOddsDto(string Chest, int Level, double[] Quality, List<ItemQtyPctDto> Treasure, List<ItemQtyPctDto> Gear,
     string PillItem, int PillMin, int PillMax, double Pill);
@@ -98,7 +107,19 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     string Basic = "hoa_cau",    // chiêu dùng làm đòn đánh thường (để client chọn animation)
     int[]? Rage = null,          // nộ cuối mỗi lượt, 0–100 (lượt tung kỹ năng: về 0)
     int Burn = 0, double BurnPct = 0,    // thiêu đốt (Phần Cốt): sát thương mỗi lần kích hoạt · % công
-    bool[]? Burned = null);               // lượt nào thiêu đốt kích hoạt (30%)
+    bool[]? Burned = null,                // lượt nào thiêu đốt kích hoạt (30%)
+    // hiệu ứng trang bị theo cấp (GameService.GearEffects), mảng theo lượt như Burned:
+    bool[]? Bolt = null, int BoltDmg = 0,  // Thiên lôi: lượt nào giáng sét · sát thương mỗi tia
+    bool[]? Extra = null,                  // Liên kích: lượt nào đánh thêm 1 đòn thường (HeroDmg)
+    int[]? Heal = null,                    // Hồi khí: máu hồi cuối lượt
+    int[]? Reflect = null,                 // Địa mạch: sát thương phản lại quái
+    int Guard = 0, int[]? GuardLeft = null,   // Thổ thuẫn: khiên đầu trận · khiên còn lại cuối mỗi lượt
+    int FirstHit = 0,                      // Địa chấn: sát thương thêm ở lượt đầu
+    int EnrageTurn = -1, int MonsterDmgEnraged = 0,   // Boss Cuồng bạo: lượt (đã lấy mẫu) bắt đầu nổi giận · sát thương mỗi đòn khi đó
+    List<WaveDto>? Waves = null);           // các đợt quái đã giao chiến (ải thường 3 đợt): Start = lượt (đã lấy mẫu) đợt bắt đầu
+
+/// <summary>Một đợt quái trong trận: chỉ số đã tính công pháp/trang bị, sát thương hai bên, lượt bắt đầu (đã lấy mẫu).</summary>
+public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start);
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
 public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
