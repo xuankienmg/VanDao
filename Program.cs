@@ -79,7 +79,7 @@ public static class Program
             GameData.Slots,
             GameData.ExtraStats,
             GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources, r.Cn, r.BagSlots, r.EquipSlots,
-                r.Boss.Name, r.Boss.Image, r.BossLair, r.KeyItem, r.BossItem)),
+                r.Boss.Name, r.Boss.Image, r.BossLair, r.KeyItem, r.BossItem, r.HeroStand, r.HeroMed, r.HeroCast)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms));
 
@@ -120,8 +120,8 @@ public static class Program
         api.MapPost("/players/{id:guid}/sell/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             Run(id, game, p => game.Sell(p, itemId, n ?? 1)));
 
-        api.MapPost("/players/{id:guid}/sell-bulk", (Guid id, int max, bool? gear, string? items, GameService game) =>
-            Run(id, game, p => game.SellBulk(p, max, gear ?? false, items)));
+        api.MapPost("/players/{id:guid}/sell-bulk", (Guid id, int max, bool? gear, string? items, bool? pick, GameService game) =>
+            Run(id, game, p => game.SellBulk(p, max, gear ?? false, items, pick ?? false)));
 
         api.MapPost("/players/{id:guid}/unequip/{slot}", (Guid id, string slot, GameService game) =>
             Run(id, game, p => game.Unequip(p, slot)));

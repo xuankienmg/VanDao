@@ -32,7 +32,7 @@ public sealed class PanelWindow : Form
         StartPosition = FormStartPosition.Manual;
         BackColor = Theme.Ink;
         KeyPreview = true;
-        MinimumSize = LogicalToDeviceUnits(new Size(260, 300));
+        MinimumSize = LogicalToDeviceUnits(MinPanel);   // dưới ~640px giao diện Tu luyện tự xếp dọc, nên không cho kéo hẹp hơn
         Size = SizeFor(_tab);
         Controls.Add(_web);
 
@@ -72,9 +72,17 @@ public sealed class PanelWindow : Form
         }
     }
 
-    /// <summary>Mọi tab Tu luyện dùng chung một kích thước: kích thước người dùng đã kéo, chưa có thì mặc định.</summary>
-    private Size SizeFor(string _) =>
-        _s.InvW is int w && _s.InvH is int h ? new Size(w, h) : LogicalToDeviceUnits(new Size(740, 680));
+    /// <summary>Cỡ nhỏ nhất của bảng Tu luyện (đơn vị logic): đủ rộng để các tab giữ bố cục ngang.</summary>
+    private static readonly Size MinPanel = new(700, 560);
+
+    /// <summary>Mọi tab Tu luyện dùng chung một kích thước: kích thước người dùng đã kéo (không nhỏ hơn MinPanel), chưa có thì mặc định.</summary>
+    private Size SizeFor(string _)
+    {
+        var min = LogicalToDeviceUnits(MinPanel);
+        return _s.InvW is int w && _s.InvH is int h
+            ? new Size(Math.Max(w, min.Width), Math.Max(h, min.Height))
+            : LogicalToDeviceUnits(new Size(740, 680));
+    }
 
     public Task SyncAsync() => Visible ? WebHost.SyncAsync(_web) : Task.CompletedTask;
 
