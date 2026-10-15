@@ -161,6 +161,7 @@ public static class GameData
         new("lk_mu",   "Giới Mũ",   "equip", "#5fbf6a", "Mũ vải dày khóa đồng, giữ đầu óc tỉnh táo khi tọa thiền.",   "img/lk_mu.png",   "head",     Hp: 30, Def: 3, QiPct: 2, Rarity: "uncommon", Kind: "Mũ", Set: "Luyện Khí Giới"),
         new("lk_ao",   "Giới Bào",  "equip", "#5fbf6a", "Đạo bào lam thẫm viền chỉ đỏ, dệt lẫn sợi linh tơ.",        "img/lk_ao.png",   "body",     Hp: 85, Def: 5, Rarity: "uncommon", Kind: "Đạo bào", Set: "Luyện Khí Giới"),
         new("lk_gang", "Giới Thủ Sáo", "equip", "#5fbf6a", "Găng hở ngón tán đinh bạc, ra quyền nhanh mà chắc.",     "img/lk_gang.png", "hands",    Atk: 4, Def: 3, Rarity: "uncommon", Kind: "Găng tay", Set: "Luyện Khí Giới"),
+        new("lk_quan", "Giới Khố",  "equip", "#5fbf6a", "Quần vải lam thẫm nhiều lớp vạt, gối độn da, ngồi thiền lâu không tê.", "img/lk_quan.png", "legs", Hp: 40, Def: 3, Rarity: "uncommon", Kind: "Quần", Set: "Luyện Khí Giới"),
         new("lk_giay", "Giới Hài",  "equip", "#5fbf6a", "Ủng vải cổ cao bọc da, đi đường núi không mỏi.",            "img/lk_giay.png", "feet",     Hp: 20, Def: 3, MovePct: 9, Rarity: "uncommon", Kind: "Giày", Set: "Luyện Khí Giới"),
         new("lk_nhan", "Giới Nhẫn", "equip", "#5fbf6a", "Nhẫn đồng khảm lam ngọc, tụ linh khí quanh ngón tay.",      "img/lk_nhan.png", "ring",     QiPct: 7, Rarity: "uncommon", Kind: "Nhẫn", Set: "Luyện Khí Giới"),
         // pháp bảo nhập môn: ô Pháp bảo mở từ Trúc Cơ
@@ -233,6 +234,9 @@ public static class GameData
     public static readonly double[] QualityMult = { 1, 1.25, 1.55, 1.9, 2.4 };   // cân bằng 10/2026 (trước: 1 · 1.3 · 1.7 · 2.2 · 3.0)
     public static readonly string[] QualityColor = { "#8d9399", "#5fbf6a", "#4f8fe0", "#a46ae6", "#f2c94c" };
     public static readonly string[] QualityName = { "Phàm cấp", "Linh cấp", "Huyền cấp", "Địa cấp", "Thiên cấp" };
+    /// <summary>Luyện khí: ghép FuseCount trang bị cùng phẩm q → 1 món phẩm q+1 với tỉ lệ FuseChance[q] (thất bại: 1 món phẩm q).</summary>
+    public const int FuseCount = 9;
+    public static readonly double[] FuseChance = { 0.90, 0.75, 0.60, 0.45 };   // Phàm→Linh · Linh→Huyền · Huyền→Địa · Địa→Thiên
     /// <summary>Tỉ lệ cấp (%) khi quái thường rơi trang bị, theo cảnh giới của món: Luyện Khí chủ yếu Phàm,
     /// Trúc Cơ mở Huyền, Kim Đan mở Địa. Thiên cấp chỉ có từ Rương Boss Kim Đan.</summary>
     public static readonly double[][] DropQuality =
@@ -434,6 +438,10 @@ public static class GameData
     public const double WaveHp = 0.40, EliteHp = 0.80, EliteAtk = 1.3, EliteDef = 1.2, EliteDmgReduce = 5;
     /// <summary>Thưởng thêm khi thắng chuyến có tinh anh: linh thạch ×EliteStoneMult, rương hiếm EliteRareChestChance.</summary>
     public const double EliteStoneMult = 1.5, EliteRareChestChance = 0.20;
+    /// <summary>Luyện Khí ải LateBoostFrom–15 mạnh thêm: +LateBoostBase ở ải LateBoostFrom, mỗi ải thêm LateBoostStep (ải 15: +40%).</summary>
+    public const int LateBoostFrom = 10;
+    public const double LateBoostBase = 0.10, LateBoostStep = 0.06;
+    public static double LateBoost(RealmDef r, int s) => RealmIndex(r) == 0 && s >= LateBoostFrom && s <= Areas ? 1 + LateBoostBase + LateBoostStep * (s - LateBoostFrom) : 1;
 
     /// <summary>Loài quái chính (0..9) ở ải s.</summary>
     public static int MonsterKind(int s) => Math.Min(MonsterImages.Length - 1, (Math.Clamp(s, 1, Areas) - 1) * MonsterImages.Length / Areas);
@@ -447,7 +455,7 @@ public static class GameData
     {
         if (s >= BossArea) return new[] { r.Boss with { Hp = (int)Math.Round(r.Boss.Hp * MonsterHpMult * BossMult * BossHpByRealm[Math.Min(RealmIndex(r), BossHpByRealm.Length - 1)]),
             Atk = (int)Math.Round(r.Boss.Atk * BossMult), Def = (int)Math.Round(r.Boss.Def * BossMult), Tier = "boss" } };
-        var m = 0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1);
+        var m = (0.6 + 2.0 * (Math.Clamp(s, 1, Areas) - 1) / (Areas - 1)) * LateBoost(r, s);
         var b = r.Monster with { Hp = (int)Math.Round(r.Monster.Hp * m * MonsterHpMult), Atk = (int)Math.Round(r.Monster.Atk * m), Def = (int)Math.Round(r.Monster.Def * m) };
         MonsterDef Common(int k) => b with { Name = r.MonsterNames is { } n ? n[k] : b.Name, Image = MonsterImages[k], Hp = Math.Max(1, (int)Math.Round(b.Hp * WaveHp)) };
         int k0 = MonsterKind(s), k1 = Math.Min(k0 + 1, MonsterImages.Length - 1);
@@ -490,7 +498,7 @@ public static class GameData
             BossLair = "Côn Ngô Sơn", KeyItem = "con_ngo_lenh", BossItem = "kim_o_tinh_hach",
             Drops = new[] { new DropDef("linh_thach", 3, 8, 1), new DropDef("tu_khi_dan", 1, 1, .4),
                 // bộ Luyện Khí Giới: món gốc, khi rơi gieo cấp bậc theo DropQuality
-                new DropDef("lk_ao", 1, 1, .008), new DropDef("lk_mu", 1, 1, .008), new DropDef("lk_gang", 1, 1, .008), new DropDef("lk_giay", 1, 1, .008),
+                new DropDef("lk_ao", 1, 1, .008), new DropDef("lk_mu", 1, 1, .008), new DropDef("lk_gang", 1, 1, .008), new DropDef("lk_giay", 1, 1, .008), new DropDef("lk_quan", 1, 1, .008),
                 new DropDef("lk_kiem", 1, 1, .006), new DropDef("lk_nhan", 1, 1, .005) },
             Resources = new[] { "linh_thach", "tu_khi_dan", "con_ngo_lenh", "kim_o_tinh_hach" } },
         new RealmDef

@@ -58,6 +58,13 @@ public class GameService(GameDbContext db)
         // đòn thường đã bỏ (Hỏa Tiễn, Thủy Châm) → đổi sang đòn thường còn lại cùng hệ
         if (p.SkillSlots.Length > 0)
             p.SkillSlots = string.Join(',', p.SkillSlots.Split(',').Select(x => SkillData.RemovedBasics.TryGetValue(x.Trim(), out var to) ? to : x));
+        // luật điểm mới (tầng/kỳ +1, đại cảnh giới +12, hạ Boss không cho điểm): đã dùng quá số điểm → tẩy kỹ năng, hoàn điểm
+        if (SkillPoints(p) < 0)
+        {
+            p.SetSkillLevels(new Dictionary<string, int> { [SkillData.StartSkill] = 1 });
+            p.SkillSlots = "";
+            Log(p, $"Luật điểm kỹ năng đã đổi (+{SkillData.PointsPerStage} mỗi tầng/kỳ, +{SkillData.PointsPerRealm} mỗi đại cảnh giới): kỹ năng đã được tẩy, hoàn lại {SkillPoints(p)} điểm để lĩnh ngộ lại.", "gold");
+        }
         Tick(p, DateTime.UtcNow);
         // ô trang bị chưa mở ở cảnh giới hiện tại (dữ liệu bản cũ) → trả món về túi
         foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList())
@@ -644,6 +651,35 @@ public class GameService(GameDbContext db)
 
     private static int MaxSynth(Player p, SynthDef sd) =>
         Math.Min(p.Count(sd.From) / sd.Count, sd.Stones > 0 ? p.Count("linh_thach") / sd.Stones : int.MaxValue);
+
+    // ================= Luyện khí: ghép 9 trang bị cùng phẩm → 1 phẩm cao hơn =================
+
+    /// <summary>Ghép đúng GameData.FuseCount trang bị trong túi (items: danh sách id, lặp lại khi lấy nhiều món cùng id), cùng một phẩm.
+    /// Thành công (GameData.FuseChance[phẩm]): 1 món phẩm kế tiếp; thất bại: 1 món cùng phẩm. Loại món gieo ngẫu nhiên trong các món đã bỏ vào.</summary>
+    public (string msg, string kind, CraftResultDto craft) Fuse(Player p, string? items)
+    {
+        var ids = (items ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        if (ids.Count != GameData.FuseCount) throw new GameException($"Cần đúng {GameData.FuseCount} trang bị để luyện khí.");
+        var defs = ids.Select(id => GameData.ItemById.TryGetValue(id, out var d) && d.Slot is not null && d.Base is not null ? d
+            : throw new GameException("Chỉ ghép được trang bị.")).ToList();
+        var q = Array.IndexOf(GameData.RarityOrder, defs[0].Rarity);
+        if (defs.Any(d => d.Rarity != defs[0].Rarity)) throw new GameException("Các trang bị phải cùng phẩm.");
+        if (q < 0 || q >= GameData.FuseChance.Length) throw new GameException($"{GameData.QualityName[^1]} đã là phẩm cao nhất.");
+        foreach (var g in ids.GroupBy(x => x))
+            if (p.Count(g.Key) < g.Count()) throw new GameException($"Không đủ {GameData.ItemById[g.Key].Name} trong hành trang.");
+        foreach (var g in ids.GroupBy(x => x)) p.Add(g.Key, -g.Count());
+        var rng = Random.Shared;
+        var ok = rng.NextDouble() < GameData.FuseChance[q];
+        var baseDef = GameData.GearBaseById[defs[rng.Next(defs.Count)].Base!];
+        var outId = GameData.GearId(baseDef, ok ? q + 1 : q);
+        p.Add(outId, 1);
+        var label = GameData.Label(GameData.ItemById[outId]);
+        var (msg, kind) = ok
+            ? Log(p, $"Luyện khí thành công: {GameData.FuseCount} trang bị {GameData.QualityName[q]} → {label}.", "gold")
+            : Log(p, $"Luyện khí thất bại: {GameData.FuseCount} trang bị {GameData.QualityName[q]} chỉ còn lại {label}.", "bad");
+        var inputs = ids.GroupBy(x => x).Select(g => new ItemQtyDto(g.Key, g.Count())).ToList();
+        return (msg, kind, new CraftResultDto(ok ? "fuse:ok" : "fuse:fail", new(outId, 1), inputs));
+    }
 
     // ================= Bản đồ: 15 ải + ải Boss =================
 

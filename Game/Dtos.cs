@@ -11,7 +11,8 @@ public record GameDataDto(
     IEnumerable<SkillDef> SkillTree,
     string[] PillChain,
     int Areas,
-    string[] LockedRealms);
+    string[] LockedRealms,
+    double[]? FuseChance = null);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,

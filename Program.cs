@@ -81,7 +81,7 @@ public static class Program
             GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources, r.Cn, r.BagSlots, r.EquipSlots,
                 r.Boss.Name, r.Boss.Image, r.BossLair, r.KeyItem, r.BossItem, r.HeroStand, r.HeroMed, r.HeroCast)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
-            GameData.LockedRealms));
+            GameData.LockedRealms, GameData.FuseChance));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -128,6 +128,10 @@ public static class Program
 
         api.MapPost("/players/{id:guid}/advance", (Guid id, GameService game) =>
             Run(id, game, p => game.Advance(p)));
+
+        // luyện khí: ghép 9 trang bị cùng phẩm → 1 phẩm cao hơn (items = danh sách id, lặp lại khi lấy nhiều món cùng id)
+        api.MapPost("/players/{id:guid}/fuse", (Guid id, string? items, GameService game) =>
+            RunCraft(id, game, p => game.Fuse(p, items)));
 
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
