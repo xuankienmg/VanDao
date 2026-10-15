@@ -172,8 +172,10 @@ public static class SkillData
     /// <summary>Linh căn bẩm sinh: được cấp 1 miễn phí.</summary>
     public const string StartSkill = "hoa_linh_can";
 
-    /// <summary>Điểm kỹ năng nhận được: 1 lúc đầu, +1 mỗi tầng/kỳ đã lên, +3 mỗi đại cảnh giới, +2 mỗi lần hạ Boss.</summary>
-    public static int PointsEarned(int level, int realm, int bossKills) => 1 + (level - 1) + 3 * realm + 2 * bossKills;
-    /// <summary>Điểm kỹ năng nhận khi đột phá thành công: lên tầng/kỳ +1, lên đại cảnh giới +1 (tầng mới) +3.</summary>
-    public static int PointsForBreak(bool major) => major ? 4 : 1;
+    /// <summary>Điểm kỹ năng: PointsPerStage mỗi lần lên tầng/kỳ (cảnh giới nhỏ), thêm PointsPerRealm mỗi đại cảnh giới; hạ Boss không cho điểm.</summary>
+    public const int PointsPerStage = 2, PointsPerRealm = 12;
+    /// <summary>Điểm kỹ năng nhận được: 1 lúc đầu + PointsPerStage mỗi tầng/kỳ đã lên + PointsPerRealm mỗi đại cảnh giới (bossKills giữ cho tương thích, không dùng).</summary>
+    public static int PointsEarned(int level, int realm, int bossKills) => 1 + PointsPerStage * (level - 1) + PointsPerRealm * realm;
+    /// <summary>Điểm kỹ năng nhận khi đột phá thành công: lên tầng/kỳ PointsPerStage; lên đại cảnh giới PointsPerStage (tầng mới) + PointsPerRealm.</summary>
+    public static int PointsForBreak(bool major) => PointsPerStage + (major ? PointsPerRealm : 0);
 }
