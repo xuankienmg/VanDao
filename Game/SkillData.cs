@@ -78,6 +78,11 @@ public static class SkillData
             "Tâm hỏa bình ổn: chiêu Hỏa +3% sát thương mỗi cấp (Lv.5 +15%).", "passive", SkillPct: 3, Code: "FIRE_PASSIVE_004"),
         new("hoa_linh_chan_y", "hoa", "Hỏa Linh Chân Ý", "Bị động", 3, 1, 1, 2, 5, new[] { "liet_diem:5", "hoa_long:3", "hoa_tam:5" },
             "Bị động cao cấp: chiêu Hỏa +20% sát thương, +10% xuyên thấu.", "passive", SkillPct: 20, Pen: 10, Code: "FIRE_PASSIVE_006"),
+        // ---- Nguyên Anh: hàng bị động mới ----
+        new("phuong_hoang", "hoa", "Phượng Hoàng Niết Bàn", "Bị động", 4, 0, 5, 3, 5, new[] { "hoa_linh_chan_y:1" },
+            "Lửa phượng tái sinh: tăng máu và phòng thủ (+4% mỗi cấp, Lv.5 +20%).", "passive", HpPct: 4, DefPct: 4, Code: "FIRE_PASSIVE_008"),
+        new("lieu_nguyen", "hoa", "Liệu Nguyên Hỏa", "Bị động", 4, 2, 5, 3, 5, new[] { "hoa_linh_chan_y:1" },
+            "Lửa cháy lan đồng: chiêu Hỏa +4% sát thương và +2% xuyên thấu mỗi cấp.", "passive", SkillPct: 4, Pen: 2, Code: "FIRE_PASSIVE_009"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
@@ -112,6 +117,11 @@ public static class SkillData
             "Thủy triều lạnh buốt: chiêu thức +2% sát thương mỗi cấp (Lv.5 +10%).", "passive", SkillPct: 2, Code: "WATER_PASSIVE_004"),
         new("thuy_linh_chan_y", "thuy", "Thủy Linh Chân Ý", "Bị động", 4, 1, 1, 2, 5, new[] { "van_thuy_tien:3", "han_trieu:5" },
             "Bị động cao cấp: chiêu thức +15% sát thương, đòn quái −5%, máu +10%.", "passive", SkillPct: 15, MonAtkDown: 5, HpPct: 10, Code: "WATER_PASSIVE_005"),
+        // ---- Nguyên Anh: hàng bị động mới ----
+        new("huyen_minh", "thuy", "Huyền Minh Chân Thủy", "Bị động", 4, 0, 5, 3, 5, new[] { "thuy_linh_chan_y:1" },
+            "Nước huyền minh nặng tựa núi: máu +4% và đòn quái −1% mỗi cấp.", "passive", HpPct: 4, MonAtkDown: 1, Code: "WATER_PASSIVE_006"),
+        new("bich_hai", "thuy", "Bích Hải Triều Sinh", "Bị động", 4, 2, 5, 3, 5, new[] { "thuy_linh_chan_y:1" },
+            "Biển biếc dâng triều: chiêu thức +3% sát thương và phòng thủ +3% mỗi cấp.", "passive", SkillPct: 3, DefPct: 3, Code: "WATER_PASSIVE_007"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Mộc.", "root"),
         new("dang_man", "moc", "Đằng Mạn", "Khống", 2, 1, 5, 0, 1, new[] { "moc_linh_can:1" }, "Dây leo trói địch.", "bind"),
         new("hoi_xuan", "moc", "Hồi Xuân", "Thủ", 2, 3, 5, 0, 1, new[] { "moc_linh_can:1" }, "Chữa thương.", "aura"),

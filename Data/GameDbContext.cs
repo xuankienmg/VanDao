@@ -72,6 +72,7 @@ public static class SchemaUpgrade
             ("BreakCooldownUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"), ("DebuffUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"),
             ("Admin", "TEXT NOT NULL DEFAULT ''"), ("AdminPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"),
+            ("Chapter", "INTEGER NOT NULL DEFAULT 0"), ("ChapterMax", "INTEGER NOT NULL DEFAULT 0"), ("MapVer", "INTEGER NOT NULL DEFAULT 0"),
         })
         {
             cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('Players') WHERE name = '{col}'";
