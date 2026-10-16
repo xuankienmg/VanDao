@@ -23,10 +23,14 @@ public class Player
     public DateTime LastTickAt { get; set; } = DateTime.UtcNow;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // ---- Bản đồ: ải đang đánh (1..20, 21 = Boss) và ải cao nhất đã mở trong cảnh giới hiện tại ----
+    // ---- Bản đồ 10 chương: chương + ải đang đánh (1..15, 16 = Boss); chương cao nhất đã mở và ải cao nhất của chương đó ----
     public int Area { get; set; } = 1;
     public int AreaMax { get; set; } = 1;
-    /// <summary>Bản đồ đang đánh: -1 = cảnh giới hiện tại; 0..Realm-1 = quay lại bản đồ cảnh giới trước (mọi ải đã mở).</summary>
+    public int Chapter { get; set; }
+    public int ChapterMax { get; set; }
+    /// <summary>Phiên bản dữ liệu bản đồ: 0 = bản đồ theo cảnh giới (bản cũ) → chuyển về 1-1 khi nạp; 1 = bản đồ chương.</summary>
+    public int MapVer { get; set; } = 1;
+    /// <summary>Bản cũ (bản đồ theo cảnh giới), không còn dùng. Giữ cột để tương thích DB cũ.</summary>
     public int MapRealm { get; set; } = -1;
 
     // ---- Đột phá đại cảnh giới: thất bại phải điều tức (chờ), tẩu hỏa nhập ma bị suy yếu tạm thời ----

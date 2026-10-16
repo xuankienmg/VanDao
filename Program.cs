@@ -79,9 +79,11 @@ public static class Program
             GameData.Slots,
             GameData.ExtraStats,
             GameData.Realms.Select((r, i) => new RealmInfoDto(i, r.Id, r.Name, r.Desc, r.Stages, r.Aura, r.Lotus, r.Sash, r.Hero, r.Resources, r.Cn, r.BagSlots, r.EquipSlots,
-                r.Boss.Name, r.Boss.Image, r.BossLair, r.KeyItem, r.BossItem, r.HeroStand, r.HeroMed, r.HeroCast)),
+                r.Boss.Name, r.Boss.Image, GameData.ChapterDropping(r.BossItem)?.BossLair ?? "", GameData.ChapterDropping(r.BossItem)?.KeyItem ?? "", r.BossItem,
+                r.HeroStand, r.HeroMed, r.HeroCast, r.Halo)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
-            GameData.LockedRealms, GameData.FuseChance));
+            GameData.LockedRealms, GameData.FuseChance,
+            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem))));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -137,13 +139,13 @@ public static class Program
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             RunCraft(id, game, p => game.Synthesize(p, itemId, n ?? 1)));
 
-        // bản đồ: chọn ải 1..20, 21 = Boss (cần chìa khóa)
+        // bản đồ: chọn ải 1..15 của chương đang đánh, 16 = Boss (cần lệnh Boss)
         api.MapPost("/players/{id:guid}/area/{area:int}", (Guid id, int area, GameService game) =>
             Run(id, game, p => game.SelectArea(p, area)));
 
-        // bản đồ: chọn cảnh giới (quay lại bản đồ cảnh giới trước)
-        api.MapPost("/players/{id:guid}/map/{realm:int}", (Guid id, int realm, GameService game) =>
-            Run(id, game, p => game.SelectMap(p, realm)));
+        // bản đồ: chọn chương đã mở (0-based)
+        api.MapPost("/players/{id:guid}/map/{chapter:int}", (Guid id, int chapter, GameService game) =>
+            Run(id, game, p => game.SelectMap(p, chapter)));
 
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>

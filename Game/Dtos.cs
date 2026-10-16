@@ -12,12 +12,13 @@ public record GameDataDto(
     string[] PillChain,
     int Areas,
     string[] LockedRealms,
-    double[]? FuseChance = null);
+    double[]? FuseChance = null,
+    IEnumerable<ChapterInfoDto>? Chapters = null);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
     string Cn, int BagSlots, string[] EquipSlots, string Boss, string BossImage, string BossLair, string KeyItem, string BossItem,
-    string? HeroStand = null, string? HeroMed = null, string? HeroCast = null);
+    string? HeroStand = null, string? HeroMed = null, string? HeroCast = null, string? Halo = null);
 
 // ---- Trạng thái người chơi ----
 public record CostDto(string Item, int Need, int Have);
@@ -25,7 +26,12 @@ public record CostDto(string Item, int Need, int Have);
 /// <summary>Bản đồ cảnh giới hiện tại: ải đang đánh, ải đã mở, dự đoán thắng/thua từng ải, chìa khóa và yêu hạch Boss.</summary>
 public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, string BossLair, double KeyChanceMin, double KeyChanceMax,
     List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem, int Realm = 0,
-    List<DropInfoDto>? Drops = null, double ChestChance = 0, double RareChestChance = 0, int RareChestMinArea = 0, string BossChest = "");
+    List<DropInfoDto>? Drops = null, double ChestChance = 0, double RareChestChance = 0, int RareChestMinArea = 0, string BossChest = "",
+    int ChapterMax = 0, string Boss = "", string BossImage = "", double[]? Quality = null);
+// Realm = chương đang đánh (0-based, tên giữ cho tương thích client: nhãn ải "C-x")
+
+/// <summary>Thông tin tĩnh một chương cho thanh chọn chương.</summary>
+public record ChapterInfoDto(int Index, string Name, string Realm, bool Enabled, string Boss, string BossImage, string BossLair, string KeyItem, string? BossItem);
 
 /// <summary>Bảng rơi của bản đồ (tỉ lệ gốc ở ải 1; client tự nhân theo ải giống server).</summary>
 public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear);
@@ -34,7 +40,7 @@ public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, 
     List<WaveInfoDto>? Waves = null, bool Elite = false);
 
 /// <summary>Một đợt quái của ải (bảng thông tin ải trên bản đồ).</summary>
-public record WaveInfoDto(string Name, string Image, string Tier, int Hp, int Atk, int Def);
+public record WaveInfoDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int StoneMin = 0, int StoneMax = 0);
 
 public record SynthStateDto(string From, int Max);
 
@@ -120,7 +126,8 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     List<WaveDto>? Waves = null);           // các đợt quái đã giao chiến (ải thường 3 đợt): Start = lượt (đã lấy mẫu) đợt bắt đầu
 
 /// <summary>Một đợt quái trong trận: chỉ số đã tính công pháp/trang bị, sát thương hai bên, lượt bắt đầu (đã lấy mẫu).</summary>
-public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start);
+/// <summary>Stones = linh thạch rơi khi hạ quái đợt này (đã gieo sẵn theo chuyến, server cộng đúng số này).</summary>
+public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start, int Stones = 0);
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
 public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
