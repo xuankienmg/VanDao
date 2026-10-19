@@ -20,18 +20,10 @@
 <body>
 
 <div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <h1>Vấn Đạo</h1>
-      <p>Ngồi thiền hấp thu linh khí, thu thập linh tài, luyện đan và đột phá cảnh giới.</p>
-    </div>
-    <ul class="track" id="track"></ul>
-  </header>
-
   <main class="grid">
     <section class="altar">
       <div class="stage-wrap">
-        <canvas id="stage" aria-label="Tu sĩ ngồi xếp bằng tu luyện"></canvas>
+        <canvas id="stage" aria-label="Thám hiểm diệt yêu"></canvas>
         <div class="hud">
           <div class="realm" id="hudRealm">Luyện Khí</div>
           <div class="sub"><b id="hudStage">Tầng 1</b> · <span id="hudRate">2 tu vi/giây</span></div>
@@ -62,7 +54,7 @@
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-req" aria-selected="true" data-tab="req">Đột phá</button>
         <button class="tab" role="tab" id="tab-inv" aria-selected="false" data-tab="inv">Hành trang</button>
-        <button class="tab" role="tab" id="tab-craft" aria-selected="false" data-tab="craft">Luyện chế</button>
+        <button class="tab" role="tab" id="tab-craft" aria-selected="false" data-tab="craft">Luyện  chế</button>
         <button class="tab" role="tab" id="tab-map" aria-selected="false" data-tab="map">Bản đồ</button>
         <button class="tab" role="tab" id="tab-skill" aria-selected="false" data-tab="skill">Công pháp</button>
         <button class="tab adm" role="tab" id="tab-admin" aria-selected="false" data-tab="admin" hidden>Admin</button>
@@ -79,10 +71,6 @@
     </aside>
   </main>
 
-  <footer>
-    <span>Tiến độ lưu trong cơ sở dữ liệu SQLite trên server. Rời đi nhân vật vẫn tiếp tục thám hiểm (tối đa 2 giờ).</span>
-    <button class="link" id="btnReset">Tu lại từ đầu</button>
-  </footer>
 </div>
 
 <script src="js/core.js"></script>

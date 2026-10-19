@@ -82,7 +82,6 @@ async function playBreak(kind, fromHost){
   const r = realm();
   rings.push({t:0, c: kind === 'bad' ? '#e58472' : kind === 'gold' ? '#f2c94c' : r.aura, big: kind === 'gold'});
   if (kind === 'gold') setTimeout(() => rings.push({t:0, c: r.aura, big: true}), 350);
-  if (typeof burst === 'function' && kind !== 'bad') burst(kind === 'gold' ? 60 : 24);
 }
 window.playBreak = playBreak;
 
@@ -229,13 +228,6 @@ async function boot(){
   // cửa sổ desktop: menu cài đặt gốc (có mục Nhập code); chạy trên trình duyệt: hỏi code quà tặng
   $('btnMenu').onclick = () => window.chrome?.webview ? notifyHost('menu') : (c => c && redeemCode(c))(prompt('Nhập code quà tặng'));
   addEventListener('keydown', e => { if (e.key === 'Escape' && MODE === 'panel') notifyHost('close-panel'); });
-  let armed = 0;
-  $('btnReset').onclick = async () => {
-    const b = $('btnReset');
-    if (Date.now() - armed < 3000){ armed = 0; b.textContent='Tu lại từ đầu'; b.classList.remove('armed'); await act('reset'); return; }
-    armed = Date.now(); b.textContent = 'Bấm lần nữa để xóa tiến độ'; b.classList.add('armed');
-    setTimeout(() => { if (armed && Date.now()-armed >= 3000){ b.textContent='Tu lại từ đầu'; b.classList.remove('armed'); } }, 3100);
-  };
   setInterval(sync, 4000);
   if (MODE === 'strip'){
     addEventListener('resize', () => reportShape()); setInterval(reportShape, 1000);
@@ -244,7 +236,6 @@ async function boot(){
     fontsReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => reportShape(true))));
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
-  for (let i=0;i<30;i++) spawn(false);
   requestAnimationFrame(frame);
 }
 boot();
