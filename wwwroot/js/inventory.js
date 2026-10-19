@@ -2,54 +2,85 @@
 // =====================================================================
 // HÀNH TRANG: nhân vật ↔ trang bị ↔ hành trang ↔ so sánh ↔ mặc ↔ chỉ số
 // =====================================================================
+// 10 phẩm (GameData.QualityName / QualityColor): khóa giữ tên cũ cho 6 phẩm đầu để không đổi dữ liệu đã lưu
 const RARITY = {
-  common:    {n:'Trắng',    c:'#8d9399', v:3},
-  uncommon:  {n:'Lục',    c:'#5fbf6a', v:12},
-  rare:      {n:'Lam',   c:'#4f8fe0', v:50},
-  epic:      {n:'Tím',     c:'#a46ae6', v:200},
-  legendary: {n:'Vàng',   c:'#f2c94c', v:800},
-  mythic:    {n:'Đỏ',    c:'#e0483c', v:0},      // dành sẵn: Thần / Tiên cấp (khí linh) chưa mở
+  common:    {n:'Phàm',        c:'#FFFFFF', v:3},
+  uncommon:  {n:'Linh',        c:'#00E5FF', v:12},
+  rare:      {n:'Huyền',       c:'#00FF7F', v:50},
+  epic:      {n:'Địa',         c:'#1E90FF', v:200},
+  legendary: {n:'Thiên',       c:'#BF00FF', v:800},
+  mythic:    {n:'Thánh',       c:'#FF8C00', v:3200},
+  divine:    {n:'Thần',        c:'#FF0033', v:12800},
+  immortal:  {n:'Tiên',        c:'#FF69B4', v:51200},
+  dao:       {n:'Đạo',         c:'#FFD700', v:204800},
+  supreme:   {n:'Huyền Thiên', c:'#E0FFFF', v:819200},
 };
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
-const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','ring','ring2','weapon','offhand'];
+const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
-const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest');
-const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' ? 'consumable' : 'material';
+const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'elixir');
+const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
 const reqLevel = it => levelOf(it.minRealm || 0);
 /** Cấp trang bị (1 Luyện Khí · 10 Trúc Cơ · 15 Kim Đan) hiện ở góc ô; món không có cấp thì hiện cấp nhân vật tối thiểu của cảnh giới yêu cầu. */
 const itemLv = it => it.itemLevel || reqLevel(it);
-const RAR_KEYS = ['common','uncommon','rare','epic','legendary','mythic'];
+const RAR_KEYS = Object.keys(RARITY);
 /** Tên phẩm tô đúng màu phẩm: nền tối (bảng, nhật ký) dùng rc-*, thẻ giấy da dùng qc-* (màu đậm hơn để đọc rõ). */
 const qWord = (r, card) => `<b class="${card ? 'qc' : 'qn'} ${card ? 'qc' : 'rc'}-${r}">${RARITY[r]?.n ?? r}</b>`;
 /** Tô màu tên phẩm trong câu chữ từ server (nhật ký): "[cấp 25 · Đỏ]", "trang bị Vàng". */
-const qColorize = t => t.replace(/(· |trang bị )(Trắng|Lục|Lam|Tím|Vàng|Đỏ)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
-const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
+const qColorize = t => t.replace(/(· |trang bị )(Huyền Thiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
+const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
 let bulkScope = 'all', bulkGear = true;
 try { bulkScope = localStorage.getItem('van-dao-bulk-scope') || 'all'; bulkGear = localStorage.getItem('van-dao-bulk-gear') !== '0'; } catch(e){}
 const canWear = it => (it.minRealm || 0) <= S.realm;
-const slotsFor = it => !it.slot ? [] : it.slot === 'ring' ? ['ring','ring2'] : [it.slot];
+const slotsFor = it => !it.slot ? [] : [it.slot];
 function itemStats(it){ return STAT_KEYS.filter(([k]) => it[k]).map(([k, n, u]) => `${n} +${it[k]}${u}`); }
 // tooltip khi rê chuột (dùng chung cho các tab)
+/** Đan trong chuỗi hợp thành và linh thảo: chuột phải mở Luyện chế · Đan dược. */
+const rcCraft = it => !!it && (it.type === 'herb' || (it.type === 'pill' && !canUse(it)));
+/** Icon chuột trong chú thích: MS_R chuột phải (nút phải tô sáng), MS_L2 nhấp đúp chuột trái; KBD(k): phím tô đậm. */
+const MS_SVG = (side, tip) => `<svg class="ms" viewBox="0 0 12 16" role="img" aria-label="${tip}"><title>${tip}</title><rect x="1" y="1" width="10" height="14" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v6" stroke="currentColor" stroke-width="1.1"/><path d="${side === 'r' ? 'M6.6 1.7A4.4 4.4 0 0 1 10.3 6.2V6.4H6.6Z' : 'M5.4 1.7A4.4 4.4 0 0 0 1.7 6.2V6.4H5.4Z'}" fill="currentColor"/></svg>`;
+const MS_R = `<span class="msk r">${MS_SVG('r', 'Chuột phải')}</span>`;
+const MS_L2 = `<span class="msk l2">${MS_SVG('l', 'Nhấp đúp')}<sup>2</sup></span>`;
+const KBD = k => `<kbd>${k}</kbd>`;
+/** Chú thích thao tác chuột cho ô trong túi (hiện ở dòng cuối tooltip). */
+function rcHint(it){
+  if (!it) return '';
+  if (it.slot) return `${MS_R}/${MS_L2} mặc · kéo vào ô trang bị`;
+  if (it.type === 'chest') return `${MS_R}/${MS_L2} mở · ${KBD('Ctrl')}+${MS_R} mở hết`;
+  if (canUse(it)) return `${MS_R}/${MS_L2} dùng`;
+  if (rcCraft(it)) return `${MS_R} mở Đan dược (${it.type === 'herb' ? 'luyện đan' : 'hợp thành'})`;
+  return '';
+}
+/** Thượng phẩm linh thạch: chưa có nguồn nhận, tạm hiện số dư (0) cạnh linh thạch. */
+const HP_STONE = 'thuong_pham_linh_thach';
+const hpStoneHtml = cls => ITEM[HP_STONE] ? `<span class="${cls}" data-tip="Thượng phẩm linh thạch&#10;Chưa mở: sẽ có trong bản cập nhật sau">${itemImg(HP_STONE)}<b>${fmt(S.inventory[HP_STONE] || 0)}</b></span>` : '';
 function itemTip(k, hint){
   const it = ITEM[k], lines = [it.name, `${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${rar(it).n} · ${it.kind || ''}`];
   if (it.slot) lines.push(`Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}`);
   const sts = itemStats(it); if (sts.length) lines.push(sts.join(' · '));
   if (it.special) lines.push(it.special);
   if (it.use) lines.push(it.use);
+  if (it.type === 'herb') lines.push(...herbSrcLines(k));
   if (adminOn && it.type === 'chest') lines.push(...chestOddsLines(k));
   if (it.set) lines.push(`Bộ ${it.set}`);
   lines.push(it.desc);
   if (hint) lines.push(hint);
   return lines.join('\n').replace(/"/g, '&quot;');
 }
+/** Nơi rơi linh thảo (DATA.herbDrops): "Chương 1 · Hắc Phong Lâm · ải 10–15 · 8%/chuyến". */
+function herbSrcLines(k){
+  const src = (DATA.herbDrops || []).filter(h => h.item === k); if (!src.length) return [];
+  const pct = v => (Math.round(v * 1000) / 10).toLocaleString('vi-VN') + '%';
+  return ['Nơi rơi:', ...src.map(h => `• ${h.chapters.map(c => `Chương ${c + 1} · ${DATA.chapters?.[c]?.name || ''}`).join(', ')} · ${h.minArea > 1 ? `ải ${h.minArea}–${DATA.areas}` : 'mọi ải'} · ${pct(h.chance)}/chuyến${h.max > 1 ? ` (${h.min}–${h.max} cây)` : ''}`)];
+}
 // ---- admin: tỉ lệ phần thưởng khi mở rương (S.chestOdds, tính ở server đúng như lúc mở) ----
-const Q_NAMES = ['Trắng', 'Lục', 'Lam', 'Tím', 'Vàng', 'Đỏ'];
-const topPct = q => (q[3] || 0) + (q[4] || 0);          // % ra đồ Địa cấp trở lên
+const Q_NAMES = RAR_KEYS.map(k => RARITY[k].n);
+const topPct = q => q.slice(3).reduce((a, x) => a + (x || 0), 0);          // % ra đồ Địa phẩm trở lên
 const pctS = v => (Math.round(v * 100) / 100) + '%';
 function chestOdds(k){ return (S.chestOdds || []).find(o => o.chest === k); }
 /** Tên món gốc (pháp bảo / trang bị) kèm cấp, lấy từ món sinh ra cùng gốc. */
@@ -60,14 +91,14 @@ function chestOddsLines(k){
   return [`[Admin] Tỉ lệ mỗi lần mở`,
     `Phẩm: ${o.quality.map((q, i) => `${Q_NAMES[i]} ${pctS(q)}`).join(' · ')}`,
     `Pháp bảo ${pctS(pt)} · Trang bị ${pctS(pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
-    `Ra đồ Tím trở lên: ${pctS((pt + pg) * topPct(o.quality) / 100)}`];
+    `Ra đồ Địa trở lên: ${pctS((pt + pg) * topPct(o.quality) / 100)}`];
 }
 function chestOddsHtml(k){
   const o = chestOdds(k); if (!o) return '';
   const pt = o.treasure.reduce((a, x) => a + x.pct, 0), pg = o.gear.reduce((a, x) => a + x.pct, 0);
   const list = xs => xs.map(x => `${gearName(x.item)} <b>${pctS(x.pct)}</b>`).join(' · ') || '—';
   return `<div class="iv-odds"><p class="t">Tỉ lệ mỗi lần mở (admin)</p>
-    <p>Phẩm: ${o.quality.map((q, i) => `<span class="rc-${RAR_KEYS[i]}">${Q_NAMES[i]} ${pctS(q)}</span>`).join(' · ')} · <i>ra đồ Tím trở lên ${pctS((pt + pg) * topPct(o.quality) / 100)}</i></p>
+    <p>Phẩm: ${o.quality.map((q, i) => `<span class="rc-${RAR_KEYS[i]}">${Q_NAMES[i]} ${pctS(q)}</span>`).join(' · ')} · <i>ra đồ Địa trở lên ${pctS((pt + pg) * topPct(o.quality) / 100)}</i></p>
     <p><b>Pháp bảo ${pctS(pt)}</b>: ${list(o.treasure)}</p>
     <p><b>Trang bị ${pctS(pg)}</b>: ${list(o.gear)}</p>
     <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p></div>`;
@@ -79,6 +110,21 @@ function itemImg(k, cls = ''){
 const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
 let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
+// ---- Trang phục (skin): nút móc áo góc trên cột nhân vật → bảng chọn trang phục ----
+let wardOpen = false;
+const WARD_SVG = '<svg viewBox="0 0 24 24"><path d="M12 7.5a2 2 0 1 1 2-2c0 1-.6 1.4-1.2 1.8-.5.3-.8.6-.8 1.2v.5"/><path d="M12 9l-8.4 6.2a1.3 1.3 0 0 0 .8 2.3h15.2a1.3 1.3 0 0 0 .8-2.3Z"/></svg>';
+function wardrobeHtml(){
+  const skins = DATA.skins || [], cur = S.skin || '';
+  const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
+      <span class="wd-fig">${img ? `<img src="${img}" alt="">` : '<b>⟳</b>'}</span><b class="wd-nm">${name}</b><small>${note}</small></button>`;
+  const list = [card('', 'Theo cảnh giới', realm().heroStand, 'Tự đổi khi đột phá', false)]
+    .concat(skins.map(s => { const locked = S.realm < s.minRealm;
+      return card(s.id, s.name, s.heroStand, locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : DATA.realms[s.minRealm].name, locked); }));
+  return `<button class="iv-ward-btn ${wardOpen ? 'on' : ''}" id="wardBtn" aria-label="Trang phục" aria-expanded="${wardOpen}" ${wardOpen ? '' : 'data-tip="Trang phục&#10;Đổi ngoại hình nhân vật ở Hành trang, Đột phá và màn hình chính"'}>${WARD_SVG}</button>
+    <div class="iv-ward" ${wardOpen ? '' : 'hidden'} role="dialog" aria-label="Trang phục">
+      <p class="wd-hd"><b>Trang phục</b><span>Chỉ đổi ngoại hình, không đổi chỉ số</span><button class="wd-x" data-wardclose aria-label="Đóng">×</button></p>
+      <div class="wd-list">${list.join('')}</div></div>`;
+}
 // ---- chọn nhiều món để bán: Ctrl + nhấp chọn từng món, Shift + nhấp chọn một dải, hoặc bật chế độ "Chọn nhiều" (nhấp là chọn) ----
 const multiSel = new Map();          // chỉ số ô trong túi → id món (chỉ món bán được)
 let msMode = false, msAnchor = -1, msArm = 0;
@@ -88,15 +134,17 @@ function msSummary(){
   for (const k of multiSel.values()){ pool[k] = (pool[k] || 0) + 1; gain += ITEM[k].sell; n++; if (RAR_KEYS.indexOf(ITEM[k].rarity) >= 2) hi = true; }
   return {pool, gain, n, hi};
 }
-function msToggle(i, k){ if (!ITEM[k]?.sell) return; if (multiSel.has(i)) multiSel.delete(i); else multiSel.set(i, k); msAnchor = i; msArm = 0; }
+/** Bán nhanh trong Hành trang (chọn nhiều, bán theo phẩm) chỉ áp cho trang bị; đan dược bán ở Luyện chế · Bán. */
+const gearSell = k => !!(ITEM[k]?.sell && ITEM[k].slot);
+function msToggle(i, k){ if (!gearSell(k)) return; if (multiSel.has(i)) multiSel.delete(i); else multiSel.set(i, k); msAnchor = i; msArm = 0; }
 function msRange(i){
   const list = bagList(), a = msAnchor >= 0 ? msAnchor : invSel?.src === 'bag' ? invSel.idx : i;
-  for (let j = Math.min(a, i); j <= Math.max(a, i); j++){ const c = list[j]; if (c && ITEM[c.k].sell) multiSel.set(j, c.k); }
+  for (let j = Math.min(a, i); j <= Math.max(a, i); j++){ const c = list[j]; if (c && gearSell(c.k)) multiSel.set(j, c.k); }
   msAnchor = i; msArm = 0;
 }
 function msPage(){
   const list = bagList(), first = bagPage * BAG_PER_PAGE;
-  for (let j = first; j < Math.min(list.length, first + BAG_PER_PAGE); j++) if (ITEM[list[j].k].sell) multiSel.set(j, list[j].k);
+  for (let j = first; j < Math.min(list.length, first + BAG_PER_PAGE); j++) if (gearSell(list[j].k)) multiSel.set(j, list[j].k);
   msArm = 0;
 }
 function msClear(){ multiSel.clear(); msAnchor = -1; msArm = 0; }
@@ -141,9 +189,20 @@ function renderInv(){
   const pane = $('pane-inv'), host = pane?.closest('aside.book'), hostTop = host?.scrollTop, SCROLLERS = '#ivGrid, .iv-cats';
   const keep = pane ? [pane.scrollTop, [...pane.querySelectorAll(SCROLLERS)].map(el => [el.scrollTop, el.scrollLeft])] : null;
   renderInvInner();
+  fitBagGrid();
   if (host) host.scrollTop = hostTop;
   if (keep){ pane.scrollTop = keep[0]; pane.querySelectorAll(SCROLLERS).forEach((el, i) => { const k = keep[1][i]; if (k){ el.scrollTop = k[0]; el.scrollLeft = k[1]; } }); }
 }
+/** Cửa sổ Tu luyện: cỡ ô túi (--cell) để 8 × 6 ô vừa khít chỗ trống của cột túi, không phải cuộn. Màn hẹp (≤ 620px) giữ lưới co theo bề ngang. */
+const BAG_COLS = 8, BAG_ROWS = 6, BAG_GAP = 3;
+function fitBagGrid(){
+  const g = $('ivGrid'); if (!g) return;
+  if (MODE !== 'panel' || innerWidth <= 620 || !g.clientHeight){ g.style.removeProperty('--cell'); return; }
+  const w = g.clientWidth - 4, h = g.clientHeight - 4;
+  const cell = Math.floor(Math.min((w - (BAG_COLS - 1) * BAG_GAP) / BAG_COLS, (h - (BAG_ROWS - 1) * BAG_GAP) / BAG_ROWS));
+  g.style.setProperty('--cell', Math.max(28, Math.min(80, cell)) + 'px');
+}
+if (window.ResizeObserver) new ResizeObserver(() => fitBagGrid()).observe($('pane-inv'));
 function renderInvInner(){
   const st = S.stats, unlocked = new Set(S.equipSlots), r = realm();
   if (invSel?.src === 'bag' && !(S.inventory[invSel.k] > 0)) invSel = null;
@@ -159,7 +218,7 @@ function renderInvInner(){
       return `<div class="iv-slot locked" data-tip="${sd.name}&#10;Mở ở cảnh giới ${opens ? opens.name : 'cao hơn'}">${LOCK_SVG}<span class="nm">${sd.name}</span></div>`;
     }
     const cls = `${compat.has(id) ? 'compat' : ''} ${invSel?.src === 'slot' && invSel.slot === id ? 'sel' : ''}`;
-    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo')}">${itemImg(k)}<span class="lv">${itemLv(ITEM[k])}</span></button>`;
+    if (k) return `<button class="iv-slot has r-${ITEM[k].rarity} ${cls}" data-slot="${id}" data-k="${k}" data-card="slot" draggable="true" aria-label="${sd.name}: ${ITEM[k].name}" data-tip="${itemTip(k, `${MS_R}/${MS_L2} tháo · kéo vào hành trang`)}">${itemImg(k)}<span class="lv">${itemLv(ITEM[k])}</span></button>`;
     return `<button class="iv-slot empty ${cls}" data-slot="${id}" aria-label="${sd.name} (trống)" data-tip="${sd.name}&#10;Trống · kéo trang bị vào đây"><span class="nm">${sd.name}</span></button>`;
   };
 
@@ -186,7 +245,7 @@ function renderInvInner(){
     if (i >= shown) return '<div class="iv-cell empty void"></div>';            // giữ lưới đủ 7 hàng ở trang cuối
     if (!c) return `<div class="iv-cell empty ${invCat === 'all' && i >= cap ? 'over' : ''}"></div>`;
     const it = ITEM[c.k], isSel = invSel?.src === 'bag' && invSel.idx === i;
-    return `<button class="iv-cell r-${it.rarity} ${it.slot ? 'eq' : ''} ${isSel ? 'sel' : ''} ${multiSel.has(i) ? 'msel' : ''} ${msMode && it.sell ? 'mspick' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, it.slot ? 'Nhấp đúp hoặc kéo vào ô trang bị để mặc' : canUse(it) ? 'Nhấp đúp để dùng' : '')}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${itemLv(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
+    return `<button class="iv-cell r-${it.rarity} ${it.slot ? 'eq' : ''} ${isSel ? 'sel' : ''} ${multiSel.has(i) ? 'msel' : ''} ${msMode && gearSell(c.k) ? 'mspick' : ''} ${it.slot && !canWear(it) ? 'req' : ''}" data-idx="${i}" data-k="${c.k}" data-card="bag" ${it.slot ? 'draggable="true"' : ''} aria-label="${it.name}${c.n > 1 ? ' × ' + c.n : ''}" data-tip="${itemTip(c.k, rcHint(it))}">${itemImg(c.k)}${c.n > 1 ? `<span class="qty">${short(c.n)}</span>` : it.slot ? `<span class="lv">${itemLv(it)}</span>` : ''}${isSel && Date.now() - sellArm < 3000 ? '<span class="arm">B lần nữa để bán</span>' : isSel && Date.now() - dropArm < 3000 ? '<span class="arm">Del lần nữa để bỏ</span>' : ''}</button>`;
   }).join('');
   const counts = Object.fromEntries(CATS.map(([id]) => [id, 0]));
   for (const k of DATA.items.map(i => i.id)) if ((S.inventory[k]||0) > 0){ counts.all++; counts[catOf(ITEM[k])]++; }
@@ -194,11 +253,11 @@ function renderInvInner(){
 
   const nextBag = DATA.realms[S.realm+1]?.bagSlots, nextNote = S.atTop ? '' : `Lên ${S.nextRealmName}: ${nextBag ? `hành trang ${nextBag} ô, ` : ''}thêm ô trang bị và chỉ số mới`;
   $('pane-inv').innerHTML = `<div class="iv" style="--aura:${r.aura}">
-    <section class="iv-char" aria-label="Nhân vật">
+    <section class="iv-char" aria-label="Nhân vật">${wardrobeHtml()}<div class="iv-char-in">
       <header class="iv-name"><b>${S.name}</b><span>Cấp ${S.level} · ${S.realmName} ${S.stageName}</span></header>
       <div class="iv-doll">
         <div class="iv-col">${SLOT_LEFT.map(slotHtml).join('')}</div>
-        <div class="iv-fig"><div class="iv-stage"><img class="hero ref" src="${realm().heroStand || 'img/hero_ref_stand.png'}" alt="${S.name}"></div>
+        <div class="iv-fig"><div class="iv-stage"><img class="hero ref" src="${skinArt('heroStand') || 'img/hero_ref_stand.png'}" alt="${S.name}"></div>
           <p class="iv-pow" data-tip="Lực chiến&#10;Tổng hợp tấn công, phòng thủ, máu và chỉ số phụ">Lực chiến <b>${fmt(power(st))}</b></p>
           <div class="iv-skills" data-goskill>${skSlotsHtml('mini')}</div></div>
         <div class="iv-col">${SLOT_RIGHT.map(slotHtml).join('')}</div>
@@ -211,11 +270,11 @@ function renderInvInner(){
       <div class="iv-stats">${statRows}</div>
       ${gearFxHtml()}
       ${nextNote ? `<p class="iv-next">${nextNote}</p>` : ''}
-    </section>
+    </div></section>
     <section class="iv-bag" aria-label="Hành trang">
       <nav class="iv-cats" role="tablist">${CATS.map(([id, n], i) => `<button role="tab" data-cat="${id}" aria-selected="${invCat === id}" data-tip="${n}&#10;Phím ${i+1}">${n}<small>${counts[id]}</small></button>`).join('')}</nav>
       <div class="iv-head"><p class="eyebrow ${used >= cap ? 'full' : ''}">Hành trang ${used}/${cap} ô</p>
-        <span class="iv-stone" data-tip="Linh thạch&#10;Bán trang bị để nhận thêm">${itemImg('linh_thach')}${fmt(S.inventory.linh_thach || 0)}</span>
+        <span class="iv-stone" data-tip="Linh thạch&#10;Bán trang bị để nhận thêm">${itemImg('linh_thach')}${fmt(S.inventory.linh_thach || 0)}</span>${hpStoneHtml('iv-stone hp')}
         <div class="sort">
           <button class="sell-btn" id="sellBtn" aria-label="Bán" data-tip="Bán&#10;Mở Luyện chế · Bán: chọn món bỏ vào quầy rồi bán"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg><span>Bán</span></button>
         </div>
@@ -238,7 +297,7 @@ function bulkPool(){
     const first = bagPage * BAG_PER_PAGE;
     for (const c of bagList().slice(first, first + BAG_PER_PAGE)) pool[c.k] = (pool[c.k] || 0) + c.n;
   } else for (const [k, c] of Object.entries(S.inventory)) if (c > 0) pool[k] = c;
-  for (const k of Object.keys(pool)){ const it = ITEM[k]; if (!it?.sell || (bulkGear && !it.slot)) delete pool[k]; }
+  for (const k of Object.keys(pool)){ const it = ITEM[k]; if (!it?.sell || it.tier || (bulkGear && !it.slot)) delete pool[k]; }
   return pool;
 }
 function bulkSellRows(){
@@ -275,8 +334,9 @@ function gearFx(){
   const sum = {}, name = {}, grade = {}; let thien = 0, red = 0;
   for (const k of Object.values(S?.equipment || {})){
     const it = ITEM[k]; if (!it) continue;
-    if (it.slot && (it.rarity === 'legendary' || it.rarity === 'mythic')) thien++;   // đồ Đỏ tính vào bộ Vàng
-    if (it.slot && it.rarity === 'mythic') red++;
+    const qi = RAR_KEYS.indexOf(it.rarity);
+    if (it.slot && qi >= 4) thien++;   // bộ Thiên phẩm: tính cả phẩm cao hơn
+    if (it.slot && qi >= 5) red++;     // Thánh phẩm trở lên: mốc 3 · 6 · 9
     for (const e of it.effects || []){ sum[e.id] = (sum[e.id] || 0) + e.value; name[e.id] = e.name; grade[e.id] = e.grade; }
   }
   const redPct = RED_TIERS.filter(t => red >= t[0]).reduce((m, t) => Math.max(m, t[1]), 0);   // Đỏ mốc 3 · 6 · 9
@@ -306,8 +366,10 @@ function itemCardHtml(k, src){
     }).join('');
     cmp = `<div class="iv-cmp"><p>${curIt ? `So với đang mặc: <b class="rc-${curIt.rarity}">${curIt.name}</b>` : 'Ô đang trống: mọi chỉ số đều là tăng thêm'}</p><ul>${rows || '<li>Không đổi chỉ số</li>'}</ul></div>`;
   }
-  const hint = src === 'slot' ? 'Nhấp đúp, chuột phải hoặc kéo vào hành trang để tháo · U tháo'
-    : it.slot ? 'Nhấp đúp, chuột phải hoặc kéo vào ô trang bị để mặc · B bán · Del bỏ' : it.type === 'chest' ? 'Nhấp đúp hoặc chuột phải để mở · Ctrl + chuột phải mở hết · Del bỏ' : canUse(it) ? 'Nhấp đúp hoặc chuột phải để dùng · Del bỏ' : 'Del bỏ';
+  const del = `${KBD('Del')} bỏ`, act2 = `${MS_R}<i>/</i>${MS_L2}`;
+  const hint = src === 'slot' ? `${act2} tháo · kéo vào hành trang · ${KBD('U')} tháo`
+    : it.slot ? `${act2} mặc · kéo vào ô trang bị · ${KBD('B')} bán · ${del}` : it.type === 'chest' ? `${act2} mở · ${KBD('Ctrl')}+${MS_R} mở hết · ${del}` : canUse(it) ? `${act2} dùng · ${del}`
+    : rcCraft(it) ? `${MS_R} mở Luyện chế · Đan dược · ${del}` : del;
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
     <p class="sub">${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${qWord(it.rarity || 'common', true)} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
@@ -316,8 +378,8 @@ function itemCardHtml(k, src){
     ${it.special ? `<p class="spc">${it.special}</p>` : ''}
     ${it.use ? `<p class="spc">${it.use}</p>` : ''}
     ${it.effects?.length ? `<p class="eff">${it.effects.map(e => `<span class="qc-${it.rarity}">◇ ${e.name}: ${e.text}</span>`).join('<br>')}</p>` : ''}
-    ${it.slot && it.rarity === 'mythic' ? `<p class="eff"><span class="qc-mythic">◆ Đỏ (đang mặc ${gearFx().red}): 3 món +10% · 6 món +20% · 9 món +30% giá trị mọi hiệu ứng trang bị</span></p>` : ''}
-    ${it.slot && (it.rarity === 'legendary' || it.rarity === 'mythic') ? `<p class="eff"><span class="qc-legendary">◆ Bộ Vàng (đang mặc ${gearFx().thien}): 3 món +5% · 5 món +10% · đủ bộ +20% công, thủ, máu</span></p>` : ''}
+    ${it.slot && RAR_KEYS.indexOf(it.rarity) >= 5 ? `<p class="eff"><span class="qc-mythic">◆ Thánh phẩm trở lên (đang mặc ${gearFx().red}): 3 món +10% · 6 món +20% · 9 món +30% giá trị mọi hiệu ứng trang bị</span></p>` : ''}
+    ${it.slot && RAR_KEYS.indexOf(it.rarity) >= 4 ? `<p class="eff"><span class="qc-legendary">◆ Bộ Thiên phẩm (đang mặc ${gearFx().thien}): 3 món +5% · 5 món +10% · đủ bộ +20% công, thủ, máu</span></p>` : ''}
     ${it.set ? `<p class="set" style="--sc:${SET_COLOR[it.set] || '#2e8b6a'}">◆ Bộ ${it.set}</p>` : ''}
     <p class="ds">“${it.desc}”</p>
     <p class="sv">${it.sell ? `Giá bán: ${fmt(it.sell)} linh thạch` : 'Không bán được'}</p>
@@ -357,6 +419,11 @@ function initInventory(){
     if (sellOpen && !e.target.closest('.sort')){ sellOpen = false; renderInv(); }
   });
   pane.addEventListener('click', e => {
+    if (e.target.closest('#wardBtn')){ wardOpen = !wardOpen; hideTip(); renderInv(); return; }
+    if (e.target.closest('[data-wardclose]')){ wardOpen = false; renderInv(); return; }
+    const sk = e.target.closest('[data-skin]');
+    if (sk){ if (!sk.disabled && sk.dataset.skin !== (S.skin || '')) act('skin?skin=' + encodeURIComponent(sk.dataset.skin)); return; }
+    if (wardOpen && !e.target.closest('.iv-ward')){ wardOpen = false; renderInv(); }
     if (e.target.closest('#sortBtn')){ sortOpen = !sortOpen; sellOpen = false; hideTip(); renderInv(); return; }
     if (e.target.closest('[data-goskill]')){ const sl = e.target.closest('[data-slot]'); if (sl && S.skillSlots[+sl.dataset.slot]) skSel = S.skillSlots[+sl.dataset.slot]; skEl = 'hoa'; openTab('skill'); return; }
     if (e.target.closest('#arrangeBtn')){ hideTip(); invDo('arrange'); return; }
@@ -411,7 +478,11 @@ function initInventory(){
       invSel = {src:'bag', k: cell.dataset.k, idx: +cell.dataset.idx}; dropArm = 0; sellArm = 0;
       const it = ITEM[cell.dataset.k];
       if (it?.type === 'chest' && e.ctrlKey) act(`use/${cell.dataset.k}?n=0`);     // Ctrl + chuột phải: mở hết rương loại này
-      else if (it?.slot) invDo('equip'); else if (it && canUse(it)) invDo('use'); else renderInv();
+      else if (it?.slot) invDo('equip'); else if (it && canUse(it)) invDo('use');
+      else if (rcCraft(it)){                                                      // đan / linh thảo: mở Luyện chế · Đan dược
+        if (DATA.pillChain.includes(cell.dataset.k)){ ddSel = cell.dataset.k; try { localStorage.setItem('van-dao-dd-sel', ddSel); } catch(err){} }
+        openTab('craft', true); renderCraft();
+      } else renderInv();
       return;
     }
     invSel = {src:'slot', k: slot.dataset.k, slot: slot.dataset.slot}; invDo('unequip');

@@ -22,7 +22,7 @@ function renderMap(){
   const pts = m.areas.map(a => mapPos(a.index));
   const seg = (from, to) => pts.slice(from, to).map((p, k) => `${k ? 'L' : 'M'}${p.x} ${p.y}`).join(' ');
   const reach = Math.min(m.areaMax + (bossOpen ? 1 : 0), B);                   // đoạn đã đi qua
-  const hero = realm().hero.replace('.png', '_48.png');
+  const hero = skinArt('hero').replace('.png', '_48.png');
   const fr = mapFrontier();
   const node = a => {
     const st = mapStateOf(a), p = mapPos(a.index), boss = a.index === B;
@@ -86,7 +86,7 @@ function renderMapInfo(){
   if (boss) rewards = (bw?.stoneMax ? cell('linh_thach', 1, bw.stoneMin === bw.stoneMax ? bw.stoneMin : `${bw.stoneMin}-${bw.stoneMax}`) : '') + (m.bossItem ? cell(m.bossItem, 1) : '') + cell(m.bossChest || 'ruong_boss', 1) + `<div class="mpx-rw"><span class="dd-fr qi">☯</span><small>Tu vi ×5</small><em>100%</em></div>`;
   else {
     const k = a.index, drops = m.drops || [], gear = drops.filter(x => x.gear);
-    rewards = drops.filter(x => !x.gear).map(x => {
+    rewards = drops.filter(x => !x.gear && k >= (x.minArea || 1)).map(x => {
       const stone = x.item === 'linh_thach', sc = stone ? (1 + (k - 1) * .05) * (a.elite ? 1.5 : 1) : 1, lo = Math.round(x.min * sc), hi = Math.round(x.max * sc);
       return cell(x.item, Math.min(1, x.chance * (stone || x.chance >= 1 ? 1 : 1 + (k - 1) * .03)), lo === hi ? (lo > 1 ? lo : '') : `${lo}-${hi}`);
     }).join('');

@@ -17,7 +17,7 @@ function skFrame(now){
   g.clearRect(0, 0, 120, 60);
   g.fillStyle = '#0d0a08'; g.fillRect(0, 0, 120, 60);
   for (let x = 0; x < 120; x++) P(x, 52, '#2a221a'), P(x, 53, '#1a140f');
-  const hero = skImg(realm().hero.replace('.png', '_48.png')), mon = skImg('img/quai_yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
+  const hero = skImg(skinArt('hero').replace('.png', '_48.png')), mon = skImg('img/quai_yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
   if (open && s.id === 'hoa_cau'){ hcPreview(g, now - skAnimT0, hero, mon, P); return; }
   if (open && SK_FX_ROW[s.id] !== undefined){ skFlip(g, now - skAnimT0, s); return; }
   if (open && s.category === 'Bị động'){ skPassiveFx(g, now, s); return; }

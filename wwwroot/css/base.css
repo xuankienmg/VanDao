@@ -124,3 +124,12 @@ aside.book{border:1px solid var(--line);border-radius:6px;background:var(--ink-2
 .tabs{display:flex;border-bottom:1px solid var(--line)}
 .tab{flex:1;background:none;border:0;color:var(--muted);padding:12px 6px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--paper);border-bottom-color:var(--gold)}
+/* chú thích thao tác: icon chuột + phím tô đậm */
+.msk{display:inline-flex;align-items:flex-start;vertical-align:-3px;margin:0 1px}
+.msk svg.ms{width:10px;height:13px;color:currentColor}
+.msk.r svg.ms path:last-child{color:#d0563a;fill:#d0563a}
+.msk.l2 svg.ms path:last-child{fill:#3f8f78}
+.msk sup{font-size:7.5px;font-weight:800;line-height:1;margin-left:1px}
+.hn i{font-style:normal;opacity:.6;margin:0 1px}
+kbd{display:inline-block;min-width:12px;padding:0 3px;font-size:9.5px;line-height:13px;font-weight:800;text-align:center;color:#2b2116;background:#efe3c2;border:1px solid #8a6a3a;border-bottom-width:2px;border-radius:3px;vertical-align:1px}
+.iv-card .hn{font-size:10.5px !important;line-height:1.7}

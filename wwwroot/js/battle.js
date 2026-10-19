@@ -10,7 +10,7 @@ function drawPixelBattle(t, dt, ph, r){
   // ải 3 đợt: quái, máu, sát thương hai bên theo đợt đang đánh (mảng theo lượt vẫn dùng chung chỉ số lượt)
   const b = wv ? Object.assign({}, B0, {monster: wv.name, image: wv.image, monsterHp: wv.hp, heroDmg: wv.heroDmg, monsterDmg: wv.monsterDmg}) : B0;
   const wEnd = wv ? (B0.waves[wvI + 1]?.start ?? B0.hits) : B0.hits, lastWave = !wv || wvI === B0.waves.length - 1, elite = wv?.tier === 'elite';
-  const hero = sprite48(realm().hero), mon = sprite48(b.image), monHi = monHD(b.image);
+  const hero = sprite48(skinArt('hero')), mon = sprite48(b.image), monHi = monHD(b.image);
   if (!hero || !mon) return false;
   pctx.imageSmoothingEnabled = false;
 
@@ -40,7 +40,7 @@ function drawPixelBattle(t, dt, ph, r){
   const hLeft = n => n <= 0 ? heroMax : (b.heroHpLeft ? b.heroHpLeft[Math.min(n, b.heroHpLeft.length) - 1] : heroMax - b.monsterDmg * n);
   const castsNow = ph.name === 'fight' ? (b.casts || []).filter(c => c.turn === ph.i) : [];
   // đòn đánh mặc định là Hỏa Cầu (chưa có kiếm pháp): tu sĩ + lửa vẽ nét từ bản thiết kế ở bước sau, không vẽ kiếm pixel
-  const refHero = skImg(realm().heroCast || HC_REF.src);           // khung tung chiêu theo cảnh giới (cùng bố cục HC_REF)
+  const refHero = skImg(skinArt('heroCast') || HC_REF.src);           // khung tung chiêu theo cảnh giới (cùng bố cục HC_REF)
   // nộ cuối mỗi lượt (server): lượt tung kỹ năng thì về 0
   const rageAt = n => !b.rage || n <= 0 ? 0 : b.rage[Math.min(n, b.rage.length) - 1];
   let mHp = 1, hHp = 1, rg = 0, burning = false;

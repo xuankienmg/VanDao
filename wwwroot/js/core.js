@@ -20,6 +20,9 @@ async function api(method, url){
   return j;
 }
 const realm = () => DATA.realms[S.realm];
+/** Trang phục đang mặc (S.skin, rỗng = theo cảnh giới) → bộ ảnh nhân vật: 'hero' (sprite chiến đấu) · 'heroStand' · 'heroMed' (ngồi thiền) · 'heroCast' (tung chiêu). */
+const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && S.realm >= x.minRealm)) || null;
+const skinArt = k => curSkin()?.[k] || realm()[k];
 /** Chương có Boss rơi nguyên liệu đột phá item: " (chương N)" để ghi kèm tên Boss. */
 const bossChapterTag = item => { const c = (DATA.chapters || []).find(x => x.bossItem === item); return c ? ` · chương ${c.index + 1}` : ''; };
 /** Dòng gợi ý sau khi lên đại cảnh giới ri: Boss giữ nguyên liệu cho lần đột phá kế. */
@@ -109,3 +112,23 @@ function renderTrack(){
   $('track').innerHTML = DATA.realms.map((r,i) => `<li class="${i<S.realm?'done':i===S.realm?'now':''}">${r.name}</li>`).join('')
     + DATA.lockedRealms.map(n => `<li class="locked" title="Sẽ mở trong bản cập nhật">${n}</li>`).join('');
 }
+
+/* ---- Giữ nhịp hiệu ứng lặp khi vẽ lại DOM ----
+   Các bảng (Hành trang, Lò ghép…) vẽ lại bằng innerHTML nên phần tử mới khiến animation lặp
+   (viền đồ Đỏ, lấp lánh đồ Thiên…) chạy lại từ đầu → giật. Neo mọi animation vô hạn vào gốc
+   document.timeline: phần tử mới tiếp tục đúng pha cũ (animation-delay âm vẫn giữ độ lệch). */
+(function(){
+  if (!document.getAnimations) return;
+  let queued = false;
+  const align = () => {
+    queued = false;
+    for (const a of document.getAnimations()){
+      if (!(a instanceof CSSAnimation) || a.startTime === 0 || a.playState !== 'running') continue;
+      if (a.effect?.getTiming().iterations !== Infinity) continue;
+      a.startTime = 0;
+    }
+  };
+  const kick = () => { if (!queued){ queued = true; requestAnimationFrame(align); } };
+  new MutationObserver(kick).observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
+  addEventListener('DOMContentLoaded', kick); kick();
+})();

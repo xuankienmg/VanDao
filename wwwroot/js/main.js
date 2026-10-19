@@ -173,8 +173,8 @@ document.addEventListener('click', e => {
   else adminAct(a, b.dataset.arg ?? null, b.dataset.n ? +b.dataset.n : 0);
 });
 function openTab(name, exact){
-  if (name === 'craft' && !exact) name = lcSub;                 // tab Luyện chế: mở lại tab con dùng gần nhất (mặc định Luyện khí)
-  if (LC_SUBS.includes(name)){ lcSub = name; try { localStorage.setItem('van-dao-lc', name); } catch(e){} }
+  if (name === 'craft' && !exact) name = 'fuse';                // tab Luyện chế: mặc định mở Luyện khí
+  if (LC_SUBS.includes(name)) lcSub = name;
   const top = name === 'fuse' || name === 'sell' ? 'craft' : name;
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === top));
   ['req','inv','craft','fuse','sell','map','skill','admin'].forEach(id => $('pane-'+id).hidden = id !== name);

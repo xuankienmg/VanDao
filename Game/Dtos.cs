@@ -13,7 +13,10 @@ public record GameDataDto(
     int Areas,
     string[] LockedRealms,
     double[]? FuseChance = null,
-    IEnumerable<ChapterInfoDto>? Chapters = null);
+    IEnumerable<ChapterInfoDto>? Chapters = null,
+    IEnumerable<BrewDef>? Brews = null,
+    IEnumerable<HerbDropDef>? HerbDrops = null,
+    IEnumerable<SkinDef>? Skins = null);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
@@ -34,7 +37,7 @@ public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, str
 public record ChapterInfoDto(int Index, string Name, string Realm, bool Enabled, string Boss, string BossImage, string BossLair, string KeyItem, string? BossItem);
 
 /// <summary>Bảng rơi của bản đồ (tỉ lệ gốc ở ải 1; client tự nhân theo ải giống server).</summary>
-public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear);
+public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear, int MinArea = 1);
 
 public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open, string Image = "",
     List<WaveInfoDto>? Waves = null, bool Elite = false);
@@ -94,7 +97,9 @@ public record StateDto(
     BreakStateDto Break,
     List<LogDto> Logs,
     string Admin = "",    // cờ admin mode đang bật
-    List<ChestOddsDto>? ChestOdds = null);   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
+    List<ChestOddsDto>? ChestOdds = null,   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
+    double PillBonus = 0,    // tỉ lệ đột phá cộng thêm từ Phá Chướng Đan
+    string Skin = "");       // trang phục đang mặc, rỗng = theo cảnh giới   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
 
 /// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % cấp Phàm → Thiên,
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>

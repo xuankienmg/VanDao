@@ -21,6 +21,10 @@
 
   <ItemGroup>
     <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- công cụ mô phỏng cân bằng (project riêng): không biên dịch vào game -->
+    <Compile Remove="tools\**" />
+    <Content Remove="tools\**" />
+    <None Remove="tools\**" />
   </ItemGroup>
 
 </Project>

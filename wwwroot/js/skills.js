@@ -353,7 +353,7 @@ function hcRef(g, img, i, a, px, py, k, alpha = 1){              // vẽ khung i
   g.globalAlpha = 1;
 }
 function hcPreview(g, now, hero, mon, P){
-  const ref = skImg(realm().heroCast || HC_REF.src), wolf = skImg('img/quai_yeu_lang.png') || mon, tier = Math.min(2, S.realm), t = now / 1000;   // đòn thường: biến thể theo cảnh giới
+  const ref = skImg(skinArt('heroCast') || HC_REF.src), wolf = skImg('img/quai_yeu_lang.png') || mon, tier = Math.min(2, S.realm), t = now / 1000;   // đòn thường: biến thể theo cảnh giới
   
   const total = HC.phases.reduce((a, p) => a + p[1], 0) + HC.rest, e = t % total, ph = hcAt(e);
   const name = ph ? ph.name : 'rest', k = ph ? ph.k : 0, ease = x => x * x * (3 - 2 * x);

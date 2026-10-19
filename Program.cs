@@ -83,7 +83,8 @@ public static class Program
                 r.HeroStand, r.HeroMed, r.HeroCast, r.Halo)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
-            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem))));
+            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
+            GameData.Brews, GameData.HerbDrops, GameData.Skins));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -116,6 +117,10 @@ public static class Program
         api.MapPost("/players/{id:guid}/skill/{skillId}", (Guid id, string skillId, GameService game) =>
             Run(id, game, p => game.UpgradeSkill(p, skillId)));
 
+        // trang phục: skin = id trong GameData.Skins, rỗng = theo cảnh giới
+        api.MapPost("/players/{id:guid}/skin", (Guid id, string? skin, GameService game) =>
+            Run(id, game, p => game.SetSkin(p, skin)));
+
         api.MapPost("/players/{id:guid}/skillslot/{slot:int}", (Guid id, int slot, string? skill, GameService game) =>
             Run(id, game, p => game.SetSkillSlot(p, slot, skill)));
 
@@ -138,6 +143,10 @@ public static class Program
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
             RunCraft(id, game, p => game.Synthesize(p, itemId, n ?? 1)));
+
+        // luyện đan theo đan phương (linh dược + đan + linh thạch → 1 viên), n = số lần, 0 = tối đa
+        api.MapPost("/players/{id:guid}/brew/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
+            RunCraft(id, game, p => game.Brew(p, itemId, n ?? 1)));
 
         // bản đồ: chọn ải 1..15 của chương đang đánh, 16 = Boss (cần lệnh Boss)
         api.MapPost("/players/{id:guid}/area/{area:int}", (Guid id, int area, GameService game) =>
