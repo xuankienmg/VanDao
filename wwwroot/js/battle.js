@@ -45,8 +45,10 @@ function drawPixelBattle(t, dt, ph, r){
   const rageAt = n => !b.rage || n <= 0 ? 0 : b.rage[Math.min(n, b.rage.length) - 1];
   let mHp = 1, hHp = 1, rg = 0, burning = false;
   if (ph.name === 'walk'){
-    hy = reduce ? 0 : -(Math.floor(t*8) % 2);
-    if (!reduce && Math.random() < dt*6) pfx.push({type:'dust', x: hx - U(4) + Math.random()*U(8), y: g - 1, vx: -12 - Math.random()*10, vy: -4, life: 0, max: .5});
+    const flying = skinActorFlight();
+    hy = flying ? -sz * .22 + (reduce ? 0 : Math.sin(t * 3) * sz * .025)
+      : reduce ? 0 : -(Math.floor(t*8) % 2);
+    if (!flying && !reduce && Math.random() < dt*6) pfx.push({type:'dust', x: hx - U(4) + Math.random()*U(8), y: g - 1, vx: -12 - Math.random()*10, vy: -4, life: 0, max: .5});
   } else if (ph.name === 'enter'){
     wx = Math.round(w + mhs + 2 - (w + mhs + 2 - wolfX) * ease(ph.k));
     wy = reduce ? 0 : -(Math.floor(ph.k*10) % 2);
@@ -83,7 +85,7 @@ function drawPixelBattle(t, dt, ph, r){
     }
     if (i === 0 && b.firstHit) gfx('dia', .47, () => { pfx.push({type:'num', x: wolfX - U(18), y: g - msz - (big ? 8 : 2), text: '-' + b.firstHit, col: '#d0a060', life: 0, max: .9});
       if (big) pfx.push({type:'label', x: wolfX - U(18), y: g - msz - 22, text: 'Địa chấn', col: '#d0a060', life: 0, max: .9}); });
-    if (b.extra?.[i]) gfx('ex', .64, () => { pfx.push({type:'num', x: wolfX + U(6), y: g - msz - (big ? 34 : 12), text: '-' + b.heroDmg, col: PX.dmg, life: 0, max: .8});
+    if (b.extra?.[i]) gfx('ex', .64, () => { pfx.push({type:'num', x: wolfX + U(6), y: g - msz - (big ? 34 : 12), text: '-' + (b.extraDamage?.[i] ?? b.heroDmg), critical: b.extraCritical?.[i], col: PX.dmg, life: 0, max: .8});
       if (big) pfx.push({type:'label', x: wolfX + U(6), y: g - msz - 48, text: 'Liên kích', col: PX.dmg, life: 0, max: .8}); });
     if (b.reflect?.[i]) gfx('rf', .9, () => { pfx.push({type:'num', x: wolfX - U(8), y: g - msz - (big ? 8 : 2), text: '-' + b.reflect[i], col: '#d0a060', life: 0, max: .8});
       if (big) pfx.push({type:'label', x: wolfX - U(8), y: g - msz - 22, text: 'Phản', col: '#d0a060', life: 0, max: .8}); });
@@ -98,7 +100,7 @@ function drawPixelBattle(t, dt, ph, r){
       const ck = ph.trip + ':c' + i + c.skill;
       if (s >= .05 + n * .12 && !battleDone[ck]){ battleDone[ck] = 1; pfx.push({type:'label', x: heroX + (MODE === 'strip' ? U(6) : 0), y: g - sz - (MODE === 'strip' ? 2 : 14) - n * (MODE === 'strip' ? 7 : 14), text: c.name, col: '#f8d25a', life: 0, max: 1.1}); }
       const dk = ck + 'd';                                                              // Hỏa Cầu: số gộp vào đòn đánh (cùng một quả cầu)
-      if (c.dmg > 0 && s >= .45 && !battleDone[dk] && !(refHero && c.skill === 'hoa_cau')){ battleDone[dk] = 1; pfx.push({type:'num', x: wolfX + U(4), y: g - msz - (MODE === 'strip' ? 16 : 40), text: '-' + c.dmg, col: '#f08a2a', life: 0, max: 1}); }
+      if (c.dmg > 0 && s >= .45 && !battleDone[dk] && !(refHero && c.skill === 'hoa_cau')){ battleDone[dk] = 1; pfx.push({type:'num', x: wolfX + U(4), y: g - msz - (MODE === 'strip' ? 16 : 40), text: '-' + c.dmg, critical: c.critical, col: '#f08a2a', life: 0, max: 1}); }
     });
     if (killing && s >= .62 && wv?.stones > 0){                                         // quái gục: linh thạch văng ra (số đúng như server cộng), rồi bay về tu sĩ
       const sk = ph.trip + ':stone' + wvI;
@@ -127,7 +129,7 @@ function drawPixelBattle(t, dt, ph, r){
         const fk = ph.trip + ':h' + i;
         if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
           const hc = castsNow.filter(c => c.skill === 'hoa_cau' && c.dmg > 0).reduce((a, c) => a + c.dmg, 0);   // cùng một quả cầu → một con số
-          pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.heroDmg + hc), col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
+          pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + ((b.basicDamage?.[i] ?? b.heroDmg) + hc), critical: b.basicCritical?.[i], col: hc ? '#f08a2a' : PX.dmg, life: 0, max: .9});
           const wetB = skById(b.basic)?.element === 'thuy';
           for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(4), y: g - U(22), vx: (Math.random()-.3)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.25, col: wetB ? WP[2 + Math.floor(Math.random()*3)] : FIRE[2 + Math.floor(Math.random()*4)]});
         }
@@ -142,7 +144,7 @@ function drawPixelBattle(t, dt, ph, r){
       wFlash = k < .5; wx = wolfX + (k < .5 ? U(3) : U(2));
       const fk = ph.trip + ':h' + i;
       if (!battleDone[fk] && !skTurn){ battleDone[fk] = 1;
-        pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + b.heroDmg, col: PX.dmg, life: 0, max: .9});
+        pfx.push({type:'num', x: wolfX - U(6), y: g - msz - (MODE === 'strip' ? 10 : 28), text: '-' + (b.basicDamage?.[i] ?? b.heroDmg), critical: b.basicCritical?.[i], col: PX.dmg, life: 0, max: .9});
         for (let n = 0; n < 16; n++) pfx.push({type:'spark', x: wolfX - U(10), y: g - U(24), vx: (Math.random()-.2)*60*u, vy: (Math.random()-.6)*50*u, life: 0, max: .35 + Math.random()*.2, col: Math.random() < .5 ? PX.cyan2 : PX.white});
       }
     }
@@ -280,7 +282,7 @@ function drawPixelBattle(t, dt, ph, r){
         }));
       }
     }
-    else if (f.type === 'num'){ const sc = MODE === 'strip' ? 1 : 2; ptext(Math.round(f.x - 6*sc), Math.round(f.y - k*8), f.text, k < .25 ? PX.white : f.col, sc); }
+    else if (f.type === 'num') labels.push(f);
     else if (f.type === 'label') labels.push(f);
   }
 
@@ -384,6 +386,36 @@ function drawPixelBattle(t, dt, ph, r){
   }
   for (const f of labels){
     const k = f.life / f.max;
+    if (f.type === 'num'){
+      // Số nổi gọn: chữ nét cao, tách hàng nghìn, bật nhẹ rồi bay lên và tan.
+      // Chỉ đánh dấu bạo kích khi nguồn dữ liệu xác nhận, không tự suy đoán từ sát thương.
+      const critical = f.critical === true;
+      const size = big ? (critical ? 26 : 20) : (critical ? 18 : 14);
+      const raw = String(f.text);
+      const text = /^[+-]?\d+$/.test(raw)
+        ? raw.replace(/\d+/, digits => Number(digits).toLocaleString('vi-VN')).replace(/^-/, '−') : raw;
+      ctx.save();
+      ctx.globalAlpha = reduce ? 1 : Math.min(1, k / .08) * Math.min(1, (1 - k) / .25);
+      ctx.font = `${critical ? 'italic 800' : '800'} ${size}px "Be Vietnam Pro", system-ui, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      const labelSize = big ? 11 : 9;
+      const half = Math.max(ctx.measureText(text).width / 2, critical ? labelSize * 3.5 : 0) + 4;
+      const x = Math.max(half, Math.min(W - half, f.x * sx));
+      const y = Math.max(size + (critical ? labelSize + 5 : 0) + 3, f.y * sy - (reduce ? 0 : k * (big ? 30 : 18)));
+      ctx.translate(x, y);
+      const pop = reduce ? 1 : k < .12 ? .85 + k / .12 * .25 : k < .26 ? 1.1 - (k - .12) / .14 * .1 : 1;
+      ctx.scale(pop, pop);
+      ctx.lineJoin = 'round'; ctx.lineWidth = big ? 3 : 2;
+      ctx.strokeStyle = '#141719';
+      ctx.fillStyle = critical ? '#ffb33f' : /^-/.test(raw) ? '#fff0c2' : f.col;
+      ctx.strokeText(text, 0, 0); ctx.fillText(text, 0, 0);
+      if (critical){
+        ctx.font = `800 ${labelSize}px "Be Vietnam Pro", system-ui, sans-serif`;
+        ctx.strokeText('BẠO KÍCH', 0, -size - 3); ctx.fillText('BẠO KÍCH', 0, -size - 3);
+      }
+      ctx.restore();
+      continue;
+    }
     ctx.font = `700 ${big ? 15 : 11}px "Be Vietnam Pro", system-ui, sans-serif`;
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(f.text, f.x*sx + 1, (f.y - k*6)*sy + 1);
     ctx.fillStyle = f.col; ctx.fillText(f.text, f.x*sx, (f.y - k*6)*sy);

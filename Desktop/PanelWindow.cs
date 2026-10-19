@@ -27,6 +27,7 @@ public sealed class PanelWindow : Form
         _url = url;
 
         Owner = strip; // luôn nổi trên dải game, ẩn/hiện cùng dải
+        Icon = strip.Icon;
         FormBorderStyle = FormBorderStyle.SizableToolWindow;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
@@ -62,8 +63,11 @@ public sealed class PanelWindow : Form
         Text = $"Tu luyện · {TabNames[_tab]}";
         TopMost = _s.Pinned;
         Size = SizeFor(_tab);
-        PlaceNearStrip();
-        if (!Visible) Show();
+        if (!Visible)
+        {
+            PlaceNearStrip();
+            Show();
+        }
         Activate();
         if (_ready)
         {
@@ -87,7 +91,7 @@ public sealed class PanelWindow : Form
     public Task SyncAsync() => Visible ? WebHost.SyncAsync(_web) : Task.CompletedTask;
 
     /// <summary>Đặt bảng ngay phía trên dải (hoặc phía dưới nếu dải nằm ở mép trên màn hình).</summary>
-    public void PlaceNearStrip()
+    private void PlaceNearStrip()
     {
         var area = Screen.FromControl(_strip).WorkingArea;
         var gap = LogicalToDeviceUnits(6);

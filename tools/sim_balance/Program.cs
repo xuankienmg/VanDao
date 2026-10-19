@@ -1,6 +1,50 @@
 // Mô phỏng cân bằng: người chơi mặc đủ bộ trang bị cảnh giới của chương (phẩm Linh/Huyền/Địa), tầng đầu / tầng cuối, chỉ đòn thường.
 // base.txt = kết quả trước khi thu nhỏ chỉ số trang bị (10/2026). Chạy: dotnet run -c Release -- [check|tune]
 using VanDao.Game; using VanDao.Data;
+if (args.FirstOrDefault() == "effects-check") { EffectChecks.Run(); return; }
+if (args.FirstOrDefault() == "effects-report") { EffectChecks.Report(); return; }
+if (args.FirstOrDefault() == "budget-check")
+{
+    var csv = args.Length > 1 ? args[1] : "../../docs/superpowers/plans/2026-10-19-equipment-stat-budget.csv";
+    var expected = File.ReadLines(csv).Skip(1).Select(line => line.Split(',').Select(x => x.Trim('"', '\uFEFF')).ToArray()).ToArray();
+    var profiles = new Dictionary<string, (string Slot, string Kind, bool Defensive)>
+    {
+        ["Vũ khí chuẩn"] = ("weapon", "Kiếm", false), ["Thương"] = ("weapon", "Thương", false),
+        ["Pháp bảo công kích"] = ("offhand", "Pháp bảo", false), ["Pháp bảo hộ thân"] = ("offhand", "Pháp bảo", true),
+        ["Nón"] = ("head", "Mũ", false), ["Áo"] = ("body", "Áo", false),
+        ["Găng tay"] = ("hands", "Găng", false), ["Quần"] = ("legs", "Quần", false),
+        ["Giày"] = ("feet", "Giày", false), ["Dây chuyền"] = ("necklace", "Dây", false),
+        ["Hộ phù"] = ("charm", "Phù", false), ["Nhẫn"] = ("ring", "Nhẫn", false)
+    };
+    double[] Values(ItemDef it) => new double[] { it.Atk, it.Def, it.Hp, it.CritPct, it.SpeedPct, it.QiPct };
+    foreach (var row in expected)
+    {
+        var realm = Array.IndexOf(GameData.GearLevels, int.Parse(row[2]));
+        var quality = Array.IndexOf(GameData.QualityName, row[3]);
+        var p = profiles[row[4]];
+        var item = new ItemDef("check", "check", "equip", "", "", Slot: p.Slot,
+            Kind: p.Kind, MinRealm: realm, Atk: p.Defensive ? 0 : 1, Def: p.Defensive ? 1 : 0);
+        var actual = Values(EquipmentBudget.Apply(item, quality));
+        var wanted = row.Skip(5).Select(x => double.Parse(x, System.Globalization.CultureInfo.InvariantCulture));
+        if (!actual.SequenceEqual(wanted)) throw new Exception($"CSV mismatch: {string.Join('/', row.Take(5))}");
+    }
+    if (expected.Length != 720) throw new Exception("Missing budget rows");
+    foreach (var b in GameData.GearBases)
+    {
+        double[] previous = new double[6];
+        for (var q = 0; q < 10; q++)
+        {
+            var it = GameData.ItemById[GameData.GearId(b, q)];
+            var stats = Values(it);
+            if (stats.Where((v, i) => v < previous[i]).Any()) throw new Exception($"Stat regression: {it.Id}");
+            if (!stats.SequenceEqual(Values(EquipmentBudget.Apply(b, q)))) throw new Exception($"Variant mismatch: {it.Id}");
+            if (it.Base != b.Id || it.ItemLevel != GameData.GearLevelOf(b)) throw new Exception("Item identity changed");
+            previous = stats;
+        }
+    }
+    Console.WriteLine($"PASS: 720 CSV rows; {GameData.GearBases.Length * 10} real variants, monotonic stats and saved item identities.");
+    return;
+}
 int[] chRealm = {0,1,2,2,3,3,4,4,5};
 int[] areas = {1,5,8,10,12,14,15,16};
 var basel = File.ReadAllLines("base.txt").Select(l=>l.Split(" | ")).ToDictionary(x=>x[0], x=>x[1].Split(' ').Select(t=>(win:t.Split(':')[1][0]=='W', turns:int.Parse(t.Split(':')[1][1..]))).ToArray());

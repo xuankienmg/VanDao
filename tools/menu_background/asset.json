@@ -1,0 +1,16 @@
+{
+  "art_source": "host_image",
+  "route": "image_gen",
+  "model": "host tool default",
+  "estimateUsd": null,
+  "estimateNote": "Host image tool did not report a cost estimate",
+  "source": "tools/menu_background/source.png",
+  "asset": "wwwroot/img/backgrounds/menu-night-v1.webp",
+  "pixels": [
+    1672,
+    941
+  ],
+  "bytes": 150712,
+  "sha256": "ed2eee55b297dc8bc710a579d86aa2f374053af2f095d984486261143fa7c002",
+  "conversion": "WebP quality 86; no resizing, recoloring or artwork edits"
+}

@@ -18,7 +18,8 @@ public record GameDataDto(
     IEnumerable<HerbDropDef>? HerbDrops = null,
     IEnumerable<SkinDef>? Skins = null,
     double[]? SpinWeights = null,
-    int SpinPrice = 0);
+    int SpinPrice = 0,
+    IEnumerable<EquipmentSetDef>? EquipmentSets = null);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
@@ -104,7 +105,13 @@ public record StateDto(
     List<ChestOddsDto>? ChestOdds = null,   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
     double PillBonus = 0,    // tỉ lệ đột phá cộng thêm từ Phá Chướng Đan
     string Skin = "",
-    string SpinHistory = "");   // lịch sử quay Tài Xỉu: "unixGiây|id,id,…;…", mới nhất trước       // trang phục đang mặc, rỗng = theo cảnh giới   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
+    string SpinHistory = "",
+    EquipmentEffectsState? GearEffects = null,
+    StatSourceDto[]? StatSources = null,
+    EffectState[]? CombatLimits = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+
+public record StatSourceDto(string Name, double Atk = 0, double Def = 0, double Hp = 0,
+    double AtkPct = 0, double DefPct = 0, double HpPct = 0, double Crit = 0, double Speed = 0, double Qi = 0);
 
 /// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % cấp Phàm → Thiên,
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>
@@ -115,7 +122,7 @@ public record ItemQtyPctDto(string Item, double Pct);
 public record BonusDto(double QiPct, double SpeedPct);
 
 /// <summary>
-/// Kết quả trận đánh của chuyến thám hiểm (tính sẵn từ chỉ số, không ngẫu nhiên)
+/// Kết quả trận đánh của chuyến thám hiểm (tính sẵn với hạt giống cố định theo chuyến)
 /// để hoạt ảnh ở client khớp đúng với server.
 /// </summary>
 public record BattleDto(string Monster, string Image, int MonsterHp, int MonsterAtk, int MonsterDef,
@@ -133,14 +140,16 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     int Guard = 0, int[]? GuardLeft = null,   // Thổ thuẫn: khiên đầu trận · khiên còn lại cuối mỗi lượt
     int FirstHit = 0,                      // Địa chấn: sát thương thêm ở lượt đầu
     int EnrageTurn = -1, int MonsterDmgEnraged = 0,   // Boss Cuồng bạo: lượt (đã lấy mẫu) bắt đầu nổi giận · sát thương mỗi đòn khi đó
-    List<WaveDto>? Waves = null);           // các đợt quái đã giao chiến (ải thường 3 đợt): Start = lượt (đã lấy mẫu) đợt bắt đầu
+    List<WaveDto>? Waves = null,
+    int[]? BasicDamage = null, bool[]? BasicCritical = null,
+    int[]? ExtraDamage = null, bool[]? ExtraCritical = null);
 
 /// <summary>Một đợt quái trong trận: chỉ số đã tính công pháp/trang bị, sát thương hai bên, lượt bắt đầu (đã lấy mẫu).</summary>
 /// <summary>Stones = linh thạch rơi khi hạ quái đợt này (đã gieo sẵn theo chuyến, server cộng đúng số này).</summary>
 public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start, int Stones = 0);
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
-public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg);
+public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg, bool Critical = false);
 
 /// <summary>Kết quả một lần luyện chế/hợp thành: thành phẩm và nguyên liệu đã tiêu hao (dùng chung cho mọi công thức).</summary>
 public record ItemQtyDto(string Item, int Qty);

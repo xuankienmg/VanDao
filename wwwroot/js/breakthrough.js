@@ -94,6 +94,12 @@ function renderReq(){
 
   $('btNav').innerHTML = btNavHtml();
   $('btPlaque').innerHTML = `<b>${S.realmName}</b><span>${S.realmName} ${S.stageName}</span>`;
+  const detail = BT_DETAILS[Math.min(S.realm, BT_DETAILS.length - 1)];
+  const unlocked = BT_DETAILS.slice(0, Math.min(S.realm + 1, BT_DETAILS.length));
+  $('btPlaque').innerHTML += `<small class="bt-detail" data-tip="${unlocked.map(d => d.name + ': ' + d.desc).join('&#10;')}">${unlocked.length} dấu ấn · ${detail.name}</small>`;
+  const portrait = $('btCanvas');
+  portrait.setAttribute('aria-label', `${S.realmName} ${S.stageName}: ${unlocked.map(d => d.name).join(', ')}`);
+  portrait._sized = false;
 
   // thẻ "Kế tiếp": tên cảnh giới / tầng kế tiếp + chỉ số tăng
   const gains = [['Máu', pv.hp], ['Tấn công', pv.atk], ['Phòng thủ', pv.def]].filter(g => g[1]).map(([n, v]) => `<li>${n} <b>+${fmt(v)}</b></li>`).join('')
@@ -215,7 +221,7 @@ async function btStart(){
   const {res, err} = btProc;
   btProc = null;
   if (err){ busy = false; btLock = false; localLog(err, 'bad'); renderReq(); $('btWhy').textContent = err; $('btWhy').className = 'bt-why bad'; return; }
-  btFx = {kind: res.kind, t0: performance.now()};
+  btFx = {kind: res.kind, t0: performance.now(), fromRealm: before.realm, target: res.state};
   const result = {kind: res.kind, msg: res.message || '', before, after: res.state};
   // bảng kết quả hiện sau khi hoạt ảnh thành công (tia sáng ~2.6s) / thất bại (~1.4s) chạy xong.
   // Trạng thái mới (renderAll vẽ lại mọi tab — nặng) chỉ áp dụng lúc đó, không chen giữa hoạt ảnh gây giật;
@@ -314,10 +320,14 @@ function btFrame(now){
   const availH = Math.max(40, H - c._top - c._bot);
   const sc = Math.min(W / 96 * .98, availH / 84);                 // pixel thật mỗi đơn vị lưới
   const ox = W / 2 - 48 * sc, oy = c._top + (availH - 84 * sc) * .55;
-  const t = now / 1000, id = DATA.realms[S.realm].id, pal = BT_PAL[id] || BT_PAL.luyen_khi;
+  const t = reduce ? 0 : now / 1000;
   const k = btProc ? Math.min(1, (now - btProc.t0) / btProc.dur) : 0;     // tiến độ 5 giai đoạn
   const fx = btFx ? (now - btFx.t0) / 1000 : 99, win = btFx && ['gold','crit','good'].includes(btFx.kind), lose = btFx && !win;
   const fxOn = fx < 2.4;
+  const visual = win && fx < 2.6 && btFx.target ? btFx.target : S;
+  const visualRealm = DATA.realms[visual.realm], pal = BT_PAL[visualRealm.id] || BT_PAL.luyen_khi;
+  const evolution = btEvolutionState(visual.realm, visual.stage, visualRealm.stages.length, t,
+    reduce ? 0 : k, win && fx < 2.6 && !reduce ? fx : null, btFx?.fromRealm ?? S.realm);
   const ready = btReady();
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
   g.drawImage(btBackdrop(W, H, pal), 0, 0);
@@ -335,12 +345,13 @@ function btFrame(now){
   const RC = 37;
   const rc = btRuneCircle(RC * sc);
   let ca = btProc ? .85 + .15 * k : fxOn && win ? 1 : ready ? 1 : .8;
-  if (lose && fxOn) ca *= Math.floor(fx * 12) % 2 ? .25 : .6;
+  ca *= .28 + evolution.rank * .1;
+  if (lose && fxOn) ca *= reduce ? .5 : .5 + Math.sin(fx * 4) * .15;
   g.save(); g.globalAlpha = ca; g.translate(48, 40); g.rotate(btSpin); g.drawImage(rc, -rc.width / sc / 2, -rc.height / sc / 2, rc.width / sc, rc.height / sc);
   if (btProc || ready){ g.globalCompositeOperation = 'lighter'; g.globalAlpha = ca * (btProc ? .25 + .5 * k : .18); g.drawImage(rc, -rc.width / sc / 2, -rc.height / sc / 2, rc.width / sc, rc.height / sc); }
   g.restore();
   // vòng sáng cảnh giới bên trong trận pháp
-  const hsrc = realm().halo;
+  const hsrc = visualRealm.halo;
   if (hsrc){
     if (!btImgs[hsrc]){ btImgs[hsrc] = new Image(); btImgs[hsrc].src = hsrc; }
     if (btHalo.src !== hsrc){ if (btHalo.src) btHalo.born = now; btHalo.src = hsrc; }
@@ -348,10 +359,10 @@ function btFrame(now){
     if (!reduce) btHalo.a += dh * Math.PI * 2 / BT_HALO_TURN * (btProc ? 1 + k * 3 : 1);
     const hi = btImgs[hsrc];
     if (hi.complete && hi.naturalWidth){
-      const grow = btHalo.born ? Math.min(1, (now - btHalo.born) / 800) : 1, e = 1 - (1 - grow) ** 3;
+      const grow = reduce || !btHalo.born ? 1 : Math.min(1, (now - btHalo.born) / 800), e = 1 - (1 - grow) ** 3;
       const D = 52 * (.35 + .65 * e);
       let ha = (btProc ? .7 + .3 * k : ready ? .9 : .65) * e;
-      if (lose && fxOn) ha *= Math.floor(fx * 12) % 2 ? .35 : .8;
+      if (lose && fxOn) ha *= .5;
       g.save(); g.globalAlpha = ha; g.translate(48, 40); g.rotate(btHalo.a); g.drawImage(hi, -D / 2, -D / 2, D, D); g.restore();
     }
   }
@@ -394,25 +405,28 @@ function btFrame(now){
   }
   g.restore();
   // tu sĩ ngồi thiền theo trang phục đang mặc (img/med_<cảnh giới>.png)
-  const src = skinArt('heroMed') || 'img/med_ref.png';
+  const src = curSkin()?.heroMed || visualRealm.heroMed || 'img/med_ref.png';
   if (!btImgs[src]){ btImgs[src] = new Image(); btImgs[src].src = src; }
   const im = btImgs[src];
   if (im.complete && im.naturalWidth){
-    const h = 56, w = h * im.naturalWidth / im.naturalHeight;
-    const sx = 48 - w / 2, sy = 76 - h + (btProc || reduce ? 0 : Math.sin(t * 1.2) * .6);
+    const breathScale = reduce ? 1 : 1 + evolution.breath * .006;
+    const h = 56 * breathScale, w = 56 * im.naturalWidth / im.naturalHeight;
+    const sx = 48 - w / 2, sy = 75 - h - evolution.lift;
     // viền linh khí quanh người (silhouette lệch nhẹ, sáng dần)
     const aur = btProc ? .25 + k * .5 : fxOn && win ? .7 * (1 - fx / 2.4) : .14;
     if (!im._sil){ const o = document.createElement('canvas'); o.width = im.naturalWidth; o.height = im.naturalHeight; const og = o.getContext('2d'); og.drawImage(im, 0, 0); og.globalCompositeOperation = 'source-in'; og.fillStyle = '#e6fbff'; og.fillRect(0, 0, o.width, o.height); im._sil = o; }
+    btEvolutionLayer(g, 'back', evolution, pal, im, {w,h});
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
     g.globalAlpha = aur;
     for (const [dx, dy] of [[-.6,0],[.6,0],[0,-.6],[0,.6]]) g.drawImage(im._sil, sx + dx, sy + dy, w, h);
     g.globalAlpha = 1;
-    if (lose && fxOn && Math.floor(fx * 12) % 2 === 0) g.globalAlpha = .75;
+    if (lose && fxOn) g.globalAlpha = .8;
     g.drawImage(im, sx, sy, w, h);
     g.globalAlpha = 1;
+    btEvolutionLayer(g, 'front', evolution, pal, im, {w,h});
   }
   // đột phá thành công: từng tia sáng vàng bắn vút lên quanh tu sĩ (đại cảnh giới nhiều tia hơn)
-  if (win && fx < 2.6){
+  if (win && fx < 2.6 && !reduce){
     const n = btFx.kind === 'good' ? 16 : 28, h = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
     if (fx < .35){ g.globalAlpha = .55 * (1 - fx / .35); g.fillStyle = '#fff3c4'; g.fillRect(44, -20, 8, 96); g.globalAlpha = .25 * (1 - fx / .35); g.fillRect(38, -20, 20, 96); }   // cột sáng lóe lúc đầu
     for (let i = 0; i < n; i++){
@@ -428,19 +442,20 @@ function btFrame(now){
     g.globalAlpha = 1;
   }
   // hạt linh khí: lúc thường bay lên lững lờ, khi đột phá xoáy vào người, thất bại thì văng ra
-  const want = btProc ? 24 + k * 50 : ready ? 18 : 12;
+  const want = reduce ? 6 : btProc ? 18 + k * 28 : 6 + evolution.rank * 2;
   while (btMotes.length < want) btMotes.push({a: Math.random() * Math.PI * 2, r: 30 + Math.random() * 16, y: 10 + Math.random() * 64, s: .5 + Math.random(), life: Math.random()});
   if (btMotes.length > want + 4) btMotes.length = Math.round(want);
   for (const m of btMotes){
-    if (btProc){ m.r -= (8 + k * 30) * m.s / 60; m.a += (1 + k * 3) * m.s / 60; if (m.r < 4){ m.r = 30 + Math.random() * 16; m.y = 10 + Math.random() * 64; } }
-    else if (lose && fxOn){ m.r += 40 / 60; }
-    else { m.y -= m.s * 6 / 60; if (m.y < -6){ m.y = 76; m.r = 18 + Math.random() * 30; } m.a += .2 / 60; }
+    const dt = reduce ? 0 : dts;
+    if (btProc){ m.r -= (8 + k * 30) * m.s * dt; m.a += (1 + k * 3) * m.s * dt; if (m.r < 4){ m.r = 30 + Math.random() * 16; m.y = 10 + Math.random() * 64; } }
+    else if (lose && fxOn){ m.r += 40 * dt; }
+    else { m.y -= m.s * 6 * dt; if (m.y < -6){ m.y = 76; m.r = 18 + Math.random() * 30; } m.a += .2 * dt; }
     const x = 48 + Math.cos(m.a) * m.r, y = btProc ? 46 + Math.sin(m.a) * m.r * .45 : m.y;
     const col = lose && fxOn ? (m.s > 1 ? '#e06a40' : '#8a2a1a') : (btProc && k > .8) || (win && fxOn) ? (m.s > 1.2 ? '#f2d27a' : '#ffffff') : pal.mote;
     dot(x, y, col, (btProc ? .5 + k * .5 : .55) * (m.s > 1.2 ? 1 : .7), m.s > 1.2 ? .5 : .35);
   }
   // giai đoạn cuối: cột linh quang mảnh, không quá chói
-  if ((btProc && k > .8) || (win && fx < 1.2)){
+  if (!reduce && ((btProc && k > .8) || (win && fx < 1.2))){
     const a = btProc ? (k - .8) * 4 : 1 - fx / 1.2;
     const gc = g.createLinearGradient(0, -20, 0, 74); gc.addColorStop(0, 'rgba(230,251,255,0)'); gc.addColorStop(1, 'rgba(255,255,255,1)');
     g.globalAlpha = a * .5; g.fillStyle = gc; g.fillRect(46.5, -20, 3, 94); g.globalAlpha = a * .8; g.fillRect(47.6, -20, .8, 94);

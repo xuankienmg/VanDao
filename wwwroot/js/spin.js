@@ -1,4 +1,4 @@
-/* Vấn Đạo · js/spin.js: Luyện chế → Tài Xỉu: đổi linh thạch lấy vé, quay vòng 10 phẩm trang bị (Phàm → Huyền Thiên). */
+/* Vấn Đạo · js/spin.js: Luyện chế → Tài Xỉu: đổi linh thạch lấy vé, quay vòng 10 phẩm trang bị (Phàm → Huyền Tiên). */
 const SPIN_TICKET = 've_tai_xiu';
 const SPIN_SEG = 36;                     // 10 ô × 36°
 let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';

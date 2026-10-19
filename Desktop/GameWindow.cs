@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Drawing.Drawing2D;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -7,10 +6,10 @@ using Microsoft.Web.WebView2.WinForms;
 namespace VanDao.Desktop;
 
 /// <summary>
-/// Dải game kiểu "TBH: Task Bar Hero": một cửa sổ ngang, không viền, nền trong suốt,
+/// Dải game kiểu "TBH: Task Bar Hero": một cửa sổ ngang, không viền, nền đặc,
 /// nằm sát ngay trên thanh taskbar và luôn hiển thị khi làm việc khác.
 ///
-/// - Chuột phải (hoặc nút ⋯): menu nhanh — bố cục màn hình, kích thước, ghim, nền trong suốt, độ trong.
+/// - Chuột phải (hoặc nút ⋯): menu nhanh — bố cục màn hình, kích thước, ghim.
 /// - Kéo ⋮⋮ để đặt tự do; chọn lại một bố cục để neo về taskbar.
 /// - Nút "Tu luyện": mở Đột phá / Hành trang / Đan dược / Bản đồ trong cửa sổ bật lên phía trên dải.
 /// - Shift+F12: đặt lại vị trí khi bị lạc. Shift+F11: đặt lại kích thước.
@@ -26,7 +25,7 @@ public sealed class GameWindow : Form
     private readonly WindowSettings _s = WindowSettings.Load();
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly ContextMenuStrip _menu = new() { Renderer = Theme.Renderer, ShowImageMargin = true };
-    private readonly NotifyIcon _tray = new() { Text = "Vấn Đạo", Icon = SystemIcons.Application, Visible = true };
+    private readonly NotifyIcon _tray = new() { Text = "Người Lười Tu Tiên" };
     private readonly System.Windows.Forms.Timer _dockTimer = new() { Interval = 2000 };
     private readonly System.Windows.Forms.Timer _revealTimer = new() { Interval = 10000 };
     private PanelWindow? _panel;
@@ -36,7 +35,11 @@ public sealed class GameWindow : Form
     {
         _url = serverUrl.TrimEnd('/') + "/";
 
-        Text = "Vấn Đạo";
+        Text = "Người Lười Tu Tiên";
+        using (var iconStream = typeof(GameWindow).Assembly.GetManifestResourceStream("VanDao.AppIcon.ico")!)
+            Icon = new Icon(iconStream);
+        _tray.Icon = Icon;
+        _tray.Visible = true;
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.Manual;
         ShowInTaskbar = true;
@@ -47,7 +50,7 @@ public sealed class GameWindow : Form
         _tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) ToggleVisible(); };
 
         ApplySize();
-        ApplyTransparency();
+        ApplyBackground();
         ApplyPin();
         Opacity = 1.0; // độ trong cố định 100%
         PlaceStrip();
@@ -66,7 +69,6 @@ public sealed class GameWindow : Form
             (_s.X, _s.Y) = (Left, Top);
             _s.Screen = Screen.FromControl(this).DeviceName;
             _s.Save();
-            if (_panel?.Visible == true) _panel.PlaceNearStrip();
         };
 
         // taskbar đổi vị trí, đổi độ phân giải, cắm thêm màn hình → neo lại
@@ -149,7 +151,6 @@ public sealed class GameWindow : Form
         _placing = true;
         Location = p;
         _placing = false;
-        if (_panel?.Visible == true) _panel.PlaceNearStrip();
     }
 
     private void OnDisplayChanged(object? sender, EventArgs e) => BeginInvoke(PlaceStrip);
@@ -171,7 +172,7 @@ public sealed class GameWindow : Form
         PlaceStrip();
     }
 
-    // ================= Ghim, trong suốt =================
+    // ================= Ghim, nền =================
 
     private void ApplyPin()
     {
@@ -179,22 +180,16 @@ public sealed class GameWindow : Form
         if (_panel is not null) _panel.TopMost = _s.Pinned;
     }
 
-    /// <summary>
-    /// Nền trong suốt bằng cách cắt hình cửa sổ (window region) theo khung game bo góc.
-    /// Không dùng TransparencyKey vì WebView2 vẽ ở lớp riêng nên Windows coi cả cửa sổ là "trong suốt"
-    /// và mọi cú click đều xuyên qua.
-    /// </summary>
-    private void ApplyTransparency()
+    /// <summary>Nền đặc: cửa sổ hiện đủ hình chữ nhật, khung game phủ kín (đã bỏ tuỳ chọn nền trong suốt).</summary>
+    private void ApplyBackground()
     {
         BackColor = Theme.Ink;
         _web.DefaultBackgroundColor = Theme.Ink;
-        if (!_s.Transparent && _revealed) SetRegion(null);
         if (_web.CoreWebView2 is null) return;
-        _ = _web.ExecuteScriptAsync($"window.setOpaque && window.setOpaque({(_s.Transparent ? "false" : "true")})");
-        if (_s.Transparent) _ = _web.ExecuteScriptAsync("window.reportShape && window.reportShape(true)");
+        _ = _web.ExecuteScriptAsync("window.setOpaque && window.setOpaque(true)");
     }
 
-    /// <summary>Hiện dải game lần đầu: cả khung chữ nhật (nền đặc, hoặc trang không báo hình về).</summary>
+    /// <summary>Hiện dải game lần đầu: cả khung chữ nhật.</summary>
     private void Reveal()
     {
         _revealTimer.Stop();
@@ -203,46 +198,11 @@ public sealed class GameWindow : Form
         SetRegion(null);
     }
 
-    private void ApplyShape(JsonElement m)
-    {
-        if (!_s.Transparent) { Reveal(); return; }
-        try
-        {
-            var k = m.GetProperty("card");
-            using var card = RoundRect(k.GetProperty("x").GetInt32(), k.GetProperty("y").GetInt32(),
-                                       k.GetProperty("w").GetInt32(), k.GetProperty("h").GetInt32(), k.GetProperty("r").GetInt32());
-            var region = new Region(card);
-            if (m.TryGetProperty("circle", out var c))
-            {
-                using var circle = new GraphicsPath();
-                circle.AddEllipse(c.GetProperty("x").GetInt32(), c.GetProperty("y").GetInt32(),
-                                  c.GetProperty("size").GetInt32(), c.GetProperty("size").GetInt32());
-                region.Union(circle);
-            }
-            SetRegion(region);
-            _revealTimer.Stop();
-            _revealed = true;
-        }
-        catch (Exception) { /* dữ liệu lạ thì giữ nguyên hình cũ */ }
-    }
-
     private void SetRegion(Region? region)
     {
         var old = Region;
         Region = region;
         old?.Dispose();
-    }
-
-    private static GraphicsPath RoundRect(int x, int y, int w, int h, int r)
-    {
-        var p = new GraphicsPath();
-        var d = Math.Max(1, r * 2);
-        p.AddArc(x, y, d, d, 180, 90);
-        p.AddArc(x + w - d, y, d, d, 270, 90);
-        p.AddArc(x + w - d, y + h - d, d, d, 0, 90);
-        p.AddArc(x, y + h - d, d, d, 90, 90);
-        p.CloseFigure();
-        return p;
     }
 
     // ================= Menu nhanh (chuột phải / khay hệ thống) =================
@@ -288,8 +248,6 @@ public sealed class GameWindow : Form
 
         _menu.Items.Add(new ToolStripMenuItem("Ghim luôn hiển thị", null, (_, _) => { _s.Pinned = !_s.Pinned; _s.Save(); ApplyPin(); })
             { Checked = _s.Pinned });
-        _menu.Items.Add(new ToolStripMenuItem("Nền trong suốt", null, (_, _) => { _s.Transparent = !_s.Transparent; _s.Save(); ApplyTransparency(); })
-            { Checked = _s.Transparent });
         _menu.Items.Add(new ToolStripMenuItem("Đặt lại vị trí", null, (_, _) => ResetPosition()) { ShortcutKeyDisplayString = "Shift+F12" });
         _menu.Items.Add(new ToolStripMenuItem("Đặt lại kích thước", null, (_, _) => { _s.Scale = 1; _s.Save(); ApplySize(); }) { ShortcutKeyDisplayString = "Shift+F11" });
         _menu.Items.Add(new ToolStripSeparator());
@@ -363,12 +321,12 @@ public sealed class GameWindow : Form
                 e.Handled = true; // thay menu trình duyệt bằng menu của game
                 ShowMenuAtCursor();
             };
-            _web.Source = new Uri($"{_url}?mode=strip{(_s.Transparent ? "" : "&opaque=1")}");
+            _web.Source = new Uri($"{_url}?mode=strip&opaque=1");
         }
         catch (WebView2RuntimeNotFoundException)
         {
             Hide();
-            _tray.ShowBalloonTip(8000, "Vấn Đạo",
+            _tray.ShowBalloonTip(8000, "Người Lười Tu Tiên",
                 "Máy chưa cài Microsoft Edge WebView2 Runtime nên game mở trên trình duyệt. Thoát game từ biểu tượng ở khay hệ thống.",
                 ToolTipIcon.Info);
             Process.Start(new ProcessStartInfo(_url) { UseShellExecute = true });
@@ -383,7 +341,7 @@ public sealed class GameWindow : Form
             case "menu": ShowMenuAtCursor(); break;
             case "open-panel": OpenPanel(msg.TryGetProperty("tab", out var t) ? t.GetString() ?? "req" : "req"); break;
             case "changed": _ = _panel?.SyncAsync(); break;
-            case "shape": ApplyShape(msg); break;
+            case "shape": Reveal(); break;          // trang đã vẽ xong khung đầu → hiện dải
         }
     }
 

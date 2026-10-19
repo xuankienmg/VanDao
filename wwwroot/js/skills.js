@@ -346,6 +346,7 @@ function skFlip(g, now, s){
   if (rest){ draw(7, Math.max(0, 1 - (e - D[7]) / SK_FX.rest)); }
   else { draw(i, 1); if (i < 7 && k > .7) draw(i + 1, (k - .7) / .3); }
   g.globalAlpha = 1; g.imageSmoothingEnabled = false;
+  drawSkinActor(g,skinActorAction(s),rest ? 0 : Math.min(1,(i+k)/7),26,55,46);
 }
 /** Kỹ năng bị động: không có animation chiêu, chỉ icon phát sáng và tàn lửa bay lên. */
 function skPassiveFx(g, now, s){
@@ -404,7 +405,8 @@ function hcPreview(g, now, hero, mon, P){
 
   // tu sĩ (lửa trên tay nằm sẵn trong khung tư thế)
   const pose = {prep: 0, ignite: 1, form: 2, launch: 3, fly: k < .6 ? 7 : 0}[name] ?? 0;
-  hcRef(g, ref, pose, HC_REF.feet[pose], footX, ground, K * HC_REF.scale[pose]);
+  if (!drawSkinActor(g,'cast',({prep:0,ignite:.34,form:.5,launch:.8,fly:.99}[name] ?? 0),footX,ground,57))
+    hcRef(g, ref, pose, HC_REF.feet[pose], footX, ground, K * HC_REF.scale[pose]);
   if (name === 'prep'){                                          // linh khí tụ về lòng bàn tay
     const hx = footX + 14, hy = ground - 21;
     for (let i = 0; i < 8; i++){ const a = i / 8 * Math.PI * 2 + t * 4, r = 14 * (1 - k) + 2; P(hx + Math.cos(a) * r, hy + Math.sin(a) * r * .8, i % 2 ? '#6fe0e0' : '#f8d25a', .35 + .5 * k); }

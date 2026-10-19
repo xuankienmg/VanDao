@@ -507,6 +507,35 @@ function ultFx(s, o){
 }
 /** Trận đánh: tu sĩ theo bản thiết kế + đòn Hỏa Cầu mặc định, vẽ ở độ phân giải thật (toạ độ CSS px).
  *  Nhịp lượt đánh s: tư thế .00–.30 · phóng .30 · bay .30–.45 · nổ .45–.62 · tan .62–.72 · tàn lửa .72–.78 */
+function drawAirFlightFx(g, x, feetY, height, t, reduced = false){
+  const phase = reduced ? 0 : t * 1.8;
+  const pulse = reduced ? 1 : 1 + Math.sin(t * 2.8) * .06;
+  const radius = height * .32 * pulse;
+  g.save();
+  g.translate(x, feetY + height * .035);
+  g.scale(1, .3);
+  g.globalCompositeOperation = 'lighter';
+  const glow = g.createRadialGradient(0,0,0,0,0,radius*1.35);
+  glow.addColorStop(0,'rgba(180,235,255,.24)');
+  glow.addColorStop(.6,'rgba(70,170,255,.15)');
+  glow.addColorStop(1,'rgba(70,170,255,0)');
+  g.fillStyle = glow;
+  g.beginPath(); g.arc(0,0,radius*1.35,0,Math.PI*2); g.fill();
+  g.lineWidth = Math.max(1,height*.009);
+  g.strokeStyle = 'rgba(120,220,255,.75)';
+  g.beginPath(); g.arc(0,0,radius,0,Math.PI*2); g.stroke();
+  g.strokeStyle = 'rgba(245,208,125,.8)';
+  for(let i=0;i<3;i++){
+    const a=phase+i*Math.PI*2/3;
+    g.beginPath(); g.arc(0,0,radius*.72,a,a+.8); g.stroke();
+  }
+  g.fillStyle = 'rgba(210,245,255,.85)';
+  for(let i=0;i<6;i++){
+    const a=-phase+i*Math.PI/3, r=radius*.9;
+    g.beginPath(); g.arc(Math.cos(a)*r,Math.sin(a)*r,Math.max(.8,height*.007),0,Math.PI*2); g.fill();
+  }
+  g.restore();
+}
 function hcBattleDraw(ref, o){
   const {fw, fh} = HC_REF, {ph, sx, sy, g, sz, t} = o, s = ph.name === 'fight' ? ph.s : -1;
   const kH = sz * sy * 1.05 / 150;                                 // 150px = chiều cao nhân vật trong ảnh gốc
@@ -525,8 +554,21 @@ function hcBattleDraw(ref, o){
     ctx.save(); ctx.translate(fx, fy);                                             // dáng: co giãn + nghiêng quanh điểm giữa bàn chân
     if (o.rot) ctx.rotate(o.rot);
     ctx.scale(o.sqx || 1, o.sqy || 1);
-    ctx.drawImage(ref, pose * fw, 0, fw, fh, -ft[0] * q, -ft[1] * q, fw * q, fh * q);
-    if (o.hFlash){ ctx.globalAlpha = .55 * o.hAlpha; ctx.drawImage(hcFlash(ref), pose * fw, 0, fw, fh, -ft[0] * q, -ft[1] * q, fw * q, fh * q); }
+    const acting = s >= 0 && s < .78;
+    const skill = skById(fireSkill);
+    const action = ph.name === 'walk' ? 'run' : acting ? skinActorAction(skill) : 'idle';
+    const progress = reduce ? 0 : ph.name === 'walk' ? skinActorLoop('run', t)
+      : acting ? Math.min(.99, s / .6)
+      : SKIN_ACTOR_SHEETS[skinArt('hero')] ? skinActorLoop('idle', t) : 0;
+    if (o.hFlash) ctx.filter = 'brightness(1.8)';
+    if (ph.name === 'walk' && skinActorFlight() === 'air')
+      drawAirFlightFx(ctx, 0, 0, sz * sy * 1.05, t, reduce);
+    const newActor = drawSkinActor(ctx, action, progress, 0, 0, sz * sy * 1.05);
+    ctx.filter = 'none';
+    if (!newActor){
+      ctx.drawImage(ref, pose * fw, 0, fw, fh, -ft[0] * q, -ft[1] * q, fw * q, fh * q);
+      if (o.hFlash){ ctx.globalAlpha = .55 * o.hAlpha; ctx.drawImage(hcFlash(ref), pose * fw, 0, fw, fh, -ft[0] * q, -ft[1] * q, fw * q, fh * q); }
+    }
     ctx.restore();
   }
   ctx.globalAlpha = 1;
