@@ -53,6 +53,9 @@ public class Player
     /// <summary>Admin mode: cờ gian lận đang bật (god · break · fast), cách nhau dấu phẩy; điểm kỹ năng admin cộng thêm.</summary>
     public string Admin { get; set; } = "";
     public int AdminPoints { get; set; }
+
+    /// <summary>Code quà tặng đã nhập (GameData.GiftCodes), cách nhau dấu phẩy. Mỗi code dùng 1 lần mỗi nhân vật; tu lại từ đầu thì xóa.</summary>
+    public string Redeemed { get; set; } = "";
     public bool Cheat(string flag) => Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
 
     /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng chủ động (tung khi đầy nộ). Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>

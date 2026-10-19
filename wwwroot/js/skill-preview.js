@@ -18,6 +18,13 @@ function skFrame(now){
   g.fillStyle = '#0d0a08'; g.fillRect(0, 0, 120, 60);
   for (let x = 0; x < 120; x++) P(x, 52, '#2a221a'), P(x, 53, '#1a140f');
   const hero = skImg(skinArt('hero').replace('.png', '_48.png')), mon = skImg('img/quai_yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
+  if (open && s.element === 'hoa' && typeof fireFxAvailable === 'function' && fireFxAvailable(s.id, S.realm)){
+    if (hero) g.drawImage(hero,2,6);
+    if (mon) g.drawImage(mon,72,6);
+    const progress=((now-skAnimT0)%2600)/2200;
+    drawFireSkillFx(g,s.id,Math.min(1,progress),S.realm,{handX:38,handY:28,targetX:94,targetY:32,groundY:52,heroHeight:46,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+    return;
+  }
   if (open && s.id === 'hoa_cau'){ hcPreview(g, now - skAnimT0, hero, mon, P); return; }
   if (open && SK_FX_ROW[s.id] !== undefined){ skFlip(g, now - skAnimT0, s); return; }
   if (open && s.category === 'Bị động'){ skPassiveFx(g, now, s); return; }
@@ -99,11 +106,21 @@ function initSkill(){
   $('pane-skill').addEventListener('click', e => {
     const b = e.target.closest('[data-el]');
     if (b){ if (b.dataset.el !== skEl){ skEl = b.dataset.el; skFade = 1; try { localStorage.setItem('van-dao-sk-el', skEl); } catch(err){} hideTip(); renderSkill(); } return; }
+    const u = e.target.closest('[data-up]');
+    if (u){ if (!u.disabled){ hideTip(); act('skill/' + u.dataset.up); } return; }
     const n = e.target.closest('[data-sk]');
-    if (n){ skAnimT0 = performance.now(); skSel = n.dataset.sk; try { localStorage.setItem('van-dao-sk-sel', skSel); } catch(err){} renderSkill(); return; }
+    if (n){
+      skAnimT0 = performance.now(); skSel = n.dataset.sk;
+      try { localStorage.setItem('van-dao-sk-sel', skSel); } catch(err){}
+      // Giữ nguyên node để cú nhấp thứ hai vẫn phát dblclick / trang bị.
+      $('pane-skill').querySelectorAll('.sk-n[data-sk]').forEach(node => {
+        const selected = node.dataset.sk === skSel;
+        node.classList.toggle('sel', selected); node.setAttribute('aria-pressed', String(selected));
+      });
+      return;
+    }
     const bs = e.target.closest('[data-basic]'); if (bs){ act(`skillslot/0?skill=${bs.dataset.basic}`); return; }
     if (e.target.closest('[data-anim]')){ skAnimT0 = performance.now(); return; }          // phát lại animation từ đầu
-    const u = e.target.closest('[data-up]'); if (u && !u.disabled){ act('skill/' + u.dataset.up); return; }
     const eq = e.target.closest('[data-equip-sk]');
     if (eq){
       const sk = skById(eq.dataset.equipSk), slots = S.skillSlots;
@@ -203,6 +220,6 @@ function renderAll(){
   $('hudStage').textContent = S.stageName;
   $('hudRate').textContent = `${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')} tu vi/giây`;
   const tipKey = tipEl && !tipEl.hidden && tipEl._for ? (tipEl._for.id || tipEl._for.dataset.equip || tipEl._for.dataset.unequip || '') : '';
-  renderTrack(); renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderMap(); renderSkill(); renderAdmin(); renderLog(); live();
+  renderTrack(); renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderLog(); live();
   if (tipKey){ const el = document.getElementById(tipKey) || document.querySelector(`[data-equip="${tipKey}"],[data-unequip="${tipKey}"]`); if (el && el.matches(':hover')) showTip(el); }
 }

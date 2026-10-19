@@ -9,7 +9,7 @@ public record ElementDef(string Id, string Name, string Color, string Color2, bo
 /// </summary>
 public record SkillDef(string Id, string Element, string Name, string Category, int Row, int Col, int MaxLv, int MinRealm, int Cost,
     string[] Req, string Effect, string Anim, double Cooldown = 0, int DmgBase = 0, int DmgPerLv = 0,
-    double AtkPct = 0, double DefPct = 0, double HpPct = 0, double Crit = 0, double Speed = 0, double Move = 0,
+    double AtkPct = 0, double DefPct = 0, double HpPct = 0, double Crit = 0, double Speed = 0,
     double QiPct = 0, double MonAtkDown = 0,
     double SkillPct = 0,       // % sát thương cộng thêm cho mọi chiêu hệ Hỏa tự thi triển
     double Pen = 0,            // % phòng thủ của quái bị bỏ qua (xuyên thấu)
@@ -83,6 +83,14 @@ public static class SkillData
             "Lửa phượng tái sinh: tăng máu và phòng thủ (+4% mỗi cấp, Lv.5 +20%).", "passive", HpPct: 4, DefPct: 4, Code: "FIRE_PASSIVE_008"),
         new("lieu_nguyen", "hoa", "Liệu Nguyên Hỏa", "Bị động", 4, 2, 5, 3, 5, new[] { "hoa_linh_chan_y:1" },
             "Lửa cháy lan đồng: chiêu Hỏa +4% sát thương và +2% xuyên thấu mỗi cấp.", "passive", SkillPct: 4, Pen: 2, Code: "FIRE_PASSIVE_009"),
+        new("than_hoa", "hoa", "Thần Hỏa Giáng Thế", "Công", 5, 1, 5, 4, 5, new[] { "xich_diem_thien:3" },
+            "Nguyên thần dẫn thiên hỏa giáng thế, gây 420% công ở cấp 1, thêm 30% mỗi cấp.", "pillar", DmgBase: 420, DmgPerLv: 30, Code: "FIRE_ACTIVE_004", AnimId: "FIRE_HEAVEN_001"),
+        new("hoa_than_phap", "hoa", "Hỏa Thần Pháp Thân", "Bị động", 5, 1, 5, 4, 4, new[] { "phuong_hoang:1", "lieu_nguyen:1" },
+            "Linh hỏa rèn pháp thân: công và máu +3% mỗi cấp.", "passive", AtkPct: 3, HpPct: 3, Code: "FIRE_PASSIVE_010"),
+        new("hu_khong_hoa", "hoa", "Hư Không Diễm", "Tuyệt kỹ", 6, 1, 5, 5, 6, new[] { "than_hoa:3" },
+            "Luyện hỏa vào hư không, bùng nổ 520% công ở cấp 1, thêm 35% mỗi cấp.", "ultimate", DmgBase: 520, DmgPerLv: 35, Code: "FIRE_ULTIMATE_002", AnimId: "FIRE_ULTIMATE_001"),
+        new("thai_hu_hoa", "hoa", "Thái Hư Hỏa Đạo", "Bị động", 6, 1, 5, 5, 5, new[] { "hoa_than_phap:3" },
+            "Hỏa đạo hòa hư: sát thương chiêu thức +3% và xuyên thấu +1% mỗi cấp.", "passive", SkillPct: 3, Pen: 1, Code: "FIRE_PASSIVE_011"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
@@ -122,6 +130,14 @@ public static class SkillData
             "Nước huyền minh nặng tựa núi: máu +4% và đòn quái −1% mỗi cấp.", "passive", HpPct: 4, MonAtkDown: 1, Code: "WATER_PASSIVE_006"),
         new("bich_hai", "thuy", "Bích Hải Triều Sinh", "Bị động", 4, 2, 5, 3, 5, new[] { "thuy_linh_chan_y:1" },
             "Biển biếc dâng triều: chiêu thức +3% sát thương và phòng thủ +3% mỗi cấp.", "passive", SkillPct: 3, DefPct: 3, Code: "WATER_PASSIVE_007"),
+        new("thien_ha", "thuy", "Thiên Hà Khuynh Thế", "Công", 5, 1, 5, 4, 5, new[] { "thuong_hai:3" },
+            "Dẫn thiên hà thành thủy long: 395% công ở cấp 1, thêm 28% mỗi cấp.", "water_dragon", DmgBase: 395, DmgPerLv: 28, Code: "WATER_ACTIVE_004", AnimId: "WATER_DRAGON_001"),
+        new("thuy_than_phap", "thuy", "Thủy Thần Pháp Thân", "Bị động", 5, 1, 5, 4, 4, new[] { "huyen_minh:1", "bich_hai:1" },
+            "Chân thủy hộ nguyên thần: máu +4% và phòng thủ +2% mỗi cấp.", "passive", HpPct: 4, DefPct: 2, Code: "WATER_PASSIVE_008"),
+        new("hu_hai", "thuy", "Hư Hải Vô Nhai", "Tuyệt kỹ", 6, 1, 5, 5, 6, new[] { "thien_ha:3" },
+            "Biển hư không hóa thủy lao: 490% công ở cấp 1, thêm 33% mỗi cấp.", "water_prison", DmgBase: 490, DmgPerLv: 33, Code: "WATER_ULTIMATE_002", AnimId: "WATER_PRISON_001"),
+        new("thai_hu_thuy", "thuy", "Thái Hư Thủy Đạo", "Bị động", 6, 1, 5, 5, 5, new[] { "thuy_than_phap:3" },
+            "Thủy đạo hòa hư: sát thương chiêu thức +3% và máu +3% mỗi cấp.", "passive", SkillPct: 3, HpPct: 3, Code: "WATER_PASSIVE_009"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Mộc.", "root"),
         new("dang_man", "moc", "Đằng Mạn", "Khống", 2, 1, 5, 0, 1, new[] { "moc_linh_can:1" }, "Dây leo trói địch.", "bind"),
         new("hoi_xuan", "moc", "Hồi Xuân", "Thủ", 2, 3, 5, 0, 1, new[] { "moc_linh_can:1" }, "Chữa thương.", "aura"),

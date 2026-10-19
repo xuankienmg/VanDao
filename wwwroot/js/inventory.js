@@ -5,8 +5,8 @@
 // 10 phẩm (GameData.QualityName / QualityColor): khóa giữ tên cũ cho 6 phẩm đầu để không đổi dữ liệu đã lưu
 const RARITY = {
   common:    {n:'Phàm',        c:'#FFFFFF', v:3},
-  uncommon:  {n:'Linh',        c:'#00E5FF', v:12},
-  rare:      {n:'Huyền',       c:'#00FF7F', v:50},
+  uncommon:  {n:'Linh',        c:'#00FF7F', v:12},
+  rare:      {n:'Huyền',       c:'#00E5FF', v:50},
   epic:      {n:'Địa',         c:'#1E90FF', v:200},
   legendary: {n:'Thiên',       c:'#BF00FF', v:800},
   mythic:    {n:'Thánh',       c:'#FF8C00', v:3200},
@@ -17,7 +17,7 @@ const RARITY = {
 };
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
-const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['movePct','Tốc chạy','%'],['qiPct','Tu vi','%']];
+const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
 const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'elixir');
 const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' ? 'consumable' : 'material';
@@ -31,7 +31,7 @@ const RAR_KEYS = Object.keys(RARITY);
 const qWord = (r, card) => `<b class="${card ? 'qc' : 'qn'} ${card ? 'qc' : 'rc'}-${r}">${RARITY[r]?.n ?? r}</b>`;
 /** Tô màu tên phẩm trong câu chữ từ server (nhật ký): "[cấp 25 · Đỏ]", "trang bị Vàng". */
 const qColorize = t => t.replace(/(· |trang bị )(Huyền Thiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
-const SET_COLOR = {'Luyện Khí Giới': '#2e8b6a', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
+const SET_COLOR = {'Thanh Vân': '#4fb0d8', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
 let bulkScope = 'all', bulkGear = true;
@@ -182,7 +182,7 @@ function bagList(){
   // trang bị: mỗi món một ô; vật phẩm: một ô kèm số lượng
   return owned.flatMap(k => ITEM[k].slot ? Array.from({length: S.inventory[k]}, () => ({k, n: 1})) : [{k, n: S.inventory[k]}]);
 }
-function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed + st.move)*4); }
+function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed)*4); }
 
 /** Vẽ lại Hành trang mà giữ nguyên vị trí cuộn (túi, khung thông tin): renderInv chạy lại mỗi lần trạng thái đổi. */
 function renderInv(){
@@ -226,7 +226,7 @@ function renderInvInner(){
   const statRows = [
     ['Tấn công', fmt(st.atk), 0], ['Phòng thủ', fmt(st.def), 0], ['Máu', fmt(st.hp), 0],
     ['Bạo kích', `${Math.round(st.crit)}%`, 0],
-    ['Tốc đánh', `${Math.round(st.speed)}%`, 1], ['Tốc chạy', `${Math.round(st.move)}%`, 0],
+    ['Tốc đánh', `${Math.round(st.speed)}%`, 1],
   ].map(([n, v, need]) => S.realm >= need
       ? `<div class="st"><span>${n}</span><b>${v}</b></div>`
       : `<div class="st off" data-tip="${n}&#10;Mở ở cảnh giới ${DATA.realms[need].name}"><span>${n}</span><b>${DATA.realms[need].name}</b></div>`).join('');
@@ -251,7 +251,7 @@ function renderInvInner(){
   for (const k of DATA.items.map(i => i.id)) if ((S.inventory[k]||0) > 0){ counts.all++; counts[catOf(ITEM[k])]++; }
 
 
-  const nextBag = DATA.realms[S.realm+1]?.bagSlots, nextNote = S.atTop ? '' : `Lên ${S.nextRealmName}: ${nextBag ? `hành trang ${nextBag} ô, ` : ''}thêm ô trang bị và chỉ số mới`;
+  const nextBag = DATA.realms[S.realm+1]?.bagSlots, nextNote = S.atTop ? '' : `Lên ${S.nextRealmName}: ${nextBag ? `hành trang ${nextBag} ô, ` : ''}${(DATA.realms[S.realm+1]?.equipSlots || []).some(x => !S.equipSlots.includes(x)) ? 'thêm ô trang bị và ' : ''}chỉ số mới`;
   $('pane-inv').innerHTML = `<div class="iv" style="--aura:${r.aura}">
     <section class="iv-char" aria-label="Nhân vật">${wardrobeHtml()}<div class="iv-char-in">
       <header class="iv-name"><b>${S.name}</b><span>Cấp ${S.level} · ${S.realmName} ${S.stageName}</span></header>

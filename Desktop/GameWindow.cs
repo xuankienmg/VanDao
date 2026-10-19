@@ -293,6 +293,8 @@ public sealed class GameWindow : Form
         _menu.Items.Add(new ToolStripMenuItem("Đặt lại vị trí", null, (_, _) => ResetPosition()) { ShortcutKeyDisplayString = "Shift+F12" });
         _menu.Items.Add(new ToolStripMenuItem("Đặt lại kích thước", null, (_, _) => { _s.Scale = 1; _s.Save(); ApplySize(); }) { ShortcutKeyDisplayString = "Shift+F11" });
         _menu.Items.Add(new ToolStripSeparator());
+        _menu.Items.Add(new ToolStripMenuItem("Nhập code quà tặng…", null, (_, _) => ShowGiftCode()));
+        _menu.Items.Add(new ToolStripSeparator());
 
         _menu.Items.Add(Visible ? "Ẩn xuống khay hệ thống" : "Hiện dải game", null, (_, _) => ToggleVisible());
         _menu.Items.Add("Thoát", null, (_, _) => Close());
@@ -301,6 +303,34 @@ public sealed class GameWindow : Form
     }
 
     private void ShowMenuAtCursor() => _menu.Show(Cursor.Position);
+
+    /// <summary>Hộp nhập code quà tặng; trang game gửi code lên server (window.redeemCode) và báo kết quả trên dải game.</summary>
+    private void ShowGiftCode()
+    {
+        using var f = new Form
+        {
+            Text = "Nhập code quà tặng", FormBorderStyle = FormBorderStyle.FixedToolWindow, StartPosition = FormStartPosition.CenterScreen,
+            TopMost = true, ShowInTaskbar = false, MinimizeBox = false, MaximizeBox = false,
+            BackColor = Theme.Bar, ForeColor = Theme.Paper, Font = new Font("Segoe UI", 10f),
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        };
+        var lbl = new Label { Text = "Nhập code để nhận quà (mỗi nhân vật nhận 1 lần):", AutoSize = true, Margin = new Padding(0, 0, 0, 6) };
+        var box = new TextBox { Width = LogicalToDeviceUnits(280), CharacterCasing = CharacterCasing.Upper, MaxLength = 32,
+            BackColor = Theme.Ink, ForeColor = Theme.Paper, BorderStyle = BorderStyle.FixedSingle };
+        var ok = new Button { Text = "Nhận", DialogResult = DialogResult.OK, FlatStyle = FlatStyle.Flat, BackColor = Theme.Hover, ForeColor = Theme.Gold, AutoSize = true };
+        var cancel = new Button { Text = "Hủy", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, ForeColor = Theme.Paper, AutoSize = true };
+        ok.FlatAppearance.BorderColor = cancel.FlatAppearance.BorderColor = Theme.Line;
+        var btns = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 8, 0, 0) };
+        btns.Controls.AddRange(new Control[] { cancel, ok });
+        var grid = new TableLayoutPanel { ColumnCount = 1, AutoSize = true, Dock = DockStyle.Fill, Padding = new Padding(12) };
+        grid.Controls.Add(lbl); grid.Controls.Add(box); grid.Controls.Add(btns);
+        f.Controls.Add(grid);
+        f.AcceptButton = ok; f.CancelButton = cancel;
+        if (f.ShowDialog(this) != DialogResult.OK) return;
+        var code = box.Text.Trim();
+        if (code.Length == 0 || _web.CoreWebView2 is null) return;
+        _ = _web.ExecuteScriptAsync($"window.redeemCode && window.redeemCode({JsonSerializer.Serialize(code)})");
+    }
 
     private void ToggleVisible()
     {

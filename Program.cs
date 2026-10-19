@@ -84,7 +84,7 @@ public static class Program
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
             GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
-            GameData.Brews, GameData.HerbDrops, GameData.Skins));
+            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -139,6 +139,16 @@ public static class Program
         // luyện khí: ghép 9 trang bị cùng phẩm → 1 phẩm cao hơn (items = danh sách id, lặp lại khi lấy nhiều món cùng id)
         api.MapPost("/players/{id:guid}/fuse", (Guid id, string? items, GameService game) =>
             RunCraft(id, game, p => game.Fuse(p, items)));
+
+        // code quà tặng (nhập ở menu Cài đặt)
+        api.MapPost("/players/{id:guid}/redeem", (Guid id, string? code, GameService game) =>
+            Run(id, game, p => game.RedeemCode(p, code)));
+
+        // Tài Xỉu: đổi linh thạch lấy vé (n = số vé, 0 = tối đa) · quay vòng trang bị 10 phẩm (n = số lượt, tối đa 10)
+        api.MapPost("/players/{id:guid}/spin/buy", (Guid id, int? n, GameService game) =>
+            Run(id, game, p => game.BuySpinTicket(p, n ?? 1)));
+        api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, GameService game) =>
+            RunCraft(id, game, p => game.Spin(p, n ?? 1)));
 
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>

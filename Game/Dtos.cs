@@ -16,7 +16,9 @@ public record GameDataDto(
     IEnumerable<ChapterInfoDto>? Chapters = null,
     IEnumerable<BrewDef>? Brews = null,
     IEnumerable<HerbDropDef>? HerbDrops = null,
-    IEnumerable<SkinDef>? Skins = null);
+    IEnumerable<SkinDef>? Skins = null,
+    double[]? SpinWeights = null,
+    int SpinPrice = 0);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,

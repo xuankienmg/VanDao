@@ -513,7 +513,9 @@ function hcBattleDraw(ref, o){
   // lượt hệ Thủy (đòn thường Thủy hoặc chiêu Thủy): không dùng tư thế tụ lửa trong tay (khung 1–3) của bản thiết kế Hỏa Cầu
   const dmgCasts = (o.casts || []).filter(c => c.dmg > 0);
   const wetTurn = dmgCasts.length ? dmgCasts.some(c => skById(c.skill)?.element === 'thuy') : skById(o.basic)?.element === 'thuy';
-  const pose = s < 0 || s >= .5 ? 0 : s < .1 ? 0 : wetTurn ? (s < .3 ? 0 : 7) : s < .2 ? 1 : s < .3 ? 2 : s < .36 ? 3 : 7;
+  const fireSkill = dmgCasts.length ? [...dmgCasts].sort((a,b) => b.dmg-a.dmg)[0].skill : o.basic;
+  const newFireReady = !wetTurn && s >= 0 && typeof fireFxAvailable === 'function' && fireFxAvailable(fireSkill, S.realm);
+  const pose = s < 0 || s >= .5 ? 0 : s < .1 ? 0 : wetTurn || newFireReady ? (s < .3 ? 0 : 7) : s < .2 ? 1 : s < .3 ? 2 : s < .36 ? 3 : 7;
   const q = kH * HC_REF.scale[pose], fx = o.hx * sx, fy = (g + 1 + o.hy) * sy, ft = HC_REF.feet[pose];
   ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   // chiêu trong ô thi triển lượt này: chiêu công mạnh nhất thay cho hỏa cầu thường, chiêu thủ diễn đầu lượt 0
@@ -528,9 +530,13 @@ function hcBattleDraw(ref, o){
     ctx.restore();
   }
   ctx.globalAlpha = 1;
-  if (plan) skBattleDraw(plan, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, hAlpha: o.hAlpha});
-  ultFx(plan && plan.main && plan.row === 5 ? s : -1, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, t});
-  if (s >= .3 && s < .78 && !(plan && plan.main) && !wetTurn){                 // lượt hệ Thủy: không vẽ cầu lửa (nước vẽ bằng tbDraw / tngDraw / ttienDraw / tlaoDraw / tlDraw)
+  const newFireDrawn = newFireReady && drawFireSkillFx(ctx, fireSkill, s, S.realm, {
+    handX:fx+sz*sx*.25, handY:fy-sz*sy*.55, targetX:o.wolfX*sx, targetY:(g-sz*.45)*sy,
+    groundY:(g+1)*sy, heroHeight:sz*sy, reducedMotion:reduce
+  });
+  if (!newFireDrawn && plan) skBattleDraw(plan, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, hAlpha: o.hAlpha});
+  ultFx(!newFireDrawn && plan && plan.main && plan.row === 5 ? s : -1, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, t});
+  if (!newFireDrawn && s >= .3 && s < .78 && !(plan && plan.main) && !wetTurn){                 // lượt hệ Thủy: không vẽ cầu lửa (nước vẽ bằng tbDraw / tngDraw / tlaoDraw / tlDraw)
     const tier = o.cast ? Math.min(2, S.realm) : 0;                                  // đòn thường Hỏa Cầu: biến thể theo cảnh giới
     const fk = kH * HC_FX_SCALE[tier];
     const L = HC_REF.feet[3], B = HC_REF.fire[3], q3 = kH * HC_REF.scale[3];

@@ -57,7 +57,9 @@ const skOfEl = el => DATA.skillTree.filter(s => s.element === el);
 const skLv = id => S.skills[id] || 0;
 const skCost = (s, lv) => lv === 0 ? s.cost : 1 + Math.floor(lv / 2);
 const elOf = id => DATA.elements.find(e => e.id === id);
-const skIcon = s => `img/sk_${s.id}.png`;
+// Chiêu mới dùng lại tranh bí kíp và hiệu ứng cùng hệ.
+const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y'};
+const skIcon = s => `img/sk_${SK_ART[s.id] || s.id}.png`;
 const skFactor = (s, lv) => lv > 0 ? lv + (s.lead || 0) : 0;
 const realmName = i => DATA.realms[i]?.name || DATA.lockedRealms?.[i - DATA.realms.length] || '?';
 
@@ -214,22 +216,22 @@ function tbDraw(g2, kind, s, hx, hy, tx, ty, h, t){
 const WET_FILTER = 'hue-rotate(185deg) saturate(1.15)';
 function skPassive(s, lv){
   const fire = s.element === 'hoa';
-  const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['move','Tốc chạy'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
+  const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
   return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1))]);
 }
 
 function renderSkill(){
   const pane = $('pane-skill'); if (!pane || !S) return;
+  // Hai ô chiến đấu là giới hạn cache: nạp sớm để lần tung chiêu đầu không giật.
+  if (typeof fireFxAvailable === 'function'){
+    fireFxAvailable(skBasicId(),S.realm);
+    if (S.skillSlots?.[1]) fireFxAvailable(S.skillSlots[1],S.realm);
+  }
   const el = elOf(skEl) || DATA.elements[0], list = skOfEl(el.id);
   if (!skById(skSel) || skById(skSel).element !== el.id) skSel = (list.find(s => skTree(s) === 'active') || list[0]).id;
   // đòn thường dùng chung mọi hệ (Hỏa Cầu): hệ chưa có đòn thường riêng thì hiện đòn thường chung
   const basics = (list.some(s => skTree(s) === 'basic') ? list : DATA.skillTree).filter(s => skTree(s) === 'basic'), act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
-  const sel = skById(skSel), st = skState(sel), tree = skTree(sel);
   const WX = {hoa: '&#10;Ngũ hành: Hỏa khắc Mộc +15% sát thương · Hỏa bị Thủy khắc −15%'};
-  // thanh gọn: điểm · đòn thường · kỹ năng trong trận · thao tác cho kỹ năng đang chọn (chi tiết nằm trong tooltip)
-  const selBtns = tree === 'basic' ? '' : `${!el.open ? '' : st.max ? '<span class="sk2-max">MAX</span>'
-      : `<button class="sk-up ${st.why.length ? '' : 'go'}" data-up="${sel.id}" ${st.why.length ? 'disabled' : ''} data-tip="${st.why.length ? st.why.join('&#10;') : `Tốn ${st.cost} điểm kỹ năng`}">${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} <small>${st.cost}đ</small></button>`}
-`;
   pane.innerHTML = `<div class="sk2" style="--ec:${el.color};--ec2:${el.color2}">
     <nav class="sk-els" role="tablist" aria-label="Hệ tu luyện">${DATA.elements.map(e => `<button role="tab" class="${e.id === el.id ? 'on' : ''} ${e.open ? '' : 'lock'}" aria-selected="${e.id === el.id}" data-el="${e.id}" style="--c:${e.color}" data-tip="${e.name} hệ&#10;${e.desc}${e.open ? (WX[e.id] || '') : '&#10;Chưa mở khóa'}">
       <img class="px" src="img/el_${e.id}.png" alt=""><span>${e.name.toUpperCase()}</span>${e.open ? '' : '<small>Chưa mở khóa</small>'}</button>`).join('')}</nav>
@@ -237,15 +239,41 @@ function renderSkill(){
       <div class="sk2-pts" data-tip="Điểm kỹ năng&#10;Chỉ dùng cho Chủ động và Bị động (đánh thường không tốn điểm)&#10;Đã nhận ${S.skillPointsTotal} · đã dùng ${S.skillPointsTotal - S.skillPoints}"><span>Điểm</span><b>${S.skillPoints}</b></div>
       <div class="sk2-grp"><span>Đánh thường</span>${basics.map(b => `<button class="sk2-ico ${skBasicId() === b.id ? 'on' : ''}" data-basic="${b.id}" data-skcard="${b.id}" data-tip="${b.name}" ${el.open ? '' : 'disabled'}><img src="${skIcon(b)}" alt="${b.name}"></button>`).join('')}</div>
       <div class="sk2-grp"><span>Kỹ năng</span><button class="sk2-ico slot ${act ? 'on' : ''}" data-slot="1" ${act ? 'draggable="true" data-slotsk="' + act.id + '"' : ''} ${act ? `data-sk="${act.id}" data-skcard="${act.id}" data-tip="${act.name}"` : 'data-tip="Ô kỹ năng trống&#10;Nhấp đúp hoặc kéo một kỹ năng chủ động đã lĩnh ngộ vào đây"'}>${act ? `<img src="${skIcon(act)}" alt="">` : '<span class="emp">+</span>'}</button></div>
-      <div class="sk2-sel" data-skcard="${sel.id}" data-tip="${sel.name}"><img src="${skIcon(sel)}" alt=""><span><b>${sel.name}</b><small>${SK_TYPE[tree]}${tree === 'basic' ? '' : ` · Lv. ${st.lv}/${sel.maxLv}`}</small></span></div>
-      <div class="sk2-act">${selBtns}</div>
     </section>
-    <section class="sk2-tree act ${skFade ? 'fade' : ''}"><h3>Chủ động <small>có animation</small></h3>${skTreeHtml(el, 'active', 3, 3)}</section>
-    <section class="sk2-tree pas ${skFade ? 'fade' : ''}"><h3>Bị động <small>tăng cường vĩnh viễn</small></h3>${skTreeHtml(el, 'passive', 5, 3)}</section>
-    ${el.open ? '' : `<div class="sk-lockmsg"><b>${el.name.toUpperCase()} HỆ · CHƯA MỞ KHÓA</b><span>Cùng khung với Hỏa hệ: Đánh thường + Chủ động + Bị động.</span></div>`}
   </div>`;
+  // Một cây chung: các nhánh giữ liên kết khi đi qua ranh giới cảnh giới.
+  const root = pane.querySelector('.sk2');
+  root.classList.add('sk-realms');
+  const learnable = list.filter(s => skTree(s) !== 'basic' && skState(s).st === 'avail').length;
+  root.insertAdjacentHTML('beforeend', `<section class="sk-path-section"><header class="sk-path-heading"><h3>Đạo lộ ${el.name}</h3><span>${el.open ? `${learnable} có thể nâng · Rê chuột xem chi tiết · Nhấp đúp để trang bị` : 'Hệ này chưa mở công pháp'}</span></header><div class="sk-path-scroll" aria-label="Cây công pháp theo cảnh giới">${skRealmTree(el)}</div></section>`);
   skFade = 0;
   liveSkill();
+}
+
+/** Bố trí bằng MinRealm; không phụ thuộc số hàng cố định hay tọa độ cây cũ. */
+function skRealmTree(el){
+  const list = el.open ? skOfEl(el.id).filter(s => skTree(s) !== 'basic') : [];
+  const pos = new Map(), height = 100, rowHeight = 94 / DATA.realms.length;
+  const bands = DATA.realms.map((realm, i) => {
+    const top = 6 + i * rowHeight, tier = list.filter(s => s.minRealm === i);
+    const active = tier.filter(s => skTree(s) === 'active'), passive = tier.filter(s => skTree(s) === 'passive');
+    const h = rowHeight;
+    for (const [nodes, x, width] of [[active, 32, 28], [passive, 75, 47]]) nodes.forEach((s, n) => {
+      pos.set(s.id, {x: x + (n - (nodes.length - 1) / 2) * Math.min(16, width / nodes.length), y: top + h / 2});
+    });
+    return `<div class="sk-realm-band ${i > S.realm ? 'future' : ''} ${i === S.realm ? 'current' : ''}" data-realm-band="${i}" style="top:${top}%;height:${h}%"><div class="sk-realm-label"><b>${realm.name}</b><span>${tier.length ? `${tier.filter(s => skLv(s.id) > 0).length}/${tier.length} đã học` : 'Chưa có bí kíp'}</span></div></div>`;
+  }).join('');
+  let lines = '';
+  for (const s of list) for (const req of s.req){
+    const p = pos.get(req.split(':')[0]), c = pos.get(s.id); if (!p || !c) continue;
+    const state = skState(s), y = c.y - rowHeight / 2 + 1;
+    lines += `<path class="${state.learned ? 'on' : state.reqOk ? 'next' : 'off'}" d="M${p.x} ${p.y + 3} V${y} H${c.x} V${c.y - 3}"/>`;
+  }
+  const nodes = list.map(s => {
+    const st = skState(s), p = pos.get(s.id), tree = skTree(s);
+    return `<div class="sk-node-wrap" style="left:${p.x}%;top:${p.y}%"><button class="sk-n ${tree === 'active' ? 'act' : 'pas'} ${st.st} ${s.id === skSel ? 'sel' : ''} ${S.skillSlots?.[1] === s.id ? 'eq' : ''}" data-sk="${s.id}" data-skcard="${s.id}" data-tip="${s.name}" aria-label="${s.name}, cấp ${st.lv}/${s.maxLv}, ${realmName(s.minRealm)}${st.why.length ? ', ' + st.why.join(', ') : ''}" aria-pressed="${s.id === skSel}" ${tree === 'active' && st.lv > 0 ? 'draggable="true"' : ''}><span class="sk-ic"><img src="${skIcon(s)}" alt="">${st.max ? '<em>MAX</em>' : st.st === 'locked' ? '<i class="lk">▣</i>' : ''}</span><span class="sk-nm">${s.name}</span><span class="sk-lvt">${st.lv}/${s.maxLv}${S.skillSlots?.[1] === s.id ? ' · Đang dùng' : ''}</span></button>${st.max ? '' : `<button class="sk-node-up" data-up="${s.id}" ${st.why.length ? 'disabled' : ''} aria-label="${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name}, ${st.cost} điểm" data-tip="${st.why.length ? st.why.join('&#10;') : `${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name} · ${st.cost} điểm`}">+</button>`}</div>`;
+  }).join('');
+  return `<div class="sk-realm-board"><div class="sk-lane-head"><span>Cảnh giới</span><b>Chủ động</b><b>Bị động</b></div>${bands}<svg class="sk-lines" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div>`;
 }
 
 /** Vẽ một cây (chủ động / bị động) trên lưới rows × cols từ Row/Col của dữ liệu; chỉ nối các tiền đề cùng cây. */
@@ -303,7 +331,7 @@ function liveSkill(){
 
 // ---- Hỏa hệ: animation 8 khung cắt từ bảng thiết kế (img/fx_hoa_skills.png, mỗi khung 124×64; sinh lại: tools/cut_skills.py) ----
 const SK_FX = {src: 'img/fx_hoa_skills.png', fw: 124, fh: 64, bg: '#0c1019', dur: [.3, .25, .25, .25, .35, .3, .3, .3], rest: .6};
-const SK_FX_ROW = {liet_diem: 2, hoa_long: 3, phan_thien: 4, xich_diem_thien: 5, hoa_thuan: 6, hoa_giap: 7};
+const SK_FX_ROW = {liet_diem: 2, hoa_long: 3, phan_thien: 4, xich_diem_thien: 5, than_hoa: 4, hu_khong_hoa: 5, hoa_thuan: 6, hoa_giap: 7};
 /** Phát 8 khung của chiêu theo nhịp thiết kế, chuyển khung mờ dần cho mượt. */
 function skFlip(g, now, s){
   const img = skImg(SK_FX.src), row = SK_FX_ROW[s.id], D = SK_FX.dur, total = D.reduce((a, b) => a + b, 0) + SK_FX.rest;

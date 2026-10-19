@@ -1,0 +1,56 @@
+/* Vấn Đạo · css/spin.css: Luyện chế → Tài Xỉu (vòng quay 10 phẩm trang bị). Dùng chung khung .dd của craft.css. */
+.sp-main{align-items:center}
+.sp .dd-top{flex-wrap:wrap;gap:6px 10px}
+.sp .dd-top .dd-cult{order:3;flex-basis:100%}
+.sp .dd-top .lc-tabs{margin-right:auto}
+.sp-stage{position:relative;width:min(100%,320px);aspect-ratio:1;margin:4px auto 0}
+.sp-wheel{position:absolute;inset:0}
+.sp-svg{display:block;width:100%;height:100%;overflow:visible}
+.sp-ring{fill:#0b0806;stroke:var(--bz2);stroke-width:2}
+.sp-disc{transform-box:fill-box;transform-origin:center;transition:transform 4.2s cubic-bezier(.12,.62,.08,1)}
+.sp-bg{fill:#17120e;stroke:#3b3127;stroke-width:.8}
+.sp-bg.alt{fill:#120e0b}
+.sp-seg .sp-bg{fill:color-mix(in srgb,var(--c) 10%,#17120e)}
+.sp-seg .sp-bg.alt{fill:color-mix(in srgb,var(--c) 16%,#0f0c09)}
+.sp-rim{fill:none;stroke:var(--c);stroke-width:3;opacity:.85}
+.sp-nm{fill:var(--c);font:600 7.4px var(--f-body);text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#0b0806;stroke-width:1.6}
+.sp-no{fill:#e9dfc4;font:700 11px var(--f-display);text-anchor:middle;dominant-baseline:middle;opacity:.85}
+.sp-ic{width:26px;height:26px;display:grid;place-items:center}
+.sp-ic img{width:24px;height:24px;image-rendering:pixelated}
+.sp-seg.on .sp-bg{fill:color-mix(in srgb,var(--c) 38%,#17120e);animation:sp-win 1s ease-in-out 3}
+.sp-seg.on .sp-rim{stroke-width:5;opacity:1}
+@keyframes sp-win{50%{fill:color-mix(in srgb,var(--c) 60%,#17120e)}}
+.sp-dot{fill:#6a5430} .sp-dot.b{fill:#3b3127}
+.sp-wheel.spinning .sp-dot{animation:sp-blink .5s steps(2) infinite} .sp-wheel.spinning .sp-dot.b{animation-delay:.25s}
+@keyframes sp-blink{50%{fill:#ffd27a}}
+/* kim chỉ ở đỉnh vòng */
+.sp-ptr{position:absolute;left:50%;top:-6px;width:0;height:0;transform:translateX(-50%);border:11px solid transparent;border-top:20px solid #f2c94c;border-bottom:0;
+  filter:drop-shadow(0 2px 0 #0b0806) drop-shadow(0 0 6px rgba(242,201,76,.55));z-index:2}
+.sp-hub{position:absolute;left:50%;top:50%;width:25%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
+  font-family:var(--f-display);font-size:17px;font-weight:700;letter-spacing:.08em;color:#ffe2a0;cursor:pointer;
+  background:radial-gradient(circle at 40% 35%,#5a4220,#2a1d0c 70%);border:2px solid #c98a3a;box-shadow:inset 0 0 0 2px #0b0806,0 0 12px rgba(255,170,60,.3)}
+.sp-hub:hover:not(:disabled){border-color:#e6b060}
+.sp-hub:disabled{opacity:.55;cursor:not-allowed}
+.sp-hub:focus-visible,.sp-side button:focus-visible,.sp-act button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sp-act{padding-top:2px}
+.sp-res{align-self:stretch;min-height:64px;background:var(--ink3);border:1px solid #3b3127;padding:6px 8px}
+.sp-wait{margin:10px 0;text-align:center;color:#8a9690;font-size:11.5px}
+.sp-got{display:flex;flex-wrap:wrap;gap:4px}
+.sp-item{display:flex;align-items:center;gap:5px;padding:3px 7px 3px 3px;background:var(--iron,#1b1f22);border:1px solid #2f3438;font-size:11px;position:relative}
+.sp-item img{width:28px;height:28px}
+.sp-item em{position:absolute;left:18px;bottom:0;font-style:normal;font-size:9.5px;color:#f4efe2;text-shadow:0 1px 0 #000}
+.sp-got.big .sp-item:first-child{box-shadow:0 0 10px color-mix(in srgb,var(--rc,#e6c46a) 55%,transparent);animation:sp-pop .5s ease-out}
+@keyframes sp-pop{from{transform:scale(.6);opacity:0}}
+.sp-side{display:flex;flex-direction:column;gap:10px}
+.sp-rate{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--parch)}
+.sp-rate img{width:22px;height:22px} .sp-rate i{font-style:normal;color:#a08c66;margin:0 2px}
+.sp-btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px} .sp-btns .dd-all{flex:1;white-space:nowrap}
+.sp-note{margin:5px 0 0;font-size:10.5px;color:#8a9690}
+.sp-odds ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.sp-odds li{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:0 6px;padding:2px 4px;font-size:11.5px;border:1px solid transparent}
+.sp-odds li b:last-of-type{font-variant-numeric:tabular-nums;color:var(--parch)}
+.sp-odds li.on{border-color:#8a6a2a;background:#2a2414}
+.sp-n{display:grid;place-items:center;width:18px;height:18px;font-size:10px;font-weight:700;color:#0b0806;background:var(--c)}
+.sp-tk img{width:24px;height:24px}
+@media (prefers-reduced-motion: reduce){.sp-disc{transition:none}.sp-seg.on .sp-bg,.sp-wheel.spinning .sp-dot,.sp-got.big .sp-item:first-child{animation:none}}
+body.panel .sp-stage{width:min(100%,280px)}
