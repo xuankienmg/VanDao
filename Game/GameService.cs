@@ -551,7 +551,7 @@ public class GameService(GameDbContext db)
                 p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0; p.PillBonus = 0;
                 p.Area = 1; p.AreaMax = 1; p.Chapter = 0; p.ChapterMax = 0; p.BossKills = 0;
                 p.BreakCooldownUntil = p.DebuffUntil = DateTime.MinValue;
-                p.Skills = ""; p.SkillSlots = ""; p.AdminPoints = 0;
+                p.Skills = ""; p.SkillSlots = ""; p.AdminPoints = 0; p.Redeemed = "";
                 p.AlchemyExp = 0; p.RefineRecipe = -1; p.RefineLeft = 0; p.RefineCatalyst = false;
                 p.RefineStartAt = p.RefineEndAt = now; p.LastRefine = ""; p.LastRefineAt = DateTime.MinValue;
                 p.BodyHp = 0; p.BodyDef = 0;
@@ -664,16 +664,16 @@ public class GameService(GameDbContext db)
     }
 
     /// <summary>Tổng hiệu quả bị động của các kỹ năng đã học (đơn vị %).</summary>
-    private static (double atk, double def, double hp, double crit, double speed, double move, double qi, double monAtk) SkillBonus(Player p)
+    private static (double atk, double def, double hp, double crit, double speed, double qi, double monAtk) SkillBonus(Player p)
     {
-        double a = 0, d = 0, h = 0, c = 0, sp = 0, mv = 0, q = 0, m = 0;
+        double a = 0, d = 0, h = 0, c = 0, sp = 0, q = 0, m = 0;
         foreach (var (id, l) in SkillLevels(p))
         {
             if (!SkillData.ById.TryGetValue(id, out var s) || s.Tree == "basic") continue;
             var f = s.Factor(l);
-            a += s.AtkPct * f; d += s.DefPct * f; h += s.HpPct * f; c += s.Crit * f; sp += s.Speed * f; mv += s.Move * f; q += s.QiPct * f; m += s.MonAtkDown * f;
+            a += s.AtkPct * f; d += s.DefPct * f; h += s.HpPct * f; c += s.Crit * f; sp += s.Speed * f; q += s.QiPct * f; m += s.MonAtkDown * f;
         }
-        return (a, d, h, c, sp, mv, q, Math.Min(40, m));
+        return (a, d, h, c, sp, q, Math.Min(40, m));
     }
 
     /// <summary>Bị động cho chiêu thức: % sát thương chiêu hệ Hỏa, % xuyên thấu phòng thủ quái, % công thiêu đốt mỗi lượt.</summary>
@@ -767,6 +767,56 @@ public class GameService(GameDbContext db)
             : Log(p, $"Luyện khí thất bại: {GameData.FuseCount} trang bị {GameData.QualityName[q]} chỉ còn lại {label}.", "bad");
         var inputs = ids.GroupBy(x => x).Select(g => new ItemQtyDto(g.Key, g.Count())).ToList();
         return (msg, kind, new CraftResultDto(ok ? "fuse:ok" : "fuse:fail", new(outId, 1), inputs));
+    }
+
+    // ================= Tài Xỉu: linh thạch → vé → quay vòng 10 phẩm trang bị =================
+
+    /// <summary>Nhập code quà tặng: mỗi code nhận 1 lần cho mỗi nhân vật (Player.Redeemed, xóa khi tu lại từ đầu).</summary>
+    public (string msg, string kind) RedeemCode(Player p, string? code)
+    {
+        var c = (code ?? "").Trim().ToUpperInvariant();
+        if (c.Length == 0) throw new GameException("Hãy nhập code.");
+        if (!GameData.GiftCodes.TryGetValue(c, out var g)) throw new GameException("Code không đúng.");
+        var used = p.Redeemed.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        if (used.Contains(c)) throw new GameException("Code này đã được nhận cho nhân vật hiện tại.");
+        if (p.Count(g.Item) == 0 && BagUsed(p) >= BagCap(p)) throw new GameException("Hành trang đầy, dọn bớt một ô rồi nhập lại.");
+        p.Redeemed = string.Join(',', used.Append(c));
+        p.Add(g.Item, g.Qty);
+        return Log(p, $"Nhập code {c}: +{g.Qty} {GameData.ItemById[g.Item].Name}.", "gold");
+    }
+
+    /// <summary>Đổi linh thạch lấy vé quay (n = số vé, 0 = đổi tối đa).</summary>
+    public (string msg, string kind) BuySpinTicket(Player p, int n)
+    {
+        var price = GameData.SpinTicketPrice;
+        var max = p.Count("linh_thach") / price;
+        if (n <= 0) n = max;
+        if (max <= 0 || n > max) throw new GameException($"Cần {(long)price * Math.Max(1, n):N0} linh thạch để đổi {Math.Max(1, n)} vé quay.");
+        if (p.Count(GameData.SpinTicket) == 0 && BagUsed(p) >= BagCap(p)) throw new GameException("Hành trang đầy, không nhận được vé quay.");
+        p.Add("linh_thach", -n * price);
+        p.Add(GameData.SpinTicket, n);
+        return Log(p, $"Đổi {(long)n * price:N0} linh thạch lấy {n} vé Tài Xỉu.", "good");
+    }
+
+    /// <summary>Quay n lượt (1..SpinMaxBatch), mỗi lượt tốn 1 vé: nhận 1 trang bị bộ cảnh giới hiện tại, phẩm gieo theo GameData.SpinWeights.</summary>
+    public (string msg, string kind, CraftResultDto craft) Spin(Player p, int n)
+    {
+        n = Math.Clamp(n, 1, GameData.SpinMaxBatch);
+        var have = p.Count(GameData.SpinTicket);
+        if (have < n) throw new GameException(have == 0 ? "Chưa có vé quay. Đổi vé bằng linh thạch trước." : $"Cần {n} vé quay (đang có {have}).");
+        var free = BagCap(p) - BagUsed(p) + (have == n ? 1 : 0);   // dùng hết vé thì trả lại ô của vé
+        if (free < n) throw new GameException($"Hành trang cần {n} ô trống để nhận trang bị.");
+        var pool = GameData.SpinPool(p.Realm);
+        var outs = Enumerable.Range(0, n)
+            .Select(_ => GameData.GearId(pool[Random.Shared.Next(pool.Length)], GameData.RollQuality(GameData.SpinWeights))).ToList();
+        p.Add(GameData.SpinTicket, -n);
+        foreach (var id in outs) p.Add(id, 1);
+        int Q(string id) => Array.IndexOf(GameData.RarityOrder, GameData.ItemById[id].Rarity);
+        var best = outs.MaxBy(Q)!;
+        var labels = string.Join(", ", outs.OrderByDescending(Q).Select(id => GameData.Label(GameData.ItemById[id])));
+        var (msg, kind) = Log(p, $"Tài Xỉu quay {n} lượt: {labels}.", Q(best) >= 4 ? "gold" : "good");
+        var got = outs.GroupBy(x => x).Select(g => new ItemQtyDto(g.Key, g.Count())).ToList();
+        return (msg, kind, new CraftResultDto($"spin:{Q(best)}", new(best, 1), new List<ItemQtyDto> { new(GameData.SpinTicket, n) }, got));
     }
 
     // ================= Bản đồ: 10 chương × (15 ải + ải Boss) =================
@@ -1068,7 +1118,7 @@ public class GameService(GameDbContext db)
     private static double ExploreSeconds(Player p)
     {
         var t = Math.Max(GameData.MinExploreSeconds,
-            GameData.WalkSeconds * (1 - Math.Min(60, Stats(p).Move) / 100)
+            GameData.WalkSeconds
             + Battle(p).Hits * GameData.HitSeconds * (1 - Math.Min(60, Stats(p).Speed) / 100)
             + (Math.Max(1, Battle(p).Waves?.Count ?? 1) - 1) * GameData.WaveSeconds
             + GameData.EndSeconds);
@@ -1090,8 +1140,7 @@ public class GameService(GameDbContext db)
         return new CombatStats((int)((b.Atk + Sum(i => i.Atk)) * weak * (1 + (sk.atk + fx.SetPct) / 100)), (int)((b.Hp + Sum(i => i.Hp) + p.BodyHp) * (1 + (sk.hp + fx.HpPct + fx.SetPct) / 100)),
             (int)((b.Def + Sum(i => i.Def) + p.BodyDef) * weak * (1 + (sk.def + fx.SetPct) / 100)),
             (On("speed") ? baseSpeed + SumD(i => i.SpeedPct) : 0) + sk.speed,
-            5 + SumD(i => i.CritPct) + sk.crit,
-            SumD(i => i.MovePct) + sk.move);
+            5 + SumD(i => i.CritPct) + sk.crit);
     }
 
     /// <summary>

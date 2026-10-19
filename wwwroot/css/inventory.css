@@ -110,10 +110,10 @@ body.panel .sell-btn{padding:0 6px}
 .iv-cell .arm{position:absolute;inset:auto 0 0 0;padding:1px 0;background:rgba(58,30,20,.92);color:#ffc0a0;font-size:8px;line-height:1.1;text-align:center}
 .iv-cell:focus-visible,.iv-slot:focus-visible,.iv-cats button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 /* ================= 10 PHẨM (10/2026): màu + hiệu ứng theo cấp =================
-   1 Phàm trắng · 2 Linh lục lam · 3 Huyền lục · 4 Địa lam · 5 Thiên tím · 6 Thánh cam · 7 Thần đỏ · 8 Tiên hồng · 9 Đạo vàng kim · 10 Huyền Thiên cầu vồng / bạch kim
+   1 Phàm trắng · 2 Linh lục · 3 Huyền lục lam · 4 Địa lam · 5 Thiên tím · 6 Thánh cam · 7 Thần đỏ · 8 Tiên hồng · 9 Đạo vàng kim · 10 Huyền Thiên cầu vồng / bạch kim
    Cấp 1–2: không viền sáng · 3–5: viền sáng nhẹ · 6–8: viền sáng mạnh + hạt sáng nhỏ · 9–10: viền sáng chạy quanh ô + hạt bay + glow mạnh (10: viền cầu vồng)
    Áp cho mọi vật phẩm (ô túi, ô trang bị, khung đan …): --rc = màu phẩm, --rbg = màu nền ô. */
-.r-common{--rc:#FFFFFF;--rbg:#3a3d42} .r-uncommon{--rc:#00E5FF;--rbg:#0c4651} .r-rare{--rc:#00FF7F;--rbg:#0c4d2c}
+.r-common{--rc:#FFFFFF;--rbg:#3a3d42} .r-uncommon{--rc:#00FF7F;--rbg:#0c4d2c} .r-rare{--rc:#00E5FF;--rbg:#0c4651}
 .r-epic{--rc:#1E90FF;--rbg:#0f3769} .r-legendary{--rc:#BF00FF;--rbg:#43105f} .r-mythic{--rc:#FF8C00;--rbg:#653406}
 .r-divine{--rc:#FF0033;--rbg:#650a17} .r-immortal{--rc:#FF69B4;--rbg:#652046} .r-dao{--rc:#FFD700;--rbg:#5f4a06} .r-supreme{--rc:#E0FFFF;--rbg:#34465a}
 [class*=" r-"]:is(.r-common,.r-uncommon,.r-rare,.r-epic,.r-legendary,.r-mythic,.r-divine,.r-immortal,.r-dao,.r-supreme),
@@ -166,10 +166,10 @@ body.panel .sell-btn{padding:0 6px}
 /* (màu tên phẩm qc-* / rc-*: xem khối "màu tên phẩm" bên dưới) */
 .iv-card .eff [class^="qc-"]{font-weight:600}
 /* màu tên phẩm: rc-* trên nền tối · qc-* trên thẻ giấy da (đậm hơn để đọc rõ) */
-.rc-common{color:#f2f2f2} .rc-uncommon{color:#00E5FF} .rc-rare{color:#00FF7F} .rc-epic{color:#4aa8ff} .rc-legendary{color:#d24dff}
+.rc-common{color:#f2f2f2} .rc-uncommon{color:#00FF7F} .rc-rare{color:#00E5FF} .rc-epic{color:#4aa8ff} .rc-legendary{color:#d24dff}
 .rc-mythic{color:#FF8C00} .rc-divine{color:#ff3355} .rc-immortal{color:#FF69B4} .rc-dao{color:#FFD700}
 .rc-supreme,.qc-supreme{background:linear-gradient(90deg,#E0FFFF,#FFD700,#FF00FF,#00E5FF);-webkit-background-clip:text;background-clip:text;color:transparent}
-.qc-common{color:#5d6268} .qc-uncommon{color:#00808f} .qc-rare{color:#0a8a48} .qc-epic{color:#1660b0} .qc-legendary{color:#8a00b8}
+.qc-common{color:#5d6268} .qc-uncommon{color:#0a8a48} .qc-rare{color:#00808f} .qc-epic{color:#1660b0} .qc-legendary{color:#8a00b8}
 .qc-mythic{color:#c25f00} .qc-divine{color:#c4002a} .qc-immortal{color:#c2337f} .qc-dao{color:#a07e00}
 .qc-supreme{background-image:linear-gradient(90deg,#1a8a9a,#a07e00,#b000b0,#1660b0)}
 .iv-odds .rc-common{color:#5d6268} .iv-odds .rc-uncommon{color:#00808f} .iv-odds .rc-rare{color:#0a8a48} .iv-odds .rc-epic{color:#1660b0} .iv-odds .rc-legendary{color:#8a00b8}
@@ -187,7 +187,7 @@ body.panel .sell-btn{padding:0 6px}
 .iv-card .spc{font-size:11px;color:#6a3d8a}
 .iv-card .eff{font-size:11px;line-height:1.4;margin:1px 0} .iv-card .eff .g1{color:#00808f} .iv-card .eff .g2{color:#0a8a48} .iv-card .eff .g3{color:#1660b0} .iv-card .eff .g4{color:#8a00b8;font-weight:600} .iv-card .eff .g5{color:#c25f00;font-weight:600}
 .iv-fx{margin-top:6px;padding-top:5px;border-top:1px dashed #3b3127;font-size:11px;line-height:1.5;color:#a9b4ae}
-.iv-fx b{color:var(--parch);font-weight:600} .iv-fx .g1{color:#00E5FF} .iv-fx .g2{color:#00FF7F} .iv-fx .g3{color:#4aa8ff} .iv-fx .g4{color:#d24dff} .iv-fx .g5{color:#FF8C00}
+.iv-fx b{color:var(--parch);font-weight:600} .iv-fx .g1{color:#00FF7F} .iv-fx .g2{color:#00E5FF} .iv-fx .g3{color:#4aa8ff} .iv-fx .g4{color:#d24dff} .iv-fx .g5{color:#FF8C00}
 .iv-card .ds{font-size:11px;font-style:italic;color:#5a4a34}
 .iv-card .set{align-self:flex-start;margin:2px 0 0;padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:700;letter-spacing:.2px;color:#f2fff8;background:var(--sc);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}   /* dòng tên bộ trang bị */
 .iv-card .sv{font-size:10.5px;color:#6b5a3e}

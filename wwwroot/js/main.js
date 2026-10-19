@@ -175,9 +175,9 @@ document.addEventListener('click', e => {
 function openTab(name, exact){
   if (name === 'craft' && !exact) name = 'fuse';                // tab Luyện chế: mặc định mở Luyện khí
   if (LC_SUBS.includes(name)) lcSub = name;
-  const top = name === 'fuse' || name === 'sell' ? 'craft' : name;
+  const top = name === 'fuse' || name === 'sell' || name === 'spin' ? 'craft' : name;
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === top));
-  ['req','inv','craft','fuse','sell','map','skill','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
+  ['req','inv','craft','fuse','sell','spin','map','skill','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
   document.querySelectorAll('[data-lc]').forEach(b => { b.classList.toggle('on', b.dataset.lc === name); b.setAttribute('aria-selected', b.dataset.lc === name); });
   if (MODE === 'panel' && typeof notifyHost === 'function') notifyHost('tab', {tab: name}); // cửa sổ đổi cỡ theo tab
 }
@@ -226,7 +226,8 @@ async function boot(){
     act(`area/${a + 1}`);
   };
   $('btnPanel').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'map'}) : openTab('map');
-  $('btnMenu').onclick = () => notifyHost('menu');
+  // cửa sổ desktop: menu cài đặt gốc (có mục Nhập code); chạy trên trình duyệt: hỏi code quà tặng
+  $('btnMenu').onclick = () => window.chrome?.webview ? notifyHost('menu') : (c => c && redeemCode(c))(prompt('Nhập code quà tặng'));
   addEventListener('keydown', e => { if (e.key === 'Escape' && MODE === 'panel') notifyHost('close-panel'); });
   let armed = 0;
   $('btnReset').onclick = async () => {
