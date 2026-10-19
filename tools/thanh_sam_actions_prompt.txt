@@ -1,0 +1,4 @@
+Tool: built-in image_gen, edit with transparent_background=true.
+Reference: user-supplied codex-clipboard-7da94344-6357-4a7f-93fa-817ae689632a.png.
+Edit the exact sprite sheet. Preserve positions, scale, pose count, pixel illustration style, identity and clothing. Remove checkerboard to true transparent alpha. Remove all cyan glows, magic energy, sword trails, orbs, gold rings, beam and watermark. Reconstruct natural hands and clothing where glow was. Keep physical swords. Keep 8 walking poses, 7 running poses, 5 sword poses, 3 spellcasting poses in the original row order. Do not add, omit or rearrange poses. Character-only sprites without effects.
+Returned square PNG normalized to 1024x1024 before slicing. Whole-row connected silhouettes determine ownership so weapons do not cross crop boundaries. Runtime: shared 210 source-pixel body height, 384x320 frames, anchor 192,308.

@@ -1,12 +1,12 @@
 {
   "profiles": {
-    "VanDao (cửa sổ)": {
+    "NguoiLuoiTuTien (cửa sổ)": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "VanDao (trình duyệt)": {
+    "NguoiLuoiTuTien (trình duyệt)": {
       "commandName": "Project",
       "commandLineArgs": "--web",
       "launchBrowser": true,

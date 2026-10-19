@@ -1,4 +1,4 @@
-# Vấn Đạo (C# / ASP.NET Core + SQLite)
+# Người Lười Tu Tiên — NguoiLuoiTuTien (C# / ASP.NET Core + SQLite)
 
 Game tu tiên 2D. Server C# xử lý toàn bộ luật chơi và lưu tiến độ vào SQLite; trình duyệt chỉ hiển thị canvas và gửi hành động.
 
@@ -11,10 +11,11 @@ cd VanDao
 dotnet run
 ```
 
+File chạy sau khi build là `NguoiLuoiTuTien.exe`. Dữ liệu tiếp tục dùng thư mục `%LocalAppData%\VanDao` để giữ tiến độ từ bản cũ.
+
 Game chạy dưới dạng **dải nhỏ 280×200 nằm sát ngay trên thanh taskbar**, giống cách "TBH: Task Bar Hero" hoạt động (cần Microsoft Edge WebView2 Runtime, có sẵn trên Windows 10/11):
 
-- **Nền trong suốt**: chỉ thấy nhân vật và bảng thông tin gọn; phần trống bấm xuyên qua được. Tắt trong menu nếu màn hình bị đen.
-- **Chuột phải** lên dải (hoặc nút bánh răng): menu cài đặt gồm bố cục màn hình, kích thước (75–200%), ghim luôn hiển thị, nền trong suốt, đặt lại vị trí, ẩn xuống khay, thoát.
+- **Chuột phải** lên dải (hoặc nút bánh răng): menu cài đặt gồm bố cục màn hình, kích thước (75–200%), ghim luôn hiển thị, đặt lại vị trí, ẩn xuống khay, thoát.
 - **Bố cục màn hình**: tự động theo vị trí taskbar, hoặc neo trái / giữa / phải ở mép dưới hay mép trên. Kéo thanh tiêu đề (chỗ tên cảnh giới) để đặt tự do.
 - **Nút Tu luyện** (quyển sách): mở cửa sổ nhỏ Đột phá / Hành trang / Đan dược / Bản đồ bật lên phía trên dải. Esc hoặc nút đóng để quay về dạng dải.
 - **Shift+F12**: đặt lại vị trí khi dải bị lạc. **Shift+F11**: đặt lại kích thước.
@@ -68,7 +69,7 @@ Dữ liệu nằm trong `%LocalAppData%\VanDao`: `vandao.db` (tiến độ), `wi
 | `Game/Dtos.cs` | Dữ liệu trả về cho client |
 | `Data/Entities.cs` | Bảng `Players`, `Inventory`, `Equipment`, `Logs` |
 | `Data/GameDbContext.cs` | EF Core DbContext |
-| `Desktop/GameWindow.cs` | Dải game trên taskbar: neo vị trí, nền trong suốt, menu chuột phải, phím tắt, khay hệ thống |
+| `Desktop/GameWindow.cs` | Dải game trên taskbar: neo vị trí, menu chuột phải, phím tắt, khay hệ thống |
 | `Desktop/PanelWindow.cs` | Cửa sổ Tu luyện bật lên (Đột phá / Hành trang / Đan dược / Bản đồ) |
 | `Desktop/WindowSettings.cs` | Lưu cài đặt cửa sổ |
 | `Desktop/WebHost.cs`, `Native.cs`, `Theme.cs` | WebView2 dùng chung, Win32 API, giao diện menu tối |

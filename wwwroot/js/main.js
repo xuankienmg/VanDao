@@ -6,12 +6,12 @@ let lastFrame = performance.now(), lastLive = 0;
 function frame(now){
   const dt = Math.min(.1, (now - lastFrame)/1000); lastFrame = now;
   if (W && S && MODE !== 'panel') drawScene(now/1000, dt);
+  if (S) drawInventoryAvatar(now/1000);
   if (now - lastLive > 200){ live(); lastLive = now; }
   requestAnimationFrame(frame);
 }
 
-// Báo cho cửa sổ C# vùng nào là "có game": đĩa nhân vật + bảng thông tin.
-// Ngoài vùng này cửa sổ trong suốt và chuột bấm xuyên qua xuống desktop.
+// Báo cho cửa sổ C# khung game đã vẽ xong (tin "shape") để hiện dải lần đầu.
 let lastShape = '';
 function reportShape(force){
   if (MODE !== 'strip' || !window.chrome?.webview) return;
@@ -131,7 +131,18 @@ function renderAdmin(force){
   const sets = [...new Set(bases.map(b => b.set || 'Khác'))];
   const gearOpts = sets.map(st => `<optgroup label="Bộ ${st} · cấp ${bases.find(b => (b.set || 'Khác') === st).itemLevel}">${bases.filter(b => (b.set || 'Khác') === st)
     .map(b => `<option value="${b.base}" data-set="${b.set || ''}" ${b.base === keepGear ? 'selected' : ''}>${b.name} · ${b.kind || ''} (cấp ${b.itemLevel} · ${DATA.realms[b.minRealm || 0].name})</option>`).join('')}</optgroup>`).join('');
-  const items = DATA.items.filter(i => !i.base).sort((a, b) => RAR_KEYS.indexOf(a.rarity) - RAR_KEYS.indexOf(b.rarity));   // trang bị chọn ở mục Trang bị bên dưới
+  const itemTypes = [
+    ['stone', 'Tài nguyên'], ['pill', 'Đan đột phá'], ['elixir', 'Đan đặc biệt'],
+    ['herb', 'Linh thảo'], ['boss', 'Nguyên liệu Boss'], ['key', 'Chìa khóa'],
+    ['chest', 'Rương'], ['ticket', 'Vé'], ['equip', 'Trang bị'],
+  ];
+  const itemGroup = it => itemTypes.some(([type]) => type === it.type) ? it.type : 'other';
+  const items = DATA.items.filter(i => !i.base).sort((a, b) =>
+    RAR_KEYS.indexOf(a.rarity) - RAR_KEYS.indexOf(b.rarity) || a.name.localeCompare(b.name, 'vi'));
+  const itemOpts = [...itemTypes, ['other', 'Khác']].map(([type, label]) => {
+    const group = items.filter(it => itemGroup(it) === type);
+    return group.length ? `<optgroup label="${label}">${group.map(it => `<option value="${it.id}" ${it.id === keepItem ? 'selected' : ''}>${it.name} · ${rar(it).n}${it.slot ? '' : ' · ' + (it.kind || '')}</option>`).join('')}</optgroup>` : '';
+  }).join('');
   const realms = DATA.realms.flatMap((r, i) => r.stages.map((st, j) => `<option value="${i}:${j}" ${i === S.realm && j === S.stage ? 'selected' : ''}>${r.name} · ${st}</option>`)).join('');
   const F = (id, n, d) => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) ? 'on' : ''}" title="${d}">${n}: ${flags.includes(id) ? 'BẬT' : 'tắt'}</button>`;
   pane.innerHTML = `<div class="adm-p">
@@ -139,7 +150,7 @@ function renderAdmin(force){
       <small>Ctrl+Shift+A để ẩn / hiện admin mode. Cờ chế độ lưu theo nhân vật cho tới khi tắt.</small></section>
     <section><h4>Tài nguyên & vật phẩm</h4>
       <div class="adm-row"><button data-adm="stones" data-n="1000">+1.000 linh thạch</button><button data-adm="stones" data-n="100000">+100.000</button><button data-adm="stones" data-n="10000000">+10 triệu</button></div>
-      <div class="adm-row"><select id="admItem">${items.map(it => `<option value="${it.id}" ${it.id === keepItem ? 'selected' : ''}>${it.name} · ${rar(it).n}${it.slot ? '' : ' · ' + (it.kind || '')}</option>`).join('')}</select>
+      <div class="adm-row"><select id="admItem">${itemOpts}</select>
         <input id="admN" type="number" min="1" value="${keepN || 1}"><button data-adm="give">Nhận</button></div></section>
     <section><h4>Trang bị</h4>
       <div class="adm-row"><select id="admGear">${gearOpts}</select>

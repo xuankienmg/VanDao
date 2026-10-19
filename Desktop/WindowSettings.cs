@@ -27,9 +27,6 @@ public class WindowSettings
     /// <summary>Luôn hiển thị trên các cửa sổ khác.</summary>
     public bool Pinned { get; set; } = true;
 
-    /// <summary>Nền trong suốt: chỉ thấy nhân vật và bảng thông tin, bấm xuyên qua phần trống.</summary>
-    public bool Transparent { get; set; } = true;
-
     public double Opacity { get; set; } = 1.0;
 
     /// <summary>Kích thước riêng cho tab Hành trang (rộng hơn để chứa nhân vật + túi).</summary>

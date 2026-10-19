@@ -1,0 +1,31 @@
+/* Main menu plate: static artwork, with dark surfaces above it for legible UI. */
+body.full,body.panel{
+  background-color:#08131f;
+  background-image:linear-gradient(180deg,rgba(5,12,22,.24),rgba(5,12,22,.48) 55%,rgba(3,8,16,.76)),url('../img/backgrounds/menu-night-v1.webp');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+}
+body.full{min-height:100vh;min-height:100dvh}
+body:is(.full,.panel) aside.book{
+  background:linear-gradient(135deg,rgba(8,18,32,.50),rgba(5,12,22,.72));
+  border-color:rgba(171,145,87,.42);
+  box-shadow:0 12px 44px rgba(0,0,0,.28),inset 0 0 0 1px rgba(205,181,117,.05);
+}
+body:is(.full,.panel) .book > .tabs{
+  background:linear-gradient(180deg,rgba(14,29,43,.97),rgba(8,19,31,.96));
+  border-bottom-color:rgba(201,164,92,.34);
+}
+body:is(.full,.panel) .book > .tabs .tab{color:#a8bdc8}
+body:is(.full,.panel) .book > .tabs .tab:hover{color:#f2e2b9;background:rgba(196,160,86,.07)}
+body:is(.full,.panel) .book > .tabs .tab[aria-selected="true"]{
+  color:#f3dfac;
+  border-bottom-color:#d5b576;
+  background:linear-gradient(0deg,rgba(185,145,65,.13),transparent);
+  text-shadow:0 0 12px rgba(218,182,111,.18);
+}
+/* The transparent desktop strip deliberately has no scenic background. */
+@media (max-width:620px){
+  body.full,body.panel{background-position:54% center}
+}

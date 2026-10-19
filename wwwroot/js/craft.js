@@ -30,12 +30,12 @@ function ddPillCard(k){
 
 // ---- đan phương: luyện đan đặc biệt từ linh dược (Tẩy Tủy Đan, Phá Chướng Đan theo cảnh giới) ----
 const brewRealm = id => id.startsWith('pha_chuong_dan_') ? +id.slice(15) : -1;
-const brewMax = b => Math.min(...Object.entries(b.in).map(([k, c]) => Math.floor((S.inventory[k] || 0) / c)));
+const brewMax = b => S.realm < (ITEM[b.out].minRealm || 0) ? 0 : Math.min(...Object.entries(b.in).map(([k, c]) => Math.floor((S.inventory[k] || 0) / c)));
 function ddBrewRow(b){
   const it = ITEM[b.out], max = brewMax(b), own = S.inventory[b.out] || 0, br = brewRealm(b.out);
   const ins = Object.entries(b.in).map(([k, c]) => { const h = S.inventory[k] || 0;
     return `<span class="br-in ${h >= c ? 'ok' : 'miss'}" data-tip="${itemTip(k)}">${itemImg(k)}<b>${k === 'linh_thach' ? fmt(c) : `${fmt(Math.min(h, c))}/${fmt(c)}`}</b></span>`; }).join('<i>+</i>');
-  const note = br >= 0 && br !== S.realm ? `<small class="br-far">dùng ở ${DATA.realms[br].name}</small>` : '';
+  const note = b.out === 'ngo_dao_dan' ? '<small class="br-far">Từ Nguyên Anh · dùng: +1 điểm công pháp/viên</small>' : br >= 0 && br !== S.realm ? `<small class="br-far">dùng ở ${DATA.realms[br].name}</small>` : '';
   return `<div class="dd-brew ${max ? 'ok' : ''}">
     <span class="dd-fr r-${it.rarity}" data-tip="${itemTip(b.out)}">${itemImg(b.out)}</span>
     <div class="br-mid"><p class="nm"><b class="rc-${it.rarity}">${it.name}</b> <small>đang có ${fmt(own)}</small>${note}</p><div class="br-ins">${ins}</div></div>

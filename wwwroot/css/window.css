@@ -1,11 +1,13 @@
 /* Vấn Đạo · css/window.css: cửa sổ desktop: dải nhỏ / bảng Tu luyện. Tách từ index.html (tools/split_index.py). */
 /* ===== Cửa sổ desktop kiểu Task Bar Hero =====
-   strip: dải ngang nằm sát thanh taskbar, nền trong suốt, chỉ có nhân vật + thông tin gọn
+   strip: dải ngang nằm sát thanh taskbar, nền đặc, chỉ có nhân vật + thông tin gọn
    panel: cửa sổ bảng (Đột phá / Hành trang / Đan dược / Bản đồ) bật lên phía trên dải khi cần */
 .strip-head{display:none}
 html.strip,body.strip{background:transparent!important;height:100%;overflow:hidden}
 body.strip{padding:0}
 body.strip.opaque{background:var(--ink)!important}
+/* nền đặc: cửa sổ là hình chữ nhật đầy đủ (không cắt region) → khung game phủ kín, bỏ lề 4px và bo góc để không lộ viền nền thừa bên ngoài */
+body.strip.opaque .altar{margin:0;height:100%;border-radius:0}
 body.strip .wrap{max-width:none;height:100%;gap:0}
 body.strip aside.book,body.strip .hud{display:none}
 body.strip .grid{display:block;height:100%}

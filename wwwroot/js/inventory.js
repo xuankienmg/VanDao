@@ -13,7 +13,7 @@ const RARITY = {
   divine:    {n:'Thần',        c:'#FF0033', v:12800},
   immortal:  {n:'Tiên',        c:'#FF69B4', v:51200},
   dao:       {n:'Đạo',         c:'#FFD700', v:204800},
-  supreme:   {n:'Huyền Thiên', c:'#E0FFFF', v:819200},
+  supreme:   {n:'Huyền Tiên', c:'#E0FFFF', v:819200},
 };
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
@@ -30,7 +30,7 @@ const RAR_KEYS = Object.keys(RARITY);
 /** Tên phẩm tô đúng màu phẩm: nền tối (bảng, nhật ký) dùng rc-*, thẻ giấy da dùng qc-* (màu đậm hơn để đọc rõ). */
 const qWord = (r, card) => `<b class="${card ? 'qc' : 'qn'} ${card ? 'qc' : 'rc'}-${r}">${RARITY[r]?.n ?? r}</b>`;
 /** Tô màu tên phẩm trong câu chữ từ server (nhật ký): "[cấp 25 · Đỏ]", "trang bị Vàng". */
-const qColorize = t => t.replace(/(· |trang bị )(Huyền Thiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
+const qColorize = t => t.replace(/(· |trang bị )(Huyền Tiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
 const SET_COLOR = {'Thanh Vân': '#4fb0d8', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
@@ -64,10 +64,16 @@ function itemTip(k, hint){
   if (it.slot) lines.push(`Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}`);
   const sts = itemStats(it); if (sts.length) lines.push(sts.join(' · '));
   if (it.special) lines.push(it.special);
+  for (const effect of it.effects || []) lines.push(`${effect.name}: ${effect.text}`);
   if (it.use) lines.push(it.use);
   if (it.type === 'herb') lines.push(...herbSrcLines(k));
   if (adminOn && it.type === 'chest') lines.push(...chestOddsLines(k));
-  if (it.set) lines.push(`Bộ ${it.set}`);
+  if (it.set) {
+    const state = S?.gearEffects?.sets?.find(s => s.id === it.setId);
+    lines.push(`Bộ ${it.set}: ${state?.count || 0}/10 món đang mặc`);
+    const def = (DATA.equipmentSets || []).find(s => s.id === it.setId);
+    for (const m of def?.milestones || []) lines.push(`${state?.active?.includes(m.count) ? '✓' : '○'} ${m.count} món, cộng thêm: ${m.bonuses.map(b => b.text).join(' · ')}`);
+  }
   lines.push(it.desc);
   if (hint) lines.push(hint);
   return lines.join('\n').replace(/"/g, '&quot;');
@@ -184,11 +190,61 @@ function bagList(){
 }
 function power(st){ return Math.round(st.atk*2 + st.def*3 + st.hp*.4 + (st.crit + st.speed)*4); }
 
-/** Vẽ lại Hành trang mà giữ nguyên vị trí cuộn (túi, khung thông tin): renderInv chạy lại mỗi lần trạng thái đổi. */
+/** Vẽ lại Hành trang mà giữ nguyên vị trí cuộn (cột nhân vật, túi, khung thông tin) và trạng thái mở của mục "Nguồn chỉ số và giới hạn": renderInv chạy lại mỗi lần trạng thái đổi. */
+function drawInventoryIdle(g, image, shape, t, reduced){
+  const {fw,fh,ax,ay,bodyHeight} = shape, scale = 278 / bodyHeight;
+  const left = 160 - ax * scale, top = 306 - ay * scale;
+  g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  if (reduced){
+    g.drawImage(image,0,0,fw,fh,left,top,fw*scale,fh*scale);
+  } else {
+    // Warp one stable pose continuously; never dissolve between mismatched faces.
+    // Both offsets taper to zero at the boots, preserving the ground anchor.
+    const breath = Math.sin(t * Math.PI * 2 / 3.6);
+    const wind = Math.sin(t * Math.PI * 2 / 7.2);
+    const point = y => {
+      const up = Math.max(0,Math.min(1,(ay-y)/bodyHeight));
+      const weight = Math.max(0,Math.min(1,(up-.14)/.86));
+      return {x:left + wind * 8 * Math.sin(Math.PI*weight),
+        y:top + y*scale - breath * 3.6 * weight};
+    };
+    for(let y=0;y<fh;y+=3){
+      const sh=Math.min(3,fh-y), a=point(y), b=point(y+sh);
+      const sy=(b.y-a.y)/sh;
+      // Sample the full pose through each overlapping clip, so filtering does
+      // not introduce transparent scanlines along individual strip edges.
+      g.save(); g.beginPath();
+      g.rect(a.x-1,a.y-.7,fw*scale+2,b.y-a.y+1.4); g.clip();
+      g.drawImage(image,0,0,fw,fh,a.x,a.y-y*sy,fw*scale,fh*sy);
+      g.restore();
+    }
+  }
+  g.restore();
+}
+function drawInventoryAvatar(t){
+  const canvas = $('ivAvatar');
+  if (!S || !canvas || !canvas.offsetParent) return;
+  const g = canvas.getContext('2d'), still = canvas.previousElementSibling;
+  const hero = skinArt('hero');
+  g.clearRect(0,0,320,320);
+  const profile = SKIN_ACTOR_SHEETS[hero];
+  const thanhSam = hero === 'img/hero_luyenkhi.png';
+  const image = thanhSam ? skImg('img/skin/luyenkhi_inventory_breeze.png')
+    : profile ? skImg(`img/skin/${profile.id}_actions.png`) : null;
+  const drawn = !!image;
+  if (image){
+    drawInventoryIdle(g,image,thanhSam ? {fw:384,fh:320,ax:192,ay:308,bodyHeight:210}
+      : {fw:480,fh:440,ax:240,ay:420,bodyHeight:profile.bodyHeight},t,reduce);
+  }
+  canvas.style.visibility = drawn ? 'visible' : 'hidden';
+  if (still) still.hidden = drawn;
+}
 function renderInv(){
-  const pane = $('pane-inv'), host = pane?.closest('aside.book'), hostTop = host?.scrollTop, SCROLLERS = '#ivGrid, .iv-cats';
+  const pane = $('pane-inv'), host = pane?.closest('aside.book'), hostTop = host?.scrollTop, SCROLLERS = '.iv-char-in, #ivGrid, .iv-cats';
   const keep = pane ? [pane.scrollTop, [...pane.querySelectorAll(SCROLLERS)].map(el => [el.scrollTop, el.scrollLeft])] : null;
+  const fxOpen = !!pane?.querySelector('details.iv-fx')?.open;
   renderInvInner();
+  if (fxOpen){ const d = pane.querySelector('details.iv-fx'); if (d) d.open = true; }
   fitBagGrid();
   if (host) host.scrollTop = hostTop;
   if (keep){ pane.scrollTop = keep[0]; pane.querySelectorAll(SCROLLERS).forEach((el, i) => { const k = keep[1][i]; if (k){ el.scrollTop = k[0]; el.scrollLeft = k[1]; } }); }
@@ -226,7 +282,7 @@ function renderInvInner(){
   const statRows = [
     ['Tấn công', fmt(st.atk), 0], ['Phòng thủ', fmt(st.def), 0], ['Máu', fmt(st.hp), 0],
     ['Bạo kích', `${Math.round(st.crit)}%`, 0],
-    ['Tốc đánh', `${Math.round(st.speed)}%`, 1],
+    ['Thân pháp', `${Math.round(st.speed)}%`, 1],
   ].map(([n, v, need]) => S.realm >= need
       ? `<div class="st"><span>${n}</span><b>${v}</b></div>`
       : `<div class="st off" data-tip="${n}&#10;Mở ở cảnh giới ${DATA.realms[need].name}"><span>${n}</span><b>${DATA.realms[need].name}</b></div>`).join('');
@@ -257,7 +313,7 @@ function renderInvInner(){
       <header class="iv-name"><b>${S.name}</b><span>Cấp ${S.level} · ${S.realmName} ${S.stageName}</span></header>
       <div class="iv-doll">
         <div class="iv-col">${SLOT_LEFT.map(slotHtml).join('')}</div>
-        <div class="iv-fig"><div class="iv-stage"><img class="hero ref" src="${skinArt('heroStand') || 'img/hero_ref_stand.png'}" alt="${S.name}"></div>
+        <div class="iv-fig"><div class="iv-stage"><img class="hero ref" src="${skinArt('heroStand') || 'img/hero_ref_stand.png'}" alt="${S.name}"><canvas id="ivAvatar" class="iv-avatar" width="320" height="320" role="img" aria-label="Tạo hình nhân vật" style="visibility:hidden"></canvas></div>
           <p class="iv-pow" data-tip="Lực chiến&#10;Tổng hợp tấn công, phòng thủ, máu và chỉ số phụ">Lực chiến <b>${fmt(power(st))}</b></p>
           <div class="iv-skills" data-goskill>${skSlotsHtml('mini')}</div></div>
         <div class="iv-col">${SLOT_RIGHT.map(slotHtml).join('')}</div>
@@ -324,33 +380,31 @@ function bulkSellRows(){
 }
 /** Thẻ chi tiết vật phẩm (giấy da) hiện trong tooltip khi rê chuột: chỉ số, yêu cầu, giá bán, so sánh với đồ đang mặc. */
 // ---- hiệu ứng riêng của trang bị đang mặc (giống GameService.GearEffects: cộng dồn, áp trần) ----
-/** Hiệu ứng cộng thêm của đồ Đỏ (giống GameData.RedTiers): [số món Đỏ đang mặc, % tăng giá trị mọi hiệu ứng]. */
-const RED_TIERS = [[3, 10], [6, 20], [9, 30]];
-const FX_CAP = {tinh_tam: 75, lien_kich: 30, tho_thuan: 20, dia_mach: 15, thien_loi: 50};
-const FX_UNIT = {hap_linh: '% tu luyện', tu_linh: '% tu vi thám hiểm', pha_giap: '% bỏ qua thủ', linh_ap: '% sát thương kỹ năng', tinh_tam: ' nộ đầu trận',
-  ho_the: '% giảm sát thương', lien_kich: '% đánh thêm', vung_than: '% máu', than_phap: '% né', hoi_khi: '% máu hồi mỗi lượt', tho_thuan: '% máu làm khiên',
-  dia_chan: '% công đòn đầu', dia_mach: '% phản đòn', thien_loi: '% giáng sét', thien_uy: '% công của quái −', thien_menh: ' hệ số chí mạng'};
-function gearFx(){
-  const sum = {}, name = {}, grade = {}; let thien = 0, red = 0;
-  for (const k of Object.values(S?.equipment || {})){
-    const it = ITEM[k]; if (!it) continue;
-    const qi = RAR_KEYS.indexOf(it.rarity);
-    if (it.slot && qi >= 4) thien++;   // bộ Thiên phẩm: tính cả phẩm cao hơn
-    if (it.slot && qi >= 5) red++;     // Thánh phẩm trở lên: mốc 3 · 6 · 9
-    for (const e of it.effects || []){ sum[e.id] = (sum[e.id] || 0) + e.value; name[e.id] = e.name; grade[e.id] = e.grade; }
-  }
-  const redPct = RED_TIERS.filter(t => red >= t[0]).reduce((m, t) => Math.max(m, t[1]), 0);   // Đỏ mốc 3 · 6 · 9
-  if (redPct) for (const k in sum) sum[k] *= 1 + redPct / 100;
-  for (const [k, c] of Object.entries(FX_CAP)) if (sum[k] > c) sum[k] = c;
-  const full = (S?.equipSlots || []).length;
-  const set = thien && thien >= full ? 20 : thien >= 5 ? 10 : thien >= 3 ? 5 : 0;
-  return {sum, name, grade, thien, set, red, redPct};
-}
 function gearFxHtml(){
-  const f = gearFx(), ids = Object.keys(f.sum).sort((a, b) => f.grade[a] - f.grade[b]);
-  if (!ids.length && !f.set) return '';
-  const v = id => `+${Math.round(f.sum[id] * 100) / 100}${FX_UNIT[id] || ''}`;
-  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị&#10;Cộng dồn từ đồ đang mặc, đã tính giới hạn">${ids.map(id => `<span class="g${f.grade[id]}">${f.name[id]}</span> <b>${v(id)}</b>`).join(' · ')}${f.set ? `${ids.length ? ' · ' : ''}<span class="g4">Bộ Vàng ${f.thien} món</span> <b>+${f.set}% công, thủ, máu</b>` : ''}${f.redPct ? ` · <span class="g5">Đỏ ${f.red} món</span> <b>+${f.redPct}% mọi hiệu ứng</b>` : ''}</div>`;
+  const snapshot = S?.gearEffects;
+  if (!snapshot) return '';
+  const effects = (snapshot.effects || []).map(e => {
+    const capped = e.raw > e.effective;
+    return `<span>${e.name}</span> <b>+${e.effective}${e.unit}</b>${capped ? ` <small>(tổng ${e.raw}, trần ${e.cap})</small>` : ''}`;
+  });
+  const sets = (snapshot.sets || []).filter(s => s.count).map(s =>
+    `<span>${s.name} ${s.count}/10</span> <b>${s.active.length ? `mốc ${s.active.join(' · ')}` : 'chưa kích hoạt'}</b>${s.next ? ` <small>mốc kế: ${s.next}</small>` : ''}`);
+  const sourceFields = [['atk','công',''],['def','thủ',''],['hp','máu',''],['atkPct','công','%'],['defPct','thủ','%'],['hpPct','máu','%'],['crit','bạo kích',' điểm %'],['speed','thân pháp',' điểm %'],['qi','tu luyện','%']];
+  const sources = (S.statSources || []).map(s => {
+    const values = sourceFields.filter(([key]) => s[key]).map(([key, name, unit]) => `+${s[key]}${unit} ${name}`);
+    return values.length ? `<p><b>${s.name}:</b> ${values.join(' · ')}</p>` : '';
+  }).join('');
+  const limits = (S.combatLimits || []).map(e => `<p>${e.name}: <b>${e.effective}${e.unit}</b> <small>(tổng ${e.raw}, trần ${e.cap})</small></p>`).join('');
+  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div><details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp tăng tốc độ thám hiểm, Vân bộ tăng né tránh.</small></details>`;
+}
+function itemSetHtml(it){
+  const def = (DATA.equipmentSets || []).find(s => s.id === it.setId);
+  if (!def) return it.set ? `<p class="set">◆ Bộ ${it.set}</p>` : '';
+  const state = S?.gearEffects?.sets?.find(s => s.id === def.id);
+  return `<div class="set" style="--sc:${SET_COLOR[it.set] || '#2e8b6a'}"><p>◆ ${def.name} (${state?.count || 0}/10)</p>${def.milestones.map(m => {
+    const active = state?.active?.includes(m.count);
+    return `<p style="opacity:${active ? 1 : .5}">${active ? '✓' : '○'} ${m.count} món — cộng thêm: ${m.bonuses.map(b => b.text).join(' · ')}</p>`;
+  }).join('')}</div>`;
 }
 function itemCardHtml(k, src){
   const it = ITEM[k]; if (!it) return '';
@@ -374,13 +428,17 @@ function itemCardHtml(k, src){
     <p class="nm rc-${it.rarity}">${it.name}</p>
     <p class="sub">${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${qWord(it.rarity || 'common', true)} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
     ${it.slot ? `<p class="req ${okRealm ? '' : 'bad'}">Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}</p>` : ''}
-    ${itemStats(it).length ? `<p class="sts">${itemStats(it).join('<br>')}</p>` : ''}
+    ${it.slot ? [
+      ['Thuộc tính cơ bản', STAT_KEYS.slice(0, 3)],
+      ['Thuộc tính hỗ trợ', STAT_KEYS.slice(3)]
+    ].map(([title, keys]) => {
+      const lines = keys.filter(([key]) => it[key]).map(([key, name, unit]) => `${name}: +${it[key]}${unit}`);
+      return lines.length ? `<p class="sts"><b>${title}</b><br>${lines.join('<br>')}</p>` : '';
+    }).join('') : itemStats(it).length ? `<p class="sts">${itemStats(it).join('<br>')}</p>` : ''}
     ${it.special ? `<p class="spc">${it.special}</p>` : ''}
     ${it.use ? `<p class="spc">${it.use}</p>` : ''}
     ${it.effects?.length ? `<p class="eff">${it.effects.map(e => `<span class="qc-${it.rarity}">◇ ${e.name}: ${e.text}</span>`).join('<br>')}</p>` : ''}
-    ${it.slot && RAR_KEYS.indexOf(it.rarity) >= 5 ? `<p class="eff"><span class="qc-mythic">◆ Thánh phẩm trở lên (đang mặc ${gearFx().red}): 3 món +10% · 6 món +20% · 9 món +30% giá trị mọi hiệu ứng trang bị</span></p>` : ''}
-    ${it.slot && RAR_KEYS.indexOf(it.rarity) >= 4 ? `<p class="eff"><span class="qc-legendary">◆ Bộ Thiên phẩm (đang mặc ${gearFx().thien}): 3 món +5% · 5 món +10% · đủ bộ +20% công, thủ, máu</span></p>` : ''}
-    ${it.set ? `<p class="set" style="--sc:${SET_COLOR[it.set] || '#2e8b6a'}">◆ Bộ ${it.set}</p>` : ''}
+    ${itemSetHtml(it)}
     <p class="ds">“${it.desc}”</p>
     <p class="sv">${it.sell ? `Giá bán: ${fmt(it.sell)} linh thạch` : 'Không bán được'}</p>
     ${adminOn && it.type === 'chest' ? chestOddsHtml(k) : ''}${cmp}${hint ? `<p class="hn">${hint}</p>` : ''}</div>`;

@@ -21,7 +21,8 @@ public record ItemDef(string Id, string Name, string Type, string Color, string 
     string? Set = null,        // bộ trang bị (hiện thành dòng màu riêng trong thẻ vật phẩm)
     int ItemLevel = 0,         // cấp trang bị (1 · 10 · 15) theo ải rơi; 0 = không phải trang bị
     string? Base = null,       // id món gốc trong GearBases (trang bị sinh theo cấp + phẩm)
-    ItemEffect[]? Effects = null);   // hiệu ứng riêng theo cấp bậc (Linh → Thiên), xem GameData.EffectsFor
+    ItemEffect[]? Effects = null,
+    string? SetId = null);   // hiệu ứng riêng theo cấp bậc (Linh → Thiên), xem GameData.EffectsFor
 
 /// <summary>Hiệu ứng riêng của trang bị: Grade = cấp mở ra nó (1 Linh · 2 Huyền · 3 Địa · 4 Thiên);
 /// Value cộng dồn giữa các món đang mặc (GameService.GearEffects), Value2 = thông số phụ (Thiên lôi: % công mỗi tia).</summary>
@@ -158,7 +159,7 @@ public static class GameData
             Rarity: "epic", Kind: "Linh thạch", Use: "Chưa mở: sẽ có trong bản cập nhật sau."),
         // vé Tài Xỉu: đổi bằng linh thạch ở Luyện chế → Tài Xỉu, mỗi vé quay 1 lần nhận 1 trang bị (GameService.Spin)
         new ItemDef("ve_tai_xiu", "Vé Tài Xỉu", "ticket", "#f2c94c", "Thẻ ngọc khắc vòng thập phẩm, truyền linh lực vào là vòng quay tự chuyển.", Rarity: "epic", Kind: "Vé quay",
-            Use: "Dùng ở Luyện chế → Tài Xỉu: mỗi vé quay 1 lần, nhận 1 trang bị cảnh giới hiện tại, phẩm Phàm → Huyền Thiên."),
+            Use: "Dùng ở Luyện chế → Tài Xỉu: mỗi vé quay 1 lần, nhận 1 trang bị cảnh giới hiện tại, phẩm Phàm → Huyền Tiên."),
         // ---- rương: rơi khi diệt yêu, mở ra nhận 1 phần thưởng ngẫu nhiên theo cảnh giới (GameService.OpenChest) ----
         new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
             Use: "Mở ra nhận ngẫu nhiên trang bị (Phàm → Linh, cao hơn khi lên cảnh giới) hoặc đan dược của cảnh giới hiện tại · 10% ra pháp bảo."),
@@ -206,6 +207,8 @@ public static class GameData
         new ItemDef("bat_tu_phuong_hoa", "Bất Tử Phượng Hoa", "herb", "#ff6a2a", "Hoa lửa nở từ tro tàn phượng hoàng, cháy mãi không tàn.", "img/herb/herb_21.png", Rarity: "mythic", Kind: "Linh thảo",
             Use: "Linh thảo bậc 5 · luyện Luyện Hư Phá Chướng Đan (3 cây)."),
         // ---- đan đặc biệt: luyện từ linh dược, dùng trong Hành trang ----
+        new ItemDef("ngo_dao_dan", "Ngộ Đạo Đan", "elixir", "#3fc9b0", "Đan khai mở ngộ tính, luyện từ linh dược vùng Nguyên Anh.", "img/dan/dan_16.png",
+            MinRealm: 3, Rarity: "legendary", Kind: "Đan dược", Use: "Dùng từ Nguyên Anh: +1 điểm công pháp vĩnh viễn mỗi viên. Luyện từ 5 Thiên Niên Nhân Sâm, 3 Cửu Diệp Hồn Liên và 1.000 linh thạch."),
         new ItemDef("tay_tuy_dan", "Tẩy Tủy Đan", "elixir", "#3fd04a", "Đan gột rửa kinh mạch, xóa sạch dấu vết công pháp đã tu.", "img/dan/dan_07.png",
             Rarity: "epic", Kind: "Đan dược", Use: "Dùng: tẩy toàn bộ công pháp, hoàn lại mọi điểm kỹ năng để lĩnh ngộ lại (giữ linh căn bẩm sinh)."),
         new ItemDef("pha_chuong_dan_0", "Trúc Cơ Phá Chướng Đan", "elixir", "#a8302a", "Đan phá bình chướng Luyện Khí → Trúc Cơ.", "img/dan/dan_03.png",
@@ -366,7 +369,7 @@ public static class GameData
     {
         ["common"] = 3, ["uncommon"] = 12, ["rare"] = 50, ["epic"] = 200, ["legendary"] = 800, ["mythic"] = 3200,
         ["divine"] = 12800, ["immortal"] = 51200, ["dao"] = 204800, ["supreme"] = 819200 };
-    /// <summary>10 phẩm (10/2026): Phàm · Linh · Huyền · Địa · Thiên · Thánh · Thần · Tiên · Đạo · Huyền Thiên. Khóa giữ tên cũ cho 6 phẩm đầu để không đổi dữ liệu đã lưu.</summary>
+    /// <summary>10 phẩm (10/2026): Phàm · Linh · Huyền · Địa · Thiên · Thánh · Thần · Tiên · Đạo · Huyền Tiên. Khóa giữ tên cũ cho 6 phẩm đầu để không đổi dữ liệu đã lưu.</summary>
     public static readonly string[] RarityOrder = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "divine", "immortal", "dao", "supreme" };
     /// <summary>Giá bán đan dược theo bậc (Tụ Khí → Hóa Thần): thấp hơn chi phí hợp thành 9→1 nên không lách được.</summary>
     public static readonly int[] PillSellPrice = { 2, 6, 30, 120, 600, 2000 };
@@ -381,18 +384,18 @@ public static class GameData
     public static int GearLevelOf(ItemDef b) => GearLevels[Math.Clamp(b.MinRealm, 0, GearLevels.Length - 1)];
     /// <summary>Cấp bậc trang bị: 0 Phàm · 1 Linh · 2 Huyền · 3 Địa · 4 Thiên (RarityOrder: common → legendary).
     /// Thần / Tiên cấp (khí linh) và hiệu ứng riêng của từng cấp (Hấp linh, Đại địa, Hoàng thiên…) chưa làm.</summary>
-    public static readonly double[] QualityMult = { 1, 1.25, 1.55, 1.9, 2.4, 3.0, 3.8, 4.8, 6.0, 7.5 };   // 6 phẩm đầu giữ hệ số cũ; Thần → Huyền Thiên chỉ lên bằng Luyện khí
+    public static readonly double[] QualityMult = { 1, 1.25, 1.55, 1.9, 2.4, 3.0, 3.8, 4.8, 6.0, 7.5 };   // 6 phẩm đầu giữ hệ số cũ; Thần → Huyền Tiên chỉ lên bằng Luyện khí
     public static readonly string[] QualityColor = { "#FFFFFF", "#00FF7F", "#00E5FF", "#1E90FF", "#BF00FF", "#FF8C00", "#FF0033", "#FF69B4", "#FFD700", "#E0FFFF" };
-    public static readonly string[] QualityName = { "Phàm", "Linh", "Huyền", "Địa", "Thiên", "Thánh", "Thần", "Tiên", "Đạo", "Huyền Thiên" };
+    public static readonly string[] QualityName = { "Phàm", "Linh", "Huyền", "Địa", "Thiên", "Thánh", "Thần", "Tiên", "Đạo", "Huyền Tiên" };
     /// <summary>Luyện khí: ghép FuseCount trang bị cùng phẩm q → 1 món phẩm q+1 với tỉ lệ FuseChance[q] (thất bại: 1 món phẩm q).</summary>
     public const int FuseCount = 9;
-    public static readonly double[] FuseChance = { 0.90, 0.75, 0.60, 0.45, 0.30, 0.20, 0.15, 0.10, 0.05 };   // Phàm→Linh … Thiên→Thánh · Thánh→Thần · Thần→Tiên · Tiên→Đạo · Đạo→Huyền Thiên
+    public static readonly double[] FuseChance = { 0.90, 0.75, 0.60, 0.45, 0.30, 0.20, 0.15, 0.10, 0.05 };   // Phàm→Linh … Thiên→Thánh · Thánh→Thần · Thần→Tiên · Tiên→Đạo · Đạo→Huyền Tiên
 
     // ---- Tài Xỉu (Luyện chế): đổi SpinTicketPrice linh thạch lấy 1 vé; mỗi lượt quay ra 1 trang bị bộ cảnh giới hiện tại, phẩm theo SpinWeights ----
     public const string SpinTicket = "ve_tai_xiu";
     // Kinh tế linh thạch (10/2026): linh thạch rơi chỉ tăng ~×2.5 mỗi cảnh giới (trước ~×6), phí tầng/đột phá/hợp thành/giá bán đan giảm theo cùng tỉ lệ
     public const int SpinTicketPrice = 100_000, SpinMaxBatch = 10, SpinHistoryKeep = 30;
-    /// <summary>Tỉ lệ (%) 10 ô vòng quay, Phàm → Huyền Thiên (tổng 100). Phẩm cao cực hiếm: Huyền Thiên ≈ 1/3.333 lượt.</summary>
+    /// <summary>Tỉ lệ (%) 10 ô vòng quay, Phàm → Huyền Tiên (tổng 100). Phẩm cao cực hiếm: Huyền Tiên ≈ 1/3.333 lượt.</summary>
     /// <summary>Code quà tặng (nhập ở menu Cài đặt, không phân biệt hoa thường): code → (vật phẩm, số lượng). Mỗi nhân vật dùng mỗi code 1 lần.</summary>
     public static readonly IReadOnlyDictionary<string, (string Item, int Qty)> GiftCodes = new Dictionary<string, (string, int)>
     {
@@ -437,16 +440,10 @@ public static class GameData
     public const double GearAtkHpMult = 0.42, GearDefMult = 0.55;
     private static ItemDef Variant(ItemDef b, int q)
     {
-        var k = QualityMult[q] / QualityMult[Math.Max(0, Array.IndexOf(RarityOrder, b.Rarity))];
-        int I(int v) => v == 0 ? 0 : Math.Max(1, (int)Math.Round(v * k * GearAtkHpMult));
-        int Df(int v) => v == 0 ? 0 : Math.Max(1, (int)Math.Round(v * k * GearDefMult));
-        double D(double v) => v == 0 ? 0 : Math.Round(v * k, 1);
-        var crit = D(b.CritPct);
-        var special = b.Special is null ? null : System.Text.RegularExpressions.Regex.Replace(b.Special, @"\+[\d.]+%", $"+{crit:0.#}%");
-        return b with { Id = GearId(b, q), Rarity = RarityOrder[q], Color = QualityColor[q], Atk = I(b.Atk), Hp = I(b.Hp), Def = Df(b.Def),
-            QiPct = D(b.QiPct), SpeedPct = D(b.SpeedPct), CritPct = crit, Special = special,
+        var stats = EquipmentBudget.Apply(b, q);
+        return stats with { Id = GearId(b, q), Rarity = RarityOrder[q], Color = QualityColor[q],
             ItemLevel = GearLevelOf(b), Base = b.Id,
-            Icon = GradeIcon(b, q), Effects = EffectsFor(b, q) };
+            Icon = GradeIcon(b, q), Effects = EffectsFor(b, q), SetId = EquipmentEffects.SetId(b.Set) };
     }
 
     // ---- hiệu ứng riêng theo cấp bậc: món cấp cao giữ hiệu ứng của các cấp dưới ----
@@ -454,12 +451,6 @@ public static class GameData
     public static string GearGroup(string? slot) => slot is "weapon" or "offhand" ? "weapon" : slot is "necklace" or "ring" or "charm" ? "jewel" : "armor";
     /// <summary>Hấp linh: % tốc độ tu luyện mỗi món theo cấp của món (Linh 2 · Huyền 3 · Địa 4 · Thiên 6).</summary>
     public static readonly double[] HapLinh = { 0, 2, 3, 4, 6, 8, 10, 12, 15, 20 };
-    /// <summary>Thưởng bộ Thiên cấp (% công, thủ, máu) theo số món Thiên đang mặc; "đủ bộ" = mọi ô trang bị của cảnh giới.</summary>
-    public const double ThienSet3 = 5, ThienSet5 = 10, ThienSetFull = 20;
-    /// <summary>Hiệu ứng cộng thêm của đồ Đỏ theo số món Đỏ đang mặc (mốc 3 · 6 · 9): % tăng giá trị mọi hiệu ứng trang bị (trước khi áp trần).
-    /// Đủ 9 món = kích hoạt toàn bộ. Đồ Đỏ cũng được tính vào thưởng bộ Vàng.</summary>
-    public static readonly (int Count, double Pct)[] RedTiers = { (3, 10), (6, 20), (9, 30) };
-    public static double RedBonus(int red) => RedTiers.Where(t => red >= t.Count).Select(t => t.Pct).DefaultIfEmpty(0).Max();
     private static ItemEffect? HuyenEffect(string? slot) => slot switch
     {
         "weapon"   => new("pha_giap",  "Phá giáp",  2, 6,   0, "Bỏ qua 6% phòng thủ quái"),
@@ -491,7 +482,7 @@ public static class GameData
         if (q >= 2 && HuyenEffect(b.Slot) is { } h) list.Add(h);
         if (q >= 3) list.Add(DiaEffect(GearGroup(b.Slot)));
         if (q >= 4) list.Add(ThienEffect(GearGroup(b.Slot)));
-        return list.ToArray();
+        return list.Select(effect => EquipmentEffects.Scale(effect, q)).ToArray();
     }
     /// <summary>Ảnh bộ Thiên cấp theo loại món (tools/cut_thien.py); món chưa có ảnh riêng dùng ảnh Địa cấp.</summary>
     private static readonly Dictionary<string, string> ThienIcons = new()
@@ -536,7 +527,7 @@ public static class GameData
 
     /// <summary>Chuỗi đan: 9 viên bậc dưới → 1 viên bậc trên.</summary>
     /// <summary>Ảnh đan (img/dan/dan_01 → dan_15, thấp → cao). Đang dùng: 01 Tụ Khí · 03 Phá Chướng (Trúc Cơ) · 04 Trúc Cơ ·
-    /// 06 Phá Chướng (Kim Đan) · 07 Tẩy Tủy · 08 Ngưng Kim · 09 Phá Chướng (Nguyên Anh) · 10 Kết Anh · 11 Phá Chướng (Hóa Thần) · 12 Hóa Thần.
+    /// 06 Phá Chướng (Kim Đan) · 07 Tẩy Tủy · 08 Ngưng Kim · 09 Phá Chướng (Nguyên Anh) · 10 Kết Anh · 11 Phá Chướng (Hóa Thần) · 12 Hóa Thần · 16 Ngộ Đạo (dan_10 đổi màu ngọc lam).
     /// Để dành khi mở cảnh giới cao: 13 Luyện Hư Đan (Immortal Ascension) · 14 Hợp Thể Đan (Nine-Revolution Divine) ·
     /// 15 Đại Thừa / Đạo đan tối thượng (Primordial Dao) · 02, 05: đan phụ (linh dược / hồi phục) sau này.</summary>
     public static readonly string[] PillChain = { "tu_khi_dan", "truc_co_dan", "ngung_kim_dan", "ket_anh_dan", "hoa_than_dan", "luyen_hu_dan" };
@@ -920,7 +911,9 @@ public static class GameData
     public static int BreakPillRealm(string id) =>
         id.StartsWith("pha_chuong_dan_") && int.TryParse(id["pha_chuong_dan_".Length..], out var r) ? r : -1;
     /// <summary>Đan phương. Phá Chướng Đan cảnh giới r: 3 viên đan đột phá của r + 3 linh thảo bậc r + 1 (BreakHerbs) + linh thạch bằng phí đột phá.</summary>
-    public static readonly IReadOnlyList<BrewDef> Brews = new[] { new BrewDef("tay_tuy_dan", new() { ["tay_tuy_thao"] = 5, ["linh_thach"] = 1000 }) }
+    public static readonly IReadOnlyList<BrewDef> Brews = new[] {
+        new BrewDef("tay_tuy_dan", new() { ["tay_tuy_thao"] = 5, ["linh_thach"] = 1000 }),
+        new BrewDef("ngo_dao_dan", new() { ["thien_nien_sam"] = 5, ["cuu_diep_hon_lien"] = 3, ["linh_thach"] = 1000 }) }
         .Concat(Enumerable.Range(0, BreakHerbs.Length).Select(r => new BrewDef(BreakPillId(r), new()
         {
             [PillChain[r + 1]] = 3, [BreakHerbs[r]] = 3, ["linh_thach"] = Realms[r].BreakCost?.GetValueOrDefault("linh_thach") ?? 0,

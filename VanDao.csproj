@@ -9,7 +9,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>VanDao</RootNamespace>
+    <AssemblyName>NguoiLuoiTuTien</AssemblyName>
+    <Title>Người Lười Tu Tiên</Title>
+    <Product>Người Lười Tu Tiên</Product>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>wwwroot\img\app\icon.ico</ApplicationIcon>
     <!-- Phiên bản phát hành: tăng số này mỗi lần gửi bản chơi thử mới -->
     <Version>0.2.0</Version>
   </PropertyGroup>
@@ -20,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="wwwroot\img\app\icon.ico" LogicalName="VanDao.AppIcon.ico" />
     <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
     <!-- công cụ mô phỏng cân bằng (project riêng): không biên dịch vào game -->
     <Compile Remove="tools\**" />

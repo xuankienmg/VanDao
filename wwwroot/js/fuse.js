@@ -1,7 +1,7 @@
 /* Vấn Đạo · js/fuse.js: Luyện khí: ghép 9 trang bị, menu Luyện chế. Tách từ index.html (tools/split_index.py). */
 // ================= Luyện khí: ghép 9 trang bị cùng phẩm → 1 trang bị phẩm cao hơn =================
 const FUSE_R = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine', 'immortal', 'dao', 'supreme'];
-const FUSE_N = ['Phàm', 'Linh', 'Huyền', 'Địa', 'Thiên', 'Thánh', 'Thần', 'Tiên', 'Đạo', 'Huyền Thiên'];
+const FUSE_N = ['Phàm', 'Linh', 'Huyền', 'Địa', 'Thiên', 'Thánh', 'Thần', 'Tiên', 'Đạo', 'Huyền Tiên'];
 let fuseSel = [];
 /** Tự chọn theo phẩm: 'low' = phẩm thấp nhất đủ 9 món, hoặc số phẩm 0..3 (nhớ lựa chọn). */
 let fuseAutoQ = 'low';   // tự động điền: lấy từ phẩm thấp nhất đủ 9 món

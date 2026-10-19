@@ -84,7 +84,7 @@ public static class Program
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
             GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
-            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice));
+            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
