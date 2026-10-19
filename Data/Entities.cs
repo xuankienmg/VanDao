@@ -16,6 +16,12 @@ public class Player
     /// <summary>Tỉ lệ cộng thêm khi đột phá cảnh giới (tăng sau mỗi lần thất bại).</summary>
     public double Bonus { get; set; }
 
+    /// <summary>Tỉ lệ cộng thêm từ Phá Chướng Đan đã dùng cho lần đột phá đại cảnh giới kế tiếp (xóa khi đột phá thành công).</summary>
+    public double PillBonus { get; set; }
+
+    /// <summary>Trang phục đang mặc (GameData.Skins); rỗng = tự đổi theo cảnh giới.</summary>
+    public string Skin { get; set; } = "";
+
     /// <summary>Luôn true: nhân vật luôn tự đi thám hiểm. Giữ cột để tương thích DB cũ.</summary>
     public bool AutoExplore { get; set; } = true;
 

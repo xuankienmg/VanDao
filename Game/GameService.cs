@@ -66,6 +66,15 @@ public class GameService(GameDbContext db)
             Log(p, $"Luật điểm kỹ năng đã đổi (+{SkillData.PointsPerStage} mỗi tầng/kỳ, +{SkillData.PointsPerRealm} mỗi đại cảnh giới): kỹ năng đã được tẩy, hoàn lại {SkillPoints(p)} điểm để lĩnh ngộ lại.", "gold");
         }
         Tick(p, DateTime.UtcNow);
+        // ô "Nhẫn 2" cũ (ring2) → ô Hộ phù / Nhẫn: món đang mặc sai loại ô thì chuyển sang ô đúng nếu trống, không thì trả về túi
+        foreach (var e in p.Equipment.Where(e => GameData.ItemById.TryGetValue(e.ItemId, out var d) && d.Slot != e.Slot).ToList())
+        {
+            var want = GameData.ItemById[e.ItemId].Slot!;
+            p.Equipment.Remove(e); db.Equipment.Remove(e);
+            if (Realm(p).EquipSlots.Contains(want) && p.Equipment.All(x => x.Slot != want))
+                p.Equipment.Add(new EquippedItem { PlayerId = p.Id, Slot = want, ItemId = e.ItemId });
+            else p.Add(e.ItemId, 1);
+        }
         // ô trang bị chưa mở ở cảnh giới hiện tại (dữ liệu bản cũ) → trả món về túi
         foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList())
         {
@@ -134,7 +143,7 @@ public class GameService(GameDbContext db)
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills),
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), p.Admin, ChestOdds(p));
+            logs.Take(LogShow).ToList(), p.Admin, ChestOdds(p), p.PillBonus, CurrentSkin(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -173,8 +182,8 @@ public class GameService(GameDbContext db)
         if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.Slot is null) throw new GameException("Vật phẩm này không trang bị được.");
         if (p.Count(itemId) < 1) throw new GameException("Không có vật phẩm này trong hành trang.");
         if (p.Realm < def.MinRealm) throw new GameException($"Cần cảnh giới {GameData.Realms[def.MinRealm].Name} để mặc {def.Name}.");
-        // nhẫn đeo được ở Nhẫn 1 hoặc Nhẫn 2; các món khác chỉ có một ô
-        var options = def.Slot == "ring" ? new[] { "ring", "ring2" } : new[] { def.Slot };
+        // mỗi món một ô (Hộ phù và Nhẫn là 2 ô riêng từ 10/2026)
+        var options = new[] { def.Slot };
         var open = options.Where(o => Realm(p).EquipSlots.Contains(o)).ToArray();
         if (open.Length == 0)
         {
@@ -274,6 +283,7 @@ public class GameService(GameDbContext db)
     /// <summary>Dùng vật phẩm tiêu hao (đan dược hồi linh khí).</summary>
     public (string msg, string kind) Use(Player p, string itemId)
     {
+        if (GameData.ItemById.TryGetValue(itemId, out var el) && el.Type == "elixir") return UseElixir(p, el);
         if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.UseQiSeconds <= 0)
             throw new GameException("Đan dược chỉ dùng khi đột phá.");
         if (p.Count(itemId) < 1) throw new GameException("Không có vật phẩm này trong hành trang.");
@@ -282,6 +292,51 @@ public class GameService(GameDbContext db)
         p.Qi = Math.Min(QiReq(p), p.Qi + gain);
         p.Add(itemId, -1);
         return Log(p, p.Qi > before ? $"Dùng {def.Name}: +{Math.Floor(p.Qi - before):N0} tu vi." : $"Dùng {def.Name}: tu vi đã đầy bình cảnh.", "good");
+    }
+
+    /// <summary>Dùng đan đặc biệt: Tẩy Tủy Đan (tẩy công pháp, hoàn điểm) · Phá Chướng Đan (+tỉ lệ đột phá đại cảnh giới).</summary>
+    private (string msg, string kind) UseElixir(Player p, ItemDef def)
+    {
+        if (p.Count(def.Id) < 1) throw new GameException("Không có vật phẩm này trong hành trang.");
+        if (def.Id == "tay_tuy_dan")
+        {
+            var refund = SkillPointsSpent(p);
+            if (refund <= 0) throw new GameException("Chưa lĩnh ngộ công pháp nào để tẩy.");
+            p.SetSkillLevels(new());                                   // linh căn bẩm sinh tự giữ cấp 1 (SkillLevels)
+            var lv = SkillLevels(p);
+            p.SkillSlots = string.Join(',', p.Slots().Select(id => id.Length > 0 && SkillData.ById.TryGetValue(id, out var sk)
+                && (sk.Tree == "basic" || lv.GetValueOrDefault(id) > 0) ? id : ""));
+            p.Add(def.Id, -1);
+            return Log(p, $"Dùng {def.Name}: kinh mạch gột sạch, hoàn lại {refund} điểm kỹ năng để lĩnh ngộ lại.", "gold");
+        }
+        var r = GameData.BreakPillRealm(def.Id);
+        if (r >= 0)
+        {
+            if (p.Realm != r)
+                throw new GameException($"{def.Name} chỉ dùng được ở cảnh giới {GameData.Realms[r].Name}.");
+            if (NextRealm(p) is null) throw new GameException($"Cảnh giới {GameData.LockedRealms[0]} chưa khai mở.");
+            if (p.PillBonus >= GameData.BreakPillMax - 1e-9)
+                throw new GameException($"Dược lực đã đạt tối đa +{GameData.BreakPillMax * 100:0}%, đột phá trước rồi dùng tiếp.");
+            p.PillBonus = Math.Round(Math.Min(GameData.BreakPillMax, p.PillBonus + GameData.BreakPillStep), 2);
+            p.Add(def.Id, -1);
+            return Log(p, $"Dùng {def.Name}: tỉ lệ đột phá {GameData.Realms[r + 1].Name} +{p.PillBonus * 100:0}% (tối đa +{GameData.BreakPillMax * 100:0}%).", "good");
+        }
+        throw new GameException("Đan này chưa dùng được.");
+    }
+
+    /// <summary>Trang phục đang hiệu lực: bỏ qua skin không còn tồn tại hoặc chưa đủ cảnh giới (vd. admin hạ cảnh giới).</summary>
+    private static string CurrentSkin(Player p) =>
+        GameData.SkinById.TryGetValue(p.Skin ?? "", out var s) && p.Realm >= s.MinRealm ? s.Id : "";
+
+    /// <summary>Đổi trang phục (rỗng = tự đổi theo cảnh giới).</summary>
+    public (string msg, string kind) SetSkin(Player p, string? skin)
+    {
+        skin ??= "";
+        if (skin.Length == 0) { p.Skin = ""; return ("Trang phục: tự đổi theo cảnh giới.", ""); }
+        if (!GameData.SkinById.TryGetValue(skin, out var s)) throw new GameException("Trang phục không tồn tại.");
+        if (p.Realm < s.MinRealm) throw new GameException($"Cần đạt cảnh giới {GameData.Realms[s.MinRealm].Name} để mặc {s.Name}.");
+        p.Skin = s.Id;
+        return ($"Đã thay trang phục {s.Name}.", "");
     }
 
     /// <summary>Bỏ vật phẩm khỏi túi.</summary>
@@ -297,7 +352,7 @@ public class GameService(GameDbContext db)
     /// <summary>Bán trang bị trong hành trang lấy linh thạch (món đang mặc không bán được).</summary>
     public (string msg, string kind) Sell(Player p, string itemId, int n)
     {
-        if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.Sell <= 0) throw new GameException("Chỉ bán được trang bị.");
+        if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.Sell <= 0) throw new GameException("Chỉ bán được trang bị và đan dược.");
         if (p.Count(itemId) < 1) throw new GameException("Không có món này trong hành trang.");
         n = Math.Clamp(n, 1, p.Count(itemId));
         p.Add(itemId, -n);
@@ -324,6 +379,7 @@ public class GameService(GameDbContext db)
         }
         var list = p.Inventory.Where(i => i.Count > 0 && GameData.ItemById.TryGetValue(i.ItemId, out var d) && d.Sell > 0
                 && (!gearOnly || d.Slot is not null)
+                && (pick || d.Tier == 0)          // đan dược chỉ bán khi người chơi tự chọn, không bán theo phẩm hàng loạt
                 && (scope is null || scope.ContainsKey(i.ItemId))
                 && Array.IndexOf(GameData.RarityOrder, d.Rarity) <= maxRarity).ToList();
         int count = 0, gain = 0;
@@ -398,6 +454,7 @@ public class GameService(GameDbContext db)
             p.Stage = 0;
             p.Qi = 0;
             p.Bonus = 0;
+            p.PillBonus = 0;
             p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
             if (crit)
             {
@@ -463,7 +520,7 @@ public class GameService(GameDbContext db)
                 if (parts.Length != 2 || !int.TryParse(parts[0], out var ri) || !int.TryParse(parts[1], out var si)
                     || ri < 0 || ri >= GameData.Realms.Count || si < 0 || si >= GameData.Realms[ri].Stages.Length)
                     throw new GameException("Cảnh giới / tầng không hợp lệ.");
-                p.Realm = ri; p.Stage = si; p.Qi = 0; p.Bonus = 0;
+                p.Realm = ri; p.Stage = si; p.Qi = 0; p.Bonus = 0; p.PillBonus = 0;
                 p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
                 foreach (var e in p.Equipment.Where(e => !Realm(p).EquipSlots.Contains(e.Slot)).ToList()) { p.Add(e.ItemId, 1); p.Equipment.Remove(e); db.Equipment.Remove(e); }
                 return Log(p, $"[Admin] Chuyển tới {Realm(p).Name} {Realm(p).Stages[si]}.", "gold");
@@ -491,7 +548,7 @@ public class GameService(GameDbContext db)
             {
                 // về đúng trạng thái nhân vật mới tạo: giữ Id, tên, ngày tạo và cờ admin mode
                 var now = DateTime.UtcNow;
-                p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0;
+                p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0; p.PillBonus = 0;
                 p.Area = 1; p.AreaMax = 1; p.Chapter = 0; p.ChapterMax = 0; p.BossKills = 0;
                 p.BreakCooldownUntil = p.DebuffUntil = DateTime.MinValue;
                 p.Skills = ""; p.SkillSlots = ""; p.AdminPoints = 0;
@@ -636,23 +693,52 @@ public class GameService(GameDbContext db)
         var sd = GameData.Synths.FirstOrDefault(x => x.From == fromId) ?? throw new GameException("Đan này không hợp thành tiếp được.");
         var max = MaxSynth(p, sd);
         if (max < 1)
+        {
+            var herb = sd.Herbs?.FirstOrDefault(kv => p.Count(kv.Key) < kv.Value);
             throw new GameException(p.Count(sd.From) < sd.Count
                 ? $"Cần {sd.Count} {GameData.ItemById[sd.From].Name}, còn thiếu {sd.Count - p.Count(sd.From)}."
+                : herb is { Key: not null } h ? $"Cần {h.Value} {GameData.ItemById[h.Key].Name} (linh thảo), đang có {p.Count(h.Key)}."
                 : $"Cần {sd.Stones:N0} linh thạch phí hợp thành.");
+        }
         n = n <= 0 ? max : Math.Min(n, max);
         if (p.Count(sd.To) == 0 && BagUsed(p) >= BagCap(p) && p.Count(sd.From) > sd.Count * n)
             throw new GameException("Hành trang đầy.");
         p.Add(sd.From, -sd.Count * n);
         p.Add("linh_thach", -sd.Stones * n);
+        foreach (var (hk, hc) in sd.Herbs ?? new()) p.Add(hk, -hc * n);
         p.Add(sd.To, n);
         var (msg, kind) = Log(p, $"Hợp thành {sd.Count * n} {GameData.ItemById[sd.From].Name} → {n} {GameData.ItemById[sd.To].Name}.", "gold");
         var inputs = new List<ItemQtyDto> { new(sd.From, sd.Count * n) };
         if (sd.Stones > 0) inputs.Add(new("linh_thach", sd.Stones * n));
+        foreach (var (hk, hc) in sd.Herbs ?? new()) inputs.Add(new(hk, hc * n));
         return (msg, kind, new CraftResultDto($"{sd.From}>{sd.To}", new(sd.To, n), inputs));
     }
 
+    /// <summary>Luyện đan theo đan phương n lần (0 = tối đa): tiêu nguyên liệu, nhận n viên. Luôn thành công.</summary>
+    public (string msg, string kind, CraftResultDto craft) Brew(Player p, string outId, int n)
+    {
+        var b = GameData.Brews.FirstOrDefault(x => x.Out == outId) ?? throw new GameException("Không có đan phương này.");
+        var max = MaxBrew(p, b);
+        if (max < 1)
+        {
+            var miss = b.In.First(kv => p.Count(kv.Key) < kv.Value);
+            throw new GameException($"Thiếu {GameData.ItemById[miss.Key].Name}: cần {miss.Value:N0}, đang có {p.Count(miss.Key):N0}.");
+        }
+        n = n <= 0 ? max : Math.Min(n, max);
+        // túi đầy: chỉ luyện được khi đã có sẵn chồng thành phẩm hoặc một nguyên liệu bị dùng hết (nhả ô)
+        if (p.Count(outId) == 0 && BagUsed(p) >= BagCap(p) && !b.In.Any(kv => kv.Key != "linh_thach" && p.Count(kv.Key) == kv.Value * n))
+            throw new GameException("Hành trang đầy.");
+        foreach (var (k, c) in b.In) p.Add(k, -c * n);
+        p.Add(outId, n);
+        var (msg, kind) = Log(p, $"Luyện thành {n} {GameData.ItemById[outId].Name}.", "gold");
+        return (msg, kind, new CraftResultDto($"brew>{outId}", new(outId, n), b.In.Select(kv => new ItemQtyDto(kv.Key, kv.Value * n)).ToList()));
+    }
+
+    private static int MaxBrew(Player p, BrewDef b) => b.In.Min(kv => kv.Value > 0 ? p.Count(kv.Key) / kv.Value : int.MaxValue);
+
     private static int MaxSynth(Player p, SynthDef sd) =>
-        Math.Min(p.Count(sd.From) / sd.Count, sd.Stones > 0 ? p.Count("linh_thach") / sd.Stones : int.MaxValue);
+        Math.Min(Math.Min(p.Count(sd.From) / sd.Count, sd.Stones > 0 ? p.Count("linh_thach") / sd.Stones : int.MaxValue),
+            sd.Herbs?.Min(kv => p.Count(kv.Key) / kv.Value) ?? int.MaxValue);
 
     // ================= Luyện khí: ghép 9 trang bị cùng phẩm → 1 phẩm cao hơn =================
 
@@ -730,7 +816,8 @@ public class GameService(GameDbContext db)
         }).ToList();
         return new MapDto(p.Area, amax, c.KeyItem, c.BossItem ?? "", c.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
             GameData.Synths.Select(sd => new SynthStateDto(sd.From, MaxSynth(p, sd))).ToList(), c.BossItem is not null && p.Count(c.BossItem) > 0, c.Index,
-            c.Drops.Select(d => new DropInfoDto(d.Item, d.Min, d.Max, d.Chance, GameData.GearBaseById.ContainsKey(d.Item))).ToList(),
+            c.Drops.Select(d => new DropInfoDto(d.Item, d.Min, d.Max, GameData.DropChance(d), GameData.GearBaseById.ContainsKey(d.Item)))
+                .Concat(GameData.HerbDrops.Where(h => h.Chapters.Contains(c.Index)).Select(h => new DropInfoDto(h.Item, h.Min, h.Max, h.Chance, false, h.MinArea))).ToList(),
             GameData.ChestChance, GameData.RareChestChance, GameData.RareChestMinArea, GameData.BossChest,
             p.ChapterMax, c.Boss.Name, c.Boss.Image, c.Quality);
     }
@@ -888,11 +975,12 @@ public class GameService(GameDbContext db)
                 var eliteTrip = area >= GameData.EliteMinArea;                // chuyến có tinh anh: linh thạch ×1.5, rương hiếm 20%
                 var scale = (1 + (area - 1) * 0.05) * (eliteTrip ? GameData.EliteStoneMult : 1);
                 AddStones(battle, true);                                          // linh thạch: rơi theo từng quái gục
-                foreach (var d in r.Drops)
+                foreach (var d in r.Drops.Concat(GameData.HerbDropsAt(r.Index, area)))
                 {
                     var isStone = d.Item == "linh_thach";
                     if (isStone) continue;
-                    if (Random.Shared.NextDouble() >= Math.Min(1, d.Chance * (isStone || d.Chance >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
+                    var ch = GameData.DropChance(d);                                 // đan dược: × PillDropMult
+                    if (Random.Shared.NextDouble() >= Math.Min(1, ch * (isStone || ch >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
                     var n = (int)Math.Round(Random.Shared.Next(d.Min, d.Max + 1) * (isStone ? scale : 1));
                     // trang bị: cấp theo cảnh giới yêu cầu của món, cấp bậc theo GameData.DropQuality
                     var dropId = GameData.GearBaseById.ContainsKey(d.Item) ? GameData.RollGear(d.Item, r.Quality) : d.Item;
@@ -959,8 +1047,9 @@ public class GameService(GameDbContext db)
         foreach (var e in p.Equipment)
         {
             if (!GameData.ItemById.TryGetValue(e.ItemId, out var d)) continue;
-            if (d.Slot is not null && d.Rarity is "legendary" or "mythic") thien++;   // đồ Đỏ tính vào bộ Vàng
-            if (d.Slot is not null && d.Rarity == "mythic") red++;
+            var qi = Array.IndexOf(GameData.RarityOrder, d.Rarity);
+            if (d.Slot is not null && qi >= 4) thien++;   // bộ Thiên phẩm: tính cả phẩm cao hơn
+            if (d.Slot is not null && qi >= 5) red++;     // Thánh phẩm trở lên: mốc 3 · 6 · 9
             foreach (var f in d.Effects ?? Array.Empty<ItemEffect>())
             {
                 sum[f.Id] = sum.GetValueOrDefault(f.Id) + f.Value;
@@ -1178,7 +1267,7 @@ public class GameService(GameDbContext db)
     private static Dictionary<string, int> TargetCost(Player p) =>
         IsPeak(p) ? Realm(p).BreakCost ?? new() : Realm(p).StageCost(p.Stage);
 
-    private static double Chance(Player p) => p.Cheat("break") || Realm(p).BreakChance >= 1 ? 1 : Math.Clamp(Realm(p).BreakChance + p.Bonus, 0, 0.95);
+    private static double Chance(Player p) => p.Cheat("break") || Realm(p).BreakChance >= 1 ? 1 : Math.Clamp(Realm(p).BreakChance + p.Bonus + p.PillBonus, 0, 0.95);
 
     private void AddLog(Player p, string text, string kind = "")
     {

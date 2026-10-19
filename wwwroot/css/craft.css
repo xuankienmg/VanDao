@@ -73,6 +73,11 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 .fz-bar button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
 .fz-bar button:disabled{opacity:.4;cursor:not-allowed}
 .fz-grid{min-height:120px}
+/* hành trang trong Luyện chế (Luyện khí · Bán): ô nhỏ cố định 40px, xếp được nhiều món hơn */
+.iv-grid.fz-grid{grid-template-columns:repeat(auto-fill,40px);grid-auto-rows:40px;justify-content:start;align-content:start;gap:2px}
+.fz-grid .iv-cell{width:40px;padding:2px;border-width:1px}
+.fz-grid .iv-cell .lv{font-size:7.5px;left:1px;top:0}
+.fz-grid .iv-cell .qty{font-size:8.5px;right:1px;bottom:0}
 .fz-grid .iv-cell.off{opacity:.3;cursor:not-allowed}
 .fz-empty{grid-column:1/-1;margin:20px 8px;text-align:center;font-size:12px;color:var(--muted)}
 .dd > .fz-forge{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px}
@@ -142,3 +147,95 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 .sl-sum span{flex:1} .sl-sum b{font-size:18px;color:var(--gold)} .sl-sum img{width:18px;height:18px}
 .sl-warn{margin:0;width:100%;font-size:10.5px;color:#e6a58a}
 .dd-synth-btn.fz-go.sl-arm{background:linear-gradient(#a0331f,#6a1c10);border-color:#e58472}
+/* quầy bán: chỉnh số viên đan dược */
+.sl-qty{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:3px}
+.sl-qty li{display:flex;align-items:center;gap:3px;font-size:11px}
+.sl-qty .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.sl-qty button{min-width:20px;height:20px;padding:0 4px;background:#1c2125;color:var(--parch,#d8c9a3);border:1px solid #4a4f55;cursor:pointer;font:inherit;line-height:1}
+.sl-qty button.all{font-size:10px}
+.sl-qty button:disabled{opacity:.35;cursor:default}
+.sl-qty input{width:46px;height:20px;padding:0 3px;background:#0d0a08;color:var(--gold,#e6c46a);border:1px solid #4a4f55;font:inherit;text-align:right;-moz-appearance:textfield}
+.sl-qty input::-webkit-inner-spin-button,.sl-qty input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* quầy bán: bán nhanh theo phẩm */
+.sl-quick{width:100%}
+.sl-quick p{margin:0 0 3px;font-size:10.5px;color:#a9b4ae}
+.sl-quick div{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.sl-q{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;height:30px;padding:0 2px;min-width:0;overflow:hidden;white-space:nowrap;line-height:1.1;background:#1c2125;border:1px solid;color:#e8e2d0;font:inherit;font-size:10.5px;font-weight:700;cursor:pointer;text-shadow:0 1px 0 #000}
+.sl-q small{font-size:9px;font-weight:600;opacity:.75}
+.sl-q:hover:not(:disabled){filter:brightness(1.25)}
+.sl-q:disabled{opacity:.35;cursor:default}
+.sl-q.armed{background:linear-gradient(#a0331f,#6a1c10);border-color:#e58472}
+/* đan phương: luyện đan đặc biệt từ linh dược */
+.dd-brews{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.dd-brew{display:flex;align-items:center;gap:7px;padding:4px 6px;background:#1a1612;border:1px solid #3b3127}
+.dd-brew.ok{border-color:#7a6a3a}
+.dd-brew .dd-fr{width:38px;height:38px;flex:none}
+.dd-brew .br-mid{flex:1;min-width:0}
+.dd-brew .nm{margin:0 0 2px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-brew .nm small{font-size:10px;color:#8f9a94}
+.dd-brew .br-far{margin-left:5px;color:#c9a86a}
+.br-ins{display:flex;align-items:center;flex-wrap:wrap;gap:2px 4px;font-size:10.5px}
+.br-ins i{font-style:normal;color:#6b7076}
+.br-in{display:inline-flex;align-items:center;gap:2px}
+.br-in img,.br-in svg{width:16px;height:16px}
+.br-in.ok b{color:#9fe0a8} .br-in.miss b{color:#e58472}
+.br-act{display:flex;gap:3px;flex:none}
+.br-act .dd-all{padding:4px 8px}
+/* hợp thành: linh thảo cần thêm */
+.dd-herbs{flex-basis:100%;margin:2px 0 0;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 8px;font-size:11px;color:#a9b4ae}
+.dd-herb{display:inline-flex;align-items:center;gap:3px}
+.dd-herb img,.dd-herb svg{width:18px;height:18px}
+.dd-herb b{font-weight:600;color:var(--parch,#d8c9a3)}
+.dd-herb.ok{color:#9fe0a8} .dd-herb.miss{color:#e58472}
+/* ---- Đan dược trong cửa sổ Tu luyện (≥ 621px): gọn lại, vừa chiều cao cửa sổ; cột chính / cột phải tự cuộn riêng khi thiếu chỗ ---- */
+@media (min-width:621px){
+  body.panel .lc-tabs button{padding:4px 10px;font-size:14px}
+  body.panel #pane-craft{flex:1 1 auto;min-height:0;overflow:hidden}
+  body.panel #pane-craft .dd{flex:1 1 auto;min-height:0;grid-template-rows:auto minmax(0,1fr)}
+  body.panel #pane-craft .dd-top{padding:5px 8px;gap:10px}
+  body.panel #pane-craft .dd-main,body.panel #pane-craft .dd-side{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#4a3a26 transparent}
+  body.panel #pane-craft .dd-main{gap:6px}
+  /* lò hợp thành */
+  body.panel #pane-craft .dd-synth{grid-template-columns:84px minmax(0,1fr) 84px;padding:4px 4px 6px;gap:2px 4px}
+  body.panel #pane-craft .dd-fur{min-height:0}
+  body.panel #pane-craft .dd-fr.big{width:52px;height:52px} body.panel #pane-craft .dd-fr.big img{width:42px;height:42px}
+  body.panel #pane-craft .dd-cnt{font-size:14px}
+  body.panel #pane-craft .dd-synth-btn{min-width:0;padding:6px 16px;font-size:16px;letter-spacing:.1em}
+  body.panel #pane-craft .dd-act{gap:4px 8px}
+  body.panel #pane-craft .dd-herbs,body.panel #pane-craft .dd-fee{flex-basis:auto}
+  /* chuỗi đan: thẻ gọn, bỏ dòng x/9 (đã có ở lò) */
+  body.panel #pane-craft .dd-card{padding:3px 2px;gap:0}
+  body.panel #pane-craft .dd-card .dd-fr{width:34px;height:34px;margin-bottom:1px} body.panel #pane-craft .dd-card .dd-fr img{width:28px;height:28px}
+  body.panel #pane-craft .dd-cn{font-size:10px;line-height:1.1}
+  body.panel #pane-craft .dd-cp,body.panel #pane-craft .dd-cs{display:none}   /* trạng thái thể hiện bằng màu số lượng + tooltip */
+  body.panel #pane-craft .dd-card.ok .dd-cq{color:#9fe6a8} body.panel #pane-craft .dd-card.miss .dd-cq{color:#ff9a88}
+  body.panel #pane-craft .dd-tier{font-size:8.5px}
+  body.panel #pane-craft .dd-arr{font-size:13px} body.panel #pane-craft .dd-arr small{font-size:8px}
+  /* đan phương */
+  body.panel #pane-craft .dd-brews{gap:3px;margin-top:2px}
+  body.panel #pane-craft .dd-brew{padding:3px 5px;gap:6px}
+  body.panel #pane-craft .dd-brew .dd-fr{width:32px;height:32px} body.panel #pane-craft .dd-brew .dd-fr img{width:26px;height:26px}
+  body.panel #pane-craft .dd-brew .nm{font-size:11.5px;margin:0}
+  body.panel #pane-craft .br-act .dd-all{padding:3px 7px;font-size:11px}
+  /* cột phải */
+  body.panel #pane-craft .dd-side{gap:6px}
+  body.panel #pane-craft .dd-use,body.panel #pane-craft .dd-break{padding:5px 8px}
+  body.panel #pane-craft .dd-use-hd img{width:26px;height:26px} body.panel #pane-craft .dd-use-hd b{font-size:14px}
+  body.panel #pane-craft .dd-use-tx{font-size:11px}
+  body.panel #pane-craft .dd-path{flex-wrap:wrap;gap:2px 5px;font-size:11px} body.panel #pane-craft .dd-path b{font-size:13px}
+}
+@media (min-width:621px) and (max-height:620px){
+  body.panel #pane-craft .dd-use .dd-note{display:none}
+  body.panel #pane-craft .dd-card .dd-tier{display:none}
+}
+/* cửa sổ rất thấp: ẩn lò đan (chỉ trang trí), thay bằng mũi tên */
+@media (min-width:621px) and (max-height:560px){
+  body.panel #pane-craft .dd-fur canvas{display:none}
+  body.panel #pane-craft .dd-fur::after{content:"→";font-size:26px;color:var(--cy);align-self:center}
+  body.panel #pane-craft .dd-fur{align-self:stretch;align-items:center}
+}
+/* thượng phẩm linh thạch (tạm hiện 0) cạnh linh thạch */
+.dd-hp{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding-left:6px;border-left:1px solid #2c4256;opacity:.75}
+.dd-hp img{width:20px;height:20px} .dd-hp b{font-size:13px;color:#9fe6f0;font-variant-numeric:tabular-nums}
+.iv-stone.hp{opacity:.75;margin-left:2px} .iv-stone.hp b{color:#9fe6f0;font-weight:700}
+.sl-q.r-supreme{font-size:8.5px;letter-spacing:-.2px}

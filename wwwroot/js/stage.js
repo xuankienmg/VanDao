@@ -28,7 +28,7 @@ function drawScene(t, dt){ drawSceneInner(t, dt); }
 let scrollT = 0;
 function drawSceneInner(t, dt){
   const r = realm();
-  const fight = S.battle && sprite48(realm().hero) && sprite48(S.battle.image);
+  const fight = S.battle && sprite48(skinArt('hero')) && sprite48(S.battle.image);
   const ph = fight ? battlePhase() : null;
   if (ph && ph.name === 'walk' && !reduce) scrollT += dt;
   if (fight && drawPixelBattle(t, dt, ph, r)) return;

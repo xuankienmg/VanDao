@@ -70,6 +70,7 @@ public static class SchemaUpgrade
             ("Area", "INTEGER NOT NULL DEFAULT 1"), ("AreaMax", "INTEGER NOT NULL DEFAULT 1"),
             ("Skills", "TEXT NOT NULL DEFAULT ''"), ("BossKills", "INTEGER NOT NULL DEFAULT 0"), ("SkillSlots", "TEXT NOT NULL DEFAULT ''"),
             ("BreakCooldownUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"), ("DebuffUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"),
+            ("PillBonus", "REAL NOT NULL DEFAULT 0"), ("Skin", "TEXT NOT NULL DEFAULT ''"),
             ("Admin", "TEXT NOT NULL DEFAULT ''"), ("AdminPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"),
             ("Chapter", "INTEGER NOT NULL DEFAULT 0"), ("ChapterMax", "INTEGER NOT NULL DEFAULT 0"), ("MapVer", "INTEGER NOT NULL DEFAULT 0"),

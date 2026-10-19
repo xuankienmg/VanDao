@@ -21,11 +21,33 @@ function ddPillCard(k){
   if (!sd){ st = 'Bậc cao nhất'; cls = 'top'; }
   else if (n >= sd.count){ st = 'Hợp thành được'; cls = 'ok'; }
   else { st = `Thiếu ${sd.count - n}`; cls = 'miss'; }
-  return `<button class="dd-card ${sel ? 'sel' : ''} ${cls}" data-pill="${k}" aria-pressed="${sel}" data-tip="${itemTip(k)}">
+  return `<button class="dd-card ${sel ? 'sel' : ''} ${cls}" data-pill="${k}" aria-pressed="${sel}" data-tip="${itemTip(k, st)}">
     <small class="dd-tier">Bậc ${it.tier}</small><span class="dd-fr r-${it.rarity}">${itemImg(k)}</span>
     <span class="dd-cn">${it.name}</span><b class="dd-cq">×${fmt(n)}</b>
     ${sd ? `<span class="dd-cp">${Math.min(n, sd.count)} / ${sd.count}</span>` : '<span class="dd-cp">—</span>'}
     <span class="dd-cs">${st}</span></button>`;
+}
+
+// ---- đan phương: luyện đan đặc biệt từ linh dược (Tẩy Tủy Đan, Phá Chướng Đan theo cảnh giới) ----
+const brewRealm = id => id.startsWith('pha_chuong_dan_') ? +id.slice(15) : -1;
+const brewMax = b => Math.min(...Object.entries(b.in).map(([k, c]) => Math.floor((S.inventory[k] || 0) / c)));
+function ddBrewRow(b){
+  const it = ITEM[b.out], max = brewMax(b), own = S.inventory[b.out] || 0, br = brewRealm(b.out);
+  const ins = Object.entries(b.in).map(([k, c]) => { const h = S.inventory[k] || 0;
+    return `<span class="br-in ${h >= c ? 'ok' : 'miss'}" data-tip="${itemTip(k)}">${itemImg(k)}<b>${k === 'linh_thach' ? fmt(c) : `${fmt(Math.min(h, c))}/${fmt(c)}`}</b></span>`; }).join('<i>+</i>');
+  const note = br >= 0 && br !== S.realm ? `<small class="br-far">dùng ở ${DATA.realms[br].name}</small>` : '';
+  return `<div class="dd-brew ${max ? 'ok' : ''}">
+    <span class="dd-fr r-${it.rarity}" data-tip="${itemTip(b.out)}">${itemImg(b.out)}</span>
+    <div class="br-mid"><p class="nm"><b class="rc-${it.rarity}">${it.name}</b> <small>đang có ${fmt(own)}</small>${note}</p><div class="br-ins">${ins}</div></div>
+    <div class="br-act"><button class="dd-all" data-brew="${b.out}" data-n="1" ${max ? '' : 'disabled'}>Luyện</button>
+      <button class="dd-all" data-brew="${b.out}" data-n="0" ${max > 1 ? '' : 'disabled'} data-tip="Luyện tối đa: ${max} lần">×${max}</button></div></div>`;
+}
+function ddBrews(){
+  // Tẩy Tủy Đan + Phá Chướng Đan của cảnh giới hiện tại và kế tiếp
+  const list = (DATA.brews || []).filter(b => { const r = brewRealm(b.out); return r < 0 || r === S.realm || r === S.realm + 1; });
+  if (!list.length) return '';
+  const pb = S.pillBonus ? ` · Phá Chướng đang có hiệu lực <b>+${Math.round(S.pillBonus * 100)}%</b>` : '';
+  return `<p class="dd-sec">Đan phương · luyện từ linh dược rơi khi diệt yêu${pb}</p><div class="dd-brews">${list.map(ddBrewRow).join('')}</div>`;
 }
 
 function ddBreak(){
@@ -75,23 +97,27 @@ function renderCraft(){
     </div>`;
   }
   const k = ddCur(), it = ITEM[k], sd = synthOf(k), n = S.inventory[k] || 0, max = synthMax(k);
-  $('ddStone').innerHTML = `${itemImg('linh_thach')}<span>Linh thạch</span><b>× ${fmt(stones())}</b>`;
+  $('ddStone').innerHTML = `${itemImg('linh_thach')}<span>Linh thạch</span><b>× ${fmt(stones())}</b>${hpStoneHtml('dd-hp')}`;
   $('ddIn').innerHTML = `<span class="dd-lab">Đan bậc ${it.tier}</span><span class="dd-fr big r-${it.rarity}">${itemImg(k)}</span>
     <span class="dd-nm">${it.name}</span><b class="dd-cnt ${sd && n >= sd.count ? 'ok' : 'miss'}">${sd ? `${Math.min(n, sd.count)} / ${sd.count}` : `× ${fmt(n)}`}</b>`;
   if (sd){
     const to = ITEM[sd.to];
     $('ddOut').innerHTML = `<span class="dd-lab">Đan bậc ${to.tier}</span><span class="dd-fr big r-${to.rarity}">${itemImg(sd.to)}</span>
       <span class="dd-nm">${to.name}</span><b class="dd-cnt out">1</b><small class="dd-have">Đang có ${fmt(S.inventory[sd.to] || 0)}</small>`;
-    const why = n < sd.count ? `Thiếu ${sd.count - n} ${it.name}` : stones() < sd.stones ? `Thiếu linh thạch (cần ${fmt(sd.stones)})` : '';
+    const herbs = Object.entries(sd.herbs || {}), hMiss = herbs.find(([h, c]) => (S.inventory[h] || 0) < c);
+    const why = n < sd.count ? `Thiếu ${sd.count - n} ${it.name}` : hMiss ? `Thiếu ${hMiss[1] - (S.inventory[hMiss[0]] || 0)} ${ITEM[hMiss[0]].name}` : stones() < sd.stones ? `Thiếu linh thạch (cần ${fmt(sd.stones)})` : '';
+    const herbRow = herbs.map(([h, c]) => { const have = S.inventory[h] || 0;
+      return `<span class="dd-herb ${have >= c ? 'ok' : 'miss'}" data-tip="${itemTip(h)}">${itemImg(h)}<b>${ITEM[h].name}</b> ${fmt(Math.min(have, c))} / ${c}</span>`; }).join('');
     $('ddAct').innerHTML = `<button class="dd-synth-btn" data-dd="synth" ${max > 0 ? '' : 'disabled'}>Hợp thành</button>
       <button class="dd-all" data-dd="all" ${max > 1 ? '' : 'disabled'} data-tip="Hợp thành tất cả: ${max} lần">Tối đa ×${max}</button>
+      ${herbRow ? `<p class="dd-herbs">Linh thảo ${herbRow}</p>` : ''}
       <p class="dd-fee">${why ? `<span class="miss">${why}</span> · ` : ''}Phí ${itemImg('linh_thach')} ${fmt(sd.stones)} · luôn thành công</p>`;
   } else {
     $('ddOut').innerHTML = `<span class="dd-lab">Bậc cao nhất</span><span class="dd-fr big empty"></span><span class="dd-nm">Không hợp thành tiếp</span>`;
     $('ddAct').innerHTML = `<p class="dd-fee">${it.name} là đan bậc cao nhất hiện có.</p>`;
   }
   // đan trong hành trang xếp theo chuỗi hợp thành: bậc 1 →(9:1)→ bậc 2 →(9:1)→ bậc 3 → bậc 4
-  $('ddInv').innerHTML = `<p class="dd-sec">Đan dược trong hành trang · chuỗi hợp thành</p><div class="dd-cards">${DATA.pillChain.map(ddPillCard).join('<i class="dd-arr">→<small>9 : 1</small></i>')}</div>`;
+  $('ddInv').innerHTML = `<p class="dd-sec">Đan dược trong hành trang · chuỗi hợp thành</p><div class="dd-cards">${DATA.pillChain.map(ddPillCard).join('<i class="dd-arr">→<small>9 : 1</small></i>')}</div>${ddBrews()}`;
   $('ddUse').innerHTML = `<p class="dd-sec">Công dụng</p><div class="dd-use-hd">${itemImg(k)}<b class="rc-${it.rarity}">${it.name}</b></div>
     <p class="dd-use-tx">${it.use || it.desc}</p><p class="dd-note">Đan dược chỉ dùng để đột phá tầng và cảnh giới, không hồi máu, không hồi linh khí.</p>`;
   $('ddBreak').innerHTML = ddBreak();
@@ -117,7 +143,7 @@ const FIRE_C = ['#eaffff','#9ff6ee','#4fd6d0','#2a8f9a','#1d4d5a'];
 function ddSizeCanvas(c){
   const box = c.parentElement.getBoundingClientRect();
   if (!box.width) return false;
-  const sc = Math.max(2, Math.min(3, Math.floor(Math.min(box.width / 80, Math.max(144, box.height) / 72))));
+  const sc = Math.max(2, Math.min(MODE === 'panel' ? 2 : 3, Math.floor(Math.min(box.width / 80, Math.max(144, box.height) / 72))));   // cửa sổ Tu luyện: giữ lò ×2 cho gọn
   c.style.width = 80 * sc + 'px'; c.style.height = 72 * sc + 'px';
   return true;
 }

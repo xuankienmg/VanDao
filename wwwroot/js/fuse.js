@@ -1,15 +1,15 @@
 /* Vấn Đạo · js/fuse.js: Luyện khí: ghép 9 trang bị, menu Luyện chế. Tách từ index.html (tools/split_index.py). */
 // ================= Luyện khí: ghép 9 trang bị cùng phẩm → 1 trang bị phẩm cao hơn =================
-const FUSE_R = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
-const FUSE_N = ['Trắng', 'Lục', 'Lam', 'Tím', 'Vàng', 'Đỏ'];
+const FUSE_R = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine', 'immortal', 'dao', 'supreme'];
+const FUSE_N = ['Phàm', 'Linh', 'Huyền', 'Địa', 'Thiên', 'Thánh', 'Thần', 'Tiên', 'Đạo', 'Huyền Thiên'];
 let fuseSel = [];
 /** Tự chọn theo phẩm: 'low' = phẩm thấp nhất đủ 9 món, hoặc số phẩm 0..3 (nhớ lựa chọn). */
 let fuseAutoQ = 'low';   // tự động điền: lấy từ phẩm thấp nhất đủ 9 món
 const FUSE_GRID = '<svg viewBox="0 0 16 16"><rect x="1" y="1" width="4" height="4"/><rect x="6" y="1" width="4" height="4"/><rect x="11" y="1" width="4" height="4"/><rect x="1" y="6" width="4" height="4"/><rect x="6" y="6" width="4" height="4"/><rect x="11" y="6" width="4" height="4"/><rect x="1" y="11" width="4" height="4"/><rect x="6" y="11" width="4" height="4"/><rect x="11" y="11" width="4" height="4"/></svg>';
 const FUSE_GO = '<svg viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6"/><path d="M20 5v14"/></svg>';
-/** Menu Luyện chế: tab con đang mở ('fuse' Luyện khí · 'craft' Đan dược · 'sell' Bán), mặc định Luyện khí. */
+/** Menu Luyện chế: tab con đang mở ('fuse' Luyện khí · 'craft' Đan dược · 'sell' Bán). Bấm tab Luyện chế luôn mở Luyện khí. */
 const LC_SUBS = ['fuse', 'craft', 'sell'];
-let lcSub = 'fuse'; try { const v = localStorage.getItem('van-dao-lc'); if (LC_SUBS.includes(v)) lcSub = v; } catch(e){}
+let lcSub = 'fuse';   // luôn mở Luyện khí trước; chỉ nhớ tab con trong phiên đang chơi
 const lcNav = on => `<nav class="lc-tabs" role="tablist" aria-label="Luyện chế">${[['fuse', 'Luyện khí'], ['craft', 'Đan dược'], ['sell', 'Bán']].map(([id, nm]) =>
   `<button class="${id === on ? 'on' : ''}" data-lc="${id}" role="tab" aria-selected="${id === on}">${nm}</button>`).join('')}</nav>`;
 document.addEventListener('click', e => { const b = e.target.closest('[data-lc]'); if (b) openTab(b.dataset.lc, true); });
@@ -62,7 +62,7 @@ function renderFuse(){
   // cột trái: cả hành trang; món không ghép được (đan, nguyên liệu, Thiên cấp…) hiện mờ
   const cells = bag.map(({k, n}) => {
     const it = ITEM[k], can = it.slot && it.base && fuseQOf(k) >= 0 && fuseQOf(k) < FUSE_R.length - 1;
-    if (!can) return `<div class="iv-cell ${it.slot ? 'eq ' : ''}r-${it.rarity || 'common'} off na" aria-label="${it.name}" data-tip="${itemTip(k, it.slot ? 'Đỏ: đã là phẩm cao nhất, không ghép được' : 'Không phải trang bị, không ghép được')}">${itemImg(k)}${lcCellTail(k, n)}</div>`;
+    if (!can) return `<div class="iv-cell ${it.slot ? 'eq ' : ''}r-${it.rarity || 'common'} off na" aria-label="${it.name}" data-tip="${itemTip(k, it.slot ? `${FUSE_N.at(-1)}: đã là phẩm cao nhất, không ghép được` : 'Không phải trang bị, không ghép được')}">${itemImg(k)}${lcCellTail(k, n)}</div>`;
     const j = used[k] = (used[k] || 0) + 1, on = j <= fuseSel.filter(x => x === k).length, off = q >= 0 && fuseQOf(k) !== q;
     return `<button class="iv-cell eq r-${it.rarity} ${on ? 'msel' : ''} ${off ? 'off' : ''}" data-fu="${k}" aria-label="${it.name}" data-tip="${itemTip(k, off ? `Lò đang ghép ${FUSE_N[q]}, chỉ bỏ thêm được món cùng phẩm` : on ? 'Nhấp để bỏ khỏi lò' : 'Nhấp để bỏ vào lò luyện khí')}">${itemImg(k)}<span class="lv">${itemLv(it)}</span></button>`;
   }).join('');
@@ -73,7 +73,7 @@ function renderFuse(){
   }).join('');
   const kinds = [...new Set(fuseSel.map(k => ITEM[k].name))];
   const kindTxt = kinds.length ? (kinds.length > 3 ? `${kinds.length} loại đã chọn` : kinds.join(', ')) : 'các món đã chọn';
-  const rates = [0, 1, 2, 3, 4].map(i => `${FUSE_N[i]} → ${FUSE_N[i + 1]}: ${Math.round((DATA.fuseChance?.[i] ?? 0) * 100)}%`).join('&#10;');
+  const rates = FUSE_N.slice(0, -1).map((_, i) => `${FUSE_N[i]} → ${FUSE_N[i + 1]}: ${Math.round((DATA.fuseChance?.[i] ?? 0) * 100)}%`).join('&#10;');
   const gearN = Object.keys(S.inventory).filter(k => ITEM[k]?.slot && S.inventory[k] > 0).reduce((a, k) => a + S.inventory[k], 0);
   pane.innerHTML = `<div class="dd fz">
       <header class="dd-top">${lcNav('fuse')}<div class="dd-cult"><span>Ghép <b>${N} trang bị cùng phẩm</b> thành 1 trang bị phẩm cao hơn · thất bại vẫn nhận lại 1 món cùng phẩm</span></div>

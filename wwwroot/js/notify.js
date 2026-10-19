@@ -51,6 +51,11 @@ async function ddSynth(n){
   await act(`synth/${k}?n=${n}`);
   if ((S.inventory[sd.to] || 0) > before) ddAnim = {t0: performance.now(), item: sd.to};
 }
+async function ddBrew(k, n){
+  const before = S.inventory[k] || 0;
+  await act(`brew/${k}?n=${n}`);
+  if ((S.inventory[k] || 0) > before) ddAnim = {t0: performance.now(), item: k};
+}
 /** Đến Boss rơi nguyên liệu đột phá của cảnh giới hiện tại: chuyển sang chương của Boss đó (nếu đã mở), đủ lệnh thì vào ải Boss. */
 async function ddGoBoss(){
   const c = DATA.chapters.find(x => x.bossItem === realm().bossItem);
@@ -64,6 +69,8 @@ function initDan(){
   $('pane-craft').addEventListener('click', e => {
     const p = e.target.closest('[data-pill]');
     if (p){ ddSel = p.dataset.pill; try { localStorage.setItem('van-dao-dd-sel', ddSel); } catch(err){} renderCraft(); return; }
+    const bw = e.target.closest('[data-brew]');
+    if (bw){ if (!bw.disabled) ddBrew(bw.dataset.brew, +bw.dataset.n); return; }
     const b = e.target.closest('[data-dd]'); if (!b || b.disabled) return;
     const id = b.dataset.dd;
     if (id === 'synth') ddSynth(1);
