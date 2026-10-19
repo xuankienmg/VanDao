@@ -201,13 +201,13 @@ function live(){
   $('btnBag').dataset.tip = `Hành trang\nTấn công ${fmt(st.atk)} · Máu ${fmt(st.hp)} · Phòng thủ ${fmt(st.def)}`;
   // thanh thám hiểm: luôn tự động, rê chuột để xem chi tiết chuyến
   const trip = $('trip'), left = exploreLeft();
-  trip.dataset.tip = `${S.map.area > DATA.areas ? 'Khiêu chiến Boss · ' + S.map.bossLair : 'Ải ' + (S.map.realm + 1) + '-' + S.map.area + ' · ' + S.map.areas[S.map.area - 1].place}\nMỗi ${(S.exploreCooldownMs/1000).toFixed(1).replace('.0','')}s một chuyến · ${bt.win ? `hạ ${(bt.waves || []).map(w => w.name + (w.tier === 'elite' ? ' (tinh anh)' : '')).join(', ') || bt.monster}` : `thua ${(bt.waves || []).at(-1)?.name || bt.monster}, cần mạnh hơn`}\nThắng: +${fmt(S.exploreQiGain)} tu vi và vật phẩm rơi theo tỉ lệ`;
+  trip.dataset.tip = `${S.map.area > DATA.areas ? 'Khiêu chiến Boss · ' + S.map.bossLair : 'Ải ' + (S.map.diff ? MAP_DIFFS[S.map.diff] + ' ' : '') + (S.map.realm + 1) + '-' + S.map.area + ' · ' + S.map.areas[S.map.area - 1].place}\nMỗi ${(S.exploreCooldownMs/1000).toFixed(1).replace('.0','')}s một chuyến · ${bt.win ? `hạ ${(bt.waves || []).map(w => w.name + (w.tier === 'elite' ? ' (tinh anh)' : '')).join(', ') || bt.monster}` : `thua ${(bt.waves || []).at(-1)?.name || bt.monster}, cần mạnh hơn`}\nThắng: +${fmt(S.exploreQiGain)} tu vi và vật phẩm rơi theo tỉ lệ`;
   { const f = mapFrontier(); if (f.knocked) trip.dataset.tip += `\n⚑ Ải cao nhất ${S.map.realm + 1}-${f.top}: thua nên lùi về ${S.map.realm + 1}-${S.map.area}. Mở Bản đồ để thử lại.`; }
   { const nb = $('btnNext'), f = mapFrontier(), R = S.map.realm + 1, a = S.map.area, boss = a > DATA.areas, can = !boss && a < f.top;
     nb.disabled = !can || busy; nb.classList.toggle('knock', can && f.knocked);
     nb.dataset.tip = boss ? 'Ải tiếp theo\nĐang khiêu chiến Boss' : can ? `Sang ải ${R}-${a + 1}${f.knocked ? ' (thử lại)' : ''}\nẢi cao nhất ${R}-${f.top}` : `Ải tiếp theo\nĐang ở ải cao nhất ${R}-${f.top}, thắng ải này để mở ải kế`; }
   trip.querySelector('i').style.width = Math.min(100, 100 - left / S.exploreCooldownMs * 100) + '%';
-  $('tripText').textContent = left > 0 ? `${S.map.area > DATA.areas ? 'Boss' : 'Ải ' + (S.map.realm + 1) + '-' + S.map.area + (mapFrontier().knocked ? ' ↓' : '')} · ${Math.ceil(left/1000)}s` : 'Đang về…';
+  $('tripText').textContent = left > 0 ? `${S.map.area > DATA.areas ? 'Boss' : 'Ải ' + (S.map.diff ? MAP_DIFFS[S.map.diff] + ' ' : '') + (S.map.realm + 1) + '-' + S.map.area + (mapFrontier().knocked ? ' ↓' : '')} · ${Math.ceil(left/1000)}s` : 'Đang về…';
   if (left <= 0 && performance.now() - lastPull > 1500){ lastPull = performance.now(); sync(); }
   liveInv();
   liveDan(); liveBreak(); liveSkill();
@@ -220,6 +220,6 @@ function renderAll(){
   $('hudStage').textContent = S.stageName;
   $('hudRate').textContent = `${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')} tu vi/giây`;
   const tipKey = tipEl && !tipEl.hidden && tipEl._for ? (tipEl._for.id || tipEl._for.dataset.equip || tipEl._for.dataset.unequip || '') : '';
-  renderTrack(); renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderLog(); live();
+  renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderLog(); live();
   if (tipKey){ const el = document.getElementById(tipKey) || document.querySelector(`[data-equip="${tipKey}"],[data-unequip="${tipKey}"]`); if (el && el.matches(':hover')) showTip(el); }
 }

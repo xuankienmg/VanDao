@@ -166,6 +166,10 @@ public static class Program
         api.MapPost("/players/{id:guid}/map/{chapter:int}", (Guid id, int chapter, GameService game) =>
             Run(id, game, p => game.SelectMap(p, chapter)));
 
+        // bản đồ: chọn mức độ khó (0 Thường · 1 Khó · 2 Ác mộng)
+        api.MapPost("/players/{id:guid}/diff/{d:int}", (Guid id, int d, GameService game) =>
+            Run(id, game, p => game.SelectDiff(p, d)));
+
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
             Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)));

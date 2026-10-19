@@ -13,7 +13,9 @@ if (Q.get('opaque') === '1') document.body.classList.add('opaque');
 const notifyHost = (type, extra = {}) => { try { window.chrome?.webview?.postMessage({type, ...extra}); } catch(e){} };
 let DATA, ITEM = {}, S, recvAt = 0, busy = false;
 
+let postSeq = 0;           // tăng mỗi lần gửi lệnh POST: sync() bỏ kết quả GET đã cũ (gửi trước lệnh) để không ghi đè trạng thái mới
 async function api(method, url){
+  if (method !== 'GET') postSeq++;
   const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: method === 'POST' ? '{}' : undefined});
   const j = await r.json().catch(() => ({}));
   if (!r.ok){ const e = new Error(j.error || 'Không kết nối được máy chủ.'); e.status = r.status; throw e; }
@@ -82,13 +84,14 @@ async function channel(){
   // phản hồi ngay trên màn hình, server xác nhận sau
   const g = S.channelGain;
   S.qi = Math.min(S.qiReq, qiNow() + g); recvAt = performance.now();
-  burst(10); floats.push({x:(Math.random()-.5)*80, y:-170, text:'+' + fmt(g), t:0}); live();
+  floats.push({x:(Math.random()-.5)*80, y:-170, text:'+' + fmt(g), t:0}); live();
   try { const res = await api('POST', `/api/players/${S.id}/channel`); if (!busy) setState(res.state); notifyHost('changed'); }
   catch(e){ localLog(e.message, 'bad'); }
 }
 async function sync(){
   if (busy || !S) return;
-  try { const r = await api('GET', `/api/players/${S.id}`); setState(r.state ?? r); } catch(e){}
+  const seq = postSeq;
+  try { const r = await api('GET', `/api/players/${S.id}`); if (!busy && seq === postSeq) setState(r.state ?? r); } catch(e){}
 }
 
 /* ============================================================
@@ -107,10 +110,6 @@ function icon(k){
     ore:`<path d="M12 2 21 12 12 22 3 12Z" fill="${c}"/><path d="M12 2 12 22 M3 12H21" stroke="#0e1416" stroke-opacity=".3"/>`,
   };
   return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${shapes[it.type]}</svg>`;
-}
-function renderTrack(){
-  $('track').innerHTML = DATA.realms.map((r,i) => `<li class="${i<S.realm?'done':i===S.realm?'now':''}">${r.name}</li>`).join('')
-    + DATA.lockedRealms.map(n => `<li class="locked" title="Sẽ mở trong bản cập nhật">${n}</li>`).join('');
 }
 
 /* ---- Giữ nhịp hiệu ứng lặp khi vẽ lại DOM ----

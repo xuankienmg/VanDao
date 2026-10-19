@@ -46,7 +46,8 @@ function renderSpin(){
     pane.innerHTML = `<div class="dd sp">
       <header class="dd-top">${lcNav('spin')}<div class="dd-cult" id="spCult"></div>
         <div class="dd-stone">${itemImg('linh_thach')}<span>Linh thạch</span><b id="spStone"></b></div>
-        <div class="dd-stone sp-tk" data-tip="Vé Tài Xỉu&#10;Mỗi vé quay 1 lần">${itemImg(SPIN_TICKET)}<span>Vé</span><b id="spTk"></b></div></header>
+        <div class="dd-stone sp-tk" data-tip="Vé Tài Xỉu&#10;Mỗi vé quay 1 lần">${itemImg(SPIN_TICKET)}<span>Vé</span><b id="spTk"></b></div>
+        <button class="sp-hbtn" id="spHist" aria-label="Lịch sử quay" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg><em id="spHistN"></em></button></header>
       <section class="dd-main sp-main" aria-label="Vòng quay">
         <div class="sp-stage">
           <div class="sp-wheel" id="spWheel"></div>
@@ -54,7 +55,6 @@ function renderSpin(){
           <button class="sp-hub" data-sp-go="1" id="spHub" aria-label="Quay 1 lượt">Quay</button>
         </div>
         <div class="dd-act sp-act" id="spAct"></div>
-        <div class="sp-res" id="spRes" aria-live="polite"></div>
       </section>
       <aside class="dd-side sp-side">
         <div class="sp-buy" id="spBuy"></div>
@@ -81,25 +81,82 @@ function renderSpin(){
     <div class="sp-btns">${btn(1, 'Đổi 1')}${btn(10, 'Đổi 10')}${btn(0, `Tối đa${canBuy > 0 ? ` ×${fmt(canBuy)}` : ''}`)}</div>
     <p class="sp-note">${canBuy > 0 ? `Đủ linh thạch đổi ${fmt(canBuy)} vé.` : `Cần thêm <b>${fmt(price - st % price)}</b> linh thạch cho vé kế tiếp.`}</p>`;
   const w = spinW();
+  const hn = spinHistory().length; $('spHistN').textContent = hn || '';
+  if ($('spHistPop') && !$('spHistPop').hidden) $('spHistPop').innerHTML = spinHistHtml();
   $('spOdds').innerHTML = FUSE_R.map((r, i) => `<li class="${spinLast?.q === i ? 'on' : ''}"><span class="sp-n" style="--c:${RARITY[r].c}">${i + 1}</span>${qWord(r)}<b>${spinPct(w[i])}</b></li>`).join('');
-  $('spRes').innerHTML = spinBusy ? '<p class="sp-wait">Vòng quay đang chuyển…</p>' : spinLast ? spinResHtml(spinLast) : '<p class="sp-wait">Bấm <b>Quay</b> để thử vận may.</p>';
 }
 
-function spinResHtml(r){
-  const list = r.outs.slice().sort((a, b) => FUSE_R.indexOf(ITEM[b.item]?.rarity) - FUSE_R.indexOf(ITEM[a.item]?.rarity));
-  const big = r.q >= 4;
-  return `<p class="dd-sec">${big ? 'Đại vận!' : 'Kết quả'} · ô ${r.q + 1} ${qWord(FUSE_R[r.q])}</p><div class="sp-got ${big ? 'big' : ''}">${list.map(o => {
-    const it = ITEM[o.item]; if (!it) return '';
-    return `<span class="sp-item r-${it.rarity}" data-tip="${itemTip(o.item)}">${itemImg(o.item)}${o.qty > 1 ? `<em>×${o.qty}</em>` : ''}<b class="rc-${it.rarity}">${it.name}</b></span>`;
-  }).join('')}</div>`;
+/** Danh sách món của một lượt quay, phẩm cao → thấp, gộp món trùng. */
+function spinItemsHtml(ids, cls){
+  const n = {}; ids.forEach(k => { if (ITEM[k]) n[k] = (n[k] || 0) + 1; });
+  return Object.keys(n).sort((a, b) => FUSE_R.indexOf(ITEM[b].rarity) - FUSE_R.indexOf(ITEM[a].rarity)).map(k => { const it = ITEM[k];
+    return `<span class="${cls} r-${it.rarity}">${itemImg(k)}${n[k] > 1 ? `<em>×${n[k]}</em>` : ''}<b class="rc-${it.rarity}">${it.name}</b></span>`; }).join('');
 }
+
+// ---- thông báo kết quả giữa màn hình ----
+let spinPopTimer = 0;
+function spinShowPop(r, err){
+  let el = $('spinPop');
+  if (!el){
+    el = document.createElement('div'); el.id = 'spinPop'; el.className = 'sp-pop'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); el.hidden = true;
+    document.body.appendChild(el);
+    el.addEventListener('click', () => spinHidePop());
+    el.addEventListener('mouseenter', () => clearTimeout(spinPopTimer));
+    el.addEventListener('mouseleave', () => { clearTimeout(spinPopTimer); spinPopTimer = setTimeout(spinHidePop, 2500); });
+  }
+  if (err){
+    el.className = 'sp-pop bad'; el.style.setProperty('--c', '#e58472');
+    el.innerHTML = `<div class="sp-pop-box"><p class="sp-pop-t">Không quay được</p><p class="sp-pop-nm">${err}</p><p class="sp-pop-hint">Bấm để đóng</p></div>`;
+    el.hidden = true; void el.offsetWidth; el.hidden = false;
+    clearTimeout(spinPopTimer); spinPopTimer = setTimeout(spinHidePop, 3500); return;
+  }
+  const ids = r.outs.flatMap(o => Array(o.qty || 1).fill(o.item));
+  const best = ids.slice().sort((a, b) => FUSE_R.indexOf(ITEM[b]?.rarity) - FUSE_R.indexOf(ITEM[a]?.rarity))[0];
+  const big = r.q >= 4, it = ITEM[best];
+  el.className = `sp-pop ${big ? 'big' : ''}`; el.style.setProperty('--c', RARITY[FUSE_R[r.q]].c);
+  el.innerHTML = `<div class="sp-pop-box">
+    <p class="sp-pop-t">${big ? 'Đại vận!' : 'Tài Xỉu'} · ô ${r.q + 1} ${qWord(FUSE_R[r.q])}</p>
+    ${it ? `<div class="sp-pop-best r-${it.rarity}">${itemImg(best)}</div><p class="sp-pop-nm rc-${it.rarity}">${it.name}</p>` : ''}
+    ${ids.length > 1 ? `<div class="sp-pop-list">${spinItemsHtml(ids, 'sp-item')}</div>` : ''}
+    <p class="sp-pop-hint">Đã vào hành trang · bấm để đóng</p></div>`;
+  el.hidden = true; void el.offsetWidth; el.hidden = false;
+  clearTimeout(spinPopTimer); spinPopTimer = setTimeout(spinHidePop, ids.length > 1 ? 6000 : 3500);
+}
+function spinHidePop(){ clearTimeout(spinPopTimer); const el = $('spinPop'); if (el) el.hidden = true; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ spinHidePop(); spinHistShow(false); } });
+
+// ---- lịch sử quay (server lưu 30 lần bấm quay gần nhất, xóa khi tu lại từ đầu) ----
+const spinHistory = () => (S?.spinHistory || '').split(';').filter(Boolean).map(e => { const [t, ids] = e.split('|'); return {t: +t, ids: (ids || '').split(',').filter(Boolean)}; });
+function spinHistHtml(){
+  const h = spinHistory();
+  if (!h.length) return '<p class="dd-sec">Lịch sử quay</p><p class="sp-wait">Chưa có lượt quay nào.</p>';
+  const p2 = n => String(n).padStart(2, '0');
+  const tf = t => { const d = new Date(t * 1000); return `${p2(d.getHours())}:${p2(d.getMinutes())} · ${p2(d.getDate())}/${p2(d.getMonth() + 1)}`; };
+  return `<p class="dd-sec">Lịch sử quay · ${h.length} lần gần nhất</p><ol>${h.map(e => {
+    const top = Math.max(...e.ids.map(k => FUSE_R.indexOf(ITEM[k]?.rarity)));
+    return `<li><span class="sp-ht"><time>${tf(e.t)}</time> · quay ×${e.ids.length}${top >= 0 ? ` · cao nhất ${qWord(FUSE_R[top])}` : ''}</span><div class="sp-hl">${spinItemsHtml(e.ids, 'sp-hi')}</div></li>`; }).join('')}</ol>`;
+}
+function spinHistShow(on){
+  const b = $('spHist'); let pop = $('spHistPop');
+  if (!on){ if (pop) pop.hidden = true; b?.setAttribute('aria-expanded', 'false'); return; }
+  if (!b) return;
+  if (!pop){ pop = document.createElement('div'); pop.id = 'spHistPop'; pop.className = 'sp-hpop'; pop.setAttribute('role', 'tooltip'); document.body.appendChild(pop); }
+  pop.innerHTML = spinHistHtml(); pop.hidden = false; b.setAttribute('aria-expanded', 'true');
+  const r = b.getBoundingClientRect(), t = pop.getBoundingClientRect();
+  pop.style.left = Math.max(4, Math.min(r.right - t.width, innerWidth - t.width - 4)) + 'px';
+  pop.style.top = (r.bottom + 6 + t.height <= innerHeight - 4 ? r.bottom + 6 : Math.max(4, r.top - 6 - t.height)) + 'px';
+}
+document.addEventListener('mouseover', e => { if (e.target.closest?.('#spHist')) spinHistShow(true); });
+document.addEventListener('mouseout', e => { if (e.target.closest?.('#spHist') && !e.relatedTarget?.closest?.('#spHist')) spinHistShow(false); });
+document.addEventListener('focusin', e => { if (e.target.id === 'spHist') spinHistShow(true); });
+document.addEventListener('focusout', e => { if (e.target.id === 'spHist') spinHistShow(false); });
 
 async function spinGo(n){
   if (busy || spinBusy || spinTickets() < n) return;
   spinBusy = true; busy = true; spinLast = null; renderSpin();
   let res;
   try { res = await api('POST', `/api/players/${S.id}/spin?n=${n}`); }
-  catch(e){ spinBusy = false; busy = false; localLog(e.message, 'bad'); renderSpin(); return; }
+  catch(e){ spinBusy = false; busy = false; localLog(e.message, 'bad'); renderSpin(); spinShowPop(null, e.message); return; }
   const q = Math.max(0, +(res.craft?.recipe || 'spin:0').split(':')[1] || 0);
   const disc = $('spDisc');
   disc?.querySelectorAll('.sp-seg.on').forEach(x => x.classList.remove('on'));
@@ -116,11 +173,13 @@ async function spinGo(n){
     $('spDisc')?.querySelector(`.sp-seg[data-q="${q}"]`)?.classList.add('on');
     if (q >= 4 && typeof rings !== 'undefined') rings.push({t: 0, c: RARITY[FUSE_R[q]].c, big: q >= 6});
     renderSpin(); live();
+    spinShowPop(spinLast);
   }, fast ? 250 : 4400);
 }
 
 $('pane-spin').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || b.disabled || spinBusy) return;
+  if (b.id === 'spHist'){ const p = $('spHistPop'); spinHistShow(!p || p.hidden); return; }
   if (b.dataset.spGo){ spinGo(+b.dataset.spGo); return; }
   if (b.dataset.spBuy !== undefined){ await act(`spin/buy?n=${b.dataset.spBuy}`); renderSpin(); }
 });

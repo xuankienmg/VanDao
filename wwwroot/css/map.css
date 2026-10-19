@@ -2,7 +2,21 @@
 /* ================= BẢN ĐỒ NGANG: đường ải zigzag trên nền thủy mặc + bảng thông tin bên dưới ================= */
 .mpx{--wd:#17120e;--bz:#8a6a3a;--bz2:#b8925a;--ink3:#0d0a08;--cy:#5cd6c6;display:flex;flex-direction:column;gap:8px;font-size:12px}
 body.panel .mpx{height:calc(100vh - 58px);min-height:440px}
-.mpx > .mpx-chs,.mpx > .mpx-hd,.mpx > .mpx-info{flex:none}
+.mpx > .mpx-chs,.mpx > .mpx-row,.mpx > .mpx-hd,.mpx > .mpx-info{flex:none}
+/* ---- chọn mức độ khó (Thường · Khó · Ác mộng) cạnh thanh chương ---- */
+.mpx-row{display:flex;gap:6px;align-items:stretch}
+.mpx-row .mpx-chs{flex:1;min-width:0}
+.mpx-diff{position:relative;flex:none;display:flex}
+.mpx-diff select{appearance:none;height:28px;padding:0 24px 0 9px;background:#17120e;border:1px solid #6b5a3e;color:#e9dfc4;font:600 12.5px var(--f-body,inherit);cursor:pointer}
+.mpx-diff::after{content:"▾";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#c9a86a;pointer-events:none}
+.mpx-diff select:hover{border-color:#b8925a}
+.mpx-diff select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.mpx-diff select option{background:#17120e;color:#e9dfc4}
+.mpx-diff.d1 select{border-color:#c0702a;color:#ffb070;background:#2a170c}
+.mpx-diff.d2 select{border-color:#b03030;color:#ff7a6a;background:#2a0e0c;box-shadow:inset 0 0 6px rgba(200,40,30,.35)}
+.mpx-dtag{font-style:normal;font-family:inherit;font-size:11px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:3px;border:1px solid}
+.mpx-dtag.d1{color:#ffb070;border-color:#c0702a;background:#2a170c}
+.mpx-dtag.d2{color:#ff7a6a;border-color:#b03030;background:#2a0e0c}
 /* ---- thanh chọn chương 1–10 ---- */
 .mpx-chs{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
 .mpx-chs button{position:relative;display:grid;place-items:center;height:28px;padding:0;background:#17120e;border:1px solid #6b5a3e;color:#c9bfa8;font-family:var(--f-display);font-size:14px;cursor:pointer}

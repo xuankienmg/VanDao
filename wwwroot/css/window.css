@@ -7,7 +7,7 @@ html.strip,body.strip{background:transparent!important;height:100%;overflow:hidd
 body.strip{padding:0}
 body.strip.opaque{background:var(--ink)!important}
 body.strip .wrap{max-width:none;height:100%;gap:0}
-body.strip header.top,body.strip aside.book,body.strip footer,body.strip .hud{display:none}
+body.strip aside.book,body.strip .hud{display:none}
 body.strip .grid{display:block;height:100%}
 body.strip .altar{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;gap:4px;height:calc(100% - 8px);margin:4px;padding:6px 8px 7px;background:var(--ink-2);border:1px solid var(--line);border-radius:8px;position:relative}
 body.strip .strip-head{grid-row:1} body.strip .qi{grid-row:2} body.strip .stage-wrap{grid-row:3} body.strip .actions{grid-row:4}
@@ -35,7 +35,7 @@ body.strip .actions{gap:5px}
 body.strip .trip{font-size:11px}
 body.panel{padding:0;height:100%}
 body.panel .wrap{max-width:none;height:100%;gap:0}
-body.panel header.top,body.panel .altar,body.panel footer{display:none}
+body.panel .altar{display:none}
 body.panel .grid{display:block;height:100%}
 body.panel aside.book{border:0;border-radius:0;height:100%;overflow:auto}
 body.panel{font-size:12px}

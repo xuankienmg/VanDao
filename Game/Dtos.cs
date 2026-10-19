@@ -32,7 +32,9 @@ public record CostDto(string Item, int Need, int Have);
 public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, string BossLair, double KeyChanceMin, double KeyChanceMax,
     List<AreaDto> Areas, List<SynthStateDto> Synths, bool HasBossItem, int Realm = 0,
     List<DropInfoDto>? Drops = null, double ChestChance = 0, double RareChestChance = 0, int RareChestMinArea = 0, string BossChest = "",
-    int ChapterMax = 0, string Boss = "", string BossImage = "", double[]? Quality = null);
+    int ChapterMax = 0, string Boss = "", string BossImage = "", double[]? Quality = null,
+    int Diff = 0, bool[]? DiffOpen = null, bool[]? ChapterOpen = null, bool[]? ChapterCleared = null, double RewardMult = 1, double MonMult = 1);
+// Diff = mức độ khó đang đánh (0 Thường · 1 Khó · 2 Ác mộng); DiffOpen = mức đã mở; ChapterOpen / ChapterCleared theo mức đang chọn
 // Realm = chương đang đánh (0-based, tên giữ cho tương thích client: nhãn ải "C-x")
 
 /// <summary>Thông tin tĩnh một chương cho thanh chọn chương.</summary>
@@ -101,7 +103,8 @@ public record StateDto(
     string Admin = "",    // cờ admin mode đang bật
     List<ChestOddsDto>? ChestOdds = null,   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
     double PillBonus = 0,    // tỉ lệ đột phá cộng thêm từ Phá Chướng Đan
-    string Skin = "");       // trang phục đang mặc, rỗng = theo cảnh giới   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
+    string Skin = "",
+    string SpinHistory = "");   // lịch sử quay Tài Xỉu: "unixGiây|id,id,…;…", mới nhất trước       // trang phục đang mặc, rỗng = theo cảnh giới   // tỉ lệ phần thưởng khi mở rương (hiện ở chế độ admin)
 
 /// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % cấp Phàm → Thiên,
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>

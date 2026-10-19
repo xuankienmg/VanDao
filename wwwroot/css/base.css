@@ -11,14 +11,6 @@
 html,body{background:var(--ink);color:var(--paper)}
 body{font-family:var(--f-body);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:20px 32px}
 .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
-.brand h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1;margin:0;letter-spacing:.02em}
-.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
-.track{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0}
-.track li{font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
-.track li.done{color:var(--jade);border-color:#2f5a54}
-.track li.now{color:var(--ink);background:var(--gold);border-color:var(--gold);font-weight:600}
-.track li.locked{opacity:.45;border-style:dashed}
 .grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
 .altar{display:flex;flex-direction:column;gap:12px;min-width:0}

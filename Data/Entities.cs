@@ -36,6 +36,12 @@ public class Player
     public int ChapterMax { get; set; }
     /// <summary>Phiên bản dữ liệu bản đồ: 0 = bản đồ theo cảnh giới (bản cũ) → chuyển về 1-1 khi nạp; 1 = bản đồ chương.</summary>
     public int MapVer { get; set; } = 1;
+    /// <summary>Mức độ khó đang đánh: 0 Thường · 1 Khó · 2 Ác mộng.</summary>
+    public int Diff { get; set; }
+    /// <summary>Ải cao nhất đã mở ở mức Khó / Ác mộng theo chương: "d.c=ải;…" (mức Thường dùng ChapterMax/AreaMax).</summary>
+    public string DiffProg { get; set; } = "";
+    /// <summary>Boss đã hạ theo mức và chương: "d.c;…". Hạ Boss chương N ở mức d mở chương N ở mức d+1.</summary>
+    public string Cleared { get; set; } = "";
     /// <summary>Bản cũ (bản đồ theo cảnh giới), không còn dùng. Giữ cột để tương thích DB cũ.</summary>
     public int MapRealm { get; set; } = -1;
 
@@ -56,6 +62,9 @@ public class Player
 
     /// <summary>Code quà tặng đã nhập (GameData.GiftCodes), cách nhau dấu phẩy. Mỗi code dùng 1 lần mỗi nhân vật; tu lại từ đầu thì xóa.</summary>
     public string Redeemed { get; set; } = "";
+
+    /// <summary>Lịch sử quay Tài Xỉu, mới nhất trước: "unixGiây|id,id,…;…" (giữ GameData.SpinHistoryKeep lượt bấm quay).</summary>
+    public string SpinHistory { get; set; } = "";
     public bool Cheat(string flag) => Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
 
     /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng chủ động (tung khi đầy nộ). Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>
