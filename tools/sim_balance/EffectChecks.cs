@@ -74,7 +74,7 @@ static class EffectChecks
         invalid.Equipment.Add(new EquippedItem { Slot = noSet.Slot!, ItemId = GameData.GearId(noSet, 9) });
         Check(EquipmentEffects.Calculate(invalid).Sets.All(s => s.Count == 0), "Standalone artifact counted as set");
         var full = EquipmentEffects.Calculate(Player(3, 9));
-        Check(full.Effects.Single(e => e.Id == "thien_menh").Effective == .60, "Critical bonus cap");
+        Check(full.Effects.Single(e => e.Id == "thien_menh").Effective == 60, "Critical chance bonus cap");
         Check(full.Effects.Single(e => e.Id == "dia_mach").Effective == 15, "Reflect cap");
         Check(full.Effects.Single(e => e.Id == "tho_thuan").Effective == 20, "Shield cap");
         Check(GameService.GearEffects(Player(0, 0)).Qi == 8, "Phàm full set bonus not wired");

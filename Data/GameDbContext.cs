@@ -76,6 +76,7 @@ public static class SchemaUpgrade
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"), ("Redeemed", "TEXT NOT NULL DEFAULT ''"), ("SpinHistory", "TEXT NOT NULL DEFAULT ''"),
             ("Chapter", "INTEGER NOT NULL DEFAULT 0"), ("ChapterMax", "INTEGER NOT NULL DEFAULT 0"), ("MapVer", "INTEGER NOT NULL DEFAULT 0"),
             ("Diff", "INTEGER NOT NULL DEFAULT 0"), ("DiffProg", "TEXT NOT NULL DEFAULT ''"), ("Cleared", "TEXT NOT NULL DEFAULT ''"),
+            ("LbSecret", "TEXT NOT NULL DEFAULT ''"), ("Tainted", "INTEGER NOT NULL DEFAULT 0"),
         })
         {
             cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('Players') WHERE name = '{col}'";

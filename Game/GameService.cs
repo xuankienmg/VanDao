@@ -7,8 +7,9 @@ namespace VanDao.Game;
 /// Toàn bộ luật chơi chạy ở server. Client chỉ hiển thị và gửi hành động,
 /// nên người chơi không thể sửa tu vi hay vật phẩm từ trình duyệt.
 /// </summary>
-public class GameService(GameDbContext db)
+public partial class GameService(GameDbContext db, LeaderboardService? lb = null, MarketService? market = null)
 {
+    private readonly MarketService? _market = market;
     private const int LogKeep = 100;
     private const int LogShow = 40;
 
@@ -16,7 +17,7 @@ public class GameService(GameDbContext db)
 
     public async Task<Player> CreateAsync(string? name, Guid? id = null)
     {
-        var p = new Player { Id = id ?? Guid.NewGuid(), Name = string.IsNullOrWhiteSpace(name) ? "Đạo hữu" : name.Trim()[..Math.Min(64, name.Trim().Length)] };
+        var p = new Player { Id = id ?? Guid.NewGuid(), Name = string.IsNullOrWhiteSpace(name) ? "Đạo hữu" : name.Trim()[..Math.Min(64, name.Trim().Length)], LbSecret = NewLbSecret() };
         foreach (var (item, n) in GameData.StartingInventory) p.Add(item, n);
         db.Players.Add(p);
         p.ExploreReadyAt = DateTime.UtcNow.AddSeconds(ExploreSeconds(p));
@@ -55,6 +56,9 @@ public class GameService(GameDbContext db)
             db.Equipment.Remove(e);
         }
         ConvertLegacy(p);
+        // bảng xếp hạng: nhân vật cũ chưa có khóa → tạo; đang bật cờ / còn điểm admin → loại khỏi bảng xếp hạng
+        if (p.LbSecret.Length == 0) p.LbSecret = NewLbSecret();
+        if (p.Admin.Length > 0 || p.AdminPoints > 0) p.Tainted = true;
         // đòn thường đã bỏ (Hỏa Tiễn, Thủy Châm) → đổi sang đòn thường còn lại cùng hệ
         if (p.SkillSlots.Length > 0)
             p.SkillSlots = string.Join(',', p.SkillSlots.Split(',').Select(x => SkillData.RemovedBasics.TryGetValue(x.Trim(), out var to) ? to : x));
@@ -499,6 +503,8 @@ public class GameService(GameDbContext db)
     public (string msg, string kind) AdminAction(Player p, string action, string? arg, int n)
     {
         n = Math.Clamp(n, 1, 1_000_000_000);
+        // mọi lệnh admin (trừ reset về từ đầu) loại nhân vật khỏi bảng xếp hạng
+        if (action != "resetall") p.Tainted = true;
         switch (action)
         {
             case "give":
@@ -572,6 +578,7 @@ public class GameService(GameDbContext db)
                 p.Logs.Clear();
                 db.Logs.Where(l => l.PlayerId == p.Id).ExecuteDelete();
                 p.ExploreReadyAt = now.AddSeconds(ExploreSeconds(p));
+                p.Tainted = p.Admin.Length > 0;   // tu lại từ đầu sạch (không còn cờ admin) → được lên bảng xếp hạng lại
                 AddLog(p, "Đạo tâm vừa khởi. Nhân vật sẽ tự đi thám hiểm, nhặt linh tài và tích tu vi.");
                 return Log(p, "[Admin] Đã reset nhân vật về từ đầu.", "gold");
             }
@@ -691,7 +698,7 @@ public class GameService(GameDbContext db)
         return (a, d, h, c, sp, q, Math.Min(40, m));
     }
 
-    /// <summary>Bị động cho chiêu thức: % sát thương chiêu hệ Hỏa, % xuyên thấu phòng thủ quái, % công thiêu đốt mỗi lượt.</summary>
+    /// <summary>Bị động cho chiêu thức: % sát thương Hỏa, % xuyên thấu, cấp mở hiệu ứng thiêu đốt.</summary>
     private static (double skill, double pen, double burn) SkillExtra(Player p)
     {
         double k = 0, pe = 0, bu = 0;
@@ -965,9 +972,31 @@ public class GameService(GameDbContext db)
         db.ChangeTracker.Clear();
         // giữ nguyên Id để client không phải đổi
         var fresh = await CreateAsync(p.Name, p.Id);
+        fresh.LbSecret = p.LbSecret;   // giữ khóa bảng xếp hạng để ghi đè đúng dòng cũ
         AddLog(fresh, "Tán công trùng tu, bắt đầu lại từ Luyện Khí tầng 1.");
         await db.SaveChangesAsync();
         return fresh;
+    }
+
+    // ================= Bảng xếp hạng =================
+
+    private static string NewLbSecret() => Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24));
+
+    /// <summary>Lực chiến: cùng công thức với ô "Lực chiến" trong Hành trang (inventory.js → power).</summary>
+    public static long Power(Player p)
+    {
+        var st = Stats(p);
+        return (long)Math.Round(st.Atk * 2.0 + st.Def * 3.0 + st.Hp * .4 + (st.Crit + st.Speed) * 4);
+    }
+
+    /// <summary>Đặt đạo hiệu hiển thị trên bảng xếp hạng (2–20 ký tự).</summary>
+    public (string msg, string kind) Rename(Player p, string? name)
+    {
+        var n = string.Join(' ', (name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        if (n.Length is < 2 or > 20) throw new GameException("Đạo hiệu cần 2–20 ký tự.");
+        if (n.Any(char.IsControl) || n.Any(c => "<>\"'`".Contains(c))) throw new GameException("Đạo hiệu có ký tự không hợp lệ.");
+        p.Name = n;
+        return Log(p, $"Đổi đạo hiệu thành {n}.", "good");
     }
 
     public async Task SaveAsync(Player p)
@@ -977,7 +1006,11 @@ public class GameService(GameDbContext db)
         var cutoff = await db.Logs.Where(l => l.PlayerId == p.Id).OrderByDescending(l => l.Id)
             .Skip(LogKeep).Select(l => l.Id).FirstOrDefaultAsync();
         if (cutoff > 0) await db.Logs.Where(l => l.PlayerId == p.Id && l.Id <= cutoff).ExecuteDeleteAsync();
+        lb?.Track(p);   // bảng xếp hạng online: gửi nền, có giới hạn tần suất
     }
+
+    public Task<LeaderboardDto> LeaderboardAsync(Player p, string? by) => lb?.GetAsync(p, by) ?? Task.FromResult(new LeaderboardDto(false, by ?? "realm", [], null, p.Tainted, p.Name));
+    public void PushLeaderboard(Player p) => lb?.Track(p, force: true);
 
     // ================= Nội bộ =================
 
@@ -1198,16 +1231,18 @@ public class GameService(GameDbContext db)
         }
         EffectState Limit(string id, string name, double value, double cap) => new(id, name,
             Math.Round(value, 4), Math.Round(Math.Min(value, cap), 4), cap, "%");
-        var crit = 5 + items.Sum(i => i.CritPct) + sk.crit + Raw("crit");
+        var crit = 5 + items.Sum(i => i.CritPct) + sk.crit + Raw("crit") + Raw("thien_menh");
         var basic = SkillData.ById.GetValueOrDefault(p.Slots()[SkillData.BasicSlot]);
+        var dao = DivineAbility.For(p).Tier == 8;
         return new[]
         {
             Limit("crit", "Bạo kích chung", crit, 100),
             Limit("basic_crit", "Bạo kích đòn thường", Math.Min(100, crit) + (basic?.Crit ?? 0), 100),
+            Limit("lien_kich", "Liên kích (gồm thần thông)", Math.Min(30,Raw("lien_kich")) + (dao ? 20 : 0), dao ? 50 : 30),
             Limit("speed", "Thân pháp: tốc độ thám hiểm", (p.Realm >= 1 ? GameData.BaseSpeed[Math.Min(p.Realm, GameData.BaseSpeed.Length - 1)] + items.Sum(i => i.SpeedPct) + Raw("speed") : 0) + sk.speed, 60),
             Limit("pha_giap", "Tổng bỏ qua thủ", Raw("pha_giap") + extra.pen, 80),
             Limit("ho_the", "Tổng giảm sát thương", Raw("ho_the") + guard, 60),
-            Limit("than_phap", "Tổng né tránh", Raw("than_phap") + dodge, 50),
+            Limit("than_phap", "Tổng né tránh (Thân pháp + Vân bộ)", Stats(p).Speed + Raw("than_phap") + dodge, CombatDodge.MaxChance),
             Limit("thien_uy", "Tổng giảm công quái", Raw("thien_uy") + sk.monAtk, 40)
         };
     }
@@ -1248,7 +1283,7 @@ public class GameService(GameDbContext db)
         return new CombatStats((int)((b.Atk + Sum(i => i.Atk)) * weak * (1 + (sk.atk + fx.SetPct) / 100)), (int)((b.Hp + Sum(i => i.Hp) + p.BodyHp) * (1 + (sk.hp + fx.HpPct + fx.SetPct) / 100)),
             (int)((b.Def + Sum(i => i.Def) + p.BodyDef) * weak * (1 + (sk.def + fx.SetPct) / 100)),
             Math.Min(60, (On("speed") ? baseSpeed + SumD(i => i.SpeedPct) + fx.SetSpeed : 0) + sk.speed),
-            Math.Min(100, 5 + SumD(i => i.CritPct) + sk.crit + fx.SetCrit));
+            Math.Min(100, 5 + SumD(i => i.CritPct) + sk.crit + fx.SetCrit + fx.CritBonus));
     }
 
     /// <summary>
@@ -1264,6 +1299,7 @@ public class GameService(GameDbContext db)
         var tripSec = (trip ?? p.ExploreReadyAt).Ticks / TimeSpan.TicksPerSecond;
         var rng = new Random(unchecked((p.Id.GetHashCode() * 31 + area) * 31 + (int)(tripSec % 1_000_000_007)));
         var stoneRng = new Random(unchecked((p.Id.GetHashCode() * 37 + area) * 41 + (int)(tripSec % 1_000_000_007)));   // linh thạch mỗi quái: cùng chuyến ra cùng số ở client và server
+        var dodgeRng = new Random(unchecked((p.Id.GetHashCode() * 53 + area) * 59 + (int)(tripSec % 1_000_000_007)));
         var st = Stats(p);
         var fx = GearEffects(p);                               // hiệu ứng riêng của trang bị theo cấp
         var down = Math.Min(40, SkillBonus(p).monAtk + fx.MonAtkDown);   // công pháp khống chế + Thiên uy làm yếu đòn quái
@@ -1272,10 +1308,10 @@ public class GameService(GameDbContext db)
         // các đợt quái của ải (ải thường 3 đợt, ải Boss 1): đã trừ công (khống chế) và thủ (phá giáp)
         var waves = GameData.AreaWaves(Chap(p), area, p.Diff).Select(w => w with {
             Atk = down > 0 ? (int)Math.Round(w.Atk * (1 - down / 100)) : w.Atk,
-            Def = pen > 0 ? (int)Math.Round(w.Def * (1 - pen / 100)) : w.Def }).ToArray();
+            Def = pen > 0 ? (int)Math.Floor(w.Def * (1 - pen / 100)) : w.Def }).ToArray();   // làm tròn xuống: quái thủ thấp vẫn thấy tác dụng
         var wave = 0; var m = waves[0];
         var crit = Math.Min(100, st.Crit) / 100;
-        var critMult = 0.5 + fx.CritBonus;                               // Thiên mệnh
+        const double critMult = 0.5; // bạo kích gây ×1.5; Thiên mệnh cộng tỉ lệ trong Stats
         var power = st.Atk * (1 + crit * critMult);
         // đòn đánh thường = chiêu ở ô 1 (Hỏa Cầu / Thủy Cầu), chưa đặt thì đánh 100% công
         var lv = SkillLevels(p);
@@ -1298,8 +1334,8 @@ public class GameService(GameDbContext db)
             shield += a.shield; dodge += a.dodge; stun += a.stun;
             burn += a.burn > 0 ? SkillData.Damage(s, l) * a.burn / 100 : 0;
         }
-        shield = Math.Min(60, shield + fx.Guard); dodge = Math.Min(50, dodge + fx.Dodge); stun = Math.Min(4, stun);   // + Hộ thể · Thân pháp
-        int MonHit(double atk) => p.Cheat("god") ? 0 : Math.Max(1, (int)Math.Round(Math.Max(1, atk - st.Def) * (1 - shield / 100) * (1 - dodge / 100)));   // admin: bất tử
+        shield = Math.Min(60, shield + fx.Guard); dodge = CombatDodge.Chance(st.Speed, fx.Dodge, dodge); stun = Math.Min(4, stun);
+        int MonHit(double atk) => p.Cheat("god") ? 0 : Math.Max(1, (int)Math.Round(Math.Max(1, atk - st.Def) * (1 - shield / 100)));   // Né xử lý riêng từng đòn.
         var monDmg = MonHit(m.Atk);
         // Boss: kỹ năng ẩn — Yêu thân (giảm sát thương nhận) · Cuồng bạo (máu thấp thì công tăng)
         var isBoss = area >= GameData.BossArea;
@@ -1309,37 +1345,57 @@ public class GameService(GameDbContext db)
         var monDmgEnr = trait is null ? monDmg : MonHit(m.Atk * (1 + trait.EnrageAtk / 100));
         var enraged = false; var enrageAt = -1;
 
-        // thiêu đốt bị động: % công mỗi lượt, bỏ qua phòng thủ, được cộng % sát thương Hỏa
-        var burnDmg = burnPct > 0 ? Math.Max(1, (int)Math.Round(power * burnPct / 100 * (1 + skillPct / 100))) : 0;
+        // Thiêu đốt: 5% máu tối đa, hai lượt kể cả lượt kích hoạt; không cộng dồn.
+        var canBurn = burnPct > 0 || burn > 0;
+        var burning = new CombatBurn();
+        var burnDmg = canBurn ? Math.Max(1, (int)Math.Round(m.Hp * .05)) : 0;
+        var burnDamage = new List<int>();
         // hiệu ứng trang bị: khiên đầu trận · đòn Địa chấn · tia Thiên lôi · hồi máu mỗi lượt
         var guard = (int)Math.Round(st.Hp * fx.Shield / 100); var guardLeft = guard;
         var firstHit = fx.FirstHit > 0 ? Math.Max(1, (int)Math.Round(power * fx.FirstHit / 100)) : 0;
         var boltDmg = fx.Lightning > 0 ? Math.Max(1, (int)Math.Round(power * fx.LightningPct / 100)) : 0;
         var regen = (int)Math.Round(st.Hp * fx.Regen / 100);
+        var ability = DivineAbility.For(p);
+        var divine = new DivineCombat(ability.Tier);
+        var divineRng = new Random(unchecked((p.Id.GetHashCode()*71+area)*79+(int)(tripSec%1_000_000_007)));
+        var extraChance = divine.ExtraChance(fx.ExtraHit);
+        var divineTurns = new List<DivineTurnDto>();
+        var hitBoosted = false;
         int monHp = m.Hp, heroHp = st.Hp, turns = 0, rage = (int)fx.Rage, tw = 0; var win = false;   // Tĩnh tâm: vào trận đã có nộ · tw: lượt trong đợt
         var waveFirst = new List<int> { 0 };                                  // lượt (thật) bắt đầu mỗi đợt
         bool NextWave(int t)                                                  // hạ xong đợt này: quái đợt sau bước vào, máu tu sĩ giữ nguyên
         {
             if (wave + 1 >= waves.Length) return false;
             wave++; m = waves[wave]; heroDmg = HeroDmgVs(m); monDmg = MonHit(m.Atk); monDmgEnr = monDmg; takeK = TakeK(m);
-            monHp = m.Hp; tw = -1; waveFirst.Add(t + 1);
+            monHp = m.Hp; burning.Reset(); tw = -1; waveFirst.Add(t + 1);
             return true;
         }
         var monLeft = new List<int>(); var heroLeft = new List<int>(); var skip = new List<bool>(); var casts = new List<CastDto>(); var rages = new List<int>(); var burns = new List<bool>();
         var bolts = new List<bool>(); var extras = new List<bool>(); var heals = new List<int>(); var reflects = new List<int>(); var guards = new List<int>();
         var basicDamage = new List<int>(); var basicCritical = new List<bool>();
         var extraDamage = new List<int>(); var extraCritical = new List<bool>();
-        int HitDamage(double raw, bool critical) => Math.Max(1, (int)Math.Round(
-            Math.Max(1, (int)Math.Round(raw * (critical ? 1 + critMult : 1)) - m.Def) * takeK));
+        var dodged = new List<bool>();
+        var heroBefore = new List<int>(); var guardBefore = new List<int>();
+        int HitDamage(double raw, bool critical, bool boost = true)
+        {
+            var damage=Math.Max(1, (int)Math.Round(Math.Max(1, (int)Math.Round(raw * (critical ? 1 + critMult : 1)) - m.Def) * takeK));
+            if(!boost)return damage;
+            var amplified=divine.Amplify(damage);
+            hitBoosted |= amplified!=damage;
+            return amplified;
+        }
         // thứ tự mỗi lượt (giữ cố định để gieo số giống nhau): thiêu đốt → thiên lôi → đòn thường / kỹ năng → liên kích → quái đánh → phản đòn → hồi máu
         for (var t = 0; t < 150; t++, tw++)
         {
+            heroBefore.Add(heroHp); guardBefore.Add(guardLeft);
+            divine.BeginTurn(); hitBoosted=false;
+            divineTurns.Add(new(false,false,false,divine.Charged));
             var dmg = 0;
-            if (burn > 0 && tw > 0) dmg += Math.Max(1, (int)Math.Round(power * burn / 100) - m.Def / 2);
-            var burned = burnDmg > 0 && tw > 0 && rng.Next(100) < SkillData.BurnChance;   // Phần Cốt: 30% mỗi lượt, từ lượt 2 của mỗi đợt
-            if (burned) dmg += burnDmg;
+            var burnHit = burning.Tick(m.Hp, canBurn && tw > 0 && rng.Next(100) < SkillData.BurnChance);
+            var burned = burnHit > 0;
+            burnDamage.Add(burnHit);
             burns.Add(burned);
-            var bolt = boltDmg > 0 && rng.Next(100) < fx.Lightning;           // Thiên lôi
+            var bolt = boltDmg > 0 && rng.NextDouble() * 100 < fx.Lightning;   // tỉ lệ có phần lẻ (vd 15.8%): so số thực, không làm tròn lên           // Thiên lôi
             if (bolt) dmg += boltDmg;
             bolts.Add(bolt);
             if (t == 0) dmg += firstHit;                                       // Địa chấn
@@ -1361,35 +1417,43 @@ public class GameService(GameDbContext db)
                 casts.Add(new CastDto(t, s.Id, s.Name, s.Anim, cd, critical));
             }
             if (takeK < 1) dmg = (int)Math.Round(dmg * takeK);
+            dmg += burnHit; // sát thương theo máu tối đa, không nhân công/chí mạng hoặc giảm theo giáp
             dmg += casts.Where(c => c.Turn == t).Sum(c => c.Dmg);
             var basicCrit = !fired && rng.NextDouble() < bcrit;
             var basicHit = fired ? 0 : HitDamage(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100, basicCrit);
             basicDamage.Add(basicHit); basicCritical.Add(basicCrit);
             if (fired) rage = 0;                                               // tung chiêu thay cho đòn thường, nộ về 0
             else { dmg += basicHit; rage = Math.Min(SkillData.RageMax, rage + SkillData.RagePerHit); }
-            var extra = fx.ExtraHit > 0 && rng.Next(100) < fx.ExtraHit;      // Liên kích: thêm 1 đòn thường (không tích nộ)
+            var extra = extraChance > 0 && rng.NextDouble() * 100 < extraChance; // Đạo: thêm 20 điểm %, trần 50
             var extraCrit = extra && rng.NextDouble() < bcrit;
-            var extraHit = extra ? HitDamage(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100, extraCrit) : 0;
+            var extraHit = extra ? HitDamage(bpower * bdef.DmgBase * (1 + skillPct / 100) / 100, extraCrit, false) : 0;
             dmg += extraHit;
             extraDamage.Add(extraHit); extraCritical.Add(extraCrit);
             extras.Add(extra);
             rages.Add(rage);
             monHp -= dmg; turns = t + 1;
+            divineTurns[t] = new(false,false,hitBoosted,divine.Charged);
             monLeft.Add(Math.Max(0, monHp));
-            if (monHp <= 0) { heroLeft.Add(heroHp); skip.Add(true); heals.Add(0); reflects.Add(0); guards.Add(guardLeft); if (NextWave(t)) continue; win = true; break; }
+            if (monHp <= 0) { heroLeft.Add(heroHp); skip.Add(true); heals.Add(0); reflects.Add(0); guards.Add(guardLeft); dodged.Add(false); if (NextWave(t)) continue; win = true; break; }
             var stunned = tw < stun;                                            // khống: các lượt đầu của mỗi đợt
+            var evaded = false;
+            var nullified = false;
             int refl = 0, heal = 0;
             if (!stunned)
             {
                 if (!enraged && trait is not null && trait.EnrageAtk > 0 && monHp < m.Hp * trait.EnrageAt / 100) { enraged = true; enrageAt = t; }   // Cuồng bạo
-                var hit = enraged ? monDmgEnr : monDmg;
+                evaded = !p.Cheat("god") && CombatDodge.Roll(dodgeRng, dodge);
+                nullified = !evaded && !p.Cheat("god") && divine.Nullify(divineRng);
+                if(evaded || nullified) divine.Avoided();
+                var hit = evaded || nullified ? 0 : enraged ? monDmgEnr : monDmg;
                 if (guardLeft > 0) { var ab = Math.Min(guardLeft, hit); guardLeft -= ab; hit -= ab; }   // Thổ thuẫn đỡ trước
-                heroHp -= hit;
+                heroHp = divine.Receive(heroHp,hit);
                 var dealt = enraged ? monDmgEnr : monDmg;
-                if (heroHp > 0 && fx.Reflect > 0 && dealt > 0) { refl = Math.Max(1, (int)Math.Round(dealt * fx.Reflect / 100 * takeK)); monHp -= refl; monLeft[^1] = Math.Max(0, monHp); }   // Địa mạch
+                if (!evaded && !nullified && heroHp > 0 && fx.Reflect > 0 && dealt > 0) { refl = Math.Max(1, (int)Math.Round(dealt * fx.Reflect / 100 * takeK)); monHp -= refl; monLeft[^1] = Math.Max(0, monHp); }   // Địa mạch
             }
             if (heroHp > 0 && regen > 0) { heal = Math.Min(regen, st.Hp - heroHp); heroHp += heal; }   // Hồi khí
-            heroLeft.Add(Math.Max(0, heroHp)); skip.Add(stunned); heals.Add(heal); reflects.Add(refl); guards.Add(guardLeft);
+            heroLeft.Add(Math.Max(0, heroHp)); skip.Add(stunned); heals.Add(heal); reflects.Add(refl); guards.Add(guardLeft); dodged.Add(evaded);
+            divineTurns[t] = new(nullified,divine.Saved,hitBoosted,divine.Charged);
             if (heroHp <= 0) break;
             if (monHp <= 0) { if (NextWave(t)) continue; win = true; break; }   // quái gục vì phản đòn
         }
@@ -1404,6 +1468,13 @@ public class GameService(GameDbContext db)
             if (n <= 0) break;
             var h = Math.Min(cap, n); var start = idxL.Count;
             for (var i = 0; i < h; i++) idxL.Add(s0 + (n <= h ? i : (int)Math.Round((i + 1) * (double)n / h) - 1));
+            // Chống chết chỉ một lần/trận: luôn giữ lượt này trong hoạt ảnh lấy mẫu.
+            var savedTurn=Enumerable.Range(s0,n).FirstOrDefault(i=>divineTurns[i].Saved,-1);
+            if(savedTurn>=0 && !idxL.Contains(savedTurn)){
+                var replace=Enumerable.Range(start,Math.Max(1,h-1)).MinBy(j=>Math.Abs(idxL[j]-savedTurn));
+                idxL[replace]=savedTurn;
+                idxL.Sort(start,h,Comparer<int>.Default);
+            }
             var wm = waves[w];
             var (slo, shi) = GameData.StoneRange(Chap(p), area, wm.Tier, p.Diff);
             waveDtos.Add(new WaveDto(wm.Name, wm.Image, wm.Tier, wm.Hp, wm.Atk, wm.Def, HeroDmgVs(wm), MonHit(wm.Atk), start, shi > 0 ? stoneRng.Next(slo, shi + 1) : 0));
@@ -1412,19 +1483,22 @@ public class GameService(GameDbContext db)
         var castShown = casts.Where(c => idx.Contains(c.Turn)).Select(c => c with { Turn = Array.IndexOf(idx, c.Turn) }).ToList();
         return new BattleDto(m0.Name, m0.Image, m0.Hp, m0.Atk, m0.Def, waveDtos[0].HeroDmg, waveDtos[0].MonsterDmg, hits, win,
             idx.Select(i => monLeft[i]).ToArray(), idx.Select(i => heroLeft[i]).ToArray(), idx.Select(i => skip[i]).ToArray(), castShown, st.Hp, basicId,
-            idx.Select(i => rages[i]).ToArray(), burnDmg, Math.Round(burnPct, 1), idx.Select(i => burns[i]).ToArray(),
+            idx.Select(i => rages[i]).ToArray(), burnDmg, canBurn ? CombatBurn.Percent : 0, idx.Select(i => burns[i]).ToArray(),
             idx.Select(i => bolts[i]).ToArray(), boltDmg, idx.Select(i => extras[i]).ToArray(), idx.Select(i => heals[i]).ToArray(),
             idx.Select(i => reflects[i]).ToArray(), guard, idx.Select(i => guards[i]).ToArray(), firstHit,
             enrageAt < 0 ? -1 : Array.FindIndex(idx, i => i >= enrageAt), monDmgEnr, waveDtos,
             idx.Select(i => basicDamage[i]).ToArray(), idx.Select(i => basicCritical[i]).ToArray(),
-            idx.Select(i => extraDamage[i]).ToArray(), idx.Select(i => extraCritical[i]).ToArray());
+            idx.Select(i => extraDamage[i]).ToArray(), idx.Select(i => extraCritical[i]).ToArray(),
+            idx.Select(i => dodged[i]).ToArray(), dodge,
+            idx.Select(i => heroBefore[i]).ToArray(), idx.Select(i => guardBefore[i]).ToArray(), idx.Select(i => burnDamage[i]).ToArray(),
+            new(ability.Tier,ability.Name,extraChance,idx.Select(i=>divineTurns[i]).ToArray()));
     }
     /// <summary>Số lượt thật của trận vừa tính (công cụ mô phỏng cân bằng).</summary>
     [ThreadStatic] public static int LastTurns;
 
     private static double ExploreQi(Player p) => GameData.QiRate(Realm(p), p.Stage) * GameData.ExploreQiSeconds * (1 + GearEffects(p).ExploreQi / 100);   // + Tụ linh
 
-    private static RealmDef Realm(Player p) => GameData.Realms[p.Realm];
+    internal static RealmDef Realm(Player p) => GameData.Realms[p.Realm];
     /// <summary>Chương đang đánh.</summary>
     private static ChapterDef Chap(Player p) => GameData.Chapters[Math.Clamp(p.Chapter, 0, GameData.Chapters.Count - 1)];
     /// <summary>Ải cao nhất đã mở trong chương đang đánh: chương đã qua mở hết ải.</summary>

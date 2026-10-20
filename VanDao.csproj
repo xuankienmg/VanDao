@@ -15,7 +15,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>wwwroot\img\app\icon.ico</ApplicationIcon>
     <!-- Phiên bản phát hành: tăng số này mỗi lần gửi bản chơi thử mới -->
-    <Version>0.2.0</Version>
+    <Version>0.7.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

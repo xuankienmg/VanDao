@@ -3,6 +3,9 @@
    strip: dải ngang nằm sát thanh taskbar, nền đặc, chỉ có nhân vật + thông tin gọn
    panel: cửa sổ bảng (Đột phá / Hành trang / Đan dược / Bản đồ) bật lên phía trên dải khi cần */
 .strip-head{display:none}
+body.rank-panel .book > .tabs{display:none}
+#btnRank{color:var(--gold);flex-shrink:0}
+#btnRank svg{margin:0!important}
 html.strip,body.strip{background:transparent!important;height:100%;overflow:hidden}
 body.strip{padding:0}
 body.strip.opaque{background:var(--ink)!important}

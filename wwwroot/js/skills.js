@@ -216,7 +216,7 @@ function tbDraw(g2, kind, s, hx, hy, tx, ty, h, t){
 const WET_FILTER = 'hue-rotate(185deg) saturate(1.15)';
 function skPassive(s, lv){
   const fire = s.element === 'hoa';
-  const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu'],['burnPct','Thiêu đốt 30%/lượt (% công)']];
+  const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu']];
   return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1))]);
 }
 

@@ -17,7 +17,7 @@ public record SkillDef(string Id, string Element, string Name, string Category, 
     string Code = "",          // Skill ID (FIRE_ACTIVE_001…)
     string AnimId = "NONE",    // Animation ID (bị động: NONE). Animation chỉ để hiển thị, không chứa logic
     double Lead = 0,           // bị động: giá trị = mức/cấp × (cấp + Lead) — cho phép Lv.1 cao hơn tuyến tính (vd. 5% → 20%)
-    double BurnPct = 0)        // bị động: thiêu đốt = % công (mỗi cấp), BurnChance% kích hoạt mỗi lượt từ lượt 2, bỏ qua phòng thủ
+    double BurnPct = 0)        // >0 mở thiêu đốt: 5% máu tối đa trong 2 lượt, kích hoạt lại làm mới
 {
     /// <summary>Điểm cần để lên từ cấp lv lên lv+1: lĩnh ngộ tốn Cost, mỗi lần nâng tốn 1 + lv/2.</summary>
     public int CostAt(int lv) => lv == 0 ? Cost : 1 + lv / 2;
@@ -71,7 +71,7 @@ public static class SkillData
         new("hoa_tu", "hoa", "Hỏa Tụ", "Bị động", 1, 1, 5, 0, 1, new[] { "hoa_linh_can:1" },
             "Tụ hỏa linh trong kinh mạch: tăng sát thương Hỏa (Lv.1 +5% → Lv.5 +20%).", "passive", SkillPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_001"),
         new("phan_cot", "hoa", "Phần Cốt", "Bị động", 1, 2, 5, 0, 1, new[] { "hoa_tu:1" },
-            "Hỏa độc bám xương: từ lượt 2, mỗi lượt có 30% cơ hội thiêu đốt quái (Lv.1 1% → Lv.5 5% công), bỏ qua phòng thủ.", "passive", BurnPct: 1, Code: "FIRE_PASSIVE_007"),
+            "Hỏa độc bám xương: từ lượt 2, mỗi lượt có 30% cơ hội thiêu đốt 5% máu tối đa của quái trong 2 lượt (gồm lượt kích hoạt), bỏ qua phòng thủ. Kích hoạt lại làm mới về 2 lượt, không cộng dồn.", "passive", BurnPct: 1, Code: "FIRE_PASSIVE_007"),
         new("hoa_the", "hoa", "Hỏa Thể", "Bị động", 2, 0, 5, 0, 1, new[] { "hoa_tu:2" },
             "Thân thể quen lửa: kháng Hỏa (Lv.1 +5% → Lv.5 +20%), tính là giảm sát thương nhận vào qua phòng thủ.", "passive", DefPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_003"),
         new("hoa_tam", "hoa", "Hỏa Tâm", "Bị động", 2, 2, 5, 1, 2, new[] { "hoa_tu:3" },

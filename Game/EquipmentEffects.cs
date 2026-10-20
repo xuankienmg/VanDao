@@ -7,7 +7,7 @@ public record SetMilestone(int Count, SetBonus[] Bonuses);
 public record EquipmentSetDef(string Id, string Name, SetMilestone[] Milestones);
 public record EquippedSetState(string Id, string Name, int Count, int[] Active, int? Next);
 public record EffectState(string Id, string Name, double Raw, double Effective, double? Cap, string Unit);
-public record EquipmentEffectsState(EquippedSetState[] Sets, EffectState[] Effects, Dictionary<string, double> SetBonuses);
+public record EquipmentEffectsState(EquippedSetState[] Sets, EffectState[] Effects, Dictionary<string, double> SetBonuses, DivineAbilityState? Divine = null);
 
 /// <summary>Pure calculation: no Stats/Rate calls, no persisted derived bonuses.</summary>
 public static class EquipmentEffects
@@ -23,7 +23,7 @@ public static class EquipmentEffects
         Set("thanh_van", "Thanh Vân", new("hap_linh", 5, "+5% tốc độ tu luyện"), new("tu_linh", 5, "+5% tu vi thám hiểm")),
         Set("huyen_bang", "Huyền Băng", new("ho_the", 3, "Giảm 3% sát thương nhận"), new("tho_thuan", 5, "Khiên đầu trận +5% máu")),
         Set("xich_kim", "Xích Kim", new("linh_ap", 5, "+5% sát thương kỹ năng"), new("pha_giap", 5, "Bỏ qua 5% phòng thủ quái")),
-        Set("tu_van", "Tử Vân", new("crit", 2, "+2 điểm % bạo kích"), new("thien_menh", .10, "Hệ số chí mạng +0,10")),
+        Set("tu_van", "Tử Vân", new("crit", 2, "+2 điểm % bạo kích"), new("thien_menh", 10, "Tỉ lệ bạo kích +10%")),
         Set("thai_hu", "Thái Hư", new("than_phap", 3, "+3 điểm % né tránh"), new("speed", 4, "+4 điểm % tốc độ thám hiểm")),
         Set("huyen_long", "Huyền Long", new("linh_ap", 5, "+5% sát thương kỹ năng"), new("thien_uy", 5, "Giảm 5% công quái"))
     };
@@ -37,7 +37,7 @@ public static class EquipmentEffects
         var name = effect.Id == "than_phap" ? "Vân bộ" : effect.Name;
         var amount = value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         var text = effect.Id == "thien_loi" ? $"Mỗi lượt {amount}% cơ hội giáng sét {effect.Value2:0.#}% công, bỏ qua phòng thủ"
-            : effect.Id == "thien_menh" ? $"Hệ số chí mạng +{amount}"
+            : effect.Id == "thien_menh" ? $"Tỉ lệ bạo kích +{amount}%"
             : effect.Id == "tinh_tam" ? $"Vào trận với {amount} nộ"
             : System.Text.RegularExpressions.Regex.Replace(effect.Text, @"\d+(?:\.\d+)?(?=%)", amount);
         return effect with { Name = name, Value = value, Text = text };
@@ -53,7 +53,7 @@ public static class EquipmentEffects
         ["than_phap"] = ("Vân bộ: né tránh", "%", 50), ["hoi_khi"] = ("Hồi máu mỗi lượt", "% máu", 5),
         ["tho_thuan"] = ("Khiên đầu trận", "% máu", 20), ["dia_chan"] = ("Đòn đầu", "% công", null),
         ["dia_mach"] = ("Phản đòn", "%", 15), ["thien_loi"] = ("Thiên lôi", "% cơ hội", 50),
-        ["thien_uy"] = ("Giảm công quái", "%", 40), ["thien_menh"] = ("Hệ số chí mạng cộng thêm", "", .60),
+        ["thien_uy"] = ("Giảm công quái", "%", 40), ["thien_menh"] = ("Tỉ lệ bạo kích", "%", 60),
         ["set_pct"] = ("Công, thủ, máu từ bộ", "%", null), ["crit"] = ("Bạo kích từ bộ", " điểm %", 100),
         ["speed"] = ("Thân pháp: tốc độ thám hiểm từ bộ", " điểm %", 60)
     };
@@ -85,6 +85,6 @@ public static class EquipmentEffects
             var info = Info[kv.Key];
             return new EffectState(kv.Key, info.Name, Math.Round(kv.Value, 4), Math.Round(Math.Min(kv.Value, info.Cap ?? double.MaxValue), 4), info.Cap, info.Unit);
         }).ToArray();
-        return new(states, effects, setBonuses);
+        return new(states, effects, setBonuses, DivineAbility.For(p));
     }
 }

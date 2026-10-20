@@ -29,6 +29,7 @@ public sealed class GameWindow : Form
     private readonly System.Windows.Forms.Timer _dockTimer = new() { Interval = 2000 };
     private readonly System.Windows.Forms.Timer _revealTimer = new() { Interval = 10000 };
     private PanelWindow? _panel;
+    private PanelWindow? _rankPanel;
     private bool _placing, _revealed;
 
     public GameWindow(string serverUrl)
@@ -178,6 +179,7 @@ public sealed class GameWindow : Form
     {
         TopMost = _s.Pinned;
         if (_panel is not null) _panel.TopMost = _s.Pinned;
+        if (_rankPanel is not null) _rankPanel.TopMost = _s.Pinned;
     }
 
     /// <summary>Nền đặc: cửa sổ hiện đủ hình chữ nhật, khung game phủ kín (đã bỏ tuỳ chọn nền trong suốt).</summary>
@@ -292,7 +294,7 @@ public sealed class GameWindow : Form
 
     private void ToggleVisible()
     {
-        if (Visible) { _panel?.Hide(); Hide(); }
+        if (Visible) { _panel?.Hide(); _rankPanel?.Hide(); Hide(); }
         else ShowStrip();
     }
 
@@ -305,6 +307,12 @@ public sealed class GameWindow : Form
 
     private void OpenPanel(string tab)
     {
+        if (tab == "rank")
+        {
+            _rankPanel ??= new PanelWindow(this, _s, _url, ranking: true);
+            _rankPanel.ShowTab("rank");
+            return;
+        }
         _panel ??= new PanelWindow(this, _s, _url);
         _panel.ShowTab(tab);
     }
@@ -340,7 +348,7 @@ public sealed class GameWindow : Form
             case "drag": Native.BeginDrag(this); break;
             case "menu": ShowMenuAtCursor(); break;
             case "open-panel": OpenPanel(msg.TryGetProperty("tab", out var t) ? t.GetString() ?? "req" : "req"); break;
-            case "changed": _ = _panel?.SyncAsync(); break;
+            case "changed": _ = _panel?.SyncAsync(); _ = _rankPanel?.SyncAsync(); break;
             case "shape": Reveal(); break;          // trang đã vẽ xong khung đầu → hiện dải
         }
     }

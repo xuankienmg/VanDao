@@ -142,7 +142,12 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     int EnrageTurn = -1, int MonsterDmgEnraged = 0,   // Boss Cuồng bạo: lượt (đã lấy mẫu) bắt đầu nổi giận · sát thương mỗi đòn khi đó
     List<WaveDto>? Waves = null,
     int[]? BasicDamage = null, bool[]? BasicCritical = null,
-    int[]? ExtraDamage = null, bool[]? ExtraCritical = null);
+    int[]? ExtraDamage = null, bool[]? ExtraCritical = null,
+    bool[]? Dodged = null, double DodgeChance = 0,
+    int[]? HeroHpBefore = null, int[]? GuardBefore = null, int[]? BurnDamage = null, DivineBattleDto? Divine = null);
+
+public record DivineTurnDto(bool Nullified, bool Saved, bool Boosted, bool Charged);
+public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineTurnDto[] Turns);
 
 /// <summary>Một đợt quái trong trận: chỉ số đã tính công pháp/trang bị, sát thương hai bên, lượt bắt đầu (đã lấy mẫu).</summary>
 /// <summary>Stones = linh thạch rơi khi hạ quái đợt này (đã gieo sẵn theo chuyến, server cộng đúng số này).</summary>
