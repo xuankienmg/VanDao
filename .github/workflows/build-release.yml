@@ -2,6 +2,8 @@ name: Build & Release Game
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
@@ -10,6 +12,10 @@ on:
         description: 'Version tag to release (e.g. v0.7.3)'
         required: false
         default: ''
+      force:
+        description: 'Force rebuild even if release exists'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,20 +35,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Determine Version
+      - name: Determine Version & Check Release Status
         shell: pwsh
         run: |
           $inputVer = "${{ github.event.inputs.version }}".Trim()
           $refName = "${{ github.ref_name }}"
           
+          # Read <Version> from VanDao.csproj
+          $xml = [xml](Get-Content VanDao.csproj)
+          $csprojVer = $xml.Project.PropertyGroup.Version.Trim()
+
           if ($inputVer -ne "") {
             $tag = if ($inputVer.StartsWith("v") -or $inputVer.StartsWith("V")) { $inputVer } else { "v$inputVer" }
           } elseif ($refName -like "v*") {
             $tag = $refName
           } else {
-            $xml = [xml](Get-Content VanDao.csproj)
-            $ver = $xml.Project.PropertyGroup.Version
-            $tag = if ($ver.StartsWith("v") -or $ver.StartsWith("V")) { $ver } else { "v$ver" }
+            $tag = if ($csprojVer.StartsWith("v") -or $csprojVer.StartsWith("V")) { $csprojVer } else { "v$csprojVer" }
           }
           
           $cleanVer = $tag.TrimStart('v', 'V')
@@ -50,7 +58,32 @@ jobs:
           "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
           "VERSION=$cleanVer" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+          # Check if this release already exists on GitHub (to avoid rebuilding unchanged versions)
+          $force = "${{ github.event.inputs.force }}"
+          if ($force -ne "true" -and $refName -eq "master") {
+            $token = "${{ secrets.GITHUB_TOKEN }}"
+            $repo = "${{ github.repository }}"
+            $headers = @{
+              "Authorization" = "Bearer $token"
+              "User-Agent" = "GitHubActions"
+              "Accept" = "application/vnd.github+json"
+            }
+            try {
+              $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers -ErrorAction Stop
+              if ($existing -and $existing.id) {
+                Write-Host ">> Release $tag already exists on GitHub (Version in VanDao.csproj unchanged). Skipping auto-build." -ForegroundColor Yellow
+                "SKIP_BUILD=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+              }
+            } catch {
+              Write-Host ">> Release $tag does not exist yet. New version detected from VanDao.csproj! Starting auto-build..." -ForegroundColor Green
+              "SKIP_BUILD=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+            }
+          } else {
+            "SKIP_BUILD=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
       - name: Build & Package Game + Launcher
+        if: env.SKIP_BUILD != 'true'
         shell: pwsh
         run: |
           $publishDir = "publish_game"
@@ -93,6 +126,7 @@ jobs:
           Write-Host "Archive created successfully: $zipName ($sizeMb)" -ForegroundColor Green
 
       - name: Publish GitHub Release
+        if: env.SKIP_BUILD != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
