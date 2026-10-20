@@ -263,15 +263,18 @@ public static class LauncherLogic
             // Kết luận cập nhật Game
             if (maxFoundGameVer != null && maxFoundGameVer > vCurGame)
             {
-                result.HasUpdate = true;
-                if (string.IsNullOrEmpty(result.DownloadUrl))
+                // Chỉ kích hoạt HasUpdate khi file zip đã thực sự có mặt trên GitHub
+                if (!string.IsNullOrEmpty(result.DownloadUrl))
                 {
-                    result.StatusText = $"Đã có bản v{result.LatestVersion} (chưa đính kèm gói cài đặt .zip trên GitHub)";
+                    result.HasUpdate = true;
+                    result.StatusText = $"Đã có bản game mới: v{result.LatestVersion}";
                 }
                 else
                 {
-                    result.StatusText = $"Đã có bản game mới: v{result.LatestVersion}";
+                    result.HasUpdate = false;
+                    result.StatusText = $"Bản v{result.LatestVersion} đang được máy chủ GitHub đóng gói...";
                 }
+
             }
             else
             {
