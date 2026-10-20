@@ -26,3 +26,8 @@ const recharge={divine:{tier:9,name:'Nghịch Chuyển Thiên Cơ',turns:[{boost
 text.length=0;env.drawBattleDivine(ctx,recharge,{name:'fight',i:0,s:.9},420,300,false);
 assert.ok(text.some(a=>a[0].includes('Sẵn sàng')),'A dodge recharges after boosted attack in same turn');
 console.log('PASS: divine impact timing, one label per event and balanced badge rendering.');
+for(const kind of ['shield','target','control','elite','enrage','dash']){
+  for(const reduced of [false,true])env.drawBattleStatus(ctx,{kind,x:100,y:100,width:60,height:80,strength:.5,time:2,reduced});
+  assert.equal(depth,0,kind+' must restore drawing context');
+}
+console.log('PASS: distinct status shapes render safely with normal and reduced motion.');

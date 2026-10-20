@@ -61,6 +61,7 @@ public static class Program
         builder.Services.AddSingleton<MarketService>();   // Chợ giao dịch: dùng chung project Supabase
 
         var app = builder.Build();
+        Player.AdminEnabled = app.Environment.IsDevelopment();   // admin mode (Ctrl+Shift+A) chỉ có khi chạy dev
 
         using (var scope = app.Services.CreateScope())
         {
@@ -193,7 +194,11 @@ public static class Program
 
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
-            Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)));
+            Player.AdminEnabled ? Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1))
+                : Task.FromResult<IResult>(Results.Json(new { error = "Admin mode chỉ có ở môi trường phát triển." }, statusCode: StatusCodes.Status403Forbidden)));
+
+        // môi trường: giao diện chỉ bật admin mode khi dev
+        api.MapGet("/env", () => new { dev = Player.AdminEnabled });
 
         // bảng xếp hạng online: by = realm (cảnh giới) | power (lực chiến)
         api.MapGet("/players/{id:guid}/leaderboard", async (Guid id, string? by, GameService game) =>

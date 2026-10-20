@@ -1,7 +1,10 @@
 using VanDao.Game;
 using VanDao.Data;
 using System.Text.Json;
+if(args.Contains("chest-plan")){ChestPlan.Run();return;}
+ChestChecks.Run();
 DivineChecks.Run();
+SellChecks.Run();
 
 static void Check(bool ok,string why){if(!ok)throw new Exception(why);}
 var burnCheck = new CombatBurn();

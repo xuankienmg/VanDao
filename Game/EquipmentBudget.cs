@@ -9,12 +9,12 @@ public static class EquipmentBudget
     private static readonly (int Atk, int Def, int Hp)[] Baseline =
     {
         (13, 12, 115), (53, 54, 499), (267, 266, 2499),
-        (1334, 1334, 12495), (6668, 6669, 62475), (33338, 33343, 312375)
+        (1334, 1334, 12495), (6668, 6669, 62475), (33338, 33343, 312375), (166690, 166715, 1561875)
     };
 
     public static string Profile(ItemDef item) => item.Slot switch
     {
-        "weapon" => item.Kind == "Thương" ? "Thương" : "Vũ khí chuẩn",
+        "weapon" => "Vũ khí chuẩn",
         "offhand" => item.Atk == 0 && (item.Hp > 0 || item.Def > 0)
             ? "Pháp bảo hộ thân" : "Pháp bảo công kích",
         "head" => "Nón", "body" => "Áo", "hands" => "Găng tay",
@@ -31,7 +31,6 @@ public static class EquipmentBudget
         (double A, double D, double H, double C, double S, double Q, double B) p = Profile(item) switch
         {
             "Vũ khí chuẩn" => (1, 0, 0, 2, 0, 0, 1),
-            "Thương" => (1, 0, 0, 3, 0, 0, .9),
             "Pháp bảo công kích" => (.8, 0, .2, 0, 0, 2, 1),
             "Pháp bảo hộ thân" => (0, .55, .45, 0, 0, 0, 1),
             "Nón" => (0, .35, .65, 0, 0, 1, 1),

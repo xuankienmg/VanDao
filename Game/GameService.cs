@@ -147,30 +147,21 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) + p.ElixirPoints,
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), p.Admin, ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p));
+            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
-    public static List<ChestOddsDto> ChestOdds(Player p)
+    public static List<ChestOddsDto> ChestOdds(Player p) => GameData.Chests.Select(kv =>
     {
-        var r = Realm(p);
-        var treasures = GameData.GearBases.Where(b => b.Slot == "offhand" && b.MinRealm <= Math.Max(1, p.Realm)).ToList();
-        var gear = r.Drops.Where(dd => GameData.GearBaseById.TryGetValue(dd.Item, out var b) && b.Slot != "offhand").ToList();
-        var gw = gear.Sum(g => g.Chance);
-        var pill = r.StageCost(0).Keys.First(k => k != "linh_thach");
-        return GameData.Chests.Select(kv =>
-        {
-            var cd = kv.Value;
-            var pt = treasures.Count > 0 ? cd.Treasure : 0;
-            var pg = gear.Count > 0 ? (1 - pt) * cd.GearShare : 0;
-            var cq = cd.QualityAt(p.Realm); var qs = cq.Sum();
-            return new ChestOddsDto(kv.Key, GameData.GearLevels[Math.Clamp(p.Realm, 0, GameData.GearLevels.Length - 1)],
-                cq.Select(q => Math.Round(q / qs * 100, 2)).ToArray(),
-                treasures.Select(t => new ItemQtyPctDto(t.Id, Math.Round(pt / treasures.Count * 100, 2))).ToList(),
-                gear.Select(g => new ItemQtyPctDto(g.Item, Math.Round(pg * g.Chance / gw * 100, 2))).ToList(),
-                pill, cd.PillMin, cd.PillMax, Math.Round((1 - pt - pg) * 100, 2));
-        }).ToList();
-    }
+        var cd=kv.Value;var table=ChestRewards.Table(p.Realm,kv.Key);
+        List<ItemQtyPctDto> Group(string group)=>table.Where(x=>x.Group==group).GroupBy(x=>x.BaseItem??x.Item)
+            .Select(g=>new ItemQtyPctDto(g.Key,g.Sum(x=>x.Probability)*100)).ToList();
+        double Chance(string group)=>table.Where(x=>x.Group==group).Sum(x=>x.Probability)*100;
+        return new ChestOddsDto(kv.Key,GameData.GearLevels[Math.Clamp(p.Realm,0,GameData.GearLevels.Length-1)],
+            cd.QualityAt(p.Realm).Select(q=>q/cd.QualityAt(p.Realm).Sum()*100).ToArray(),Group("treasure"),Group("gear"),
+            GameData.Realms[p.Realm].StageCost(0).Keys.First(k=>k!="linh_thach"),cd.PillMin,cd.PillMax,Chance("pill"),
+            Group("herb"),cd.HerbMin,cd.HerbMax,Chance("herb"),Chance("enlightenment"));
+    }).ToList();
 
     // ================= Hành động =================
 
@@ -253,26 +244,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     /// <summary>Mở 1 rương; null = hành trang đầy (rương được giữ lại).</summary>
     private ItemQtyDto? OpenOne(Player p, ItemDef chest)
     {
-        var cd = GameData.Chests[chest.Id];
-        var r = Realm(p);
-        var rng = Random.Shared;
-        string item; int n = 1;
-        var treasures = GameData.GearBases.Where(b => b.Slot == "offhand" && b.MinRealm <= Math.Max(1, p.Realm)).ToList();
-        var gear = r.Drops.Where(dd => GameData.GearBaseById.TryGetValue(dd.Item, out var b) && b.Slot != "offhand").ToList();
-        if (rng.NextDouble() < cd.Treasure && treasures.Count > 0)
-            item = GameData.RollGear(treasures[rng.Next(treasures.Count)].Id, cd.QualityAt(p.Realm));
-        else if (gear.Count > 0 && rng.NextDouble() < cd.GearShare)
-        {
-            var x = rng.NextDouble() * gear.Sum(g => g.Chance);     // chọn món theo trọng số = tỉ lệ rơi gốc, rồi gieo phẩm
-            var pick = gear[^1].Item;
-            foreach (var g in gear) { if ((x -= g.Chance) < 0) { pick = g.Item; break; } }
-            item = GameData.RollGear(pick, cd.QualityAt(p.Realm));
-        }
-        else
-        {
-            item = r.StageCost(0).Keys.First(k => k != "linh_thach");     // đan lên tầng/kỳ của cảnh giới hiện tại
-            n = rng.Next(cd.PillMin, cd.PillMax + 1);
-        }
+        var reward=ChestRewards.Roll(p.Realm,chest.Id,Random.Shared);
+        var item=reward.Item;var n=reward.Qty;
         p.Add(chest.Id, -1);
         var added = TryAddLoot(p, item, n);
         if (added < n)
@@ -363,12 +336,14 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     /// <summary>Bán trang bị trong hành trang lấy linh thạch (món đang mặc không bán được).</summary>
     public (string msg, string kind) Sell(Player p, string itemId, int n)
     {
-        if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.Sell <= 0) throw new GameException("Chỉ bán được trang bị và đan dược.");
+        if (!GameData.ItemById.TryGetValue(itemId, out var def) || def.Sell <= 0) throw new GameException("Vật phẩm này không bán được.");
         if (p.Count(itemId) < 1) throw new GameException("Không có món này trong hành trang.");
         n = Math.Clamp(n, 1, p.Count(itemId));
+        var gain=(long)def.Sell*n;
+        if(gain>int.MaxValue-(long)p.Count("linh_thach"))throw new GameException("Tổng linh thạch vượt giới hạn. Hãy bán ít món hơn.");
         p.Add(itemId, -n);
-        p.Add("linh_thach", def.Sell * n);
-        return Log(p, $"Bán {(n > 1 ? n + " " : "")}{def.Name}: +{def.Sell * n:N0} linh thạch.", "loot");
+        p.Add("linh_thach", (int)gain);
+        return Log(p, $"Bán {(n > 1 ? n + " " : "")}{def.Name}: +{gain:N0} linh thạch.", "loot");
     }
 
     /// <summary>Bán hết trang bị trong hành trang có độ hiếm từ maxRarity trở xuống (0 = Phàm cấp … 4 = Thiên cấp).</summary>
@@ -393,16 +368,17 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 && (pick || d.Tier == 0)          // đan dược chỉ bán khi người chơi tự chọn, không bán theo phẩm hàng loạt
                 && (scope is null || scope.ContainsKey(i.ItemId))
                 && Array.IndexOf(GameData.RarityOrder, d.Rarity) <= maxRarity).ToList();
-        int count = 0, gain = 0;
+        long count = 0, gain = 0;
         foreach (var i in list)
         {
             var d = GameData.ItemById[i.ItemId];
             var n = scope is null ? i.Count : Math.Min(i.Count, scope[i.ItemId]);
-            count += n; gain += d.Sell * n;
-            p.Add(i.ItemId, -n);
+            count += n; gain += (long)d.Sell * n;
         }
         if (count == 0) throw new GameException(gearOnly ? "Không có trang bị nào để bán." : "Không có món nào để bán.");
-        p.Add("linh_thach", gain);
+        if(gain>int.MaxValue-(long)p.Count("linh_thach"))throw new GameException("Tổng linh thạch vượt giới hạn. Hãy bán ít món hơn.");
+        foreach(var i in list){var n=scope is null?i.Count:Math.Min(i.Count,scope[i.ItemId]);p.Add(i.ItemId,-n);}
+        p.Add("linh_thach", (int)gain);
         return Log(p, $"Bán {count} {(gearOnly ? "món trang bị" : "món")}{(scope is null ? "" : pick ? " đã chọn" : " (trang đang xem)")}: +{gain:N0} linh thạch.", "loot");
     }
 
@@ -945,7 +921,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         {
             var id = inv.ItemId;
             var q = id.LastIndexOf("_q", StringComparison.Ordinal);
-            if (GameData.UpgradeGear(id) is { } up) p.Add(up, inv.Count);                                      // trang bị bản cũ → đúng cấp, cùng phẩm
+            if (GameData.RemovedGearRefund(id) is > 0 and var lt) p.Add("linh_thach", inv.Count * lt);       // trang bị đã bỏ khỏi game → hoàn linh thạch
+            else if (GameData.UpgradeGear(id) is { } up) p.Add(up, inv.Count);                                      // trang bị bản cũ → đúng cấp, cùng phẩm
             else if (q > 0 && GameData.ItemById.ContainsKey(id[..q])) p.Add(id[..q], inv.Count);              // đan phẩm chất → đan gốc
             else if (q > 0 && GameData.Legacy.TryGetValue(id[..q], out var lq)) p.Add(lq.To, inv.Count * lq.Factor);
             else if (GameData.Legacy.TryGetValue(id, out var l)) p.Add(l.To, inv.Count * l.Factor);
@@ -1132,9 +1109,10 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                     var ch = GameData.DropChance(d);                                 // đan dược: × PillDropMult
                     if (Random.Shared.NextDouble() >= Math.Min(1, ch * (isStone || ch >= 1 ? 1 : 1 + (area - 1) * 0.03))) continue;
                     var isGear = GameData.GearBaseById.TryGetValue(d.Item, out var gb);
+                    if (isGear && dif > 0) gb = GameData.RealmGear(gb!, p.Realm);   // Khó / Ác mộng: đồ theo bộ cảnh giới của người chơi (Hợp Thể → Thiên Hợp)
                     var n = (int)Math.Round(Random.Shared.Next(d.Min, d.Max + 1) * (isStone ? scale : 1) * (isGear ? 1 : rm));   // Khó / Ác mộng: nhiều đan, linh thảo hơn
                     // trang bị: cấp theo cảnh giới yêu cầu của món, cấp bậc theo GameData.DropQuality (Khó / Ác mộng nâng phẩm)
-                    var dropId = isGear ? GameData.RollGear(d.Item, GameData.DiffQuality(GameData.DiffQualityOf(r, dif) ?? GameData.DropQualityOf(gb!.MinRealm), dif)) : d.Item;
+                    var dropId = isGear ? GameData.RollGear(gb!.Id, GameData.DiffQuality(GameData.DiffQualityOf(r, dif) ?? GameData.DropQualityOf(gb!.MinRealm), dif)) : d.Item;
                     var got = TryAddLoot(p, dropId, n);
                     if (got > 0) loot[dropId] = loot.GetValueOrDefault(dropId) + got;
                     lost += n - got;

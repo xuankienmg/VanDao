@@ -73,7 +73,9 @@ public class Player
     public string LbSecret { get; set; } = "";
     /// <summary>Đã từng dùng admin mode → không được lên bảng xếp hạng cho tới khi tu lại từ đầu (không bật cờ admin).</summary>
     public bool Tainted { get; set; }
-    public bool Cheat(string flag) => Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
+    /// <summary>Admin mode chỉ có ở môi trường dev (Program đặt theo ASPNETCORE_ENVIRONMENT). Bản phát hành: cờ đã lưu bị bỏ qua, không xóa.</summary>
+    public static bool AdminEnabled { get; set; } = true;
+    public bool Cheat(string flag) => AdminEnabled && Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
 
     /// <summary>2 ô: [0] đòn đánh thường · [1] kỹ năng chủ động (tung khi đầy nộ). Dữ liệu 4 ô của bản cũ được xếp lại theo loại.</summary>
     public string[] Slots()

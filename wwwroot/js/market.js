@@ -2,7 +2,7 @@
 let mkView = 'buy', mkData = null, mkLoading = false, mkAt = 0, mkPick = null, mkCat = 'all', mkSort = 'new', mkQuery = '';
 const MK_CATS = [['all', 'Tất cả'], ['gear', 'Trang bị'], ['pill', 'Đan dược'], ['mat', 'Nguyên liệu'], ['other', 'Khác']];
 const mkCatOf = it => it.slot ? 'gear' : ['pill', 'elixir'].includes(it.type) ? 'pill' : ['herb', 'boss', 'ore', 'core'].includes(it.type) ? 'mat' : 'other';
-const mkTradable = it => !!it && !['stone', 'key', 'ticket'].includes(it.type);
+const mkTradable = it => !!it && (it.id === 've_tai_xiu' ? mkData?.canSellTickets === true : !['stone', 'key', 'ticket'].includes(it.type));
 const mkEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const mkItem = (k, n) => { const it = ITEM[k]; return `<span class="mk-it" tabindex="0" data-tip="${mkEsc(it.name)}" data-card="bag" data-k="${k}">${icon(k)}<b class="rc-${it.rarity}">${mkEsc(it.name)}</b>${n > 1 ? `<em>×${fmt(n)}</em>` : ''}</span>`; };
 const mkLeft = iso => { const h = Math.max(0, (Date.parse(iso) - Date.now()) / 36e5); return h >= 24 ? `${Math.floor(h / 24)} ngày` : h >= 1 ? `${Math.floor(h)} giờ` : `${Math.ceil(h * 60)} phút`; };
@@ -100,7 +100,7 @@ function mkSellView(d){
       if(mkBagSort==='type') return mkCatOf(x).localeCompare(mkCatOf(y)) || name;
       return RAR_KEYS.indexOf(y.rarity)-RAR_KEYS.indexOf(x.rarity) || name;
     });
-  if (mkPick && !(S.inventory[mkPick] > 0)) mkPick = null;
+  if (mkPick && (!(S.inventory[mkPick] > 0) || !mkTradable(ITEM[mkPick]))) mkPick = null;
   const openN = d.mine.filter(m => m.role === 'sell' && m.status === 'open').length;
   let form = '<p class="mk-hint">Chọn một món trong hành trang để treo bán.</p>';
   if (mkPick){

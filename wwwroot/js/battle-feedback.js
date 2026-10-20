@@ -43,3 +43,46 @@ function drawBattleDivine(ctx,battle,phase,width,height,big){
     ctx.fillText(text,24,y,Math.max(20,width-32));
   }finally{ctx.restore()}
 }
+/** Dấu trạng thái nét cao: hình dạng riêng, tâm nhân vật luôn thoáng. */
+function drawBattleStatus(ctx,{kind,x,y,width,height,strength=1,time=0,reduced=false}){
+  if(width<=0||height<=0)return;
+  ctx.save();
+  try{
+    const rx=width*.54,ry=height*.54,pulse=reduced?1:.94+.06*Math.sin(time*2);
+    ctx.lineWidth=Math.max(1.2,Math.min(2,width/45));ctx.lineJoin='round';ctx.lineCap='round';
+    const diamond=(cx,cy,r)=>{ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx+r,cy);ctx.lineTo(cx,cy+r);ctx.lineTo(cx-r,cy);ctx.closePath();ctx.fill();ctx.stroke()};
+    if(kind==='target'){
+      ctx.strokeStyle='#dd8276';ctx.globalAlpha=.7;
+      for(const [a,b] of [[.12,1.15],[2,3.03],[3.25,4.28],[5.15,6.18]]){ctx.beginPath();ctx.ellipse(x,y,rx,height*.09,0,a,b);ctx.stroke()}
+      return;
+    }
+    if(kind==='shield'||kind==='ward'){
+      ctx.globalAlpha=(.35+.45*Math.max(0,Math.min(1,strength)))*pulse;
+      ctx.strokeStyle='#8ad9eb';ctx.fillStyle='rgba(88,177,199,.055)';
+      ctx.beginPath();ctx.moveTo(x,y-ry);ctx.lineTo(x+rx*.85,y-ry*.65);ctx.lineTo(x+rx*.8,y+ry*.25);ctx.quadraticCurveTo(x+rx*.4,y+ry*.8,x,y+ry);ctx.quadraticCurveTo(x-rx*.4,y+ry*.8,x-rx*.8,y+ry*.25);ctx.lineTo(x-rx*.85,y-ry*.65);ctx.closePath();ctx.fill();ctx.stroke();
+      // Hai cạnh trong gợi vỏ khiên, không phủ lên mặt nhân vật.
+      for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(x+sign*rx*.69,y-ry*.5);ctx.lineTo(x+sign*rx*.65,y+ry*.15);ctx.stroke()}
+      return;
+    }
+    if(kind==='control'){
+      ctx.strokeStyle='#c4b8ed';ctx.fillStyle='#172135';
+      // Hai gông khóa ở hai bên, kèm khóa nhỏ gần chân.
+      for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(x+sign*rx*.65,y-ry*.5);ctx.lineTo(x+sign*rx,y-ry*.5);ctx.lineTo(x+sign*rx,y+ry*.55);ctx.lineTo(x+sign*rx*.65,y+ry*.55);ctx.stroke()}
+      ctx.beginPath();ctx.arc(x,y+ry*.55,3,Math.PI,0);ctx.stroke();ctx.fillRect(x-4,y+ry*.55,8,6);ctx.strokeRect(x-4,y+ry*.55,8,6);return;
+    }
+    if(kind==='elite'){
+      ctx.strokeStyle='#bc9be8';ctx.fillStyle='#352849';ctx.globalAlpha=.8*pulse;
+      for(const sign of [-1,1]){diamond(x+sign*rx,y-ry*.2,3);ctx.beginPath();ctx.moveTo(x+sign*rx*.83,y+ry*.15);ctx.lineTo(x+sign*rx*.94,y+ry*.55);ctx.lineTo(x+sign*rx*.65,y+ry*.75);ctx.stroke()}
+      return;
+    }
+    if(kind==='enrage'){
+      ctx.strokeStyle='#eb7a56';ctx.globalAlpha=.85*pulse;
+      for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(x+sign*rx*.75,y+ry*.8);ctx.lineTo(x+sign*rx,y+ry*.15);ctx.lineTo(x+sign*rx*.8,y+ry*.35);ctx.lineTo(x+sign*rx*.88,y-ry*.35);ctx.stroke()}
+      return;
+    }
+    if(kind==='dash'){
+      ctx.strokeStyle='#a4d5b8';ctx.globalAlpha=.7;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(x-rx*(1+i*.16),y+ry*(.2+i*.2));ctx.lineTo(x-rx*.45,y+ry*(.1+i*.2));ctx.stroke()}
+    }
+  }finally{ctx.restore()}
+}

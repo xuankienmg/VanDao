@@ -94,10 +94,39 @@ public static class SchemaUpgrade
             )
             """;
         cmd.ExecuteNonQuery();
+        ReplaceSpears(cmd);
         // vật phẩm đã bị gỡ khỏi game (vd. trang bị Trúc Cơ / Kim Đan bản cũ): xóa khỏi túi và ô trang bị để save cũ không lỗi
         var known = string.Join(",", VanDao.Game.GameData.AllItems.Select(i => $"'{i.Id.Replace("'", "''")}'"));
         cmd.CommandText = $"DELETE FROM \"Inventory\" WHERE \"ItemId\" NOT IN ({known}); DELETE FROM \"Equipment\" WHERE \"ItemId\" NOT IN ({known});";
         cmd.ExecuteNonQuery();
         conn.Close();
+    }
+
+    /// <summary>Vũ khí dạng Thương đã bỏ: đổi sang Kiếm cùng bộ, cùng phẩm (trong túi thì cộng dồn vào chồng kiếm sẵn có; đang mặc thì thay tại chỗ).
+    /// Chạy trước bước xóa vật phẩm lạ để người chơi không mất đồ.</summary>
+    private static void ReplaceSpears(System.Data.Common.DbCommand cmd)
+    {
+        void Param(string name, object value) { var p = cmd.CreateParameter(); p.ParameterName = name; p.Value = value; cmd.Parameters.Add(p); }
+        foreach (var table in new[] { "Inventory", "Equipment" })
+        {
+            cmd.CommandText = $"SELECT DISTINCT \"ItemId\" FROM \"{table}\" WHERE \"ItemId\" LIKE '%thuong%'";
+            var ids = new List<string>();
+            using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add(r.GetString(0));
+            foreach (var from in ids)
+            {
+                if (VanDao.Game.GameData.ReplaceSpear(from) is not { } to) continue;
+                cmd.Parameters.Clear(); Param("$from", from); Param("$to", to);
+                cmd.CommandText = table == "Equipment"
+                    ? "UPDATE \"Equipment\" SET \"ItemId\" = $to WHERE \"ItemId\" = $from"
+                    : """
+                      INSERT INTO "Inventory" ("PlayerId", "ItemId", "Count")
+                        SELECT "PlayerId", $to, "Count" FROM "Inventory" WHERE "ItemId" = $from
+                        ON CONFLICT ("PlayerId", "ItemId") DO UPDATE SET "Count" = "Count" + excluded."Count";
+                      DELETE FROM "Inventory" WHERE "ItemId" = $from;
+                      """;
+                cmd.ExecuteNonQuery();
+            }
+        }
+        cmd.Parameters.Clear();
     }
 }
