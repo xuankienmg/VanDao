@@ -226,6 +226,14 @@ public static class Program
         api.MapPost("/players/{id:guid}/market/claim", (Guid id, GameService game) =>
             RunAsync(id, game, p => game.MarketClaimAsync(p)));
 
+        // bấm vào một người trên bảng xếp hạng: trang bị đang mặc + chỉ số
+        api.MapGet("/players/{id:guid}/leaderboard/{other:guid}", async (Guid id, Guid other, GameService game, LeaderboardService lb) =>
+        {
+            try { return await lb.ProfileAsync(await game.LoadAsync(id), other) is { } pf ? Results.Ok(pf) : Results.NotFound(new { error = "Tu sĩ này không còn trên bảng xếp hạng." }); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+            catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        });
+
         // đổi đạo hiệu (tên hiện trên bảng xếp hạng), gửi lên bảng ngay
         api.MapPost("/players/{id:guid}/name", (Guid id, string? name, GameService game) =>
             Run(id, game, p => { var r = game.Rename(p, name); game.PushLeaderboard(p); return r; }));
