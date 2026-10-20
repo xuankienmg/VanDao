@@ -62,6 +62,11 @@ function setState(st){
     if (top.kind === 'gold') rings.push({t:0, c:'#e6c46a', big:false});
   }
   renderAll();
+  // Hành trang đầy: nhật ký mới kể từ lần trước (lần đầu mở game: chỉ dòng tổng kết lúc vắng mặt)
+  if (typeof bagWatch === 'function'){
+    const i = prevKey ? S.logs.findIndex(l => l.at + l.text === prevKey) : -1;
+    bagWatch(prevKey ? S.logs.slice(0, i < 0 ? S.logs.length : i) : S.logs.slice(0, 3).filter(l => /^Vắng mặt/.test(l.text)));
+  }
 }
 function localLog(text, kind){ S.logs.unshift({at:new Date().toISOString(), text, kind}); renderLog(); }
 

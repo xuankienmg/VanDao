@@ -116,7 +116,8 @@ public record StatSourceDto(string Name, double Atk = 0, double Def = 0, double 
 /// <summary>Tỉ lệ (%) phần thưởng 1 lần mở rương với nhân vật hiện tại: Level = cấp đồ ra, Quality = % cấp Phàm → Thiên,
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>
 public record ChestOddsDto(string Chest, int Level, double[] Quality, List<ItemQtyPctDto> Treasure, List<ItemQtyPctDto> Gear,
-    string PillItem, int PillMin, int PillMax, double Pill);
+    string PillItem, int PillMin, int PillMax, double Pill,
+    List<ItemQtyPctDto>? Herbs = null, int HerbMin = 1, int HerbMax = 1, double Herb = 0, double Enlightenment = 0);
 public record ItemQtyPctDto(string Item, double Pct);
 
 public record BonusDto(double QiPct, double SpeedPct);

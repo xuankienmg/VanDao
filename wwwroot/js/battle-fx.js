@@ -72,48 +72,85 @@ function pine(c, cx, base, hgt, ww, col){
   }
 }
 const hash = n => { const x = Math.sin(n*127.1)*43758.5; return x - Math.floor(x); };
+/** Tiên sơn ban đêm: các lớp được cache theo kích thước, không sinh lại mỗi frame. */
 function buildPixLayers(w, h){
-  const g = Math.round(h*.80);                     // mặt đất
-  const mk = (cw, ch) => { const c = document.createElement('canvas'); c.width = cw; c.height = ch; return [c, c.getContext('2d')]; };
-  // nền tĩnh: trời dither + đất + lối đi
-  const [bg, b] = mk(w, h);
-  b.fillStyle = PX.sky0; b.fillRect(0, 0, w, h);
-  for (let y = 0; y < g; y++) for (let x = 0; x < w; x++)
-    if (y > h*.32 || (y > h*.18 && (x+y) % 2 === 0)) { b.fillStyle = PX.sky1; b.fillRect(x, y, 1, 1); }
-  b.fillStyle = PX.ground; b.fillRect(0, g, w, h-g);
-  for (let x = 0; x < w; x++){
-    const top = g + 2 + Math.round(Math.sin(x/19)*1.2);
-    b.fillStyle = PX.path; b.fillRect(x, top, 1, Math.max(2, h - top - 1));
-    if (hash(x) < .25){ b.fillStyle = PX.path2; b.fillRect(x, top + Math.floor(hash(x+9)*(h-top-1)), 1, 1); }
-    if (hash(x*3) < .2){ b.fillStyle = PX.leaf; b.fillRect(x, g - 1, 1, 2); }
+  const g=Math.round(h*.80);
+  const mk=(cw,ch)=>{const c=document.createElement('canvas');c.width=cw;c.height=ch;return[c,c.getContext('2d')]};
+  const [bg,b]=mk(w,h);
+  b.fillStyle='#0a1423';b.fillRect(0,0,w,h);
+  b.fillStyle='#101f30';b.fillRect(0,Math.round(h*.2),w,g);
+  b.fillStyle='#182d3b';b.fillRect(0,Math.round(h*.43),w,g);
+  // Sao nhỏ, vị trí cố định; không nhấp nháy gây nhiễu thanh máu.
+  for(let i=0;i<Math.min(45,Math.round(w*h/800));i++){
+    const x=Math.floor(hash(i*17+3)*w),y=Math.floor(hash(i*23+8)*h*.4);
+    b.fillStyle=i%4?'#536c82':'#92a4af';b.fillRect(x,y,1,1);
   }
-  // các lớp rừng lặp lại được để trôi khi đi đường
-  const layer = (spacing, n, base, hmin, hvar, ww, col, trunk) => {
-    const tile = spacing * n, [c, x] = mk(w + tile, h);
-    for (let i = 0; i * spacing < w + tile + spacing; i++){
-      const j = i % n, cx = i*spacing + Math.round((hash(j+base)-.5)*spacing*.4);
-      if (trunk){ x.fillStyle = PX.trunk; x.fillRect(cx-1, base - 4, 2, g - base + 4); }
-      pine(x, cx, base, hmin + Math.round(hash(j*7+base)*hvar), ww, col);
+  const mx=Math.round(w*.79),my=Math.round(h*.19),mr=Math.max(3,Math.round(h*.065));
+  // Trăng kẻ từng hàng để giữ cạnh pixel, không khử răng cưa.
+  for(let y=-mr;y<=mr;y++){
+    const half=Math.floor(Math.sqrt(mr*mr-y*y));
+    b.fillStyle='#a8b9bb';b.fillRect(mx-half,my+y,half*2+1,1);
+  }
+  b.fillStyle='#8c9fa6';b.fillRect(mx-Math.max(1,mr>>2),my-1,Math.max(1,mr>>1),2);
+  const mountain=(spacing,n,base,height,color,edge)=>{
+    const tile=spacing*n,[c,x]=mk(w+tile,h);
+    for(let px=0;px<w+tile;px++){
+      const j=Math.floor(px/spacing)%n,k=(px%spacing)/spacing;
+      const a=hash(j*13+base),next=hash(((j+1)%n)*13+base);
+      const ridge=(a*(1-k)+next*k)*.5+Math.sin(k*Math.PI)*(.35+hash(j+31)*.3);
+      const top=Math.round(base-height*ridge);
+      x.fillStyle=color;x.fillRect(px,top,1,g-top);
+      if(edge&&px%3!==0){x.fillStyle=edge;x.fillRect(px,top,1,1)}
     }
-    x.fillStyle = col; x.fillRect(0, base, w + tile, (trunk ? 2 : g - base));
-    return {c, tile};
+    return{c,tile};
   };
-  const far = layer(Math.max(10, Math.round(h*.1)), 8, Math.round(h*.56), Math.round(h*.24), Math.round(h*.09), Math.round(h*.06), PX.far, false);
-  const mid = layer(Math.max(15, Math.round(h*.16)), 8, Math.round(h*.68), Math.round(h*.30), Math.round(h*.10), Math.round(h*.08), PX.mid, true);
-  // sương mỏng lượn sóng (dither)
-  const [mist, m] = mk(w, h); m.fillStyle = PX.mist;
-  const my = Math.round(h*.70);
-  for (let y = my - 6; y < my + 6; y++) for (let x = 0; x < w; x++){
-    const c = my + Math.round(2*Math.sin(x/23)), band = Math.abs(y - c);
-    if ((band < 2 && (x+y) % 2 === 0 && Math.floor(x/37) % 3 !== 1) || (band < 5 && (x*7 + y*3) % 11 === 0)) m.fillRect(x, y, 1, 1);
+  const far=mountain(Math.max(18,Math.round(h*.24)),7,Math.round(h*.61),Math.round(h*.49),'#20394b','#304b5b');
+  const mid=mountain(Math.max(24,Math.round(h*.32)),6,Math.round(h*.79),Math.round(h*.42),'#152d39',null);
+  // Bóng đình cổ ở rìa cảnh; phần giao chiến luôn thoáng.
+  const temple=(x,cx,base,size)=>{
+    x.fillStyle='#10212c';
+    x.fillRect(cx-size*.32,base-size*.65,Math.max(2,size*.64),size*.65);
+    for(let tier=0;tier<2;tier++){
+      const top=base-size*(.65+tier*.3),half=size*(tier?.38:.55);
+      for(let row=0;row<Math.max(2,size*.17);row++){
+        const k=row/Math.max(2,size*.17),width=Math.max(1,half*(.25+k*.75));
+        x.fillRect(Math.round(cx-width),Math.round(top+row),Math.round(width*2),1);
+      }
+    }
+    x.fillStyle='#9a986f';x.fillRect(Math.round(cx-1),Math.round(base-size*.48),2,Math.max(1,size*.09));
+  };
+  const midCtx=mid.c.getContext('2d');
+  for(let x=Math.round(h*.13);x<w+mid.tile;x+=mid.tile)temple(midCtx,x,Math.round(h*.67),Math.max(8,Math.round(h*.17)));
+  // Sân đá tiền cảnh có khe lát phối cảnh; không trôi dưới chân khi đang đánh.
+  b.fillStyle='#26363d';b.fillRect(0,g,w,h-g);
+  b.fillStyle='#5b6a69';b.fillRect(0,g,w,1);
+  b.fillStyle='#162832';b.fillRect(0,g+1,w,Math.max(1,Math.round(h*.012)));
+  const step=Math.max(4,Math.round(h*.065));
+  for(let row=0,y=g+2;y<h;y+=step,row++){
+    b.fillStyle=row%2?'#2c3e44':'#304249';b.fillRect(0,y,w,step-1);
+    const slab=Math.max(12,Math.round(h*.24)),offset=(row%2)*slab/2;
+    for(let x=-slab+offset;x<w;x+=slab){
+      b.fillStyle='#192d35';b.fillRect(Math.round(x),y,1,step);
+      b.fillStyle='#405158';b.fillRect(Math.round(x+2),y,Math.max(1,slab-4),1);
+    }
   }
-  // đèn linh khí xa
-  for (const [gx, gy] of [[w*.4, h*.5], [w*.8, h*.46]]) for (let k = 0; k < 10; k++){
-    const a = hash(k+gx)*6.28, rr = hash(k*3+gy)*4, X = Math.round(gx + Math.cos(a)*rr), Y = Math.round(gy + Math.sin(a)*rr*.6);
-    if ((X+Y) % 2 === 0){ m.fillStyle = PX.cyan; m.fillRect(X, Y, 1, 1); }
+  // Vết nứt và rêu mỏng trên sân cổ.
+  for(let i=0;i<Math.round(w/10);i++){
+    const x=Math.floor(hash(i*11+41)*w),y=g+2+Math.floor(hash(i*7+91)*(h-g-3));
+    b.fillStyle=i%3?'#23353b':'#40554c';b.fillRect(x,y,Math.max(1,Math.round(h*.01)),1);
   }
-  pixMotes = Array.from({length: Math.round(w*h/700)}, (_, i) => ({x: hash(i)*w, y: h*.15 + hash(i*5)*h*.6, ph: hash(i*11)*6.28}));
-  return {bg, far, mid, mist, g};
+  const [mist,m]=mk(w,h);
+  // Mây ngang mỏng, giữ vùng nhân vật và số sát thương dễ đọc.
+  for(const [center,alpha] of [[.49,.13],[.67,.12],[.76,.08]]){
+    m.fillStyle='rgba(148,181,186,'+alpha+')';
+    const cy=Math.round(h*center),band=Math.max(1,Math.round(h*.012));
+    for(let x=0;x<w;x++){
+      const y=cy+Math.round(Math.sin(x/Math.max(10,h*.2))*band);
+      m.fillRect(x,y,1,band);
+    }
+  }
+  pixMotes=Array.from({length:Math.min(16,Math.max(3,Math.round(w*h/4500)))},(_,i)=>({x:hash(i*19+2)*w,y:h*.2+hash(i*5+7)*h*.45,ph:hash(i*11)*6.28}));
+  return{bg,far,mid,mist,g};
 }
 // phông chữ pixel 3×5 cho số sát thương
 const FONT = {'0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001',

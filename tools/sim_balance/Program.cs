@@ -9,7 +9,7 @@ if (args.FirstOrDefault() == "budget-check")
     var expected = File.ReadLines(csv).Skip(1).Select(line => line.Split(',').Select(x => x.Trim('"', '\uFEFF')).ToArray()).ToArray();
     var profiles = new Dictionary<string, (string Slot, string Kind, bool Defensive)>
     {
-        ["Vũ khí chuẩn"] = ("weapon", "Kiếm", false), ["Thương"] = ("weapon", "Thương", false),
+        ["Vũ khí chuẩn"] = ("weapon", "Kiếm", false),   // Thương đã bỏ (10/2026): bỏ qua các dòng Thương trong CSV
         ["Pháp bảo công kích"] = ("offhand", "Pháp bảo", false), ["Pháp bảo hộ thân"] = ("offhand", "Pháp bảo", true),
         ["Nón"] = ("head", "Mũ", false), ["Áo"] = ("body", "Áo", false),
         ["Găng tay"] = ("hands", "Găng", false), ["Quần"] = ("legs", "Quần", false),
@@ -17,6 +17,7 @@ if (args.FirstOrDefault() == "budget-check")
         ["Hộ phù"] = ("charm", "Phù", false), ["Nhẫn"] = ("ring", "Nhẫn", false)
     };
     double[] Values(ItemDef it) => new double[] { it.Atk, it.Def, it.Hp, it.CritPct, it.SpeedPct, it.QiPct };
+    expected = expected.Where(r => profiles.ContainsKey(r[4])).ToArray();
     foreach (var row in expected)
     {
         var realm = Array.IndexOf(GameData.GearLevels, int.Parse(row[2]));
@@ -28,7 +29,7 @@ if (args.FirstOrDefault() == "budget-check")
         var wanted = row.Skip(5).Select(x => double.Parse(x, System.Globalization.CultureInfo.InvariantCulture));
         if (!actual.SequenceEqual(wanted)) throw new Exception($"CSV mismatch: {string.Join('/', row.Take(5))}");
     }
-    if (expected.Length != 720) throw new Exception("Missing budget rows");
+    if (expected.Length != 660) throw new Exception("Missing budget rows");
     foreach (var b in GameData.GearBases)
     {
         double[] previous = new double[6];
@@ -42,7 +43,7 @@ if (args.FirstOrDefault() == "budget-check")
             previous = stats;
         }
     }
-    Console.WriteLine($"PASS: 720 CSV rows; {GameData.GearBases.Length * 10} real variants, monotonic stats and saved item identities.");
+    Console.WriteLine($"PASS: {expected.Length} CSV rows; {GameData.GearBases.Length * 10} real variants, monotonic stats and saved item identities.");
     return;
 }
 int[] chRealm = {0,1,2,2,3,3,4,4,5};

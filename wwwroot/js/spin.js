@@ -4,7 +4,7 @@ const SPIN_SEG = 36;                     // 10 ô × 36°
 let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';
 const spinTickets = () => S.inventory[SPIN_TICKET] || 0;
 const spinPrice = () => DATA.spinPrice || 1e5;
-const spinW = () => DATA.spinWeights || [35, 25, 16, 10, 6, 3.5, 2, 1.2, .6, .03];
+const spinW = () => DATA.spinWeights || [32, 25, 17, 11, 6.5, 4, 2.3, 1.4, .75, .05];
 const spinPct = w => `${w >= 1 ? +w.toFixed(1) : +w.toFixed(2)}%`.replace('.', ',');
 const spinReduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 

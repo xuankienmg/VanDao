@@ -16,6 +16,7 @@ const BT_PAL = {
   nguyen_anh:{ring:'#6a4a9a', rune:'#d4a8ff', glow:'#a77ae6', mote:'#f0e0ff'},     // tím, tử vân
   hoa_than:  {ring:'#7a8aa0', rune:'#e8f0ff', glow:'#c8d8f0', mote:'#ffffff'},     // bạch kim
   luyen_hu:  {ring:'#3f6fd0', rune:'#8fc8ff', glow:'#4f8fff', mote:'#dcefff'},     // lam hư không
+  hop_the:   {ring:'#b05a2a', rune:'#ffc890', glow:'#ff9a5a', mote:'#fff0e0'},     // đỏ cam, khí huyết hợp nhất
 };
 /** 10 cảnh giới ở cột trái: tên Việt + tên Anh (bản thiết kế). Cảnh giới chưa có trong DATA hiện khóa. */
 const BT_REALMS = [['Luyện Khí','Qi Refining'],['Trúc Cơ','Foundation Establishment'],['Kim Đan','Golden Core'],['Nguyên Anh','Nascent Soul'],['Hóa Thần','Spirit Severing'],

@@ -95,8 +95,9 @@ function chestOddsLines(k){
   const o = chestOdds(k); if (!o) return [];
   const pt = o.treasure.reduce((a, x) => a + x.pct, 0), pg = o.gear.reduce((a, x) => a + x.pct, 0);
   return [`[Admin] Tỉ lệ mỗi lần mở`,
-    `Phẩm: ${o.quality.map((q, i) => `${Q_NAMES[i]} ${pctS(q)}`).join(' · ')}`,
-    `Pháp bảo ${pctS(pt)} · Trang bị ${pctS(pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
+    `Phẩm khi nhận trang bị/pháp bảo: ${o.quality.map((q, i) => `${Q_NAMES[i]} ${pctS(q)}`).join(' · ')}`,
+    `Trang bị (gồm pháp bảo) ${pctS(pt + pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
+    `Linh thảo ${pctS(o.herb || 0)} (${o.herbMin || 1}–${o.herbMax || 1} món) · Ngộ Đạo Đan ${pctS(o.enlightenment || 0)} (1 viên, từ Nguyên Anh)`,
     `Ra đồ Địa trở lên: ${pctS((pt + pg) * topPct(o.quality) / 100)}`];
 }
 function chestOddsHtml(k){
@@ -104,10 +105,11 @@ function chestOddsHtml(k){
   const pt = o.treasure.reduce((a, x) => a + x.pct, 0), pg = o.gear.reduce((a, x) => a + x.pct, 0);
   const list = xs => xs.map(x => `${gearName(x.item)} <b>${pctS(x.pct)}</b>`).join(' · ') || '—';
   return `<div class="iv-odds"><p class="t">Tỉ lệ mỗi lần mở (admin)</p>
-    <p>Phẩm: ${o.quality.map((q, i) => `<span class="rc-${RAR_KEYS[i]}">${Q_NAMES[i]} ${pctS(q)}</span>`).join(' · ')} · <i>ra đồ Địa trở lên ${pctS((pt + pg) * topPct(o.quality) / 100)}</i></p>
-    <p><b>Pháp bảo ${pctS(pt)}</b>: ${list(o.treasure)}</p>
-    <p><b>Trang bị ${pctS(pg)}</b>: ${list(o.gear)}</p>
-    <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p></div>`;
+    <p>Phẩm khi nhận trang bị/pháp bảo: ${o.quality.map((q, i) => `<span class="rc-${RAR_KEYS[i]}">${Q_NAMES[i]} ${pctS(q)}</span>`).join(' · ')} · <i>ra đồ Địa trở lên ${pctS((pt + pg) * topPct(o.quality) / 100)}</i></p>
+    <p><b>Trang bị (gồm pháp bảo) ${pctS(pt + pg)}</b>: ${list(o.gear.concat(o.treasure))}</p>
+    <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p>
+    <p><b>Linh thảo ${pctS(o.herb || 0)}</b>: ${o.herbMin || 1}–${o.herbMax || 1} món · ${(o.herbs || []).map(x=>`${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}`).join(' · ')}</p>
+    <p><b>Ngộ Đạo Đan ${pctS(o.enlightenment || 0)}</b>: 1 viên · chỉ từ Nguyên Anh</p></div>`;
 }
 function itemImg(k, cls = ''){
   const it = ITEM[k];

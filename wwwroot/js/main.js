@@ -90,9 +90,10 @@ window.playBreak = playBreak;
 // ADMIN MODE: Ctrl+Shift+A bật/tắt (nhớ trong máy). Hiện tab Admin với lệnh gian lận để thử game.
 // Cờ god / break / fast lưu ở server theo nhân vật (S.admin), các lệnh khác thực hiện một lần.
 // =====================================================================
-let adminOn = false;
+let adminOn = false, devMode = false;   // devMode: server chạy môi trường Development (GET /api/env) — chỉ khi đó mới có admin mode
 try { adminOn = localStorage.getItem('van-dao-admin') === '1'; } catch(e){}
 function setAdmin(on){
+  if (on && !devMode) return;
   adminOn = on; try { localStorage.setItem('van-dao-admin', on ? '1' : '0'); } catch(e){}
   document.body.classList.toggle('admin-on', on);
   const t = $('tab-admin'); if (t) t.hidden = !on;
@@ -101,11 +102,11 @@ function setAdmin(on){
   localLog(on ? 'Admin mode: BẬT (Ctrl+Shift+A để tắt)' : 'Admin mode: TẮT', on ? 'good' : '');
 }
 addEventListener('keydown', e => {
-  if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){ e.preventDefault(); setAdmin(!adminOn); }
+  if (devMode && e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){ e.preventDefault(); setAdmin(!adminOn); }
   // phím ẩn Alt+Shift+R: reset nhân vật về từ đầu (bấm 2 lần trong 3 giây để xác nhận, giống nút trong Admin)
   if (e.altKey && e.shiftKey && !e.ctrlKey && e.code === 'KeyR'){
     e.preventDefault();
-    if (Date.now() - resetArmAt < 3000){ resetArmAt = 0; adminAct('resetall'); }
+    if (Date.now() - resetArmAt < 3000){ resetArmAt = 0; devMode ? adminAct('resetall') : act('reset'); }   // bản phát hành: reset thường (không qua admin)
     else { resetArmAt = Date.now(); localLog('Nhấn Alt+Shift+R lần nữa trong 3 giây để reset nhân vật về từ đầu (mất toàn bộ tiến trình).', 'bad'); }
   }
 });
@@ -204,6 +205,8 @@ async function boot(){
   if (ver?.blocked){ showUpdateGate(ver); return; }
   try {
     DATA = await api('GET', '/api/data');
+    try { devMode = !!(await api('GET', '/api/env')).dev; } catch(e){}
+    if (!devMode) adminOn = false;                               // bản phát hành: không có admin mode dù máy từng bật
     DATA.items.forEach(i => ITEM[i.id] = i);
     let id = null; try { id = localStorage.getItem(KEY); } catch(e){}
     let st = null;

@@ -1,12 +1,17 @@
 /* Vấn Đạo · js/sell.js: Luyện chế · Bán — chọn món trong hành trang (cột trái) bỏ vào quầy bán (cột phải), bán một lần.
-   Trang bị: mỗi món một ô quầy. Đan dược: cả chồng vào một ô, chỉnh số viên bằng −/+ ở dưới quầy. */
+   Trang bị: mỗi món một ô quầy. Đan dược: cả chồng vào một ô, chỉnh số món bằng −/+ ở dưới quầy. */
 let sellSel = [];          // các ô quầy: {k, n} — trang bị n = 1 (mỗi món một phần tử), đan dược mỗi loại một phần tử
 let sellConfirm = 0;
 let quickArm = null;       // bán nhanh phẩm Thánh trở lên: {r, t} — bấm lần 2 trong 3 giây
 const QUICK_HI = FUSE_R.indexOf('mythic');   // từ phẩm này trở lên phải bấm 2 lần       // bấm Bán lần 1 khi có đồ Lam / đan Trúc Cơ trở lên: chờ bấm lần 2 trong 3 giây
 const SELL_N = 9;          // số ô của quầy bán
 const SELL_GO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg>';
-const sellStack = k => !ITEM[k]?.slot;                  // món xếp chồng (đan dược…): bán theo số viên
+const sellStack = k => !ITEM[k]?.slot;                  // món xếp chồng (đan dược…): bán theo số món
+function sellAllPool(){
+  const pool={};let n=0,gain=0;
+  for(const [k,c] of Object.entries(S.inventory))if(c>0&&ITEM[k]?.sell>0){pool[k]=c;n+=c;gain+=ITEM[k].sell*c;}
+  return{pool,n,gain};
+}
 const sellHi = k => sellStack(k) ? (ITEM[k].tier || 0) >= 2 : fuseQOf(k) >= 2;
 function sellClean(){                                   // bỏ / bớt món trong quầy mà túi không còn đủ (vừa mặc, ghép, dùng, bán…)
   const left = {...S.inventory};
@@ -25,12 +30,12 @@ function sellQtyRows(){
   const rows = sellSel.filter(e => sellStack(e.k)).map(e => {
     const it = ITEM[e.k], own = S.inventory[e.k] || 0;
     return `<li><span class="nm rc-${it.rarity}">${it.name}</span>
-      <button data-pq="${e.k}" data-d="-1" ${e.n > 1 ? '' : 'disabled'} data-tip="Bớt 1 viên (Shift: 10)">−</button>
+      <button data-pq="${e.k}" data-d="-1" ${e.n > 1 ? '' : 'disabled'} data-tip="Bớt 1 món (Shift: 10)">−</button>
       <input data-pqi="${e.k}" type="number" min="1" max="${own}" value="${e.n}" aria-label="Số ${it.name} bán">
-      <button data-pq="${e.k}" data-d="1" ${e.n < own ? '' : 'disabled'} data-tip="Thêm 1 viên (Shift: 10)">+</button>
-      <button data-pq="${e.k}" data-d="all" class="all" ${e.n < own ? '' : 'disabled'} data-tip="Bán cả ${fmt(own)} viên">Tất cả</button></li>`;
+      <button data-pq="${e.k}" data-d="1" ${e.n < own ? '' : 'disabled'} data-tip="Thêm 1 món (Shift: 10)">+</button>
+      <button data-pq="${e.k}" data-d="all" class="all" ${e.n < own ? '' : 'disabled'} data-tip="Bán cả ${fmt(own)} món">Tất cả</button></li>`;
   }).join('');
-  return rows ? `<ul class="sl-qty" aria-label="Số viên đan bán">${rows}</ul>` : '';
+  return rows ? `<ul class="sl-qty" aria-label="Số lượng vật phẩm bán">${rows}</ul>` : '';
 }
 /** Trang bị trong túi (không tính đồ đang mặc) theo từng phẩm: {r: {pool, n, gain}}. */
 function quickPools(){
@@ -44,12 +49,13 @@ function quickPools(){
 }
 function quickRow(){
   const pools = quickPools();
+  const all=sellAllPool(),armed=quickArm?.r==='all'&&Date.now()-quickArm.t<3000;
   const btns = FUSE_R.map((r, q) => {
     const o = pools[r], armed = quickArm && quickArm.r === r && Date.now() - quickArm.t < 3000, nm = RARITY[r]?.n ?? r;
     return `<button class="sl-q r-${r} ${armed ? 'armed' : ''}" data-sq="${r}" ${o.n && !busy ? '' : 'disabled'}
       data-tip="Bán nhanh mọi trang bị phẩm ${nm} trong hành trang&#10;${fmt(o.n)} món · +${fmt(o.gain)} linh thạch${q >= QUICK_HI ? '&#10;Bấm 2 lần để xác nhận' : ''}&#10;Đồ đang mặc không bị bán">${armed ? 'Bấm lại' : nm}<small>${short(o.n)}</small></button>`;
   }).join('');
-  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><p>Bán nhanh theo phẩm</p><div>${btns}</div></div>`;
+  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><p>Bán nhanh trang bị theo phẩm</p><div>${btns}</div><button class="fz-af ${armed?'armed':''}" data-sell-all ${all.n&&!busy?'':'disabled'} data-tip="Bán toàn bộ vật phẩm trong hành trang, gồm đan dược, nguyên liệu, rương, chìa khóa và vé. Không bán linh thạch hoặc đồ đang mặc. Bấm 2 lần để xác nhận.">${armed?'Xác nhận bán tất cả':'Bán tất cả vật phẩm'} · ${fmt(all.n)} món · +${fmt(all.gain)}</button></div>`;
 }
 function renderSell(){
   const pane = $('pane-sell'); if (!pane || !S) return;
@@ -61,7 +67,7 @@ function renderSell(){
     if (!it.sell) return `<div class="iv-cell ${it.slot ? 'eq ' : ''}r-${it.rarity || 'common'} off na" aria-label="${it.name}" data-tip="${itemTip(k, 'Không bán được')}">${itemImg(k)}${lcCellTail(k, n)}</div>`;
     if (sellStack(k)){
       const on = !!picked[k], off = !on && full;
-      return `<button class="iv-cell r-${it.rarity} ${on ? 'msel' : ''} ${off ? 'off' : ''}" data-sp="${k}" aria-label="${it.name}" data-tip="${itemTip(k, on ? 'Nhấp để lấy khỏi quầy' : off ? `Quầy đã đủ ${SELL_N} ô: bán trước hoặc lấy bớt ra` : `Nhấp để bỏ cả ${fmt(n)} viên vào quầy · ${fmt(it.sell)} linh thạch/viên`)}">${itemImg(k)}${lcCellTail(k, n)}</button>`;
+      return `<button class="iv-cell r-${it.rarity} ${on ? 'msel' : ''} ${off ? 'off' : ''}" data-sp="${k}" aria-label="${it.name}" data-tip="${itemTip(k, on ? 'Nhấp để lấy khỏi quầy' : off ? `Quầy đã đủ ${SELL_N} ô: bán trước hoặc lấy bớt ra` : `Nhấp để bỏ cả ${fmt(n)} món vào quầy · ${fmt(it.sell)} linh thạch/món`)}">${itemImg(k)}${lcCellTail(k, n)}</button>`;
     }
     const j = used[k] = (used[k] || 0) + 1, on = j <= (picked[k] || 0), off = !on && full;
     return `<button class="iv-cell eq r-${it.rarity} ${on ? 'msel' : ''} ${off ? 'off' : ''}" data-sl="${k}" aria-label="${it.name}" data-tip="${itemTip(k, on ? 'Nhấp để lấy khỏi quầy' : off ? `Quầy đã đủ ${SELL_N} ô: bán trước hoặc lấy bớt ra` : `Nhấp để bỏ vào quầy · ${fmt(it.sell)} linh thạch`)}">${itemImg(k)}<span class="lv">${itemLv(it)}</span></button>`;
@@ -71,9 +77,9 @@ function renderSell(){
   const sellable = bag.filter(c => ITEM[c.k].sell).length;
   const slots = Array.from({length: SELL_N}, (_, i) => { const e = sellSel[i]; if (!e) return '<div class="iv-cell empty"></div>';
     const it = ITEM[e.k], stack = sellStack(e.k);
-    return `<button class="iv-cell ${stack ? '' : 'eq '}r-${it.rarity}" data-ss="${i}" aria-label="${it.name}${stack ? ' ×' + e.n : ''}" data-tip="${itemTip(e.k, stack ? `${fmt(e.n)} viên · +${fmt(it.sell * e.n)} linh thạch&#10;Nhấp để lấy ra` : 'Nhấp để lấy ra')}">${itemImg(e.k)}${stack ? `<span class="qty">${short(e.n)}</span>` : `<span class="lv">${itemLv(it)}</span>`}</button>`; }).join('');
+    return `<button class="iv-cell ${stack ? '' : 'eq '}r-${it.rarity}" data-ss="${i}" aria-label="${it.name}${stack ? ' ×' + e.n : ''}" data-tip="${itemTip(e.k, stack ? `${fmt(e.n)} món · +${fmt(it.sell * e.n)} linh thạch&#10;Nhấp để lấy ra` : 'Nhấp để lấy ra')}">${itemImg(e.k)}${stack ? `<span class="qty">${short(e.n)}</span>` : `<span class="lv">${itemLv(it)}</span>`}</button>`; }).join('');
   pane.innerHTML = `<div class="dd fz sl">
-      <header class="dd-top">${lcNav('sell')}<div class="dd-cult"><span>Bỏ tối đa <b>${SELL_N} ô</b> vào quầy rồi bán một lần · đan dược bán theo chồng · đồ đang mặc không tính</span></div>
+      <header class="dd-top">${lcNav('sell')}<div class="dd-cult"><span>Bỏ tối đa <b>${SELL_N} ô</b> vào quầy rồi bán một lần · vật phẩm bán theo chồng · đồ đang mặc không tính</span></div>
         <div class="dd-stone" data-tip="Linh thạch hiện có">${itemImg('linh_thach')}<span>Linh thạch</span><b>${fmt(S.inventory.linh_thach || 0)}</b>${hpStoneHtml('dd-hp')}</div></header>
       <section class="dd-main fz-bag" aria-label="Hành trang"><p class="dd-sec">Hành trang · trang bị phẩm thấp → cao, rồi đan dược, vật phẩm khác</p>
         <div class="fz-bar"><span>Bán được ${sellable} ô · đã chọn ${sellSel.length}/${SELL_N}</span></div>
@@ -100,6 +106,17 @@ function sellSetQty(k, n){
 $('pane-sell').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
   hideTip();
+  if(b.hasAttribute('data-sell-all')){
+    if(busy)return;
+    const all=sellAllPool();if(!all.n)return;
+    if(!(quickArm?.r==='all'&&Date.now()-quickArm.t<3000)){
+      quickArm={r:'all',t:Date.now()};renderSell();
+      setTimeout(()=>{if(quickArm?.r==='all'&&Date.now()-quickArm.t>=3000){quickArm=null;renderSell();}},3100);return;
+    }
+    quickArm=null;sellSel=[];sellConfirm=0;
+    await act('sell-bulk?max=9&pick=true&items='+encodeURIComponent(Object.entries(all.pool).map(([k,n])=>k+':'+n).join(',')));
+    renderSell();return;
+  }
   if (b.dataset.sl){
     const k = b.dataset.sl, all = [...$('pane-sell').querySelectorAll(`[data-sl="${CSS.escape(k)}"]`)], j = all.indexOf(b) + 1;
     if (j <= sellSel.filter(x => x.k === k).length) sellSel.splice(sellSel.map(x => x.k).lastIndexOf(k), 1);

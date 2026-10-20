@@ -6,7 +6,13 @@ namespace VanDao.Game;
 public partial class GameService
 {
     /// <summary>Linh thạch (tiền tệ của chợ), chìa khóa Boss và vé quay không giao dịch được.</summary>
-    public static bool Tradable(ItemDef d) => d.Type is not ("stone" or "key" or "ticket");
+    public static bool Tradable(ItemDef d, bool canSellTickets = false) =>
+        d.Id == GameData.SpinTicket ? canSellTickets : d.Type is not ("stone" or "key" or "ticket");
+
+    public static bool CanSellSpinTickets(Player p, bool development) =>
+        development && (p.Tainted || p.Admin.Length > 0 || p.AdminPoints > 0);
+
+    private bool CanSellSpinTickets(Player p) => CanSellSpinTickets(p, _market?.Dev == true);
 
     /// <summary>Lý do không được mua / bán. Môi trường dev bỏ qua (thử chợ bằng nhân vật admin, cảnh giới thấp).</summary>
     private string? MarketBlocked(Player p) =>
@@ -36,7 +42,7 @@ public partial class GameService
     public async Task<MarketDto> MarketAsync(Player p)
     {
         var empty = new MarketDto(_market is { Enabled: true }, MarketService.MinRealm, MarketService.TaxPct, MarketService.MaxOpen,
-            MarketService.MaxDaily, MarketService.ListingDays, [], [], MarketBlocked(p));
+            MarketService.MaxDaily, MarketService.ListingDays, [], [], MarketBlocked(p), CanSellTickets: CanSellSpinTickets(p));
         if (!empty.Enabled) return empty;
         try
         {
@@ -56,7 +62,9 @@ public partial class GameService
     public async Task<(string msg, string kind)> MarketListAsync(Player p, string itemId, int qty, long price)
     {
         var m = Market(p);
-        if (!GameData.ItemById.TryGetValue(itemId, out var d) || !Tradable(d)) throw new GameException("Vật phẩm này không bán được ở Chợ.");
+        if (itemId == GameData.SpinTicket && !CanSellSpinTickets(p))
+            throw new GameException("Vé Tài Xỉu chỉ cho phép nhân vật admin treo bán trong môi trường Development.");
+        if (!GameData.ItemById.TryGetValue(itemId, out var d) || !Tradable(d, CanSellSpinTickets(p))) throw new GameException("Vật phẩm này không bán được ở Chợ.");
         if (qty < 1 || p.Count(itemId) < qty) throw new GameException("Không đủ vật phẩm trong hành trang.");
         if (price < 1 || price > MarketService.MaxPrice) throw new GameException("Giá không hợp lệ.");
         await m.Rpc<long>("market_list", new { p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = MarketRealm(p), p_item = itemId, p_qty = qty, p_price = price });
@@ -92,8 +100,9 @@ public partial class GameService
         if (_market is not { Enabled: true } || p.LbSecret.Length == 0) return (null, null);
         var rows = await _market.Rpc<List<MarketService.ClaimRow>>("market_claim", Who(p));
         (string, string)? last = null;
-        foreach (var r in rows)
+        foreach (var row in rows)
         {
+            var r = GameData.ReplaceSpear(row.ItemId) is { } sword ? row with { ItemId = sword } : row;   // Thương đã bỏ → Kiếm cùng phẩm
             var name = GameData.ItemById.TryGetValue(r.ItemId, out var d) ? d.Name : r.ItemId;
             var what = $"{(r.Qty > 1 ? r.Qty + " " : "")}{name}";
             if (r.Status == "sold")
