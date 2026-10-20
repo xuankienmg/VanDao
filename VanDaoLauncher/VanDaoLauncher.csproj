@@ -19,6 +19,7 @@
   <!-- Single-file publish (framework-dependent — requires .NET 8 runtime) -->
   <PropertyGroup Condition="'$(PublishDir)' != ''">
     <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>false</SelfContained>
   </PropertyGroup>
 
