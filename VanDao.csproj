@@ -15,7 +15,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>wwwroot\img\app\icon.ico</ApplicationIcon>
     <!-- Phiên bản phát hành: tăng số này mỗi lần gửi bản chơi thử mới -->
-    <Version>0.7.2</Version>
+    <Version>0.7.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +30,10 @@
     <Compile Remove="tools\**" />
     <Content Remove="tools\**" />
     <None Remove="tools\**" />
+    <!-- launcher: project riêng, không biên dịch vào game -->
+    <Compile Remove="VanDaoLauncher\**" />
+    <Content Remove="VanDaoLauncher\**" />
+    <None Remove="VanDaoLauncher\**" />
   </ItemGroup>
 
 </Project>
