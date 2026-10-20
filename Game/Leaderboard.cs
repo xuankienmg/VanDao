@@ -13,7 +13,10 @@ public sealed class LeaderboardOptions
     public bool Enabled => Url.Length > 0 && AnonKey.Length > 0;
 }
 
-public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me);
+public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default);
+/// <summary>Hồ sơ một người trên bảng: trang bị đang mặc (ô → mã vật phẩm) và chỉ số chiến đấu lúc gửi điểm gần nhất.</summary>
+public record LbProfileDto(string Name, int Realm, int Stage, string RealmName, string StageName, long Power,
+    Dictionary<string, string> Equipment, Dictionary<string, double> Stats, DateTime UpdatedAt, bool Me);
 public record LeaderboardDto(bool Enabled, string By, List<LbRowDto> Rows, LbRowDto? Me, bool Tainted, string Name, string? Error = null);
 
 /// <summary>
@@ -64,7 +67,9 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         }
         var r = GameService.Realm(p);
         var power = GameService.Power(p);
-        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}";
+        var equipment = p.Equipment.Where(e => e.ItemId.Length > 0).OrderBy(e => e.Slot).ToDictionary(e => e.Slot, e => e.ItemId);
+        var st = GameService.Stats(p);
+        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{string.Join(',', equipment.Values)}";   // đổi trang bị cũng gửi sớm
         var now = DateTime.UtcNow;
         if (!force && _sent.TryGetValue(p.Id, out var last) && now - last.at < (last.key == key ? Refresh : MinGap)) return;
         _sent[p.Id] = (now, key);
@@ -72,7 +77,8 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         {
             p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = p.Realm, p_stage = p.Stage,
             p_level = GameService.Level(p), p_qi = Math.Round(p.Qi, 1), p_realm_name = r.Name, p_stage_name = r.Stages[p.Stage],
-            p_power = power, p_version = Version,
+            p_power = power, p_version = Version, p_equipment = equipment,
+            p_stats = new Dictionary<string, double> { ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) },
         };
         _ = Task.Run(async () =>
         {
@@ -110,7 +116,7 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             }
             var mine = c.rows.FirstOrDefault(x => x.PlayerId == p.Id)
                        ?? (await _http.GetFromJsonAsync<List<Row>>($"leaderboard_public?select={Cols}&player_id=eq.{p.Id}", Json))?.FirstOrDefault();
-            LbRowDto Dto(Row x) => new(by == "power" ? x.PowerRank : x.RealmRank, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id);
+            LbRowDto Dto(Row x) => new(by == "power" ? x.PowerRank : x.RealmRank, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id, x.PlayerId);
             return new LeaderboardDto(true, by, c.rows.Select(Dto).ToList(), Excluded(p) || mine is null ? null : Dto(mine), Excluded(p), p.Name);
         }
         catch (Exception ex)
@@ -118,5 +124,27 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             log.LogWarning("Leaderboard get: {Error}", ex.Message);
             return new LeaderboardDto(true, by, [], null, Excluded(p), p.Name, "Không kết nối được bảng xếp hạng. Kiểm tra mạng rồi thử lại.");
         }
+    }
+
+    private sealed record ProfileRow(Guid PlayerId, string Name, int Realm, int Stage, string RealmName, string StageName, long Power,
+        Dictionary<string, string>? Equipment, Dictionary<string, double>? Stats, DateTime UpdatedAt);
+    private readonly ConcurrentDictionary<Guid, (DateTime at, ProfileRow row)> _profiles = new();
+
+    /// <summary>Trang bị + chỉ số của một người trên bảng (bấm vào dòng). Null = không có trên bảng.</summary>
+    public async Task<LbProfileDto?> ProfileAsync(Player me, Guid playerId)
+    {
+        if (!Enabled) throw new GameException("Bảng xếp hạng online chưa được cấu hình.");
+        if (!_profiles.TryGetValue(playerId, out var c) || DateTime.UtcNow - c.at > CacheFor)
+        {
+            List<ProfileRow>? rows;
+            try { rows = await _http.GetFromJsonAsync<List<ProfileRow>>($"leaderboard_public?select=player_id,name,realm,stage,realm_name,stage_name,power,equipment,stats,updated_at&player_id=eq.{playerId}", Json); }
+            catch (Exception ex) { log.LogWarning("Leaderboard profile: {Error}", ex.Message); throw new GameException("Không kết nối được bảng xếp hạng. Kiểm tra mạng rồi thử lại."); }
+            if (rows is not { Count: > 0 }) return null;
+            c = (DateTime.UtcNow, rows[0]); _profiles[playerId] = c;
+        }
+        var r = c.row;
+        // trang bị bản game khác (đã đổi mã, vd. Thương → Kiếm) quy về mã hiện tại; món lạ giữ nguyên để giao diện hiện "?"
+        var eq = (r.Equipment ?? new()).ToDictionary(kv => kv.Key, kv => GameData.ReplaceSpear(kv.Value) ?? GameData.UpgradeGear(kv.Value) ?? kv.Value);
+        return new LbProfileDto(r.Name, r.Realm, r.Stage, r.RealmName, r.StageName, r.Power, eq, r.Stats ?? new(), DateTime.SpecifyKind(r.UpdatedAt, DateTimeKind.Utc), r.PlayerId == me.Id);
     }
 }

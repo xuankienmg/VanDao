@@ -32,3 +32,25 @@
 .lb-champion{flex:0 0 170px;text-align:center;padding:16px 10px;border:1px solid #645238;background:radial-gradient(ellipse at 50% 35%,#3d3421,transparent 75%),#111a1c}.lb-champion[hidden]{display:none}.lb-first{color:#e0bd73;font:20px var(--f-display,Georgia,serif)}.lb-champion img{display:block;width:115px;height:130px;object-fit:contain;image-rendering:pixelated;margin:8px auto}.lb-champion>.lb-icon{margin:24px auto}.lb-champion h3{font:20px var(--f-display,Georgia,serif);color:#efcf8c;overflow-wrap:anywhere;margin:10px 0 6px}.lb-champion p{font-size:11px;color:#9ca8a6;margin:5px 0}.lb-champion strong{display:block;font-size:20px;color:#efcf8c;margin:16px 0 4px}.lb-motto{font-size:10px;color:#9e885c;margin-top:18px}
 .lb-val{color:#d5b879}.lb-val small{display:block;color:#829393;font-size:10px;margin-top:4px}#pane-rank[data-by=realm] .lb-val{color:#9ccfba}.lb-you{display:inline-block;font-style:normal;font-size:10px;color:#9ad2bc;border:1px solid #547e70;padding:0 4px;margin-left:6px}.lb-nm{display:block}.lb-nm b{display:inline-block;max-width:100%;vertical-align:middle}.lb-nm small{display:block;margin-top:3px}.lb-me:empty{display:none}.lb-me>.lb-list{margin-top:7px}.lb-me .lb-row.me{border:1px solid #547e70;background:#78bba510}.lb-footer{font-size:10px;color:#829393}.lb-footer:before{content:'';display:inline-block;width:5px;height:5px;background:#83bda7;border-radius:50%;margin-right:6px}
 @media(max-width:700px){.lb{padding:12px}.lb-body{gap:10px}.lb-champion{display:none}.lb-seal{display:none}.lb-heading h2{font-size:22px}.lb-row,.lb-columns{grid-template-columns:28px minmax(0,1fr) minmax(78px,auto);gap:6px}.lb-val{font-size:12px}}
+/* hồ sơ trang bị (bấm vào một dòng) */
+.lb-row[data-pid]{cursor:pointer}.lb-row[data-pid]:hover{background:#c8aa6612}.lb-row[data-pid]:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.lb-pf{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(6,9,10,.82)}
+.lb-pf-card{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:12px;padding:16px;background:#131d20;border:1px solid #77603a;border-radius:6px;color:#e7dfc9}
+.lb-pf-card header{display:flex;align-items:flex-start;gap:10px}.lb-pf-card header>div{flex:1;min-width:0}
+.lb-pf-card h3{margin:0;font:600 21px var(--f-display);color:#efcf8c;overflow-wrap:anywhere}.lb-pf-card header p{margin:4px 0 0;font-size:12px;color:#9ca8a6}.lb-pf-card header p b{color:#e3a082}
+.lb-pf-x{background:var(--card);border:1px solid var(--line);color:var(--paper);border-radius:4px;padding:4px 10px;cursor:pointer;font:inherit}
+.lb-pf-x:focus-visible,.lb-pf-slot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.lb-pf-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.lb-pf-stats div{display:flex;flex-direction:column;gap:2px;padding:6px 8px;background:#0e1618;border:1px solid #293638;border-radius:4px;font-variant-numeric:tabular-nums}
+.lb-pf-stats span{font-size:10.5px;color:#829393}.lb-pf-stats b{font-size:13px;color:var(--paper)}
+.lb-pf-gear{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.lb-pf-slot{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0e1618;border:1px solid #293638;border-left:3px solid var(--qc,#3a4648);border-radius:4px;min-width:0}
+.lb-pf-slot>span:last-child{display:flex;flex-direction:column;min-width:0}
+.lb-pf-slot small{font-size:10.5px;color:#829393}.lb-pf-slot b{font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb-pf-slot em{font-style:normal;font-size:12px;color:#5f6d6e}
+.lb-pf-ic{width:36px;height:36px;flex:none;display:grid;place-items:center;background:#0a0f10;border-radius:4px;color:#829393}
+.lb-pf-ic img,.lb-pf-ic svg{width:32px;height:32px}
+.lb-pf-slot.empty{opacity:.55}
+.lb-pf-slot.r-common{--qc:#d8d8d8}.lb-pf-slot.r-uncommon{--qc:#00FF7F}.lb-pf-slot.r-rare{--qc:#00E5FF}.lb-pf-slot.r-epic{--qc:#1E90FF}.lb-pf-slot.r-legendary{--qc:#BF00FF}
+.lb-pf-slot.r-mythic{--qc:#FF8C00}.lb-pf-slot.r-divine{--qc:#FF0033}.lb-pf-slot.r-immortal{--qc:#FF69B4}.lb-pf-slot.r-dao{--qc:#FFD700}.lb-pf-slot.r-supreme{--qc:#E0FFFF}
+.lb-pf-wait{margin:0;text-align:center;color:#9ca8a6;font-size:13px}.lb-pf-at{font-size:10.5px;color:#829393}
+@media(max-width:520px){.lb-pf-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.lb-pf-gear{grid-template-columns:minmax(0,1fr)}}
