@@ -58,15 +58,16 @@ function drawPixelBattle(t, dt, ph, r){
     const i = ph.i, s = ph.s, killing = (lastWave ? b.win : true) && i === wEnd - 1, held = !killing && b.monSkip && b.monSkip[i];
     wx = wolfX;
     mHp = mLeft(i + (s >= .45 ? 1 : 0)) / b.monsterHp;
-    hHp = Math.max(0, hLeft(i + (s >= .85 && !killing && !held ? 1 : 0)) / heroMax);
+    hHp = Math.max(0, (s >= .85 && !killing && !held ? hLeft(i+1) : b.heroHpBefore?.[i] ?? hLeft(i)) / heroMax);
     rg = rageAt(i + (s >= .45 ? 1 : 0)) / RAGE_MAX;
     const skTurn = castsNow.some(c => c.dmg > 0 && c.skill !== 'hoa_cau');           // lượt tung kỹ năng: không có đòn thường
-    const burnNow = b.burn > 0 && !!b.burned?.[i];                                     // thiêu đốt (Phần Cốt) kích hoạt lượt này (30%)
+    const burnDmg = b.burnDamage?.[i] ?? b.burn;
+    const burnNow = burnDmg > 0 && !!b.burned?.[i]; // gồm lượt kích hoạt và lượt duy trì
     burning = burnNow && s >= .45;
     if (burnNow && s >= .62){
       const bk = ph.trip + ':burn' + i;
       if (!battleDone[bk]){ battleDone[bk] = 1;
-        pfx.push({type:'num', x: wolfX + U(12), y: g - msz + (MODE === 'strip' ? 2 : 6), text: '-' + b.burn, col: '#ff7a28', life: 0, max: .9});
+        pfx.push({type:'num', x: wolfX + U(12), y: g - msz + (MODE === 'strip' ? 2 : 6), text: '-' + burnDmg, col: '#ff7a28', life: 0, max: .9});
         if (MODE !== 'strip') pfx.push({type:'label', x: wolfX + U(12), y: g - msz + 22, text: 'Thiêu đốt', col: '#ff9a50', life: 0, max: .9});
       }
     }
@@ -90,7 +91,7 @@ function drawPixelBattle(t, dt, ph, r){
     if (b.reflect?.[i]) gfx('rf', .9, () => { pfx.push({type:'num', x: wolfX - U(8), y: g - msz - (big ? 8 : 2), text: '-' + b.reflect[i], col: '#d0a060', life: 0, max: .8});
       if (big) pfx.push({type:'label', x: wolfX - U(8), y: g - msz - 22, text: 'Phản', col: '#d0a060', life: 0, max: .8}); });
     if (b.heal?.[i]) gfx('hl', .95, () => pfx.push({type:'num', x: heroX + U(10), y: g - sz - (big ? 30 : 10), text: '+' + b.heal[i], col: '#7ce08a', life: 0, max: .8}));
-    const gl = !b.guard ? 0 : s >= .85 ? (b.guardLeft?.[i] ?? 0) : i > 0 ? (b.guardLeft?.[i - 1] ?? 0) : b.guard;   // Thổ thuẫn còn lại
+    const gl = battleGuardAt(b,ph,wv?.start||0);
     if (b.enrageTurn >= 0 && i >= b.enrageTurn){                                      // Boss Cuồng bạo (kỹ năng ẩn): hào quang đỏ + chữ khi vừa nổi giận
       if (i === b.enrageTurn) gfx('enr', .8, () => { if (big) pfx.push({type:'label', x: wolfX, y: g - msz - 36, text: 'Cuồng bạo!', col: '#ff5a48', life: 0, max: 1.2}); });
       fxAfter.push(() => pring(wolfX, g - msz * .45, msz * .5 + (Math.floor(t * 8) % 2), msz * .5, '#c03a30', true));
@@ -156,6 +157,12 @@ function drawPixelBattle(t, dt, ph, r){
       if (st.wy !== undefined) wy = st.wy;
       if (st.wAlpha !== undefined) wAlpha = st.wAlpha;
       if (s >= .85){
+        if(b.dodged?.[i]===true){
+          if(!reduce){const k=Math.sin(Math.min(1,(s-.85)/.15)*Math.PI);hx=heroX-U(6)*k;hy=-U(2)*k;hrot=-.05*k;}
+          battleDodgeFeedback(b,ph,battleDone,f=>pfx.push(f),heroX,g-sz+U(10));
+        }else if(b.divine?.turns?.[i]?.nullified){
+          // Đòn bị vô hiệu hóa: không hiện sát thương hoặc hiệu ứng trúng đòn.
+        }else{
         hFlash = s < .93; hx = heroX - (s < .93 ? U(st.knock || 2) : 1);
         if (refHero && !reduce && s < .93){ const p = Math.sin((s - .85) / .08 * Math.PI); hsx = 1 + .05 * p; hsy = 1 - .06 * p; hrot = -.07 * p; }   // trúng đòn: co người giật lùi
         const fk = ph.trip + ':m' + i;
@@ -164,6 +171,7 @@ function drawPixelBattle(t, dt, ph, r){
           const cols = st.sparks || [PX.red];
           for (let n = 0; n < (st.nSparks || 8); n++) pfx.push({type:'spark', x: heroX + U(6), y: g - U(26), vx: (Math.random()-.5)*(st.spread || 40)*u, vy: -Math.random()*40*u, life: 0, max: .3 + Math.random()*.15, col: cols[n % cols.length]});
           if (st.label && MODE !== 'strip') pfx.push({type:'label', x: heroX, y: g - sz - 40, text: st.label, col: st.numCol || PX.hurt, life: 0, max: .9});
+        }
         }
       }
     }
@@ -180,15 +188,13 @@ function drawPixelBattle(t, dt, ph, r){
     const fk = ph.trip + ':lose';
     if (!battleDone[fk]){ battleDone[fk] = 1; pfx.push({type:'label', x: heroX, y: g - sz - 8, text: 'Rút lui', col: '#e58472', life: 0, max: 1.3}); }
   }
+  battleDivineFeedback(b,ph,battleDone,f=>pfx.push(f),heroX,g-sz+U(10));
   if (elite && wx !== null && wAlpha > .5) fxAfter.push(() => pring(wx, g - msz * .45, msz * .5 + (Math.floor(t * 6) % 2), msz * .5, '#a070e0', true));   // tinh anh: hào quang tím
   if (wv && ph.name === 'enter' && wvI > 0){                                         // quái đợt sau bước vào
     const ek = ph.trip + ':wave' + wvI;
     if (!battleDone[ek]){ battleDone[ek] = 1; if (MODE !== 'strip') pfx.push({type:'label', x: wolfX, y: g - msz - 20, text: elite ? 'Tinh anh xuất hiện!' : 'Đợt ' + (wvI + 1), col: elite ? '#c08aff' : '#f0e2bc', life: 0, max: 1.1}); }
   }
   if (Object.keys(battleDone).length > 60) battleDone = {};
-  // máu "bóng": phần vừa mất hiện trắng rồi rút dần
-  if (mHp > lastMHp + .01) ghostHp = mHp;
-  lastMHp = mHp; ghostHp = Math.max(mHp, ghostHp - dt*.9);
 
   // ---- vòng mục tiêu + bóng ----
   if (wx !== null && wAlpha > .5){ pring(wx, g + 1, U(16*ms), U(3*ms), PX.red2, false); pring(wx, g + 1, U(18*ms), U(4*ms), PX.red, true); }
@@ -202,15 +208,6 @@ function drawPixelBattle(t, dt, ph, r){
     if (!monHi) pctx.drawImage(wFlash ? mon.flash : burning && mon.burn ? mon.burn : mon.im, wx - mhs, g - msz + 1 + wy, msz, msz);   // bản nét vẽ sau, ở độ phân giải thật
     pctx.globalAlpha = 1;
     if (burning) pburn(wx, g, U(15*ms), t, u);
-    if (wAlpha > .5){
-      const bw = Math.max(12, U(26*ms));
-      pbar(wx, g - msz - 3, bw, mHp, ghostHp, PX.red, PX.red2);
-      if (burning){                                                                    // biểu tượng lửa + % cạnh thanh máu quái
-        const ix = Math.round(wx + bw/2) + 3, iy = g - msz - 5;
-        ['010','111','121','010'].forEach((row, yy) => [...row].forEach((c, xx) => { if (c !== '0') P(ix + xx, iy + yy, c === '2' ? FIRE[4] : FIRE[3]); }));
-        if (MODE !== 'strip') ptext(ix + 5, iy - 1, Math.round(b.burnPct) + '%', '#ff9a50');
-      }
-    }
   }
   // ---- tu sĩ + kiếm linh khí ----
   if (!refHero){
@@ -229,8 +226,6 @@ function drawPixelBattle(t, dt, ph, r){
   } else if (sword === 'down'){
     for (let i = 0; i < U(10); i++) P(handX + i, handY + Math.floor(i/2), i > Math.max(1, U(2)) ? PX.cyan2 : PX.gold);
   }
-  if (ph.name !== 'walk') pbar(hx, g - sz - 3, Math.max(10, U(20)), hHp, hHp, PX.hp, PX.hp2);
-  if (ph.name === 'fight' && b.rage) pbarThin(hx, g - sz, Math.max(10, U(20)), rg, rg >= 1 ? PX.dmg : PX.gold);   // thanh nộ mảnh, sát dưới thanh máu
 
   // ---- cột linh quang khi đột phá ----
   if (breakFx){
@@ -283,7 +278,7 @@ function drawPixelBattle(t, dt, ph, r){
       }
     }
     else if (f.type === 'num') labels.push(f);
-    else if (f.type === 'label') labels.push(f);
+    else if (f.type === 'label'||f.type==='dodge') labels.push(f);
   }
 
   // ---- chiêu thức trong ô tự thi triển (sprite sheet Hỏa Cầu 8 khung) ----
@@ -358,11 +353,6 @@ function drawPixelBattle(t, dt, ph, r){
   if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_dragon' && c.dmg > 0))     // Thương Hải Quyết: thủy long nét cao
     tlDraw(ctx, ph.s, (heroX + sz * .3) * sx, wolfX * sx, (g - sz * .55) * sy, sz * sy);
   ctx.textAlign = 'center';
-  if (big && wx !== null && wAlpha > .5){
-    ctx.font = '600 12px "Be Vietnam Pro", system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(b.monster, wx*sx + 1, (g - msz - 7)*sy + 1);
-    ctx.fillStyle = elite ? '#d4a8ff' : 'rgba(235,228,211,.9)'; ctx.fillText(b.monster, wx*sx, (g - msz - 7)*sy);
-  }
   if (wv && ph.name !== 'walk'){                                                      // ải 3 đợt: đợt đang đánh, góc phải trên
     const total = S.map.areas[Math.min(S.map.area, S.map.areas.length) - 1]?.waves?.length || B0.waves.length;
     if (total > 1){
@@ -386,6 +376,7 @@ function drawPixelBattle(t, dt, ph, r){
   }
   for (const f of labels){
     const k = f.life / f.max;
+    if(f.type==='dodge'){drawBattleDodgeLabel(ctx,f,{sx,sy,width:W,reduced:reduce,big});continue;}
     if (f.type === 'num'){
       // Số nổi gọn: chữ nét cao, tách hàng nghìn, bật nhẹ rồi bay lên và tan.
       // Chỉ đánh dấu bạo kích khi nguồn dữ liệu xác nhận, không tự suy đoán từ sát thương.
@@ -434,6 +425,18 @@ function drawPixelBattle(t, dt, ph, r){
     ctx.strokeStyle = hexA(q.c, 1-k); ctx.lineWidth = (q.big ? 5 : 3)*(1-k) + 1;
     ctx.beginPath(); ctx.arc(heroX*sx, (g - hs)*sy, 10 + k*Math.max(W, H)*(q.big ? .7 : .4), 0, 7); ctx.stroke();
   }
+  // HUD nằm trên FX: số HP không bị vỡ theo pixel hoặc bị lửa che lấp.
+  if(ph.name!=='walk'){
+    const heroHp=battleHpState('hero',String(ph.trip),hHp*heroMax,heroMax,dt,reduce);
+    const heroBarWidth=Math.min(big?126:96,W*.42),enemyBarWidth=Math.min(big?(isBoss?158:138):(isBoss?116:102),W*.42);
+    const heroHudX=wx===null?hx*sx:Math.min(hx*sx,wx*sx-(heroBarWidth+enemyBarWidth)/2-8);
+    drawBattleHp(ctx,{x:heroHudX,y:(g-sz)*sy-19,width:heroBarWidth,state:heroHp,name:'Tu sĩ',kind:'hero',shield:battleGuardAt(b,ph,wv?.start||0),rage:ph.name==='fight'&&b.rage?rg:null,compact:!big,viewportWidth:W});
+    if(wx!==null&&wAlpha>.5){
+      const enemyHp=battleHpState('enemy',`${ph.trip}:${wvI}:${b.image}`,mHp*b.monsterHp,b.monsterHp,dt,reduce);
+      drawBattleHp(ctx,{x:wx*sx,y:(g-msz)*sy-19,width:enemyBarWidth,state:enemyHp,name:big?(isBoss?'Boss · ':elite?'Tinh anh · ':'')+b.monster:b.monster,kind:isBoss?'boss':elite?'elite':'enemy',burn:burning?b.burnPct:null,compact:!big,viewportWidth:W});
+    }
+  }
+  if(ph.name!=='walk')drawBattleDivine(ctx,b,ph,W,H,big);
   return true;
 }
 

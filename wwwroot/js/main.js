@@ -183,11 +183,14 @@ document.addEventListener('click', e => {
   else adminAct(a, b.dataset.arg ?? null, b.dataset.n ? +b.dataset.n : 0);
 });
 function openTab(name, exact){
+  document.body.classList.toggle('rank-panel', name === 'rank');
   if (name === 'craft' && !exact) name = 'fuse';                // tab Luyện chế: mặc định mở Luyện khí
   if (LC_SUBS.includes(name)) lcSub = name;
   const top = name === 'fuse' || name === 'sell' || name === 'spin' ? 'craft' : name;
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === top));
-  ['req','inv','craft','fuse','sell','spin','map','skill','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
+  ['req','inv','craft','fuse','sell','spin','map','skill','market','rank','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
+  if (name === 'rank') loadRank();                              // bảng xếp hạng: tải khi mở tab
+  if (name === 'market') loadMarket();                          // Chợ: tải khi mở tab
   document.querySelectorAll('[data-lc]').forEach(b => { b.classList.toggle('on', b.dataset.lc === name); b.setAttribute('aria-selected', b.dataset.lc === name); });
   if (MODE === 'panel' && typeof notifyHost === 'function') notifyHost('tab', {tab: name}); // cửa sổ đổi cỡ theo tab
 }
@@ -196,6 +199,9 @@ window.openTab = openTab;
 window.setOpaque = on => document.body.classList.toggle('opaque', !!on);
 
 async function boot(){
+  // bản game quá cũ (app_config trên Supabase) → chỉ hiện màn hình cập nhật, không vào game
+  const ver = await checkVersion();
+  if (ver?.blocked){ showUpdateGate(ver); return; }
   try {
     DATA = await api('GET', '/api/data');
     DATA.items.forEach(i => ITEM[i.id] = i);
@@ -219,7 +225,7 @@ async function boot(){
   // đột phá đại cảnh giới diễn ra trong tab Đột phá (trận pháp, 5 giai đoạn, kết quả); lên tầng thì làm ngay
   // nút Đột phá ngoài màn hình chính: luôn mở tab Đột phá (đột phá thật bấm trong tab, có trận pháp + kết quả)
   $('btnAdvance').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'req'}) : openTab('req');
-  initDan(); initMap(); initBreak(); initSkill();
+  initDan(); initMap(); initBreak(); initSkill(); initMarket();
   document.addEventListener('contextmenu', e => { if (MODE !== 'strip') e.preventDefault(); });
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => openTab(t.dataset.tab));
   if (Q.get('tab')) openTab(Q.get('tab'));
@@ -236,6 +242,7 @@ async function boot(){
     act(`area/${a + 1}`);
   };
   $('btnPanel').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'map'}) : openTab('map');
+  $('btnRank').onclick = () => window.chrome?.webview ? notifyHost('open-panel', {tab:'rank'}) : window.open('?mode=panel&tab=rank', 'van-dao-rank', 'width=900,height=740');
   // cửa sổ desktop: menu cài đặt gốc (có mục Nhập code); chạy trên trình duyệt: hỏi code quà tặng
   $('btnMenu').onclick = () => window.chrome?.webview ? notifyHost('menu') : (c => c && redeemCode(c))(prompt('Nhập code quà tặng'));
   addEventListener('keydown', e => { if (e.key === 'Escape' && MODE === 'panel') notifyHost('close-panel'); });
@@ -248,5 +255,6 @@ async function boot(){
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
   requestAnimationFrame(frame);
+  showUpdateBanner(ver);                                         // có bản mới (chưa bắt buộc): nhắc nhẹ
 }
 boot();

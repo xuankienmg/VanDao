@@ -10,7 +10,7 @@ public sealed class PanelWindow : Form
 {
     private static readonly Dictionary<string, string> TabNames = new()
     {
-        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Tài Xỉu",
+        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Tài Xỉu", ["market"] = "Chợ", ["rank"] = "Bảng xếp hạng",
     };
 
     private readonly GameWindow _strip;
@@ -19,12 +19,15 @@ public sealed class PanelWindow : Form
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill, DefaultBackgroundColor = Theme.Ink };
     private bool _ready;
     private string _tab = "req";
+    private readonly bool _ranking;
 
-    public PanelWindow(GameWindow strip, WindowSettings settings, string url)
+    public PanelWindow(GameWindow strip, WindowSettings settings, string url, bool ranking = false)
     {
         _strip = strip;
         _s = settings;
         _url = url;
+        _ranking = ranking;
+        if (ranking) _tab = "rank";
 
         Owner = strip; // luôn nổi trên dải game, ẩn/hiện cùng dải
         Icon = strip.Icon;
@@ -46,6 +49,7 @@ public sealed class PanelWindow : Form
         };
         ResizeEnd += (_, _) =>
         {
+            if (_ranking) return;
             _s.InvW = Width; _s.InvH = Height;
             _s.Save();
         };
@@ -60,7 +64,7 @@ public sealed class PanelWindow : Form
     public async void ShowTab(string tab)
     {
         _tab = TabNames.ContainsKey(tab) ? tab : "req";
-        Text = $"Tu luyện · {TabNames[_tab]}";
+        Text = _ranking ? "Thiên bảng · Bảng xếp hạng" : $"Tu luyện · {TabNames[_tab]}";
         TopMost = _s.Pinned;
         Size = SizeFor(_tab);
         if (!Visible)
@@ -82,6 +86,7 @@ public sealed class PanelWindow : Form
     /// <summary>Mọi tab Tu luyện dùng chung một kích thước: kích thước người dùng đã kéo (không nhỏ hơn MinPanel), chưa có thì mặc định.</summary>
     private Size SizeFor(string _)
     {
+        if (_ranking) return LogicalToDeviceUnits(new Size(900, 740));
         var min = LogicalToDeviceUnits(MinPanel);
         return _s.InvW is int w && _s.InvH is int h
             ? new Size(Math.Max(w, min.Width), Math.Max(h, min.Height))

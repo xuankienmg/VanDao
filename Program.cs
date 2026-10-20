@@ -54,6 +54,11 @@ public static class Program
         builder.Services.AddDbContext<GameDbContext>(o =>
             o.UseSqlite(builder.Configuration.GetConnectionString("Game") ?? $"Data Source={dbPath}"));
         builder.Services.AddScoped<GameService>();
+        // bảng xếp hạng online (Supabase): cấu hình mục "Leaderboard" trong appsettings.json, bỏ trống = tắt
+        builder.Services.AddSingleton(builder.Configuration.GetSection("Leaderboard").Get<LeaderboardOptions>() ?? new LeaderboardOptions());
+        builder.Services.AddSingleton<LeaderboardService>();
+        builder.Services.AddSingleton<VersionService>();  // bắt cập nhật: đọc app_config trên Supabase
+        builder.Services.AddSingleton<MarketService>();   // Chợ giao dịch: dùng chung project Supabase
 
         var app = builder.Build();
 
@@ -63,6 +68,22 @@ public static class Program
             db.Database.EnsureCreated();
             SchemaUpgrade.Apply(db);
         }
+
+        // bản game thấp hơn min_version (app_config trên Supabase): từ chối mọi thao tác với nhân vật, giao diện hiện màn hình cập nhật
+        app.Use(async (ctx, next) =>
+        {
+            if (ctx.Request.Path.StartsWithSegments("/api/players"))
+            {
+                var v = await ctx.RequestServices.GetRequiredService<VersionService>().PeekAsync();
+                if (v.Blocked)
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
+                    await ctx.Response.WriteAsJsonAsync(new { error = $"Phiên bản {v.Current} đã cũ, hãy tải bản {v.Latest} để tiếp tục.", update = v });
+                    return;
+                }
+            }
+            await next();
+        });
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -174,6 +195,36 @@ public static class Program
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
             Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)));
 
+        // bảng xếp hạng online: by = realm (cảnh giới) | power (lực chiến)
+        api.MapGet("/players/{id:guid}/leaderboard", async (Guid id, string? by, GameService game) =>
+        {
+            try { return Results.Ok(await game.LeaderboardAsync(await game.LoadAsync(id), by)); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+        });
+
+        // phiên bản: ok · update · required · unknown (giao diện gọi khi mở game và định kỳ)
+        api.MapGet("/version", (VersionService v, bool? force) => v.GetAsync(force ?? false));
+
+        // Chợ giao dịch giữa người chơi (Supabase)
+        api.MapGet("/players/{id:guid}/market", async (Guid id, GameService game) =>
+        {
+            try { return Results.Ok(await game.MarketAsync(await game.LoadAsync(id))); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+        });
+        api.MapPost("/players/{id:guid}/market/list/{itemId}", (Guid id, string itemId, int? qty, long? price, GameService game) =>
+            RunAsync(id, game, async p => await game.MarketListAsync(p, itemId, qty ?? 1, price ?? 0)));
+        api.MapPost("/players/{id:guid}/market/buy/{listing:long}", (Guid id, long listing, GameService game) =>
+            RunAsync(id, game, async p => await game.MarketBuyAsync(p, listing)));
+        api.MapPost("/players/{id:guid}/market/cancel/{listing:long}", (Guid id, long listing, GameService game) =>
+            RunAsync(id, game, p => game.MarketCancelAsync(p, listing)));
+        // nhận linh thạch đã bán / đồ trả về: giao diện gọi định kỳ
+        api.MapPost("/players/{id:guid}/market/claim", (Guid id, GameService game) =>
+            RunAsync(id, game, p => game.MarketClaimAsync(p)));
+
+        // đổi đạo hiệu (tên hiện trên bảng xếp hạng), gửi lên bảng ngay
+        api.MapPost("/players/{id:guid}/name", (Guid id, string? name, GameService game) =>
+            Run(id, game, p => { var r = game.Rename(p, name); game.PushLeaderboard(p); return r; }));
+
         api.MapPost("/players/{id:guid}/reset", async (Guid id, GameService game) =>
         {
             try
@@ -184,6 +235,20 @@ public static class Program
             }
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
         });
+    }
+
+    // Như Run nhưng hành động bất đồng bộ (gọi Supabase); lỗi thì không lưu gì
+    private static async Task<IResult> RunAsync(Guid id, GameService game, Func<Player, Task<(string? msg, string? kind)>> action)
+    {
+        try
+        {
+            var p = await game.LoadAsync(id);
+            var (msg, kind) = await action(p);
+            await game.SaveAsync(p);
+            return Results.Ok(new ActionResponse(await game.BuildStateAsync(p), msg, kind));
+        }
+        catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+        catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
     }
 
     // Nạp người chơi → thực hiện hành động → lưu DB → trả trạng thái mới

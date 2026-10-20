@@ -302,7 +302,7 @@ public static class GameData
     public static readonly IReadOnlyList<StatDef> ExtraStats = new[]
     {
         new StatDef("crit",   "Bạo kích",  "Tỉ lệ đánh chí mạng (×1.5 sát thương), tính theo kỳ vọng.", 0),
-        new StatDef("speed",  "Thân pháp", "Đánh nhanh hơn: rút ngắn mỗi lượt giao chiến.", 1) };
+        new StatDef("speed",  "Thân pháp", "Rút ngắn lượt giao chiến; mỗi 1% cộng 1 điểm % né đòn/kỹ năng quái. Tổng né tối đa 50%.", 1) };
 
     /// <summary>Thân pháp gốc theo cảnh giới (%).</summary>
     /// <summary>Bộ đồ cảnh giới mới sinh từ bộ Xích Kim (kd_*): chỉ số × k, dùng chung ảnh kèm bộ lọc màu Tint (chờ ảnh thiết kế riêng).</summary>
@@ -472,7 +472,7 @@ public static class GameData
     private static ItemEffect ThienEffect(string group) => group switch
     {
         "weapon" => new("thien_loi",  "Thiên lôi",  4, 15,   60, "Mỗi lượt 15% cơ hội giáng sét 60% công, bỏ qua phòng thủ"),
-        "jewel"  => new("thien_menh", "Thiên mệnh", 4, 0.15, 0,  "Hệ số chí mạng +0.15 (×1.5 → ×1.65)"),
+        "jewel"  => new("thien_menh", "Thiên mệnh", 4, 15, 0,  "Tỉ lệ bạo kích +15%"),
         _        => new("thien_uy",   "Thiên uy",   4, 5,    0,  "Giảm 5% công của quái") };
     /// <summary>Hiệu ứng của món gốc b ở cấp q: Linh → Hấp linh · Huyền → theo loại món · Địa / Thiên → theo nhóm món.</summary>
     public static ItemEffect[]? EffectsFor(ItemDef b, int q)

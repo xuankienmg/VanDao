@@ -18,6 +18,7 @@ async function api(method, url){
   if (method !== 'GET') postSeq++;
   const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: method === 'POST' ? '{}' : undefined});
   const j = await r.json().catch(() => ({}));
+  if (r.status === 426 && j.update) window.showUpdateGate?.(j.update);    // bản game đã cũ: server từ chối, hiện màn hình cập nhật
   if (!r.ok){ const e = new Error(j.error || 'Không kết nối được máy chủ.'); e.status = r.status; throw e; }
   return j;
 }

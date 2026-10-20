@@ -1,0 +1,38 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../..'),env=vm.createContext({console});
+vm.runInContext(fs.readFileSync(path.join(root,'wwwroot/js/health-bars.js'),'utf8'),env);
+const shieldBattle={guard:32000,guardLeft:[18000,0,0],hits:3};
+assert.equal(env.battleGuardAt(shieldBattle,{name:'walk'}),32000);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'enter'},0),32000);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'fight',i:0,s:.84}),32000);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'fight',i:0,s:.85}),18000);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'fight',i:1,s:.1}),18000);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'fight',i:1,s:.85}),0);
+assert.equal(env.battleGuardAt(shieldBattle,{name:'enter'},1),18000,'New waves must not replenish shield');
+assert.equal(env.battleGuardAt(shieldBattle,{name:'win'}),0);
+assert.equal(env.battleGuardAt({guard:100,guardLeft:[70,60]},{name:'win'}),60);
+assert.equal(env.battleGuardAt({},{name:'enter'}),0);
+assert.equal(env.battleHpText(12345),'12,3K');assert.equal(env.battleHpText(3200000),'3,2Tr');assert.equal(env.battleHpText(-1),'0');
+let s=env.battleHpState('hero','trip1',100,100,0);assert.equal(s.fraction,1);
+s=env.battleHpState('hero','trip1',60,100,.016);assert.equal(s.fraction,.6);assert.equal(s.ghost,1);
+for(let i=0;i<60;i++)s=env.battleHpState('hero','trip1',60,100,.016);assert.equal(s.ghost,.6);
+s=env.battleHpState('hero','trip1',85,100,.016);assert.equal(s.ghost,.85);
+s=env.battleHpState('hero','trip1',15,100,.016,true);assert.equal(s.ghost,.15);
+s=env.battleHpState('hero','trip2',70,100,.016);assert.equal(s.ghost,.7);
+s=env.battleHpState('enemy','wave1',1,100,.01);s=env.battleHpState('enemy','wave2',100,100,.01);assert.equal(s.ghost,1);
+s=env.battleHpState('enemy','wave2',-20,0,NaN);assert.equal(s.fraction,0);assert.equal(s.current,0);
+let depth=0;const calls=[];const ctx=new Proxy({canvas:{width:420,height:300},measureText:t=>({width:t.length*5}),save(){depth++},restore(){depth--}}, {get(o,k){return k in o?o[k]:(...a)=>calls.push([k,...a])}});
+for(const x of [-100,100,500])for(const kind of ['hero','enemy','elite','boss']){
+ const rect=env.drawBattleHp(ctx,{x,y:-100,width:116,state:{current:250,max:1000,fraction:.25,ghost:.5},name:'Yêu Lang',kind,rage:1,viewportWidth:420});
+ assert.ok(rect.left>=4&&rect.left+rect.width<=416);assert.ok(rect.top>=16);assert.equal(depth,0);
+}
+assert.ok(calls.some(c=>c[0]==='fillText'&&c[1]==='250 / 1K'));
+calls.length=0;
+env.drawBattleHp(ctx,{x:100,y:40,width:100,state:{current:1000,max:1000,fraction:1,ghost:1},name:'Tu sĩ',shield:300,kind:'hero',viewportWidth:420});
+assert.ok(calls.some(c=>c[0]==='fillText'&&c[1]==='+300'));
+assert.ok(calls.some(c=>c[0]==='fillRect'&&c[3]===30&&c[4]===3),'Shield width must be relative to max HP');
+calls.length=0;
+env.drawBattleHp(ctx,{x:100,y:40,width:100,state:{current:1000,max:1000,fraction:1,ghost:1},name:'Tu sĩ',shield:0,kind:'hero',viewportWidth:420});
+assert.ok(!calls.some(c=>c[0]==='fillText'&&String(c[1]).startsWith('+')),'Depleted shield must not show a label');
+assert.ok(!calls.some(c=>c.slice(1).some(x=>typeof x==='number'&&!Number.isFinite(x))));
+console.log('PASS: HP and shield rendering, server phase timing, no wave refill, depleted shield, damage trails, healing, reduced motion and bounds.');

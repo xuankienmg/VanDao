@@ -116,9 +116,9 @@ function itemImg(k, cls = ''){
 const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
 let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
-// ---- Trang phục (skin): nút móc áo góc trên cột nhân vật → bảng chọn trang phục ----
+// ---- Trang phục (skin): nút trường bào góc trên cột nhân vật → bảng chọn trang phục ----
 let wardOpen = false;
-const WARD_SVG = '<svg viewBox="0 0 24 24"><path d="M12 7.5a2 2 0 1 1 2-2c0 1-.6 1.4-1.2 1.8-.5.3-.8.6-.8 1.2v.5"/><path d="M12 9l-8.4 6.2a1.3 1.3 0 0 0 .8 2.3h15.2a1.3 1.3 0 0 0 .8-2.3Z"/></svg>';
+const WARD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-4 2-3 6 4 2 2-4-1 12h10L16 9l2 4 4-2-3-6-4-2-3 4Z"/><path d="m9 3 5 7-3 4M15 3l-3 4M8 14h8"/></svg>';
 function wardrobeHtml(){
   const skins = DATA.skins || [], cur = S.skin || '';
   const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
@@ -395,7 +395,9 @@ function gearFxHtml(){
     return values.length ? `<p><b>${s.name}:</b> ${values.join(' · ')}</p>` : '';
   }).join('');
   const limits = (S.combatLimits || []).map(e => `<p>${e.name}: <b>${e.effective}${e.unit}</b> <small>(tổng ${e.raw}, trần ${e.cap})</small></p>`).join('');
-  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div><details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp tăng tốc độ thám hiểm, Vân bộ tăng né tránh.</small></details>`;
+  const divine=snapshot.divine;
+  const divineHtml=divine ? `<details class="iv-fx iv-divine" ${divine.tier ? 'open' : ''}><summary>◇ Thần thông bộ · ${divine.tier ? divine.name : 'Chưa kích hoạt'}</summary><p>${divine.setName ? `Bộ ${divine.setName} · ` : ''}Cần 10 món cùng bộ; chỉ kích hoạt mốc phẩm cao nhất.</p>${(divine.progress||[]).map(p=>`<p style="opacity:${p.active?1:.65}">${p.active?'◆':'◇'} <b>${p.quality} · ${p.name} (${p.count}/10)</b><br>${p.description}</p>`).join('')}</details>` : '';
+  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div>${divineHtml}<details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp vừa tăng tốc độ thám hiểm vừa tăng né tránh; cộng Vân bộ và công pháp, tổng né tối đa 50%.</small></details>`;
 }
 function itemSetHtml(it){
   const def = (DATA.equipmentSets || []).find(s => s.id === it.setId);
@@ -429,8 +431,8 @@ function itemCardHtml(k, src){
     <p class="sub">${it.itemLevel ? `Cấp ${it.itemLevel} · ` : ''}${qWord(it.rarity || 'common', true)} · ${it.kind || ''}${S.inventory[k] > 1 && !it.slot ? ` · có ${fmt(S.inventory[k])}` : ''}</p>
     ${it.slot ? `<p class="req ${okRealm ? '' : 'bad'}">Yêu cầu cảnh giới: ${DATA.realms[it.minRealm||0].name}</p>` : ''}
     ${it.slot ? [
-      ['Thuộc tính cơ bản', STAT_KEYS.slice(0, 3)],
-      ['Thuộc tính hỗ trợ', STAT_KEYS.slice(3)]
+      ['Thuộc tính cơ bản', STAT_KEYS.slice(0, 4)],   // kể cả Bạo kích (vũ khí): không còn dòng riêng
+      ['Thuộc tính hỗ trợ', STAT_KEYS.slice(4)]
     ].map(([title, keys]) => {
       const lines = keys.filter(([key]) => it[key]).map(([key, name, unit]) => `${name}: +${it[key]}${unit}`);
       return lines.length ? `<p class="sts"><b>${title}</b><br>${lines.join('<br>')}</p>` : '';

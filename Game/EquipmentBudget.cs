@@ -49,14 +49,13 @@ public static class EquipmentBudget
             : Math.Max(1, (int)Math.Round(Basic[quality] * p.B * share * coefficient, MidpointRounding.AwayFromZero));
         double Percent(double value) => Math.Round(value * Utility[quality] / 100, 1, MidpointRounding.AwayFromZero);
         var crit = Percent(p.C);
-        // Special cũ mô tả bạo kích của món mẫu, không còn đúng với hồ sơ mới.
-        var special = crit > 0 ? $"{item.Kind}: +{crit.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}% Bạo kích" : null;
+        // Bạo kích hiện trong nhóm "Thuộc tính cơ bản" của thẻ trang bị, không còn dòng riêng (Special).
         return item with
         {
             Atk = Stat(p.A, baseline.Atk / (155 * 3.3)),
             Def = Stat(p.D, baseline.Def / (155 * 2.45)),
             Hp = Stat(p.H, baseline.Hp / (155 * 4.25)),
-            CritPct = crit, SpeedPct = Percent(p.S), QiPct = Percent(p.Q), Special = special
+            CritPct = crit, SpeedPct = Percent(p.S), QiPct = Percent(p.Q), Special = null
         };
     }
 }
