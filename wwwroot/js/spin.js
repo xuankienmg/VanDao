@@ -2,6 +2,23 @@
 const SPIN_TICKET = 've_tai_xiu';
 const SPIN_SEG = 36;                     // 10 ô × 36°
 let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';
+let spinMode='gear';
+function spinModeButtons(){return `<div class="pet-spin-modes"><button type="button" data-sp-mode="gear" aria-pressed="${spinMode==='gear'}">Quay trang bị</button><button type="button" data-sp-mode="pet" aria-pressed="${spinMode==='pet'}">Quay Linh Thú</button></div>`;}
+function renderPetSpin(){
+  const ids=['thu_dan_pham','thu_dan_linh','thu_dan_huyen','thu_dan_dia','thu_dan_thien'],weights=DATA.petSpinWeights||[45,30,17,7,1];
+  $('pane-spin').innerHTML=`<div class="dd sp pet-spin"><header class="dd-top">${lcNav('spin')}${spinModeButtons()}<div class="dd-cult">Mỗi vé nhận một Thú Đản. Đưa vào ổ ấp để nhận linh thú.</div></header><section class="pet-spin-eggs">${ids.map((id,i)=>`<article>${ITEM[id]?itemImg(id):''}<b>${ITEM[id]?.name||id}</b><span>${weights[i]}%</span></article>`).join('')}</section><section class="pet-spin-controls"><p>Vé Tài Xỉu: <b>${fmt(spinTickets())}</b></p><button class="dd-all" data-sp-go="1" ${busy||spinBusy||spinTickets()<1?'disabled':''}>Quay ×1</button><button class="dd-all" data-sp-go="10" ${busy||spinBusy||spinTickets()<10?'disabled':''}>Quay ×10</button><button class="dd-all" data-sp-buy="1" ${busy||spinBusy||(S.inventory.linh_thach||0)<spinPrice()?'disabled':''}>Đổi vé · ${fmt(spinPrice())} linh thạch</button></section></div>`;
+}
+async function spinPetGo(n){
+  if(busy||spinBusy||spinTickets()<n)return;
+  spinBusy=true;busy=true;renderSpin();
+  try{
+    const res=await api('POST',`/api/players/${S.id}/spin?mode=pet&n=${n}`);
+    const outs=res.craft?.outputs?.length?res.craft.outputs:[res.craft.output];
+    const q=Math.max(...outs.map(o=>FUSE_R.indexOf(ITEM[o.item]?.rarity)),0);
+    setState(res.state);notifyHost('changed');spinShowPop({q,outs});
+  }catch(e){localLog(e.message,'bad');spinShowPop(null,e.message);}
+  finally{spinBusy=false;busy=false;renderSpin();}
+}
 const spinTickets = () => S.inventory[SPIN_TICKET] || 0;
 const spinPrice = () => DATA.spinPrice || 1e5;
 const spinW = () => DATA.spinWeights || [32, 25, 17, 11, 6.5, 4, 2.3, 1.4, .75, .05];
@@ -42,9 +59,10 @@ function spinDisc(){
 
 function renderSpin(){
   const pane = $('pane-spin'); if (!pane || !S) return;
+  if(spinMode==='pet'){renderPetSpin();return;}
   if (!$('spWheel')){
     pane.innerHTML = `<div class="dd sp">
-      <header class="dd-top">${lcNav('spin')}<div class="dd-cult" id="spCult"></div>
+      <header class="dd-top">${lcNav('spin')}${spinModeButtons()}<div class="dd-cult" id="spCult"></div>
         <div class="dd-stone">${itemImg('linh_thach')}<span>Linh thạch</span><b id="spStone"></b></div>
         <div class="dd-stone sp-tk" data-tip="Vé Tài Xỉu&#10;Mỗi vé quay 1 lần">${itemImg(SPIN_TICKET)}<span>Vé</span><b id="spTk"></b></div>
         <button class="sp-hbtn" id="spHist" aria-label="Lịch sử quay" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg><em id="spHistN"></em></button></header>
@@ -152,6 +170,7 @@ document.addEventListener('focusin', e => { if (e.target.id === 'spHist') spinHi
 document.addEventListener('focusout', e => { if (e.target.id === 'spHist') spinHistShow(false); });
 
 async function spinGo(n){
+  if(spinMode==='pet'){await spinPetGo(n);return;}
   if (busy || spinBusy || spinTickets() < n) return;
   spinBusy = true; busy = true; spinLast = null; renderSpin();
   let res;
@@ -179,6 +198,7 @@ async function spinGo(n){
 
 $('pane-spin').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || b.disabled || spinBusy) return;
+  if(b.dataset.spMode){if(busy)return;spinMode=b.dataset.spMode;spinKey='';renderSpin();return;}
   if (b.id === 'spHist'){ const p = $('spHistPop'); spinHistShow(!p || p.hidden); return; }
   if (b.dataset.spGo){ spinGo(+b.dataset.spGo); return; }
   if (b.dataset.spBuy !== undefined){ await act(`spin/buy?n=${b.dataset.spBuy}`); renderSpin(); }

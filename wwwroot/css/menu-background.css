@@ -1,7 +1,7 @@
 /* Main menu plate: static artwork, with dark surfaces above it for legible UI. */
 body.full,body.panel{
   background-color:#08131f;
-  background-image:linear-gradient(180deg,rgba(5,12,22,.24),rgba(5,12,22,.48) 55%,rgba(3,8,16,.76)),url('../img/backgrounds/menu-night-v1.webp');
+  background-image:linear-gradient(180deg,rgba(4,16,18,.22),rgba(4,16,18,.38) 55%,rgba(3,12,15,.65)),url('../img/backgrounds/concept-courtyard-v1.webp');
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -9,7 +9,7 @@ body.full,body.panel{
 }
 body.full{min-height:100vh;min-height:100dvh}
 body:is(.full,.panel) aside.book{
-  background:linear-gradient(135deg,rgba(8,18,32,.50),rgba(5,12,22,.72));
+  background:linear-gradient(135deg,rgba(7,24,25,.67),rgba(5,18,22,.83));
   border-color:rgba(171,145,87,.42);
   box-shadow:0 12px 44px rgba(0,0,0,.28),inset 0 0 0 1px rgba(205,181,117,.05);
 }

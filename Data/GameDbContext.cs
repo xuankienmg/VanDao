@@ -4,6 +4,7 @@ namespace VanDao.Data;
 
 public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
 {
+    public DbSet<Pet> Pets => Set<Pet>();
     public DbSet<Player> Players => Set<Player>();
     public DbSet<InventoryItem> Inventory => Set<InventoryItem>();
     public DbSet<LogEntry> Logs => Set<LogEntry>();
@@ -14,6 +15,7 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
         b.Entity<Player>(e =>
         {
             e.HasKey(p => p.Id);
+            e.HasMany(p => p.Pets).WithOne().HasForeignKey(p => p.PlayerId).OnDelete(DeleteBehavior.Cascade);
             e.Property(p => p.Name).HasMaxLength(64);
             e.HasMany(p => p.Inventory).WithOne().HasForeignKey(i => i.PlayerId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(p => p.Logs).WithOne().HasForeignKey(l => l.PlayerId).OnDelete(DeleteBehavior.Cascade);
@@ -62,6 +64,7 @@ public static class SchemaUpgrade
         // cột luyện đan / luyện thể thêm sau
         foreach (var (col, def) in new[]
         {
+            ("Hatch", "TEXT NOT NULL DEFAULT ''"),
             ("AlchemyExp", "INTEGER NOT NULL DEFAULT 0"), ("RefineRecipe", "INTEGER NOT NULL DEFAULT -1"),
             ("RefineStartAt", "TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'"), ("RefineEndAt", "TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'"),
             ("RefineLeft", "INTEGER NOT NULL DEFAULT 0"), ("RefineCatalyst", "INTEGER NOT NULL DEFAULT 0"),
@@ -92,6 +95,18 @@ public static class SchemaUpgrade
                 CONSTRAINT "PK_Equipment" PRIMARY KEY ("PlayerId", "Slot"),
                 CONSTRAINT "FK_Equipment_Players_PlayerId" FOREIGN KEY ("PlayerId") REFERENCES "Players" ("Id") ON DELETE CASCADE
             )
+            """;
+        cmd.ExecuteNonQuery();
+        cmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS "Pets" (
+                "Id" TEXT NOT NULL PRIMARY KEY, "PlayerId" TEXT NOT NULL, "DefId" TEXT NOT NULL,
+                "Level" INTEGER NOT NULL DEFAULT 1, "Exp" INTEGER NOT NULL DEFAULT 0,
+                "Form" INTEGER NOT NULL DEFAULT 0, "AptAtk" INTEGER NOT NULL DEFAULT 100,
+                "AptDef" INTEGER NOT NULL DEFAULT 100, "AptHp" INTEGER NOT NULL DEFAULT 100,
+                "Slot" INTEGER NOT NULL DEFAULT 0, "FoodSpent" INTEGER NOT NULL DEFAULT 0,
+                "CreatedAt" TEXT NOT NULL,
+                FOREIGN KEY ("PlayerId") REFERENCES "Players" ("Id") ON DELETE CASCADE);
+            CREATE INDEX IF NOT EXISTS "IX_Pets_PlayerId" ON "Pets" ("PlayerId");
             """;
         cmd.ExecuteNonQuery();
         ReplaceSpears(cmd);

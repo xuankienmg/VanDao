@@ -12,6 +12,10 @@ assert.equal(env.battleGuardAt(shieldBattle,{name:'enter'},1),18000,'New waves m
 assert.equal(env.battleGuardAt(shieldBattle,{name:'win'}),0);
 assert.equal(env.battleGuardAt({guard:100,guardLeft:[70,60]},{name:'win'}),60);
 assert.equal(env.battleGuardAt({},{name:'enter'}),0);
+assert.equal(env.battleGuardAt({guard:0,guardBefore:[80],guardLeft:[35]},{name:'fight',i:0,s:.5}),80,'Pet shield can start during combat');
+assert.equal(env.battleGuardAt({guard:0,guardBefore:[80],guardLeft:[35]},{name:'fight',i:0,s:.9}),35);
+assert.equal(env.battleGuardAt({guard:20,guardBefore:[100],guardLeft:[65]},{name:'win'}),65,'Pet shield can exceed initial shield');
+assert.equal(env.battleGuardAt({guard:0,guardBefore:[80],guardLeft:[35],pet:{casts:[{turn:0,guard:100}]}},{name:'fight',i:0,s:.5}),80,'Compressed casts must not double-count guard already in server snapshot');
 assert.equal(env.battleHpText(12345),'12,3K');assert.equal(env.battleHpText(3200000),'3,2Tr');assert.equal(env.battleHpText(-1),'0');
 let s=env.battleHpState('hero','trip1',100,100,0);assert.equal(s.fraction,1);
 s=env.battleHpState('hero','trip1',60,100,.016);assert.equal(s.fraction,.6);assert.equal(s.ghost,1);

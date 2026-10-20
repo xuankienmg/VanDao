@@ -20,11 +20,21 @@ Chạy `supabase.sql` trong thư mục này, rồi chạy lại `docs/leaderboar
 
 ## Quy trình phát hành bản mới
 
-1. Tăng `<Version>` trong `VanDao.csproj` (vd. 0.6.0 → 0.7.0), publish, nén và đưa lên Google Drive / OneDrive
-   (link chia sẻ "Bất kỳ ai có link").
-2. Supabase → Table Editor → `app_config`: đặt `latest_version = 0.7.0`, `download_url` = link mới, `message` = tóm tắt thay đổi.
-3. Khi muốn bắt buộc mọi người lên bản mới: đặt `min_version = 0.7.0`. Game bản cũ đang mở sẽ bị chặn trong tối đa
-   15 phút (hoặc ngay lần mở tiếp theo).
+1. Commit code của bản mới, rồi đánh tag (chưa cần push):
+   ```
+   git tag -a v0.7.3 -m "Sửa lỗi Chợ, thêm Hợp Thể"
+   ```
+   Không cần sửa `<Version>` trong `VanDao.csproj`: lúc build, target `VersionFromGitTag` lấy số từ tag gần nhất
+   (`git describe`), nên file .exe mang đúng 0.7.3. Dòng "Phiên bản game: 0.7.3" hiện trong log build để kiểm tra.
+2. Publish, nén và đưa lên Google Drive / OneDrive (link "Bất kỳ ai có link"). Link mới thì sửa `download_url` trong `app_config`.
+3. Push tag **sau khi** file đã tải được: `git push origin v0.7.3`. GitHub Actions (`.github/workflows/release-version.yml`)
+   tự đặt `latest_version = 0.7.3` và `message` = dòng đầu nội dung tag.
+4. Khi muốn bắt buộc mọi người lên bản mới: đặt `min_version = 0.7.3` bằng tay trong Supabase. Game bản cũ đang mở sẽ bị chặn
+   trong tối đa 15 phút (hoặc ngay lần mở tiếp theo).
+
+Cài workflow một lần: GitHub → repo → Settings → Secrets and variables → Actions → thêm `SUPABASE_URL` và
+`SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API → khóa `service_role`; khóa này toàn quyền DB, chỉ để ở secret,
+không bao giờ cho vào game hay appsettings.json).
 
 Tiến trình người chơi lưu ở `%LocalAppData%\VanDao\vandao.db` nên giữ nguyên khi đổi sang bản mới.
 

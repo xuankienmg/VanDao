@@ -25,7 +25,7 @@ public sealed class GameWindow : Form
     private readonly WindowSettings _s = WindowSettings.Load();
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly ContextMenuStrip _menu = new() { Renderer = Theme.Renderer, ShowImageMargin = true };
-    private readonly NotifyIcon _tray = new() { Text = "Người Lười Tu Tiên" };
+    private readonly NotifyIcon _tray = new() { Text = "Người Lười TT" };
     private readonly System.Windows.Forms.Timer _dockTimer = new() { Interval = 2000 };
     private readonly System.Windows.Forms.Timer _revealTimer = new() { Interval = 10000 };
     private PanelWindow? _panel;
@@ -36,7 +36,7 @@ public sealed class GameWindow : Form
     {
         _url = serverUrl.TrimEnd('/') + "/";
 
-        Text = "Người Lười Tu Tiên";
+        Text = "Người Lười TT";
         using (var iconStream = typeof(GameWindow).Assembly.GetManifestResourceStream("VanDao.AppIcon.ico")!)
             Icon = new Icon(iconStream);
         _tray.Icon = Icon;
@@ -334,7 +334,7 @@ public sealed class GameWindow : Form
         catch (WebView2RuntimeNotFoundException)
         {
             Hide();
-            _tray.ShowBalloonTip(8000, "Người Lười Tu Tiên",
+            _tray.ShowBalloonTip(8000, "Người Lười TT",
                 "Máy chưa cài Microsoft Edge WebView2 Runtime nên game mở trên trình duyệt. Thoát game từ biểu tượng ở khay hệ thống.",
                 ToolTipIcon.Info);
             Process.Start(new ProcessStartInfo(_url) { UseShellExecute = true });

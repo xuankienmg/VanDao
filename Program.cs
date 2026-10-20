@@ -106,7 +106,7 @@ public static class Program
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
             GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
-            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets));
+            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets, PetData.Definitions, PetData.PetSpinWeights));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -116,9 +116,12 @@ public static class Program
 
         api.MapGet("/players/current", async (GameService game) =>
         {
+            await MutationGate.WaitAsync();
+            try {
             var p = await game.CurrentAsync();
             await game.SaveAsync(p);
             return Results.Ok(new ActionResponse(await game.BuildStateAsync(p)));
+            } finally { MutationGate.Release(); }
         });
 
         api.MapGet("/players/{id:guid}", (Guid id, GameService game) =>
@@ -169,8 +172,16 @@ public static class Program
         // Tài Xỉu: đổi linh thạch lấy vé (n = số vé, 0 = tối đa) · quay vòng trang bị 10 phẩm (n = số lượt, tối đa 10)
         api.MapPost("/players/{id:guid}/spin/buy", (Guid id, int? n, GameService game) =>
             Run(id, game, p => game.BuySpinTicket(p, n ?? 1)));
-        api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, GameService game) =>
-            RunCraft(id, game, p => game.Spin(p, n ?? 1)));
+        api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, string? mode, GameService game) =>
+            RunCraft(id, game, p => mode == "pet" ? game.PetSpin(p, n ?? 1) : game.Spin(p, n ?? 1)));
+
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/feed", (Guid id, Guid petId, int? n, GameService game) => Run(id, game, p => game.Feed(p, petId, n ?? 1)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/evolve", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Evolve(p, petId)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/slot/{slot:int}", (Guid id, Guid petId, int slot, GameService game) => Run(id, game, p => game.SetPetSlot(p, petId, slot)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/release", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Release(p, petId)));
+        api.MapPost("/players/{id:guid}/hatch/now", (Guid id, int? slot, GameService game) => Run(id, game, p => game.HatchNow(p, slot ?? 0)));
+        api.MapPost("/players/{id:guid}/hatch/collect", (Guid id, int? slot, GameService game) => Run(id, game, p => game.CollectHatch(p, slot ?? 0)));
+        api.MapPost("/players/{id:guid}/hatch/{eggId}", (Guid id, string eggId, int? slot, GameService game) => Run(id, game, p => game.Hatch(p, eggId, slot ?? 0)));
 
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
@@ -240,6 +251,7 @@ public static class Program
 
         api.MapPost("/players/{id:guid}/reset", async (Guid id, GameService game) =>
         {
+            await MutationGate.WaitAsync();
             try
             {
                 var p = await game.LoadAsync(id);
@@ -247,12 +259,14 @@ public static class Program
                 return Results.Ok(new ActionResponse(await game.BuildStateAsync(fresh)));
             }
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+            finally { MutationGate.Release(); }
         });
     }
 
     // Như Run nhưng hành động bất đồng bộ (gọi Supabase); lỗi thì không lưu gì
     private static async Task<IResult> RunAsync(Guid id, GameService game, Func<Player, Task<(string? msg, string? kind)>> action)
     {
+        await MutationGate.WaitAsync();
         try
         {
             var p = await game.LoadAsync(id);
@@ -262,15 +276,19 @@ public static class Program
         }
         catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
         catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        finally { MutationGate.Release(); }
     }
 
     // Nạp người chơi → thực hiện hành động → lưu DB → trả trạng thái mới
     private static Task<IResult> Run(Guid id, GameService game, Func<Player, (string? msg, string? kind)> action) =>
         RunCraft(id, game, p => { var (m, k) = action(p); return (m, k, null); });
 
+    private static readonly SemaphoreSlim MutationGate = new(1, 1);
+
     // Như Run, kèm kết quả luyện chế (thành phẩm + nguyên liệu) để giao diện hiện thông báo
     private static async Task<IResult> RunCraft(Guid id, GameService game, Func<Player, (string? msg, string? kind, CraftResultDto? craft)> action)
     {
+        await MutationGate.WaitAsync();
         try
         {
             var p = await game.LoadAsync(id);
@@ -286,5 +304,6 @@ public static class Program
         {
             return Results.BadRequest(new { error = ex.Message });
         }
+        finally { MutationGate.Release(); }
     }
 }

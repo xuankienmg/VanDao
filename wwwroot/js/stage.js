@@ -23,6 +23,7 @@ function drawSceneInner(t, dt){
   const ph = fight ? battlePhase() : null;
   if (ph && ph.name === 'walk' && !reduce) scrollT += dt;
   if (fight && drawPixelBattle(t, dt, ph, r)) return;
+  if(typeof drawConceptBackdrop==='function'&&drawConceptBackdrop(ctx,W,H))return;
   // ảnh trận đánh chưa tải xong: nền trời đêm tạm thời
   const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0b1216'); g.addColorStop(1,'#1a2529');
   ctx.fillStyle = g; ctx.fillRect(0,0,W,H);

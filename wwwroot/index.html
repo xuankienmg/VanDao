@@ -5,7 +5,7 @@
   <link rel="apple-touch-icon" href="/img/app/icon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Người Lười Tu Tiên</title>
+<title>Người Lười TT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
@@ -23,6 +23,8 @@
 <link rel="stylesheet" href="css/version.css">
 <link rel="stylesheet" href="css/bag-warn.css">
 <link rel="stylesheet" href="css/menu-background.css">
+<link rel="stylesheet" href="css/concept-shell.css">
+<link rel="stylesheet" href="css/pet.css">
 </head>
 <body>
 
@@ -48,6 +50,7 @@
       <div class="actions">
         <button class="ib" id="btnBag" aria-label="Hành trang" data-tip="Hành trang&#10;Trang bị, chỉ số và vật phẩm"><img class="mi" src="img/ui_hanh_trang.png" alt=""></button>
         <button class="ib" id="btnPanel" aria-label="Bản đồ" data-tip="Bản đồ&#10;Chọn ải diệt yêu · khu vực Boss"><img class="mi" src="img/ui_ban_do.png" alt=""></button>
+        <button class="ib" id="btnPet" aria-label="Linh thú" data-tip="Linh thú&#10;Xuất chiến, nuôi dưỡng và ấp trứng"></button>
         <button class="ib gold" id="btnAdvance" aria-label="Đột phá" data-tip="Đột phá"><img class="mi" src="img/ui_dot_pha.png" alt=""></button>
         <button class="ib next" id="btnNext" aria-label="Ải tiếp theo" data-tip="Ải tiếp theo"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6"/><path d="M13 6l6 6-6 6"/></svg></button>
         <div class="trip walk" id="trip"><div class="trip-bar"><i></i></div><span id="tripText">Thám hiểm</span></div>
@@ -59,12 +62,14 @@
     </section>
 
     <aside class="book">
+      <header class="game-brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="m4 25 9-10 7 6 8-14 8 18M3 30h34M10 34h20"/><circle cx="29" cy="9" r="4"/></svg><b>Người Lười TT</b><small>Tu luyện · Ngự thú · Vấn đạo</small></header>
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-req" aria-selected="true" data-tab="req">Đột phá</button>
         <button class="tab" role="tab" id="tab-inv" aria-selected="false" data-tab="inv">Hành trang</button>
         <button class="tab" role="tab" id="tab-craft" aria-selected="false" data-tab="craft">Luyện  chế</button>
         <button class="tab" role="tab" id="tab-map" aria-selected="false" data-tab="map">Bản đồ</button>
         <button class="tab" role="tab" id="tab-skill" aria-selected="false" data-tab="skill">Công pháp</button>
+        <button class="tab" role="tab" id="tab-pet" aria-selected="false" data-tab="pet">Linh thú</button>
         <button class="tab" role="tab" id="tab-market" aria-selected="false" data-tab="market">Chợ</button>
         <button class="tab adm" role="tab" id="tab-admin" aria-selected="false" data-tab="admin" hidden>Admin</button>
       </div>
@@ -76,6 +81,7 @@
       <div class="pane" id="pane-spin" hidden></div>
       <div class="pane" id="pane-map" hidden></div>
       <div class="pane" id="pane-skill" hidden></div>
+      <div class="pane" id="pane-pet" hidden></div>
       <div class="pane" id="pane-market" hidden></div>
       <div class="pane" id="pane-rank" hidden></div>
       <div class="pane" id="pane-admin" hidden></div>
@@ -99,6 +105,7 @@
 <script src="js/fire-fx.js"></script>
 <script src="js/skills.js"></script>
 <script src="js/skill-preview.js"></script>
+<script src="js/scene-backdrop.js"></script>
 <script src="js/stage.js"></script>
 <script src="js/health-bars.js"></script>
 <script src="js/battle-feedback.js"></script>
@@ -107,6 +114,9 @@
 <script src="js/leaderboard.js"></script>
 <script src="js/market.js"></script>
 <script src="js/version.js"></script>
+<script src="js/pet.js"></script>
+<script src="js/pet-battle.js"></script>
+<script src="js/concept-navigation.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

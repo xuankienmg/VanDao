@@ -255,6 +255,6 @@ function renderAll(){
   $('hudStage').textContent = S.stageName;
   $('hudRate').textContent = `${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')} tu vi/giây`;
   const tipKey = tipEl && !tipEl.hidden && tipEl._for ? (tipEl._for.id || tipEl._for.dataset.equip || tipEl._for.dataset.unequip || '') : '';
-  renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderLog(); live();
+  renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderPet(); renderLog(); live();
   if (tipKey){ const el = document.getElementById(tipKey) || document.querySelector(`[data-equip="${tipKey}"],[data-unequip="${tipKey}"]`); if (el && el.matches(':hover')) showTip(el); }
 }

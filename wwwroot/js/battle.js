@@ -15,10 +15,14 @@ function drawPixelBattle(t, dt, ph, r){
   pctx.imageSmoothingEnabled = false;
 
   // ---- nền ----
+  const scenic=typeof conceptBackdropReady==='function'&&conceptBackdropReady();
+  pctx.clearRect(0,0,w,h);
+  if(!scenic){
   pctx.drawImage(L.bg, 0, 0);
   const off = reduce ? 0 : scrollT;
   for (const [lay, sp] of [[L.far, 6], [L.mid, 14]]) pctx.drawImage(lay.c, -Math.floor((off*sp) % lay.tile), 0);
   pctx.drawImage(L.mist, 0, 0);
+  }
   for (const m of pixMotes){                                     // bụi linh khí lơ lửng
     const mt=reduce?0:t;
     const y = m.y - ((mt*3 + m.ph*5) % 12), x = m.x + Math.sin(m.ph + mt*.7)*2;
@@ -194,6 +198,7 @@ function drawPixelBattle(t, dt, ph, r){
     if (!battleDone[fk]){ battleDone[fk] = 1; pfx.push({type:'label', x: heroX, y: g - sz - 8, text: 'Rút lui', col: '#e58472', life: 0, max: 1.3}); }
   }
   battleDivineFeedback(b,ph,battleDone,f=>pfx.push(f),heroX,g-sz+U(10));
+  if(typeof petBattleFeedback==='function')petBattleFeedback(b,ph,battleDone,f=>pfx.push(f),heroX-U(14),g-sz);
   if (wv && ph.name === 'enter' && wvI > 0){                                         // quái đợt sau bước vào
     const ek = ph.trip + ':wave' + wvI;
     if (!battleDone[ek]){ battleDone[ek] = 1; if (MODE !== 'strip') pfx.push({type:'label', x: wolfX, y: g - msz - 20, text: elite ? 'Tinh anh xuất hiện!' : 'Đợt ' + (wvI + 1), col: elite ? '#c08aff' : '#f0e2bc', life: 0, max: 1.1}); }
@@ -320,6 +325,7 @@ function drawPixelBattle(t, dt, ph, r){
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
+  if(scenic)drawConceptBackdrop(ctx,cv.width,cv.height);
   ctx.drawImage(pix, 0, 0, w, h, 0, 0, cv.width, cv.height);
   ctx.restore();
 
@@ -333,6 +339,7 @@ function drawPixelBattle(t, dt, ph, r){
   if (refHero && !reduce && ph.name !== 'walk' && hsx === 1 && hsy === 1 && hrot === 0) hsy = 1 + .012 * Math.sin(t * 2.6);   // đứng chờ: thở nhẹ
   if (refHero) hcBattleDraw(refHero, {ph, hx, hy, hAlpha, hFlash, g, sz, sx, sy, wolfX, t, casts: castsNow, basic: b.basic, sqx: hsx, sqy: hsy, rot: hrot,
     cast: b.basic === 'hoa_cau'});
+  if(typeof drawPetCompanion==='function')drawPetCompanion(ctx,b,ph,{heroX:hx,ground:g,heroSize:sz,sx,sy,time:t,reduced:reduce,width:W,big});
   // Trạng thái nét cao sau sprite, trước số sát thương và HUD.
   const status=(kind,x,y,width,height,strength=1)=>drawBattleStatus(ctx,{kind,x:x*sx,y:y*sy,width:width*sx,height:height*sy,strength,time:t,reduced:reduce});
   if(ph.name!=='walk'&&hAlpha>.5){

@@ -1,0 +1,46 @@
+# Đánh tag vX.Y.Z trên GitHub → cập nhật latest_version trong bảng app_config (Supabase) thành X.Y.Z.
+# Game bản thấp hơn sẽ hiện thanh "Đã có bản mới". min_version (bắt buộc cập nhật) vẫn chỉnh tay trong Supabase.
+#
+# Cần 2 secret (GitHub → Settings → Secrets and variables → Actions):
+#   SUPABASE_URL               https://xxxx.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY  khóa service_role (Supabase → Project Settings → API). KHÔNG dùng khóa này trong game.
+name: Cập nhật phiên bản trên Supabase
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+jobs:
+  latest-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lấy phiên bản từ tag
+        id: v
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error::Tag phải có dạng vX.Y.Z, nhận được $GITHUB_REF_NAME"; exit 1; fi
+          # VanDao.csproj tự lấy Version từ tag này lúc build (target VersionFromGitTag) nên không cần so khớp
+          # lời nhắn hiện kèm thông báo bản mới: dòng đầu nội dung tag (git tag -a v0.7.3 -m "Sửa lỗi Chợ"), tag thường thì để trống
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          MSG=$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME")
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          { echo "message<<EOF_MSG"; echo "$MSG"; echo "EOF_MSG"; } >> "$GITHUB_OUTPUT"
+
+      - name: Cập nhật app_config.latest_version
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VERSION: ${{ steps.v.outputs.version }}
+          MESSAGE: ${{ steps.v.outputs.message }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then echo "::error::Thiếu secret SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY"; exit 1; fi
+          BODY=$(jq -n --arg v "$VERSION" --arg m "$MESSAGE" '{latest_version: $v, message: $m}')   # tag không có lời nhắn → xóa lời nhắn cũ
+          RES=$(curl -sS -w '\n%{http_code}' -X PATCH "${SUPABASE_URL%/}/rest/v1/app_config?id=eq.1" \
+            -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" -H "Prefer: return=representation" -d "$BODY")
+          CODE=$(echo "$RES" | tail -1); OUT=$(echo "$RES" | sed '$d')
+          echo "$OUT"
+          if [ "$CODE" != "200" ] || [ "$OUT" = "[]" ]; then echo "::error::Supabase trả về $CODE — kiểm tra secret SUPABASE_SERVICE_ROLE_KEY (phải là khóa service_role) và đã chạy docs/version/supabase.sql"; exit 1; fi
+          echo "### app_config.latest_version = $VERSION" >> "$GITHUB_STEP_SUMMARY"

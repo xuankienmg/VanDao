@@ -112,6 +112,8 @@ public class Player
     public int BodyHp { get; set; }
     public int BodyDef { get; set; }
 
+    public string Hatch { get; set; } = "";
+    public List<Pet> Pets { get; set; } = new();
     public List<InventoryItem> Inventory { get; set; } = new();
     public List<LogEntry> Logs { get; set; } = new();
     public List<EquippedItem> Equipment { get; set; } = new();
@@ -161,4 +163,19 @@ public class EquippedItem
     public Guid PlayerId { get; set; }
     public string Slot { get; set; } = "";
     public string ItemId { get; set; } = "";
+}
+public class Pet
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PlayerId { get; set; }
+    public string DefId { get; set; } = "";
+    public int Level { get; set; } = 1;
+    public int Exp { get; set; }
+    public int Form { get; set; }
+    public int AptAtk { get; set; } = 100;
+    public int AptDef { get; set; } = 100;
+    public int AptHp { get; set; } = 100;
+    public int Slot { get; set; }
+    public int FoodSpent { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -7,7 +7,7 @@ public partial class GameService
 {
     /// <summary>Linh thạch (tiền tệ của chợ), chìa khóa Boss và vé quay không giao dịch được.</summary>
     public static bool Tradable(ItemDef d, bool canSellTickets = false) =>
-        d.Id == GameData.SpinTicket ? canSellTickets : d.Type is not ("stone" or "key" or "ticket");
+        d.Id == GameData.SpinTicket ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "egg" or "petfood" or "petmaterial");
 
     public static bool CanSellSpinTickets(Player p, bool development) =>
         development && (p.Tainted || p.Admin.Length > 0 || p.AdminPoints > 0);

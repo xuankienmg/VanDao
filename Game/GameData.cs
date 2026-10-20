@@ -598,7 +598,7 @@ public static class GameData
         return null;
     }
 
-    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(GearVariants)
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(PetData.Items).Concat(GearVariants)
         .Select(it => PixelIcons.Contains(it.Id) ? it with { Icon = $"img/{it.Id}.png" } : it)
         .Select(it => it with { Sell = SellPrice(it) }).ToList();
 
@@ -1037,6 +1037,9 @@ public static class GameData
         id.StartsWith("pha_chuong_dan_") && int.TryParse(id["pha_chuong_dan_".Length..], out var r) ? r : -1;
     /// <summary>Đan phương. Phá Chướng Đan cảnh giới r: 3 viên đan đột phá của r + 3 linh thảo bậc r + 1 (BreakHerbs) + linh thạch bằng phí đột phá.</summary>
     public static readonly IReadOnlyList<BrewDef> Brews = new[] {
+        new BrewDef("linh_thu_dan", new() { ["tay_tuy_thao"] = 2, ["linh_thach"] = 100 }),
+        new BrewDef("hoa_hinh_dan", new() { ["thien_nien_sam"] = 3, ["linh_thach"] = 1000 }),
+        new BrewDef("than_thu_huyet", new() { ["cuu_diep_hon_lien"] = 5, ["linh_thach"] = 5000 }),
         new BrewDef("tay_tuy_dan", new() { ["tay_tuy_thao"] = 5, ["linh_thach"] = 1000 }),
         new BrewDef("ngo_dao_dan", new() { ["thien_nien_sam"] = 5, ["cuu_diep_hon_lien"] = 3, ["linh_thach"] = 1000 }) }
         .Concat(Enumerable.Range(0, BreakHerbs.Length).Select(r => new BrewDef(BreakPillId(r), new()

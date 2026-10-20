@@ -189,7 +189,8 @@ function openTab(name, exact){
   if (LC_SUBS.includes(name)) lcSub = name;
   const top = name === 'fuse' || name === 'sell' || name === 'spin' ? 'craft' : name;
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === top));
-  ['req','inv','craft','fuse','sell','spin','map','skill','market','rank','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
+  ['req','inv','craft','fuse','sell','spin','map','skill','pet','market','rank','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
+  if (name === 'pet') renderPet();
   if (name === 'rank') loadRank();                              // bảng xếp hạng: tải khi mở tab
   if (name === 'market') loadMarket();                          // Chợ: tải khi mở tab
   document.querySelectorAll('[data-lc]').forEach(b => { b.classList.toggle('on', b.dataset.lc === name); b.setAttribute('aria-selected', b.dataset.lc === name); });
@@ -220,6 +221,7 @@ async function boot(){
     return;
   }
   resize(); addEventListener('resize', resize);
+  $('btnPet').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'pet'}) : openTab('pet');
   $('btnBag').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'inv'}) : openTab('inv');
   document.body.appendChild($('tip')); // tooltip phải nằm ngoài vùng bị ẩn ở chế độ bảng
   document.body.appendChild($('burst'));
@@ -228,7 +230,7 @@ async function boot(){
   // đột phá đại cảnh giới diễn ra trong tab Đột phá (trận pháp, 5 giai đoạn, kết quả); lên tầng thì làm ngay
   // nút Đột phá ngoài màn hình chính: luôn mở tab Đột phá (đột phá thật bấm trong tab, có trận pháp + kết quả)
   $('btnAdvance').onclick = () => MODE === 'strip' ? notifyHost('open-panel', {tab:'req'}) : openTab('req');
-  initDan(); initMap(); initBreak(); initSkill(); initMarket();
+  initDan(); initMap(); initBreak(); initSkill(); initMarket(); initPet();
   document.addEventListener('contextmenu', e => { if (MODE !== 'strip') e.preventDefault(); });
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => openTab(t.dataset.tab));
   if (Q.get('tab')) openTab(Q.get('tab'));
