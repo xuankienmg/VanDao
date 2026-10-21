@@ -234,6 +234,8 @@ public sealed class LauncherForm : Form
             downloadUrl = check.DownloadUrl,
             assetSize = check.AssetSize,
             changelog = check.Changelog,
+            releaseTitle = check.ReleaseTitle,
+            publishedAt = check.PublishedAt,
             statusText = check.StatusText,
             errorMessage = check.ErrorMessage,
 

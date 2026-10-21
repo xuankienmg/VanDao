@@ -132,10 +132,10 @@ public partial class GameService
     }).ToList(),Hatches(p).Select(h=>new HatchDto(h.Slot,h.Egg,h.Ready,Math.Max(0,(int)Math.Ceiling((h.Ready-DateTime.UtcNow).TotalSeconds)),h.Ready<=DateTime.UtcNow,InstantCost(h.Ready))).ToList(),PetData.Capacity(p.Realm),PetLevelCap(p),PetData.GuardSlots(p.Realm),PetData.HatchSlots(p.Realm),PetData.StarCost,PetData.StarRecipes);
     public (string msg,string kind,CraftResultDto craft) PetSpin(Player p,int n,DateTimeOffset? now=null)
     {
-        n=Math.Clamp(n,1,10);var quota=CheckSpinDaily(p,n,now);if(p.Count(GameData.PetSpinTicket)<n)throw new GameException("Không đủ Vé Linh Thú.");
+        n=Math.Clamp(n,1,10);var quota=CheckSpinDaily(p,n,now,pet:true);if(p.Count(GameData.PetSpinTicket)<n)throw new GameException("Không đủ Vé Linh Thú.");
         var outs=Enumerable.Range(0,n).Select(_=>PetData.EggIds[GameData.RollQuality(PetData.PetSpinWeights)]).ToArray();
         var need=outs.Distinct().Count(x=>p.Count(x)==0);if(BagCap(p)-BagUsed(p)+(p.Count(GameData.PetSpinTicket)==n?1:0)<need)throw new GameException("Hành trang đầy.");
-        RecordSpinDaily(p,n,quota);
+        RecordSpinDaily(p,n,quota,pet:true);
         p.Add(GameData.PetSpinTicket,-n);foreach(var egg in outs)p.Add(egg,1);
         p.SpinHistory=string.Join(';',p.SpinHistory.Split(';',StringSplitOptions.RemoveEmptyEntries).Prepend($"{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}|{string.Join(',',outs)}").Take(GameData.SpinHistoryKeep));
         var got=outs.GroupBy(x=>x).Select(g=>new ItemQtyDto(g.Key,g.Count())).ToList();return ("Đã quay Linh Thú.","good",new("spin:pet",got[0],new(){new(GameData.PetSpinTicket,n)},got));

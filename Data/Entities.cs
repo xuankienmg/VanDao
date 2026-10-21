@@ -70,6 +70,8 @@ public class Player
     /// <summary>Ngày quay theo UTC+7 và tổng lượt trang bị + linh thú đã dùng trong ngày.</summary>
     public string SpinDay { get; set; } = "";
     public int SpinDailyUsed { get; set; }
+    public string PetSpinDay { get; set; } = "";
+    public int PetSpinDailyUsed { get; set; }
 
     // ---- Bảng xếp hạng online ----
     /// <summary>Khóa bí mật ngẫu nhiên của nhân vật trên bảng xếp hạng (server chỉ giữ SHA-256). Giữ nguyên khi tu lại từ đầu.</summary>

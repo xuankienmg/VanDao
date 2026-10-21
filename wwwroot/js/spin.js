@@ -11,7 +11,9 @@ let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';
 let spinMode='gear';
 function spinModeButtons(){return `<div class="pet-spin-modes"><button type="button" data-sp-mode="gear" aria-pressed="${spinMode==='gear'}">Quay trang bị</button><button type="button" data-sp-mode="pet" aria-pressed="${spinMode==='pet'}">Quay Linh Thú</button></div>`;}
 const spinTickets = () => S.inventory[spinCfg().ticket] || 0;
-const spinRemaining = () => Math.max(0, S.spinDaily?.remaining ?? 100);
+const spinQuota = () => (spinMode === 'pet' ? S.petSpinDaily : S.spinDaily);
+const spinDailyLimit = () => spinQuota()?.limit ?? (spinMode === 'pet' ? 300 : 1000);
+const spinRemaining = () => Math.max(0, spinQuota()?.remaining ?? spinDailyLimit());
 const spinPrice = () => spinCfg().price;
 const spinW = () => DATA.spinWeights || [32, 25, 17, 11, 6.5, 4, 2.3, 1.4, .75, .05];
 const spinPct = w => `${w >= 1 ? +w.toFixed(1) : +w.toFixed(2)}%`.replace('.', ',');
@@ -82,12 +84,12 @@ function renderSpin(){
     : `<span>Mỗi <b>${fmt(price)}</b> linh thạch đổi <b>1 vé</b> · mỗi vé quay 1 lần nhận 1 trang bị theo cảnh giới <b>${S.realmName}</b>${set ? ` (bộ <b>${set}</b>)` : ''} · càng lên cao càng hiếm</span>`;
   $('spStone').textContent = `× ${fmt(st)}`;
   $('spTk').textContent = `× ${fmt(tk)}`;
-  const off = spinBusy || busy, remaining = spinRemaining(), dailyLimit = S.spinDaily?.limit ?? 100;
+  const off = spinBusy || busy, remaining = spinRemaining(), dailyLimit = spinDailyLimit();
   $('spHub').disabled = off || tk < 1 || remaining < 1;
   $('spWheel').classList.toggle('spinning', spinBusy);
   $('spAct').innerHTML = `<button class="dd-synth-btn" data-sp-go="1" ${off || tk < 1 || remaining < 1 ? 'disabled' : ''}>Quay ×1</button>
     <button class="dd-all" data-sp-go="10" ${off || tk < 10 || remaining < 10 ? 'disabled' : ''} data-tip="Quay 10 lượt một lần&#10;Cần 10 vé, 10 lượt quay trong ngày và 10 ô trống trong hành trang">Quay ×10</button>
-    <p class="dd-fee sp-daily" role="status">Còn <b>${fmt(remaining)}/${fmt(dailyLimit)}</b> lượt hôm nay · dùng chung hai vòng quay · đặt lại 00:00 (giờ Việt Nam)</p>
+    <p class="dd-fee sp-daily" role="status">Còn <b>${fmt(remaining)}/${fmt(dailyLimit)}</b> lượt hôm nay · tính riêng từng vòng quay · đặt lại 00:00 (giờ Việt Nam)</p>
     <p class="dd-fee">${tk ? `Còn ${fmt(tk)} vé` : '<span class="miss">Chưa có vé</span> · đổi vé ở cột bên phải'} · ${cfg.what} nhận vào hành trang</p>`;
   const btn = (n, lab) => `<button class="dd-all" data-sp-buy="${n}" ${off || canBuy < Math.max(1, n) ? 'disabled' : ''}>${lab}</button>`;
   $('spBuy').innerHTML = `<p class="dd-sec">Đổi vé quay</p>

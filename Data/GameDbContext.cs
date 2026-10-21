@@ -88,6 +88,7 @@ public static class SchemaUpgrade
             ("ElixirPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"), ("Redeemed", "TEXT NOT NULL DEFAULT ''"), ("SpinHistory", "TEXT NOT NULL DEFAULT ''"),
             ("SpinDay", "TEXT NOT NULL DEFAULT ''"), ("SpinDailyUsed", "INTEGER NOT NULL DEFAULT 0"),
+            ("PetSpinDay", "TEXT NOT NULL DEFAULT ''"), ("PetSpinDailyUsed", "INTEGER NOT NULL DEFAULT 0"),
             ("Chapter", "INTEGER NOT NULL DEFAULT 0"), ("ChapterMax", "INTEGER NOT NULL DEFAULT 0"), ("MapVer", "INTEGER NOT NULL DEFAULT 0"),
             ("Diff", "INTEGER NOT NULL DEFAULT 0"), ("DiffProg", "TEXT NOT NULL DEFAULT ''"), ("Cleared", "TEXT NOT NULL DEFAULT ''"),
             ("LbSecret", "TEXT NOT NULL DEFAULT ''"), ("Tainted", "INTEGER NOT NULL DEFAULT 0"), ("Flagged", "INTEGER NOT NULL DEFAULT 0"),
