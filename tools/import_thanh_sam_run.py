@@ -8,7 +8,9 @@ from PIL import Image
 src = Image.open(sys.argv[1]).convert('RGBA')
 out = Path(__file__).resolve().parents[1] / 'wwwroot/img/skin'
 out.mkdir(parents=True, exist_ok=True)
-src.save(out / 'luyenkhi_run_source.png')
+source_art=Path(__file__).resolve().parents[1] / 'tools/art-sources/skin'
+source_art.mkdir(parents=True,exist_ok=True)
+src.save(source_art / 'luyenkhi_run_source.png')
 frames = []
 for left, right in [(15,180),(185,355),(365,535),(535,705),(710,850),(850,1024)]:
     a = np.array(src.crop((left,130,right,390)))

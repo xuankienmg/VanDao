@@ -8,7 +8,9 @@ skin,source=sys.argv[1:3]
 root=Path(__file__).resolve().parents[1]
 out=root/'wwwroot/img/skin'
 im=Image.open(source).convert('RGBA')
-im.save(out/f'{skin}_flight_source.png')
+source_art=root/'tools/art-sources/skin'
+source_art.mkdir(parents=True,exist_ok=True)
+im.save(source_art/f'{skin}_flight_source.png')
 arr=np.array(im); mask=arr[:,:,3]>40; seen=np.zeros(mask.shape,bool); parts=[]
 h,w=mask.shape
 for yy,xx in zip(*np.nonzero(mask)):

@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image
 
 root=Path(__file__).resolve().parents[1]
-im=Image.open(root/'wwwroot/img/skin/luyenkhi_idle_breeze_sheet.png').convert('RGBA')
+im=Image.open(root/'tools/art-sources/skin/luyenkhi_idle_breeze_sheet.png').convert('RGBA')
 frames=[]
 scale=None
 for row in range(2):
