@@ -8,6 +8,9 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     private double TalentValue => definition.TalentValue * _starScale;
     private int _turn, _markUntil = -1, _downUntil = -1, _dodgeUntil = -1, _reflectUntil = -1;
     private int _burnLeft, _hotLeft;
+    private int _ownerTurns;
+    public bool SkillReady => _ownerTurns >= definition.SkillEvery;
+    public void RecordOwnerTurn() => _ownerTurns = Math.Min(definition.SkillEvery, _ownerTurns + 1);
     public int Shield { get; private set; }
     public bool Burning => _burnLeft > 0;
     private double Tier(double a, double b, double c) => (_form == 0 ? a : _form == 1 ? b : c) * _starScale;
@@ -60,6 +63,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     }
     public PetCastDto Cast(int turn, ref int hp, int monsterHp, int monsterMaxHp, int defense, double takeK)
     {
+        _ownerTurns = 0; // Only a real cast consumes the accumulated turns; wave transitions do not.
         _turn = turn;
         var damage = 0; var heal = 0; var guard = 0; var hits = new List<int>();
         void Strike(double percent, double pen = 0)

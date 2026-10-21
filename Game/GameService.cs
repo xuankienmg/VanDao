@@ -1520,7 +1520,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             extraDamage.Add(extraHit); extraCritical.Add(extraCrit);
             extras.Add(extra);
             rages.Add(rage);
-            if(petCombat is not null && petDef is not null && monHp > dmg && (t+1)%petDef.SkillEvery==0)
+            petCombat?.RecordOwnerTurn();
+            if(petCombat is not null && petDef is not null && monHp > dmg && petCombat.SkillReady)
             {
                 var cast = petCombat.Cast(t, ref heroHp, monHp - dmg, m.Hp, m.Def, takeK);
                 dmg += cast.Dmg; guardLeft += cast.Guard;
