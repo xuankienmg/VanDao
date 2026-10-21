@@ -167,6 +167,7 @@ function renderAdmin(force){
     <section><h4>Thám hiểm & trận đánh</h4>
       <div class="adm-row"><button data-adm="explore">Kết thúc chuyến ngay</button><button data-adm="unlock">Mở toàn bộ ải + chìa khóa Boss</button></div></section>
     <section><h4>Nhân vật</h4>
+      <div class="adm-row"><button data-adm="clearflag">Gỡ cờ cảnh báo dữ liệu</button></div>
       <div class="adm-row"><button data-adm="resetall">Reset nhân vật về từ đầu</button></div>
       <small>Xóa toàn bộ tu vi, cảnh giới, vật phẩm, trang bị, kỹ năng, ải và nhật ký. Giữ tên và cờ chế độ admin.</small></section>
   </div>`;

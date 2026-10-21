@@ -9,7 +9,8 @@ const SKIN_ACTOR_SHEETS = {
   'img/hero_trucco.png': {id:'trucco', bodyHeight:336, flight:'sword'},
   'img/hero_kimdan.png': {id:'kimdan', bodyHeight:305, flight:'sword'},
   'img/hero_luyenhu.png': {id:'luyenhu', bodyHeight:360, flight:'air'},
-  'img/hero_hopthe.png': {id:'hopthe', bodyHeight:259, flight:'air', airSource:'flight'}
+  'img/hero_hopthe.png': {id:'hopthe', bodyHeight:259, flight:'air', airSource:'flight'},
+  'img/hero_hopthe_nu.png': {id:'hopthe_nu', bodyHeight:290, flight:'air', airSource:'flight', inventorySrc:'img/skin/hopthe_nu_idle.png'}
 };
 function skinActorFlight(){ return SKIN_ACTOR_SHEETS[skinArt('hero')]?.flight || null; }
 function skinActorLoop(action, t){

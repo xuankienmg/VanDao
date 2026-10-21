@@ -151,7 +151,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) + p.ElixirPoints,
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p));
+            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -513,6 +513,25 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
 
     public static readonly string[] AdminFlags = { "god", "break", "fast", "fast2", "fast3", "fast5", "boss", "map" };
+    public async Task<(string? msg, string? kind)> AdminClearDataFlagAsync(Player p, string? targetId = null)
+    {
+        if (!Player.AdminEnabled) throw new GameException("Chỉ admin được gỡ cờ dữ liệu.");
+        if (!string.IsNullOrWhiteSpace(targetId))
+        {
+            if (!Guid.TryParse(targetId, out var target) || target == Guid.Empty) throw new GameException("ID người chơi không hợp lệ.");
+            if (target != p.Id)
+            {
+                if (lb is null) throw new GameException("Chưa cấu hình bảng xếp hạng online.");
+                await lb.ClearDataFlagAsync(target);
+                var local = await db.Players.SingleOrDefaultAsync(x => x.Id == target);
+                if (local is not null) local.Flagged = false;
+                return Log(p, $"[Admin] Đã gỡ cờ cảnh báo dữ liệu cho người chơi {target}.", "good");
+            }
+        }
+        if (lb is not null) await lb.ClearDataFlagAsync(p);
+        p.Flagged = false;
+        return Log(p, "[Admin] Đã gỡ cờ cảnh báo dữ liệu. Giữ nguyên trạng thái từng sử dụng admin.", "good");
+    }
     /// <summary>Admin thám hiểm nhanh: hệ số tăng tốc chuyến thám hiểm (×2 · ×3 · ×5; cờ cũ "fast" = ×3), 1 = tắt.</summary>
     private static double FastMult(Player p) => p.Cheat("fast5") ? 5 : p.Cheat("fast3") || p.Cheat("fast") ? 3 : p.Cheat("fast2") ? 2 : 1;
 
@@ -1005,12 +1024,14 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     public async Task<Player> ResetAsync(Player p)
     {
         var spinQuota = SpinDailyFor(p);
+        var petSpinQuota = SpinDailyFor(p, pet: true);
         db.Players.Remove(p);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
         // giữ nguyên Id để client không phải đổi
         var fresh = await CreateAsync(p.Name, p.Id);
         RecordSpinDaily(fresh, 0, spinQuota);
+        RecordSpinDaily(fresh, 0, petSpinQuota, pet: true);
         fresh.LbSecret = p.LbSecret;   // giữ khóa bảng xếp hạng để ghi đè đúng dòng cũ
         AddLog(fresh, "Tán công trùng tu, bắt đầu lại từ Luyện Khí tầng 1.");
         await db.SaveChangesAsync();

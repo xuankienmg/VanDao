@@ -58,3 +58,6 @@
 .lb-flag{color:#ff4d4d;font-weight:800;font-size:14px;margin-left:3px;cursor:help;vertical-align:super;line-height:0;text-shadow:0 0 4px rgba(255,60,60,.5)}
 .lb-flag-note{margin:6px 2px 0;font-size:10.5px;color:#c9a8a0}
 .lb-flag-note .lb-flag{vertical-align:baseline;margin:0 3px 0 0;font-size:13px;cursor:default}
+
+/* Four ranking categories wrap on compact game windows. */
+.lb-tabs{flex-wrap:wrap;gap:6px 14px}.lb-top{flex-wrap:wrap}

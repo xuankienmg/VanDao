@@ -220,7 +220,9 @@ public static class Program
 
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
-            Player.AdminEnabled ? Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1))
+            Player.AdminEnabled ? (action == "clearflag"
+                ? RunAsync(id, game, p => game.AdminClearDataFlagAsync(p, arg))
+                : Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)))
                 : Task.FromResult<IResult>(Results.Json(new { error = "Admin mode chỉ có ở môi trường phát triển." }, statusCode: StatusCodes.Status403Forbidden)));
 
         // môi trường: giao diện chỉ bật admin mode khi dev

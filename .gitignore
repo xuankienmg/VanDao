@@ -9,3 +9,5 @@ build-check/
 NguoiLuoiTuTien.exe
 launcher_settings.json
 GEMINI.md
+# Local development tools, previews and generated art sources.
+/tools/

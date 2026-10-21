@@ -25,6 +25,8 @@ public class UpdateCheckResult
     public string? DownloadUrl { get; set; }
     public long AssetSize { get; set; }
     public string? Changelog { get; set; }
+    public string? ReleaseTitle { get; set; }
+    public string? PublishedAt { get; set; }
     public string? ErrorMessage { get; set; }
     public string StatusText { get; set; } = "";
 
@@ -177,6 +179,8 @@ public static class LauncherLogic
 
             foreach (var release in doc.RootElement.EnumerateArray())
             {
+                if (release.TryGetProperty("draft", out var draft) && draft.GetBoolean()) continue;
+                if (release.TryGetProperty("prerelease", out var prerelease) && prerelease.GetBoolean()) continue;
                 var tagName = release.TryGetProperty("tag_name", out var tn) ? (tn.GetString() ?? "") : "";
                 var body = release.TryGetProperty("body", out var b) ? (b.GetString() ?? "") : "";
 
@@ -242,6 +246,8 @@ public static class LauncherLogic
                         maxFoundGameVer = ver;
                         result.LatestVersion = verStr;
                         result.Changelog = body;
+                        result.ReleaseTitle = release.TryGetProperty("name", out var name) ? name.GetString() : tagName;
+                        result.PublishedAt = release.TryGetProperty("published_at", out var published) ? published.GetString() : null;
 
                         // Tìm asset zip của game (không phải asset launcher)
                         FindGameZipAsset(release, !string.IsNullOrWhiteSpace(token), out var url, out var size);
@@ -270,7 +276,7 @@ public static class LauncherLogic
             else
             {
                 result.HasUpdate = false;
-                result.LatestVersion = settings.CurrentVersion;
+                result.LatestVersion ??= settings.CurrentVersion;
                 result.StatusText = "Trò chơi đang ở phiên bản mới nhất";
             }
 

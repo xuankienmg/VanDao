@@ -108,7 +108,7 @@ public record StateDto(
     string SpinHistory = "",
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
-    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
 
 public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 

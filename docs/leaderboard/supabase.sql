@@ -41,12 +41,22 @@ create or replace view public.leaderboard_public as
 select player_id, name, realm, stage, level, qi, realm_name, stage_name, power, updated_at,
        row_number() over (order by (case when not flagged and clean_realm <= 10 then 0 else 1 end), realm desc, stage desc, qi desc) as realm_rank,
        row_number() over (order by (case when not flagged and clean_power <= 10 then 0 else 1 end), power desc)                     as power_rank,
-       equipment, stats, flagged
+       equipment, stats, flagged,
+       progress, pet_power,
+       row_number() over (order by (case when not flagged and clean_progress <= 10 then 0 else 1 end), progress desc, power desc, player_id) as progress_rank,
+       row_number() over (order by (case when not flagged and clean_pet <= 10 then 0 else 1 end), pet_power desc, power desc, player_id) as pet_rank
 from (
   select l.*,
          row_number() over (partition by l.flagged order by l.realm desc, l.stage desc, l.qi desc) as clean_realm,
          row_number() over (partition by l.flagged order by l.power desc)                          as clean_power
-  from public.leaderboard l
+         ,row_number() over (partition by l.flagged order by l.progress desc, l.power desc, l.player_id) as clean_progress
+         ,row_number() over (partition by l.flagged order by l.pet_power desc, l.power desc, l.player_id) as clean_pet
+  from (
+    select b.*,
+      case when coalesce(b.stats->>'progress', '') ~ '^[0-9]{1,5}$' then least((b.stats->>'progress')::bigint, 29999) else 0 end as progress,
+      case when coalesce(b.stats->>'pet_power', '') ~ '^[0-9]{1,13}$' then least((b.stats->>'pet_power')::bigint, 1000000000000) else 0 end as pet_power
+    from public.leaderboard b
+  ) l
 ) t;
 
 grant select on public.leaderboard_public to anon, authenticated;

@@ -219,7 +219,26 @@ function updateStatus(text) {
   }
 }
 
+function renderReleaseNotes(data) {
+  const available = !!data.releaseTitle || data.changelog != null || !!data.publishedAt;
+  const version = data.latestVersion;
+  const title = available ? (data.releaseTitle || `Bản phát hành v${version}`) : 'Thông tin bản phát hành';
+  const notes = available
+    ? (data.changelog?.trim() || 'Bản phát hành này chưa có ghi chú cập nhật.')
+    : (data.errorMessage ? 'Không thể tải thông tin cập nhật. Hãy kiểm tra kết nối và thử lại.' : 'Chưa có thông tin bản phát hành trên GitHub.');
+  document.getElementById('patch-tag-title').textContent = available && version ? `v${version}` : 'Chưa có thông tin';
+  const date = data.publishedAt ? new Date(data.publishedAt) : null;
+  document.getElementById('patch-date-title').textContent = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('vi-VN') : '';
+  document.getElementById('patch-body-text').textContent = notes;
+  document.getElementById('card-latest-title').textContent = title;
+  document.getElementById('card-latest-tag').textContent = available && version ? `CẬP NHẬT v${version}` : 'Thông tin cập nhật';
+  document.getElementById('card-latest-desc').textContent = notes.length > 100 ? notes.substring(0, 100) + '…' : notes;
+  document.getElementById('patch-badge-new').classList.toggle('hidden', !data.hasUpdate);
+}
+
 function handleUpdateChecked(data) {
+  renderReleaseNotes(data);
   launcherState.currentVersion = data.currentVersion || launcherState.currentVersion;
   launcherState.launcherVersion = data.currentLauncherVersion || launcherState.launcherVersion;
 
@@ -261,13 +280,6 @@ function handleUpdateChecked(data) {
     // Show patch new badge
     document.getElementById('patch-badge-new').classList.remove('hidden');
 
-    // Update Patch Notes
-    if (data.changelog) {
-      document.getElementById('patch-body-text').textContent = data.changelog;
-      document.getElementById('card-latest-desc').textContent = data.changelog.substring(0, 100) + '...';
-    }
-    document.getElementById('patch-tag-title').textContent = 'v' + data.latestVersion + ' (Bản Game Mới)';
-    document.getElementById('card-latest-tag').textContent = 'CẬP NHẬT v' + data.latestVersion;
 
     // Change Button to UPDATE GAME
     const btn = document.getElementById('main-action-btn');
@@ -345,6 +357,7 @@ function handleUpdateFinished(data) {
     document.getElementById('badge-current-version').textContent = 'v' + data.currentVersion;
     document.getElementById('status-details').textContent = `Game v${launcherState.currentVersion} · Launcher v${launcherState.launcherVersion}`;
     document.getElementById('patch-badge-new').classList.add('hidden');
+    postMessage({ type: 'check_update' });
     setPlayReadyUI();
 
     const statusTitle = document.getElementById('status-title');
