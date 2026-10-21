@@ -122,7 +122,7 @@ const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="
 let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
 // ---- Trang phục (skin): nút trường bào góc trên cột nhân vật → bảng chọn trang phục ----
 let wardOpen = false;
-const WARD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a2 2 0 0 1 4 0c0 1.5-2 1.5-2 3L3 12h18l-9-5"/><path d="m8 12-2 9h12l-2-9M10 12l4 5-3 4M8 17h8"/></svg>';
+const WARD_ICON = '<img src="img/ui_trang_phuc.png" width="24" height="24" alt="" aria-hidden="true">';
 function wardrobeHtml(){
   const skins = DATA.skins || [], cur = S.skin || '';
   const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
@@ -130,7 +130,7 @@ function wardrobeHtml(){
   const list = [card('', 'Theo cảnh giới', realm().heroStand, 'Tự đổi khi đột phá', false)]
     .concat(skins.map(s => { const locked = S.realm < s.minRealm;
       return card(s.id, s.name, s.heroStand, locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : DATA.realms[s.minRealm].name, locked); }));
-  return `<button class="iv-ward-btn ${wardOpen ? 'on' : ''}" id="wardBtn" aria-label="Trang phục" aria-expanded="${wardOpen}" ${wardOpen ? '' : 'data-tip="Trang phục&#10;Đổi ngoại hình nhân vật ở Hành trang, Đột phá và màn hình chính"'}>${WARD_SVG}</button>
+  return `<button class="iv-ward-btn ${wardOpen ? 'on' : ''}" id="wardBtn" aria-label="Trang phục" aria-expanded="${wardOpen}" ${wardOpen ? '' : 'data-tip="Trang phục&#10;Đổi ngoại hình nhân vật ở Hành trang, Đột phá và màn hình chính"'}>${WARD_ICON}</button>
     <div class="iv-ward" ${wardOpen ? '' : 'hidden'} role="dialog" aria-label="Trang phục">
       <p class="wd-hd"><b>Trang phục</b><span>Chỉ đổi ngoại hình, không đổi chỉ số</span><button class="wd-x" data-wardclose aria-label="Đóng">×</button></p>
       <div class="wd-list">${list.join('')}</div></div>`;
