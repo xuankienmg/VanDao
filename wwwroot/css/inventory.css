@@ -16,11 +16,12 @@ img[src^="img/sk_"]{image-rendering:auto}   /* icon kỹ năng vẽ nét theo b�
 .iv-doll{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center}
 .iv-col{display:flex;flex-direction:column;gap:5px}
 .iv-fig{display:flex;flex-direction:column;align-items:center;gap:6px}
-.iv-stage{width:100%;aspect-ratio:1;max-width:150px;display:grid;place-items:center;background:var(--iron);border:2px solid #0b0806;box-shadow:inset 0 0 0 1px var(--jade);
-  background-image:radial-gradient(circle at 50% 70%,rgba(92,214,198,.12) 0 30%,transparent 31%)}
+/* khung nhân vật: không viền xanh; nền là quầng sáng màu cảnh giới vẽ trên canvas .iv-aura */
+.iv-stage{width:100%;aspect-ratio:1;max-width:150px;display:grid;place-items:center;background:#050913;border:0;box-shadow:none;border-radius:6px;overflow:hidden}
+.iv-stage .iv-aura{grid-area:1/1;display:block;width:100%;height:100%;pointer-events:none}
 .iv-stage .hero{width:144px;max-width:100%;height:auto}
 .iv-stage .hero.ref{width:auto;height:138px;max-width:100%;object-fit:contain}   /* nhân vật theo bản thiết kế (ảnh nét, không pixel hoá) */
-.iv-stage .hero,.iv-stage .iv-avatar{grid-area:1/1}
+.iv-stage .hero,.iv-stage .iv-avatar{grid-area:1/1;position:relative;z-index:1}
 .iv-stage .hero[hidden]{display:none}
 .iv-stage .iv-avatar{display:block;width:100%;height:100%;min-width:0;min-height:0;pointer-events:none}
 .iv-pow{margin:0;font-size:11px;color:#a9b4ae;cursor:help}

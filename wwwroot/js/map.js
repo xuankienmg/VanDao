@@ -3,7 +3,7 @@
 // BẢN ĐỒ: 10 chương × (15 ải + ải Boss). S.map.realm = chương đang đánh (0-based); thắng Boss chương cao nhất mở chương kế
 // =====================================================================
 function renderMap(){
-  const m = S.map, c = DATA.chapters[m.realm], R = m.realm + 1, keyN = S.inventory[m.keyItem] || 0, dif = m.diff || 0;
+  const m = displayedMap(), c = DATA.chapters[m.realm], R = m.realm + 1, keyN = S.inventory[m.keyItem] || 0, dif = m.diff || 0;
   const chOpen = i => m.chapterOpen ? m.chapterOpen[i] : DATA.chapters[i].enabled && i <= m.chapterMax;
   const chDone = i => m.chapterCleared ? m.chapterCleared[i] : i < m.chapterMax, back = chDone(m.realm);
   const N = DATA.areas, B = N + 1, inBoss = m.area > N;
@@ -28,7 +28,7 @@ function renderMap(){
   const seg = (from, to) => pts.slice(from, to).map((p, k) => `${k ? 'L' : 'M'}${p.x} ${p.y}`).join(' ');
   const reach = Math.min(m.areaMax + (bossOpen ? 1 : 0), B);                   // đoạn đã đi qua
   const hero = skinArt('hero').replace('.png', '_48.png');
-  const fr = mapFrontier();
+  const fr = mapFrontier(m);
   const node = a => {
     const st = mapStateOf(a), p = mapPos(a.index), boss = a.index === B;
     const go = st !== 'locked' && st !== 'cur' && (!boss || canBoss);
@@ -47,7 +47,7 @@ function renderMap(){
   $('pane-map').innerHTML = `<div class="mpx">
     <div class="mpx-row">${diffSel}${chapterBar}</div>
     <header class="mp-hd mpx-hd"><div><b>Chương ${R} · ${c.name}${dif ? ` <em class="mpx-dtag d${dif}">${MAP_DIFFS[dif]}</em>` : ''} <small class="mp-back">${back ? 'đã qua' : 'gợi ý ' + c.realm}</small> <i class="mpx-q" data-tip="${note}">?</i></b>
-      <span>${inBoss ? `Đang khiêu chiến Boss · ${m.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${m.areas[m.area - 1].place}`}${!inBoss && m.area < fr.top ? ` · <em class="mpx-top ${fr.knocked ? 'down' : ''}">⚑ Ải cao nhất ${R}-${fr.top}${fr.knocked ? ' (bị lùi do thua)' : ''}</em>` : ''}</span></div></header>
+      <span>${!m.area ? `Đang xem chương ${R} · Nhân vật đang đánh ải ${S.map.realm+1}-${S.map.area}` : inBoss ? `Đang khiêu chiến Boss · ${m.bossLair}` : `Đang đánh ải ${R}-${m.area} · ${m.areas[m.area - 1].place}`}${m.area && !inBoss && m.area < fr.top ? ` · <em class="mpx-top ${fr.knocked ? 'down' : ''}">⚑ Ải cao nhất ${R}-${fr.top}${fr.knocked ? ' (bị lùi do thua)' : ''}</em>` : ''}</span></div></header>
     <div class="mpx-wrap"><button class="mpx-nav l" data-mnav="-1" aria-label="Cuộn trái">‹</button><div class="mpx-track"><div class="mpx-lane">
       <svg class="mpx-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <path d="${seg(0, B)}" class="ln"/>${reach > 1 ? `<path d="${seg(0, reach)}" class="dn"/>` : ''}</svg>
@@ -66,12 +66,13 @@ function renderMap(){
 function mapCenter(){
   const tr = document.querySelector('#pane-map .mpx-track'), lane = tr?.firstElementChild;
   if (!tr || !tr.clientWidth){ mapNeedCenter = true; return; }
-  tr.scrollLeft = Math.max(0, lane.clientWidth * mapPos(S.map.area).x / 100 - tr.clientWidth / 2);
+  const m = displayedMap();
+  tr.scrollLeft = Math.max(0, lane.clientWidth * mapPos(m.area || 1).x / 100 - tr.clientWidth / 2);
   mapNeedCenter = false;
 }
 /** Trạng thái ô ải: locked · win · lose · cur · boss (Boss đã mở, chưa đánh). */
 function mapStateOf(a){
-  const m = S.map, B = DATA.areas + 1;
+  const m = displayedMap(), B = DATA.areas + 1;
   if (a.index === B) return m.area > DATA.areas ? 'cur' : a.open ? 'boss' : 'locked';
   return !a.open ? 'locked' : a.index === m.area ? 'cur' : a.win ? 'win' : 'lose';
 }
@@ -82,27 +83,30 @@ function mapPos(i){
 /** Bảng dưới: thông tin ải đang rê chuột (mặc định ải đang đánh). */
 function renderMapInfo(){
   const host = $('mpxInfo'); if (!host) return;
-  const m = S.map, R = m.realm + 1, N = DATA.areas, B = N + 1, keyN = S.inventory[m.keyItem] || 0, dif2 = m.diff || 0;
-  const a = m.areas[Math.min(mapHover || m.area, B) - 1], st = mapStateOf(a), boss = a.index === B, hidden = st === 'locked' && !boss;
+  const m = displayedMap(), R = m.realm + 1, N = DATA.areas, B = N + 1, keyN = S.inventory[m.keyItem] || 0, dif2 = m.diff || 0;
+  const a = m.areas[Math.min(mapHover || m.area || 1, B) - 1], st = mapStateOf(a), boss = a.index === B, hidden = st === 'locked' && !boss;
   const pct = v => v >= 1 ? '100%' : (Math.round(v * 1000) / 10).toLocaleString('vi-VN') + '%';
   const cell = (k, chance, qty, name) => ITEM[k] ? `<div class="mpx-rw" data-tip="${itemTip(k)}"><span class="dd-fr r-${ITEM[k].rarity || 'common'}">${itemImg(k)}${qty ? `<b>${qty}</b>` : ''}</span><small>${name || ITEM[k].name}</small><em>${pct(chance)}</em></div>` : '';
   let rewards;
   const bw = boss && a.waves?.[0];
   if (boss) rewards = (bw?.stoneMax ? cell('linh_thach', 1, bw.stoneMin === bw.stoneMax ? bw.stoneMin : `${bw.stoneMin}-${bw.stoneMax}`) : '') + (m.bossItem ? cell(m.bossItem, 1) : '') + cell(m.bossChest || 'ruong_boss', 1, [1, 2, 3][dif2] > 1 ? [1, 2, 3][dif2] : '') + `<div class="mpx-rw"><span class="dd-fr qi">☯</span><small>Tu vi ×5</small><em>100%</em></div>`;
   else {
-    const k = a.index, drops = m.drops || [], gear = drops.filter(x => x.gear);
+    const k = a.index, drops = a.drops || m.drops || [], gear = drops.filter(x => x.gear);
     rewards = drops.filter(x => !x.gear && k >= (x.minArea || 1)).map(x => {
-      const stone = x.item === 'linh_thach', sc = (stone ? (1 + (k - 1) * .05) * (a.elite ? 1.5 : 1) : 1) * (m.rewardMult || 1), lo = Math.round(x.min * sc), hi = Math.round(x.max * sc);   // Khó / Ác mộng: thưởng ×1,5 / ×2,5
-      return cell(x.item, Math.min(1, x.chance * (stone || x.chance >= 1 ? 1 : 1 + (k - 1) * .03)), lo === hi ? (lo > 1 ? lo : '') : `${lo}-${hi}`);
+      const stone = x.item === 'linh_thach', sc = stone ? (1 + (k - 1) * .05) * (a.elite ? 1.5 : 1) * (m.rewardMult || 1) : a.drops ? 1 : (m.rewardMult || 1), lo = Math.round(x.min * sc), hi = Math.round(x.max * sc);
+      return cell(x.item, a.drops ? x.chance : Math.min(1, x.chance * (stone || x.chance >= 1 ? 1 : 1 + (k - 1) * .03)), lo === hi ? (lo > 1 ? lo : '') : `${lo}-${hi}`);
     }).join('');
     if (gear.length){
-      const any = 1 - gear.reduce((p, x) => p * (1 - Math.min(1, x.chance * (1 + (k - 1) * .03))), 1), v = DATA.items.find(i => i.base === gear[0].item);
+      const any = 1 - gear.reduce((p, x) => p * (1 - (a.drops ? x.chance : Math.min(1, x.chance * (1 + (k - 1) * .03)))), 1), v = DATA.items.find(i => i.base === gear[0].item);
       if (v) rewards += cell(v.id, any, '', 'Trang bị ' + (v.set || ''));
     }
-    rewards += cell(m.keyItem, m.keyChanceMin);
-    if (m.chestChance) rewards += cell('ruong_thuong', m.chestChance);
-    if (m.rareChestChance && k >= m.rareChestMinArea) rewards += cell('ruong_hiem', Math.min(1, (a.elite ? .2 : m.rareChestChance) * [1, 1.5, 2][dif2]));   // tinh anh: rương hiếm 20% (GameData.EliteRareChestChance)
+    if(!a.drops){
+      rewards += cell(m.keyItem, m.keyChanceMin);
+      if (m.chestChance) rewards += cell('ruong_thuong', m.chestChance);
+      if (m.rareChestChance && k >= m.rareChestMinArea) rewards += cell('ruong_hiem', Math.min(1, (a.elite ? .2 : m.rareChestChance) * [1, 1.5, 2][dif2]));
+    }
   }
+  if(boss)rewards+=(a.drops||[]).map(x=>cell(x.item,x.chance,x.min===x.max?x.min:`${x.min}-${x.max}`)).join('');
   const img = (a.image || m.bossImage).replace('.png', '_hd.png');
   const stats = hidden ? '<p class="mpx-hid">Chưa thám thính được ải này.</p>'
     : boss || adminOn ? (!boss && a.waves?.length > 1
@@ -110,7 +114,7 @@ function renderMapInfo(){
         : `<p class="mpx-st">Máu <b>${fmt(a.hp)}</b> · Công <b>${fmt(a.atk)}</b> · Thủ <b>${fmt(a.def)}</b></p>`) + `
       <p class="mpx-pr ${a.win ? 'ok' : 'bad'}">${a.win ? `Dự đoán: thắng sau ${a.hits} đòn` : 'Dự đoán: thua, cần mạnh hơn'}</p>`
     : `<p class="mpx-hid">${st === 'win' ? 'Đã vượt qua ải này.' : st === 'lose' ? 'Yêu khí dày đặc, cẩn thận.' : 'Đang giao chiến tại đây.'}</p>`;
-  const fr = mapFrontier();
+  const fr = mapFrontier(m);
   const bossOpen = m.areaMax >= N, canBoss = bossOpen && (keyN > 0 || adminBoss());
   const foot = boss ? `<p class="mpx-key"><span class="mp-need ${keyN > 0 ? 'ok' : ''}">${itemImg(m.keyItem)} ${keyN} / 1</span>
       ${st === 'cur' ? '<i>Đang khiêu chiến · mỗi trận tốn 1 lệnh</i>' : !bossOpen ? `<i class="bad">Mở ải ${R}-${N} trước</i>` : !canBoss ? `<i class="bad">Cần ${ITEM[m.keyItem].name}</i>` : `<i>Bấm Boss để khiêu chiến${m.realm === m.chapterMax && DATA.chapters[R]?.enabled ? ` · thắng mở chương ${R + 1}` : ''}</i>`}</p>`
@@ -133,12 +137,27 @@ function renderMapInfo(){
 /** Tên mức độ khó (giống GameData.DiffNames). */
 const MAP_DIFFS = ['Thường', 'Khó', 'Ác mộng'];
 let mapFilter = 'all', mapHover = 0, mapScrollRealm = -1, mapNeedCenter = true;
+let mapPreview = null, mapPreviewRequest = 0;
+function displayedMap(){
+  if(mapPreview && (mapPreview.diff !== (S.map.diff || 0) || mapPreview.realm === S.map.realm)) mapPreview=null;
+  return mapPreview || S.map;
+}
+async function previewChapter(chapter){
+  const request=++mapPreviewRequest, player=S.id, diff=S.map.diff||0;
+  if(chapter===S.map.realm){mapPreview=null;mapHover=0;mapNeedCenter=true;renderMap();return;}
+  try {
+    const view=await api('GET',`/api/players/${encodeURIComponent(player)}/map/${chapter}`);
+    if(request!==mapPreviewRequest||S.id!==player||(S.map.diff||0)!==diff)return;
+    mapPreview=view;mapHover=0;mapNeedCenter=true;renderMap();
+  } catch(e){if(request===mapPreviewRequest)localLog(e.message,'bad');}
+}
 /** Lần cuối người chơi tự chọn ải (ms): sau đó mới coi là "tự xuống ải thấp", không phải bị lùi do thua. */
 let mapPickAt = 0;
 try { mapPickAt = +localStorage.getItem('van-dao-map-pick') || 0; } catch(e){}
 /** Ải cao nhất đã mở của bản đồ đang xem và nhân vật có đang bị lùi xuống dưới do thua không. */
-function mapFrontier(){
-  const m = S.map, top = Math.min(m.areaMax, DATA.areas);
+function mapFrontier(m = S.map){
+  const top = Math.min(m.areaMax, DATA.areas);
+  if (!m.area) return {top, knocked:false};
   if (m.area > DATA.areas || m.area >= top) return {top, knocked: false};
   const loss = (S.logs || []).find(l => /^Thua ở ải|^Vắng mặt .*\(thua \d+\)/.test(l.text));
   return {top, knocked: !!loss && Date.parse(loss.at) > mapPickAt};
@@ -153,11 +172,11 @@ function initMap(){
   }, {passive: false});
   pane.addEventListener('change', e => {
     if (e.target.id !== 'mpDiff') return;
-    mapHover = 0; mapNeedCenter = true; act(`diff/${e.target.value}`);
+    mapPreview=null;mapPreviewRequest++;mapHover = 0; mapNeedCenter = true; act(`diff/${e.target.value}`);
   });
   pane.addEventListener('click', e => {
     const mc = e.target.closest('[data-mch]');
-    if (mc){ if (mc.getAttribute('aria-disabled') !== 'true' && +mc.dataset.mch !== S.map.realm){ mapHover = 0; mapNeedCenter = true; act(`map/${mc.dataset.mch}`); } return; }
+    if (mc){ if (mc.getAttribute('aria-disabled') !== 'true') previewChapter(+mc.dataset.mch); return; }
     const nv = e.target.closest('[data-mnav]');
     if (nv){ const tr = pane.querySelector('.mpx-track'); tr.scrollBy({left: +nv.dataset.mnav * tr.clientWidth * .7, behavior: 'smooth'}); return; }
     const f = e.target.closest('[data-mf]');
@@ -167,7 +186,9 @@ function initMap(){
     if (rt){ mapPickAt = Date.now(); try { localStorage.setItem('van-dao-map-pick', mapPickAt); } catch(e2){} act(`area/${rt.dataset.retry}`); return; }
     if (n && n.getAttribute('aria-disabled') !== 'true'){
       mapPickAt = Date.now(); try { localStorage.setItem('van-dao-map-pick', mapPickAt); } catch(e){}   // tự chọn ải: không còn tính là bị lùi
-      act(`area/${n.dataset.mx}`);
+      const chapter=displayedMap().realm;
+      mapPreviewRequest++;
+      act(chapter===S.map.realm?`area/${n.dataset.mx}`:`map/${chapter}/area/${n.dataset.mx}`);
     }
   });
   pane.addEventListener('mouseover', e => {

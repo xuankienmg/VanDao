@@ -1,0 +1,15 @@
+{
+  "art_source": "host_image",
+  "route": "local:codex-cli",
+  "model": "codex-image_gen",
+  "estimateUsd": 0.0,
+  "source": "thanh-long-source.png",
+  "sourceSha256": "41d9005ed3082684c89d8cd1e13cb603a47e4b16fd80ecafbf7f399340640c04",
+  "prompt": "thanh-long-prompt.txt",
+  "processing": "prepare_art.py",
+  "qa": "art-qa.json",
+  "finish": "hd",
+  "framing": "static evolution portraits, facing right, transparent RGBA, 256px UI / 128px battle",
+  "sourceRegions": [[0, 0, 490, 1024], [490, 0, 1008, 1024], [1008, 0, 1536, 1024]],
+  "notes": "Ownership crops at empty magenta gutters replace an invalid equal-column split. No source anatomy is discarded. Three independent static stills; no character animation generated."
+}

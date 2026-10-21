@@ -10,7 +10,7 @@ public sealed class PanelWindow : Form
 {
     private static readonly Dictionary<string, string> TabNames = new()
     {
-        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Tài Xỉu", ["market"] = "Chợ", ["rank"] = "Bảng xếp hạng",
+        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["pet"] = "Linh thú", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Tài Xỉu", ["market"] = "Chợ", ["rank"] = "Bảng xếp hạng",
     };
 
     private readonly GameWindow _strip;
@@ -29,7 +29,8 @@ public sealed class PanelWindow : Form
         _ranking = ranking;
         if (ranking) _tab = "rank";
 
-        Owner = strip; // luôn nổi trên dải game, ẩn/hiện cùng dải
+        // Không đặt Owner: cửa sổ được sở hữu luôn nằm trên chủ của nó,
+        // khiến click vào dải game không thể đưa dải lên trước Tu luyện.
         Icon = strip.Icon;
         FormBorderStyle = FormBorderStyle.SizableToolWindow;
         ShowInTaskbar = false;

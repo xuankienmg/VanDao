@@ -70,8 +70,8 @@ function setState(st){
 }
 function localLog(text, kind){ S.logs.unshift({at:new Date().toISOString(), text, kind}); renderLog(); }
 
-async function act(path){
-  if (busy) return; busy = true;
+async function act(path){              // trả về true khi server đã nhận lệnh thành công
+  if (busy) return false; busy = true;
   const prevRealm = S.realm;
   try {
     const res = await api('POST', `/api/players/${S.id}/${path}`);
@@ -83,7 +83,8 @@ async function act(path){
       notifyHost('break', {kind: k});
     }
     if (res.craft) showCraft(res.craft);
-  } catch(e){ localLog(e.message, 'bad'); ddErr = {msg: e.message, at: performance.now()}; }
+    return true;
+  } catch(e){ localLog(e.message, 'bad'); ddErr = {msg: e.message, at: performance.now()}; return false; }
   finally { busy = false; live(); }
 }
 async function channel(){
@@ -91,7 +92,8 @@ async function channel(){
   const g = S.channelGain;
   S.qi = Math.min(S.qiReq, qiNow() + g); recvAt = performance.now();
   floats.push({x:(Math.random()-.5)*80, y:-170, text:'+' + fmt(g), t:0}); live();
-  try { const res = await api('POST', `/api/players/${S.id}/channel`); if (!busy) setState(res.state); notifyHost('changed'); }
+  // seq: lệnh khác (bán, luyện…) gửi sau thì kết quả tu luyện này đã cũ, không ghi đè số linh thạch / hành trang mới
+  try { const req = api('POST', `/api/players/${S.id}/channel`), seq = postSeq, res = await req; if (!busy && seq === postSeq) setState(res.state); notifyHost('changed'); }
   catch(e){ localLog(e.message, 'bad'); }
 }
 async function sync(){

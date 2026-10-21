@@ -10,7 +10,7 @@ vm.runInContext(fs.readFileSync('wwwroot/js/skill-preview.js','utf8').split('con
 const src=fs.readFileSync('wwwroot/js/inventory.js','utf8');
 const idleCode=src.slice(src.indexOf('function drawInventoryIdle('),src.indexOf('function renderInv(){'));
 vm.runInContext(idleCode,c);
-for(const id of ['luyenkhi','trucco','kimdan','luyenhu']){
+for(const id of ['luyenkhi','trucco','kimdan','luyenhu','hopthe']){
   hero=`img/hero_${id}.png`;calls=[];
   c.drawInventoryAvatar(0);const first=calls.slice();calls=[];
   c.drawInventoryAvatar(.6);const next=calls.slice();
@@ -31,4 +31,4 @@ const waiting=vm.createContext({...c,Image:class{constructor(){this.complete=fal
 vm.runInContext(fs.readFileSync('wwwroot/js/skill-preview.js','utf8').split('const FIRE =')[0],waiting);
 vm.runInContext(idleCode,waiting);
 hero='img/hero_trucco.png';waiting.drawInventoryAvatar(0);assert.equal(still.hidden,false);
-console.log('PASS: four continuous idles, stable source pose and feet, no frame-boundary jumps, reduced motion and fallback');
+console.log('PASS: five continuous idles, stable source pose and feet, no frame-boundary jumps, reduced motion and fallback');

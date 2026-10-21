@@ -54,3 +54,7 @@
 .lb-pf-slot.r-mythic{--qc:#FF8C00}.lb-pf-slot.r-divine{--qc:#FF0033}.lb-pf-slot.r-immortal{--qc:#FF69B4}.lb-pf-slot.r-dao{--qc:#FFD700}.lb-pf-slot.r-supreme{--qc:#E0FFFF}
 .lb-pf-wait{margin:0;text-align:center;color:#9ca8a6;font-size:13px}.lb-pf-at{font-size:10.5px;color:#829393}
 @media(max-width:520px){.lb-pf-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.lb-pf-gear{grid-template-columns:minmax(0,1fr)}}
+/* dấu * đỏ: nhân vật từng mở bằng bản game cũ */
+.lb-flag{color:#ff4d4d;font-weight:800;font-size:14px;margin-left:3px;cursor:help;vertical-align:super;line-height:0;text-shadow:0 0 4px rgba(255,60,60,.5)}
+.lb-flag-note{margin:6px 2px 0;font-size:10.5px;color:#c9a8a0}
+.lb-flag-note .lb-flag{vertical-align:baseline;margin:0 3px 0 0;font-size:13px;cursor:default}

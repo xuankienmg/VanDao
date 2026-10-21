@@ -47,7 +47,9 @@ create or replace view public.market_open as
 select l.id, l.seller_id, l.seller_name, l.item_id, l.qty, l.price, l.created_at, l.expires_at
 from public.market_listings l
 join public.market_players p on p.player_id = l.seller_id and not p.banned
-where l.status = 'open' and l.expires_at > now();
+where l.status = 'open' and l.expires_at > now()
+  -- người bán bị gắn cờ trên bảng xếp hạng (từng mở bằng bản game cũ): ẩn tin khỏi Chợ
+  and not exists (select 1 from public.leaderboard lb where lb.player_id = l.seller_id and lb.flagged);
 grant select on public.market_open to anon, authenticated;
 
 -- ---------- Nội bộ: xác thực nhân vật bằng secret ----------
@@ -115,6 +117,7 @@ begin
     payout = l.price - ceil(l.price * k.tax_pct / 100)::bigint
   where l.id = p_listing and l.status = 'open' and l.expires_at > now() and l.seller_id <> p_id
     and not exists (select 1 from public.market_players s where s.player_id = l.seller_id and s.banned)
+    and not exists (select 1 from public.leaderboard lb where lb.player_id = l.seller_id and lb.flagged)
   returning l.item_id, l.qty, l.price, l.seller_name;
   if not found then raise exception 'Món này đã có người mua, đã hủy hoặc hết hạn.'; end if;
 end $$;

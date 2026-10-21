@@ -1,0 +1,4 @@
+bin/
+obj/
+desktop-build/
+*.log

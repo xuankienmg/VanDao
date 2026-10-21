@@ -13,6 +13,10 @@ const boundaries=[[0,0],[.2499,3],[.25,4],[.4499,7],[.45,8],[.5999,11],[.60,12],
 for(const [s,f]of boundaries)assert.equal(env.fireFxPlan('than_hoa',s,4).frame,f);
 assert.notEqual(env.fireFxPlan('than_hoa',.45,4).src,env.fireFxPlan('phan_thien',.45,1).src);
 assert.notEqual(env.fireFxPlan('hu_khong_hoa',.45,5).src,env.fireFxPlan('xich_diem_thien',.45,2).src);
+const hopThe=env.fireFxPlan('hon_nguyen_hoa',.45,6),luyenHu=env.fireFxPlan('hu_khong_hoa',.45,5);
+assert.equal(hopThe.src,luyenHu.src,'Hop The reuses Luyen Hu ultimate timeline');
+assert.equal(hopThe.frame,luyenHu.frame);
+assert.notEqual(hopThe.filter,luyenHu.filter,'Hop The ultimate has its own flame color');
 for(const [realm,variant]of [[0,'small'],[1,'medium'],[2,'large'],[5,'large']])assert.match(env.fireFxPlan('hoa_cau',.4,realm).src,new RegExp(variant));
 assert.equal(env.fireFxPlan('thuy_nguyet',.3,0),null);
 let draw=0,save=0,restore=0;const stack=[];

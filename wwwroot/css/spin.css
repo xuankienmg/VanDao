@@ -7,7 +7,8 @@
 .sp-wheel{position:absolute;inset:0}
 .sp-svg{display:block;width:100%;height:100%;overflow:visible}
 .sp-ring{fill:#0b0806;stroke:var(--bz2);stroke-width:2}
-.sp-disc{transform-box:fill-box;transform-origin:center;transition:transform 4.2s cubic-bezier(.12,.62,.08,1)}
+/* xoay quanh gốc tọa độ SVG (0,0) = tâm vòng (viewBox -100 -100 200 200). Không dùng fill-box: vòng 5 ô (Linh Thú) có khung bao lệch nên quay bị lệch tâm */
+.sp-disc{transform-box:view-box;transform-origin:0 0;transition:transform 4.2s cubic-bezier(.12,.62,.08,1)}
 .sp-bg{fill:#17120e;stroke:#3b3127;stroke-width:.8}
 .sp-bg.alt{fill:#120e0b}
 .sp-seg .sp-bg{fill:color-mix(in srgb,var(--c) 10%,#17120e)}
@@ -58,7 +59,7 @@ body.panel .sp-stage{width:min(100%,280px)}
 .sp-hbtn em{position:absolute;right:-5px;top:-6px;min-width:15px;padding:0 3px;font-style:normal;font-size:9.5px;line-height:14px;text-align:center;color:#0b0806;background:var(--gold);border-radius:7px}
 .sp-hbtn em:empty{display:none}
 .sp-hpop{position:fixed;z-index:65;width:min(330px,calc(100vw - 8px));max-height:min(60vh,420px);overflow:auto;padding:8px 10px;font-size:11.5px;
-  background:#17120e;border:2px solid #8a6a3a;box-shadow:inset 0 0 0 2px #0b0806,0 8px 24px rgba(0,0,0,.6);pointer-events:none}
+  background:#17120e;border:2px solid #8a6a3a;box-shadow:inset 0 0 0 2px #0b0806,0 8px 24px rgba(0,0,0,.6);overscroll-behavior:contain}   /* nhận chuột để cuộn được lịch sử */
 .sp-hpop ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .sp-hpop li{padding-top:5px;border-top:1px solid #2a231b} .sp-hpop li:first-child{border-top:0;padding-top:0}
 .sp-ht{display:block;font-size:10.5px;color:#a08c66;margin-bottom:3px} .sp-ht time{color:#c9bfa6;font-variant-numeric:tabular-nums}
@@ -84,3 +85,10 @@ body.panel .sp-stage{width:min(100%,280px)}
 .sp-pop-hint{margin:4px 0 0;font-size:10.5px;color:#8a9690}
 @media (prefers-reduced-motion: reduce){.sp-pop-box,.sp-pop-best img,.sp-pop.big .sp-pop-best{animation:none}}
 .sp-pop.bad .sp-pop-t{color:#ff9a88;text-shadow:none} .sp-pop.bad .sp-pop-nm{font-size:13px;font-weight:500;color:var(--paper)}
+/* vòng Linh Thú (5 ô Thú Đản): viền tím, kim tím, icon trứng to hơn */
+.sp-pet .sp-ring{stroke:#a77be0;stroke-width:2.5}
+.sp-pet .sp-ptr{border-top-color:#c9a2ff}
+.sp-pet .sp-hub{border-color:#8a5fc8}
+.sp-pet .sp-hub:hover:not(:disabled){border-color:#c9a2ff}
+.sp-pet .sp-ic{width:34px;height:34px}
+.sp-pet .sp-ic img{width:32px;height:32px}

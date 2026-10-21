@@ -24,8 +24,8 @@ const server = http.createServer((req, res) => {
     const page = await browser.newPage({viewport:{width:724,height:641}}), errors=[];
     page.on('pageerror',e=>{errors.push(e.message);console.error('Page error:',e.message)});
     await page.goto(`http://127.0.0.1:${server.address().port}`);
-    await page.waitForFunction(()=>document.querySelectorAll('.sk-realm-band').length===6);
-    assert.equal(await page.locator('.sk-realm-band').count(),6);
+    await page.waitForFunction(()=>document.querySelectorAll('.sk-realm-band').length===DATA.realms.length);
+    assert.equal(await page.locator('.sk-realm-band').count(),fixture.realms.length);
     assert.equal(await page.locator('.sk-detail').count(),0);
     const fits = () => page.evaluate(()=>{
       const book=document.querySelector('.book'), scroll=document.querySelector('.sk-path-scroll');
@@ -55,9 +55,18 @@ const server = http.createServer((req, res) => {
     await page.evaluate(()=>{S.skills.hu_khong_hoa=1;S.skillPoints=0;renderSkill()});
     assert.equal(await page.locator('[data-up="hu_khong_hoa"]').isDisabled(),true,'No points must disable plus');
     await page.evaluate(()=>{S.skillPoints=30;renderSkill()});
+    await page.evaluate(()=>{S.realm=6;S.skills.hu_khong_hoa=3;S.skills.thai_hu_hoa=3;renderSkill()});
+    assert.equal(await page.locator('[data-up="hon_nguyen_hoa"]').isEnabled(),true);
+    assert.equal(await page.locator('[data-up="hoa_dao_hop_nhat"]').isEnabled(),true);
+    await page.locator('[data-up="hon_nguyen_hoa"]').click();
+    assert.equal(await page.evaluate(()=>lastAction),'skill/hon_nguyen_hoa');
+    await page.evaluate(()=>{S.skills.hon_nguyen_hoa=1;renderSkill()});
+    await page.locator('[data-sk="hon_nguyen_hoa"]').dblclick();
+    assert.equal(await page.evaluate(()=>lastAction),'skillslot/1?skill=hon_nguyen_hoa');
+    assert.notEqual(await page.locator('[data-sk="hu_khong_hoa"] img').evaluate(i=>getComputedStyle(i).filter),await page.locator('[data-sk="xich_diem_thien"] img').evaluate(i=>getComputedStyle(i).filter));
     await page.screenshot({path:path.join(root,'obj/skills-default.png'),fullPage:true});
     await page.locator('[data-el="thuy"]').click();
-    assert.equal(await page.locator('.sk-realm-board .sk-n').count(),16);
+    assert.equal(await page.locator('.sk-realm-board .sk-n').count(),fixture.skillTree.filter(s=>s.element==='thuy'&&s.category!=='Đòn thường').length);
     assert.ok(await fits(),'Water tree must fit default window');
     await page.setViewportSize({width:1440,height:860});
     await page.screenshot({path:path.join(root,'obj/skills-wide.png'),fullPage:true});
@@ -74,6 +83,6 @@ const server = http.createServer((req, res) => {
       assert.ok(await page.locator('.sk-n img').evaluateAll(imgs=>imgs.every(i=>i.complete&&i.naturalWidth>0)),'Missing icons');
     }
     assert.deepEqual(errors,[]);
-    console.log('PASS: default window and 700px panel fit all six tiers without scrolling; direct plus learns/upgrades correct skill, locks and max level work, double-click equips, tooltips and images remain available.');
+    console.log('PASS: default window and 700px panel fit all realm tiers; Hop The learns/equips, distinct fire colors, locks, upgrades, tooltips and images work.');
   } finally {await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});

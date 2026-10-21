@@ -19,7 +19,7 @@ const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ']
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
-const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'elixir');
+const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'egg' || it.type === 'elixir');
 const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
@@ -40,7 +40,7 @@ const canWear = it => (it.minRealm || 0) <= S.realm;
 const slotsFor = it => !it.slot ? [] : [it.slot];
 function itemStats(it){ return STAT_KEYS.filter(([k]) => it[k]).map(([k, n, u]) => `${n} +${it[k]}${u}`); }
 // tooltip khi rê chuột (dùng chung cho các tab)
-/** Đan trong chuỗi hợp thành và linh thảo: chuột phải mở Luyện chế · Đan dược. */
+/** Đan trong danh sách luyện chế và linh thảo: chuột phải mở Luyện chế · Đan dược. */
 const rcCraft = it => !!it && (it.type === 'herb' || (it.type === 'pill' && !canUse(it)));
 /** Icon chuột trong chú thích: MS_R chuột phải (nút phải tô sáng), MS_L2 nhấp đúp chuột trái; KBD(k): phím tô đậm. */
 const MS_SVG = (side, tip) => `<svg class="ms" viewBox="0 0 12 16" role="img" aria-label="${tip}"><title>${tip}</title><rect x="1" y="1" width="10" height="14" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v6" stroke="currentColor" stroke-width="1.1"/><path d="${side === 'r' ? 'M6.6 1.7A4.4 4.4 0 0 1 10.3 6.2V6.4H6.6Z' : 'M5.4 1.7A4.4 4.4 0 0 0 1.7 6.2V6.4H5.4Z'}" fill="currentColor"/></svg>`;
@@ -53,7 +53,7 @@ function rcHint(it){
   if (it.slot) return `${MS_R}/${MS_L2} mặc · kéo vào ô trang bị`;
   if (it.type === 'chest') return `${MS_R}/${MS_L2} mở · ${KBD('Ctrl')}+${MS_R} mở hết`;
   if (canUse(it)) return `${MS_R}/${MS_L2} dùng`;
-  if (rcCraft(it)) return `${MS_R} mở Đan dược (${it.type === 'herb' ? 'luyện đan' : 'hợp thành'})`;
+  if (rcCraft(it)) return `${MS_R} mở Đan dược (${it.type === 'herb' ? 'luyện đan' : 'luyện chế'})`;
   return '';
 }
 /** Thượng phẩm linh thạch: chưa có nguồn nhận, tạm hiện số dư (0) cạnh linh thạch. */
@@ -98,6 +98,7 @@ function chestOddsLines(k){
     `Phẩm khi nhận trang bị/pháp bảo: ${o.quality.map((q, i) => `${Q_NAMES[i]} ${pctS(q)}`).join(' · ')}`,
     `Trang bị (gồm pháp bảo) ${pctS(pt + pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
     `Linh thảo ${pctS(o.herb || 0)} (${o.herbMin || 1}–${o.herbMax || 1} món) · Ngộ Đạo Đan ${pctS(o.enlightenment || 0)} (1 viên, từ Nguyên Anh)`,
+    ...(o.pets || []).map(x=>`${ITEM[x.item]?.name || x.item}: ${pctS(x.pct)}`),
     `Ra đồ Địa trở lên: ${pctS((pt + pg) * topPct(o.quality) / 100)}`];
 }
 function chestOddsHtml(k){
@@ -109,7 +110,8 @@ function chestOddsHtml(k){
     <p><b>Trang bị (gồm pháp bảo) ${pctS(pt + pg)}</b>: ${list(o.gear.concat(o.treasure))}</p>
     <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p>
     <p><b>Linh thảo ${pctS(o.herb || 0)}</b>: ${o.herbMin || 1}–${o.herbMax || 1} món · ${(o.herbs || []).map(x=>`${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}`).join(' · ')}</p>
-    <p><b>Ngộ Đạo Đan ${pctS(o.enlightenment || 0)}</b>: 1 viên · chỉ từ Nguyên Anh</p></div>`;
+    <p><b>Ngộ Đạo Đan ${pctS(o.enlightenment || 0)}</b>: 1 viên · chỉ từ Nguyên Anh</p>
+    ${(o.pets || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b></p>`).join('')}</div>`;
 }
 function itemImg(k, cls = ''){
   const it = ITEM[k];
@@ -223,7 +225,21 @@ function drawInventoryIdle(g, image, shape, t, reduced){
   }
   g.restore();
 }
+/** Nền sau nhân vật ở Hành trang: chỉ còn quầng sáng theo màu cảnh giới (BT_PAL của màn Đột phá), tỏa rộng gần kín khung, sáng tối nhẹ như đang thở. */
+function drawInventoryAura(t){
+  const canvas = $('ivAura'); if (!S || !canvas || !canvas.offsetParent || typeof BT_PAL === 'undefined') return;
+  const g = canvas.getContext('2d'), W = 320, H = 320, realmDef = DATA.realms[S.realm] || DATA.realms[0];
+  const pal = BT_PAL[realmDef.id] || BT_PAL.luyen_khi;
+  const pulse = reduce ? .5 : .5 + .5 * Math.sin(t * 1.3);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H * .48, R = W * (.72 + .04 * pulse);   // vòng sáng mở rộng gần hết khung
+  const gr = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+  gr.addColorStop(0, pal.glow); gr.addColorStop(.45, pal.glow + '99'); gr.addColorStop(1, 'transparent');
+  g.globalAlpha = .62 + .2 * pulse; g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.globalAlpha = 1;
+}
 function drawInventoryAvatar(t){
+  drawInventoryAura(t);
   const canvas = $('ivAvatar');
   if (!S || !canvas || !canvas.offsetParent) return;
   const g = canvas.getContext('2d'), still = canvas.previousElementSibling;
@@ -251,14 +267,23 @@ function renderInv(){
   if (host) host.scrollTop = hostTop;
   if (keep){ pane.scrollTop = keep[0]; pane.querySelectorAll(SCROLLERS).forEach((el, i) => { const k = keep[1][i]; if (k){ el.scrollTop = k[0]; el.scrollLeft = k[1]; } }); }
 }
-/** Cửa sổ Tu luyện: cỡ ô túi (--cell) để 8 × 6 ô vừa khít chỗ trống của cột túi, không phải cuộn. Màn hẹp (≤ 620px) giữ lưới co theo bề ngang. */
-const BAG_COLS = 8, BAG_ROWS = 6, BAG_GAP = 3;
+/** Cửa sổ Tu luyện: ô túi nhỏ cỡ ~BAG_CELL px, số cột × hàng tự tăng cho kín khung (không còn lưới 8 × 6 ô to với khoảng trống hai bên).
+ *  Ô giãn nhẹ để lấp đủ bề ngang; số ô mỗi trang (BAG_PER_PAGE) = cột × hàng. Màn hẹp (≤ 620px) giữ lưới co theo bề ngang. */
+const BAG_CELL = 58, BAG_GAP = 3;
 function fitBagGrid(){
   const g = $('ivGrid'); if (!g) return;
-  if (MODE !== 'panel' || innerWidth <= 620 || !g.clientHeight){ g.style.removeProperty('--cell'); return; }
+  if (MODE !== 'panel' || innerWidth <= 620 || !g.clientHeight){ g.style.removeProperty('--cell'); g.style.removeProperty('--cols'); return; }
   const w = g.clientWidth - 4, h = g.clientHeight - 4;
-  const cell = Math.floor(Math.min((w - (BAG_COLS - 1) * BAG_GAP) / BAG_COLS, (h - (BAG_ROWS - 1) * BAG_GAP) / BAG_ROWS));
-  g.style.setProperty('--cell', Math.max(28, Math.min(80, cell)) + 'px');
+  const cols = Math.max(6, Math.floor((w + BAG_GAP) / (BAG_CELL + BAG_GAP)));
+  const cell = Math.max(32, Math.min(72, Math.floor((w - (cols - 1) * BAG_GAP) / cols)));
+  const rows = Math.max(3, Math.floor((h + BAG_GAP) / (cell + BAG_GAP)));
+  g.style.setProperty('--cell', cell + 'px'); g.style.setProperty('--cols', cols);
+  const per = cols * rows;
+  if (per !== BAG_PER_PAGE){                                  // đổi số ô / trang: giữ món đầu trang đang xem rồi vẽ lại
+    const first = bagPage * BAG_PER_PAGE;
+    BAG_PER_PAGE = per; bagPage = Math.floor(first / per);
+    requestAnimationFrame(() => renderInv());
+  }
 }
 if (window.ResizeObserver) new ResizeObserver(() => fitBagGrid()).observe($('pane-inv'));
 function renderInvInner(){
@@ -315,7 +340,7 @@ function renderInvInner(){
       <header class="iv-name"><b>${S.name}</b><span>Cấp ${S.level} · ${S.realmName} ${S.stageName}</span></header>
       <div class="iv-doll">
         <div class="iv-col">${SLOT_LEFT.map(slotHtml).join('')}</div>
-        <div class="iv-fig"><div class="iv-stage"><img class="hero ref" src="${skinArt('heroStand') || 'img/hero_ref_stand.png'}" alt="${S.name}"><canvas id="ivAvatar" class="iv-avatar" width="320" height="320" role="img" aria-label="Tạo hình nhân vật" style="visibility:hidden"></canvas></div>
+        <div class="iv-fig"><div class="iv-stage"><canvas id="ivAura" class="iv-aura" width="320" height="320" aria-hidden="true"></canvas><img class="hero ref" src="${skinArt('heroStand') || 'img/hero_ref_stand.png'}" alt="${S.name}"><canvas id="ivAvatar" class="iv-avatar" width="320" height="320" role="img" aria-label="Tạo hình nhân vật" style="visibility:hidden"></canvas></div>
           <p class="iv-pow" data-tip="Lực chiến&#10;Tổng hợp tấn công, phòng thủ, máu và chỉ số phụ">Lực chiến <b>${fmt(power(st))}</b></p>
           <div class="iv-skills" data-goskill>${skSlotsHtml('mini')}</div></div>
         <div class="iv-col">${SLOT_RIGHT.map(slotHtml).join('')}</div>
@@ -333,6 +358,7 @@ function renderInvInner(){
       <nav class="iv-cats" role="tablist">${CATS.map(([id, n], i) => `<button role="tab" data-cat="${id}" aria-selected="${invCat === id}" data-tip="${n}&#10;Phím ${i+1}">${n}<small>${counts[id]}</small></button>`).join('')}</nav>
       <div class="iv-head"><p class="eyebrow ${used >= cap ? 'full' : ''}">Hành trang ${used}/${cap} ô</p>
         <span class="iv-stone" data-tip="Linh thạch&#10;Bán trang bị để nhận thêm">${itemImg('linh_thach')}${fmt(S.inventory.linh_thach || 0)}</span>${hpStoneHtml('iv-stone hp')}
+        <button class="sell-btn" id="quickEquipBtn" aria-label="Trang bị nhanh" data-tip="Trang bị nhanh · phím Q&#10;Mỗi ô mặc món có Chiến lực cao nhất trong hành trang&#10;(tính cả thưởng cùng bộ, chỉ món đủ cảnh giới)"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m13 7-3 5h4l-3 5"/></svg><span>Mặc nhanh</span></button>
         <div class="sort">
           <button class="sell-btn" id="sellBtn" aria-label="Bán" data-tip="Bán&#10;Mở Luyện chế · Bán: chọn món bỏ vào quầy rồi bán"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg><span>Bán</span></button>
         </div>
@@ -492,6 +518,7 @@ function initInventory(){
     if (e.target.closest('[data-msmode]')){ msMode = !msMode; if (!msMode) msClear(); sellOpen = false; hideTip(); renderInv(); return; }
     const msb = e.target.closest('[data-ms]');
     if (msb){ const a = msb.dataset.ms; hideTip(); if (a === 'sell') msSell(); else { if (a === 'clear') msClear(); else if (a === 'page') msPage(); else if (a === 'done'){ msMode = false; msClear(); } renderInv(); } return; }
+    if (e.target.closest('#quickEquipBtn')){ sellOpen = false; sortOpen = false; hideTip(); act('equip-best'); return; }
     if (e.target.closest('#sellBtn')){ sellOpen = false; sortOpen = false; hideTip(); openTab('sell', true); return; }
     const bsc = e.target.closest('[data-bulkscope]');
     if (bsc){ bulkScope = bsc.dataset.bulkscope; bulkArm = null; try { localStorage.setItem('van-dao-bulk-scope', bulkScope); } catch(err){} renderInv(); return; }
@@ -582,6 +609,7 @@ function initInventory(){
     if (sellOpen){ const li = e.target.closest?.('[data-sellmax],[data-msmode]'); if (li && (k === 'enter' || k === ' ')){ e.preventDefault(); li.click(); return; } if (k === 'escape'){ sellOpen = false; renderInv(); return; } }
     if (k === 'escape' && (multiSel.size || msMode)){ msClear(); msMode = false; renderInv(); return; }
     if (k === 'b' && multiSel.size){ e.preventDefault(); msSell(); return; }
+    if (k === 'q' && !e.ctrlKey && !e.altKey && !e.metaKey){ act('equip-best'); return; }   // trang bị nhanh
     const map = {e:'equip', u:'unequip', r:'use', delete:'drop', b:'sell', c:'compare', s:'sort', a:'arrange'};
     if (map[k]){ e.preventDefault(); invDo(map[k]); return; }
     if (/^[1-7]$/.test(k)){ setCat(CATS[+k - 1][0]); return; }
@@ -590,7 +618,8 @@ function initInventory(){
       const list = bagList(); if (!list.length) return;
       e.preventDefault();
       let i = invSel?.src === 'bag' ? invSel.idx : -1;
-      i += {arrowleft:-1, arrowright:1, arrowup:-6, arrowdown:6}[k];
+      const cols = +getComputedStyle($('ivGrid')).getPropertyValue('--cols') || 8;   // số cột thật của lưới
+      i += {arrowleft:-1, arrowright:1, arrowup:-cols, arrowdown:cols}[k];
       i = Math.max(0, Math.min(list.length - 1, i));
       invSel = {src:'bag', k: list[i].k, idx: i, _follow: true}; renderInv();
       pane.querySelector(`.iv-cell[data-idx="${i}"]`)?.scrollIntoView({block:'nearest'});

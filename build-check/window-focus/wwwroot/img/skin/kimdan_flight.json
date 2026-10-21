@@ -1,0 +1,20 @@
+{
+  "skin": "kimdan",
+  "motion": "sword-flight",
+  "route": "host_image",
+  "frames": 4,
+  "size": [
+    480,
+    440
+  ],
+  "anchor": [
+    240,
+    380
+  ],
+  "bodyHeight": 305,
+  "scale": 0.5765595463137996,
+  "review": {
+    "status": "source-reviewed; runtime-not-reviewed",
+    "warnings": []
+  }
+}

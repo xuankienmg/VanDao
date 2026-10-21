@@ -76,8 +76,8 @@ public static class SkillData
             "Thân thể quen lửa: kháng Hỏa (Lv.1 +5% → Lv.5 +20%), tính là giảm sát thương nhận vào qua phòng thủ.", "passive", DefPct: 3.75, Lead: 1.0 / 3, Code: "FIRE_PASSIVE_003"),
         new("hoa_tam", "hoa", "Hỏa Tâm", "Bị động", 2, 2, 5, 1, 2, new[] { "hoa_tu:3" },
             "Tâm hỏa bình ổn: chiêu Hỏa +3% sát thương mỗi cấp (Lv.5 +15%).", "passive", SkillPct: 3, Code: "FIRE_PASSIVE_004"),
-        new("hoa_linh_chan_y", "hoa", "Hỏa Linh Chân Ý", "Bị động", 3, 1, 1, 2, 5, new[] { "liet_diem:5", "phan_thien:3", "hoa_tam:5" },
-            "Bị động cao cấp: chiêu Hỏa +20% sát thương, +10% xuyên thấu.", "passive", SkillPct: 20, Pen: 10, Code: "FIRE_PASSIVE_006"),
+        new("hoa_linh_chan_y", "hoa", "Hỏa Linh Chân Ý", "Bị động", 3, 1, 5, 2, 5, new[] { "liet_diem:5", "phan_thien:3", "hoa_tam:5" },
+            "Bị động cao cấp: mỗi cấp tăng 4% sát thương chiêu Hỏa và 2% xuyên thấu; cấp 5 đạt +20% sát thương, +10% xuyên thấu.", "passive", SkillPct: 4, Pen: 2, Code: "FIRE_PASSIVE_006"),
         // ---- Nguyên Anh: hàng bị động mới ----
         new("phuong_hoang", "hoa", "Phượng Hoàng Niết Bàn", "Bị động", 4, 0, 5, 3, 5, new[] { "hoa_linh_chan_y:1" },
             "Lửa phượng tái sinh: tăng máu và phòng thủ (+4% mỗi cấp, Lv.5 +20%).", "passive", HpPct: 4, DefPct: 4, Code: "FIRE_PASSIVE_008"),
@@ -91,6 +91,10 @@ public static class SkillData
             "Luyện hỏa vào hư không, bùng nổ 520% công ở cấp 1, thêm 35% mỗi cấp.", "ultimate", DmgBase: 520, DmgPerLv: 35, Code: "FIRE_ULTIMATE_002", AnimId: "FIRE_ULTIMATE_001"),
         new("thai_hu_hoa", "hoa", "Thái Hư Hỏa Đạo", "Bị động", 6, 1, 5, 5, 5, new[] { "hoa_than_phap:3" },
             "Hỏa đạo hòa hư: sát thương chiêu thức +3% và xuyên thấu +1% mỗi cấp.", "passive", SkillPct: 3, Pen: 1, Code: "FIRE_PASSIVE_011"),
+        new("hon_nguyen_hoa", "hoa", "Hỗn Nguyên Phần Thiên", "Tuyệt kỹ", 7, 1, 5, 6, 8, new[] { "hu_khong_hoa:3" },
+            "Hợp nhất nguyên thần và linh hỏa, bùng nổ kim diễm: 640% công ở cấp 1, thêm 40% mỗi cấp.", "ultimate", DmgBase: 640, DmgPerLv: 40, Code: "FIRE_ULTIMATE_003", AnimId: "FIRE_ULTIMATE_003"),
+        new("hoa_dao_hop_nhat", "hoa", "Hỏa Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_hoa:3" },
+            "Thân thần hợp nhất trong linh hỏa: công +4%, sát thương chiêu thức +3% và xuyên thấu +1% mỗi cấp.", "passive", AtkPct: 4, SkillPct: 3, Pen: 1, Code: "FIRE_PASSIVE_012"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
@@ -138,6 +142,10 @@ public static class SkillData
             "Biển hư không hóa thủy lao: 490% công ở cấp 1, thêm 33% mỗi cấp.", "water_prison", DmgBase: 490, DmgPerLv: 33, Code: "WATER_ULTIMATE_002", AnimId: "WATER_PRISON_001"),
         new("thai_hu_thuy", "thuy", "Thái Hư Thủy Đạo", "Bị động", 6, 1, 5, 5, 5, new[] { "thuy_than_phap:3" },
             "Thủy đạo hòa hư: sát thương chiêu thức +3% và máu +3% mỗi cấp.", "passive", SkillPct: 3, HpPct: 3, Code: "WATER_PASSIVE_009"),
+        new("hon_nguyen_thuy", "thuy", "Hỗn Nguyên Huyền Hải", "Tuyệt kỹ", 7, 1, 5, 6, 8, new[] { "hu_hai:3" },
+            "Nguyên thần hợp chân thủy, huyền hải hóa lao bùng nổ: 605% công ở cấp 1, thêm 38% mỗi cấp.", "water_prison", DmgBase: 605, DmgPerLv: 38, Code: "WATER_ULTIMATE_003", AnimId: "WATER_PRISON_001"),
+        new("thuy_dao_hop_nhat", "thuy", "Thủy Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_thuy:3" },
+            "Thân thần hòa huyền hải: máu +4%, phòng thủ +3% và sát thương chiêu thức +3% mỗi cấp.", "passive", HpPct: 4, DefPct: 3, SkillPct: 3, Code: "WATER_PASSIVE_010"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Mộc.", "root"),
         new("dang_man", "moc", "Đằng Mạn", "Khống", 2, 1, 5, 0, 1, new[] { "moc_linh_can:1" }, "Dây leo trói địch.", "bind"),
         new("hoi_xuan", "moc", "Hồi Xuân", "Thủ", 2, 3, 5, 0, 1, new[] { "moc_linh_can:1" }, "Chữa thương.", "aura"),

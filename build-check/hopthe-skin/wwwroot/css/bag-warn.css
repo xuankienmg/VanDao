@@ -1,0 +1,16 @@
+/* Vấn Đạo · css/bag-warn.css: cảnh báo Hành trang đầy / sắp đầy. */
+.ib.bag-full,.ib.bag-near{position:relative}
+.ib.bag-full::after,.ib.bag-near::after{content:"!";position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;
+  display:grid;place-items:center;font:700 10px/1 var(--f-body);color:#1a0d08;background:var(--bad);box-shadow:0 0 0 2px var(--ink)}
+.ib.bag-near::after{background:var(--gold)}
+.ib.bag-full{border-color:var(--bad);animation:bag-pulse 1.6s ease-in-out infinite}
+@keyframes bag-pulse{50%{box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 35%,transparent)}}
+.tab.bag-full::after{content:"";display:inline-block;width:7px;height:7px;margin-left:5px;border-radius:50%;background:var(--bad);vertical-align:2px}
+.bag-warn{position:absolute;right:8px;top:8px;z-index:5;padding:4px 10px;border-radius:999px;border:1px solid var(--bad);cursor:pointer;
+  background:color-mix(in srgb,var(--bad) 22%,#120b09);color:#ffd9cf;font:500 12px var(--f-body);font-variant-numeric:tabular-nums}
+.bag-warn b{color:#fff;font-weight:600}
+.bag-warn:hover{background:color-mix(in srgb,var(--bad) 35%,#120b09)}
+.bag-warn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+body.strip .bag-warn{right:4px;top:4px;padding:2px 7px;font-size:10.5px}
+.craft-toast .ct-t.bad{color:#ffb4a4;text-shadow:0 0 8px #e5847288}
+@media (prefers-reduced-motion:reduce){.ib.bag-full{animation:none}}

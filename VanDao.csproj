@@ -14,9 +14,27 @@
     <Product>Người Lười Tu Tiên</Product>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>wwwroot\img\app\icon.ico</ApplicationIcon>
-    <!-- Phiên bản phát hành: tăng số này mỗi lần gửi bản chơi thử mới -->
+    <!-- Phiên bản lấy TỰ ĐỘNG từ git tag gần nhất (vX.Y.Z) lúc build, xem target VersionFromGitTag bên dưới.
+         Số dưới đây chỉ dùng khi không có git / chưa có tag. Ép số khác: dotnet publish -p:VersionFromTag=false -p:Version=1.2.3 -->
     <Version>0.7.4</Version>
   </PropertyGroup>
+
+  <!-- Version = tag vX.Y.Z gần nhất trên nhánh hiện tại (git describe). Không có git / không có tag thì giữ số ở trên. -->
+  <Target Name="VersionFromGitTag" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo;CoreCompile" Condition="'$(VersionFromTag)' != 'false'">
+    <Exec Command="git describe --tags --abbrev=0 --match &quot;v[0-9]*&quot;" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" WorkingDirectory="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_GitTag" />
+      <Output TaskParameter="ExitCode" PropertyName="_GitTagExit" />
+    </Exec>
+    <PropertyGroup Condition="'$(_GitTagExit)' == '0' And $([System.Text.RegularExpressions.Regex]::IsMatch('$(_GitTag)', '^v\d+\.\d+\.\d+$'))">
+      <Version>$(_GitTag.Substring(1))</Version>
+      <VersionPrefix>$(Version)</VersionPrefix>
+      <AssemblyVersion>$(Version).0</AssemblyVersion>
+      <FileVersion>$(Version).0</FileVersion>
+      <InformationalVersion>$(Version)</InformationalVersion>
+    </PropertyGroup>
+    <Message Importance="high" Text="Phiên bản game: $(Version)" />
+  </Target>
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />

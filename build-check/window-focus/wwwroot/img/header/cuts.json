@@ -1,0 +1,55 @@
+{
+  "source": "tools\\header_art\\reference.png",
+  "art_source": "existing",
+  "icons": {
+    "req": [
+      288,
+      12,
+      324,
+      49
+    ],
+    "inv": [
+      432,
+      12,
+      466,
+      49
+    ],
+    "craft": [
+      598,
+      12,
+      635,
+      49
+    ],
+    "map": [
+      754,
+      12,
+      791,
+      49
+    ],
+    "skill": [
+      895,
+      12,
+      932,
+      49
+    ],
+    "pet": [
+      1058,
+      10,
+      1096,
+      49
+    ]
+  },
+  "headerTile": [
+    1193,
+    0,
+    1233,
+    62
+  ],
+  "scenery": [
+    790,
+    63,
+    1586,
+    149
+  ],
+  "text": "All interface labels remain live text, not cropped lettering."
+}

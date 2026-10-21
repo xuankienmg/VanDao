@@ -3,16 +3,16 @@ const battleHpTrails = new Map();
 function battleHpValue(value){ return Number.isFinite(value) ? Math.max(0,value) : 0; }
 /** GuardLeft là số khiên cuối lượt; chỉ đổi khi quái ra đòn ở mốc .85. */
 function battleGuardAt(battle,phase,waveStart=0){
+  if(phase.name==='pet')phase={...phase,name:'fight',s:0};
   const initial=battleHpValue(battle.guard),history=battle.guardLeft;
-  if(initial<=0)return 0;
   if(phase.name==='fight'&&phase.s<.85&&Number.isFinite(battle.guardBefore?.[phase.i||0]))
-    return Math.min(initial,battleHpValue(battle.guardBefore[phase.i||0]));
+    return battleHpValue(battle.guardBefore[phase.i||0]);
   let index=-1;
   if(phase.name==='fight')index=Math.max(0,phase.i||0)-(phase.s>=.85?0:1);
   else if(phase.name==='enter')index=Math.max(0,waveStart)-1;
   else if(phase.name==='win'||phase.name==='lose')index=(history?.length||0)-1;
   if(index<0)return initial;
-  return Math.min(initial,battleHpValue(history?.[Math.min(index,(history?.length||0)-1)]));
+  return battleHpValue(history?.[Math.min(index,(history?.length||0)-1)]);
 }
 function battleHpText(value){
   const n=Math.round(battleHpValue(value));
