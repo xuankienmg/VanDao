@@ -189,7 +189,7 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         {
             if (!_cache.TryGetValue(by, out var c) || DateTime.UtcNow - c.at > CacheFor)
             {
-                var order = by switch { "power" => "power_rank.asc,realm_rank.asc", "progress" => "progress_rank.asc,power_rank.asc", "pet" => "pet_rank.asc,power_rank.asc", _ => "realm_rank.asc,power_rank.asc" };
+                var order = by switch { "power" => "power_rank.asc,realm_rank.asc", "progress" => "progress_rank.asc,power_rank.asc", "pet" => "pet_rank.asc,player_id.asc", _ => "realm_rank.asc,power_rank.asc" };
                 c = (DateTime.UtcNow, await ReadRows($"order={order}&limit={Top}"));
                 _cache[by] = c;
             }

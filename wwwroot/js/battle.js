@@ -399,7 +399,9 @@ function drawPixelBattle(t, dt, ph, r){
   }
   // Chữ chiến đấu nằm trong phần nền phía trên cả hai nhân vật và thanh máu.
   // Cắt vùng chữ ở mép này để hiệu ứng bật số không tràn xuống che sprite.
-  const textBottom = Math.max(0, (g - Math.max(sz, msz)) * sy - 48);
+  // Large bosses can reach the top of the stage. Keep enough visible space
+  // for damage and critical labels instead of clipping their whole layer away.
+  const textBottom = Math.min(H, Math.max(big ? 88 : 58, (g - Math.max(sz, msz)) * sy - 48));
   const textRows = [0,0];
   ctx.save();ctx.beginPath();ctx.rect(0,0,W,textBottom);ctx.clip();
   for (const f of labels){
