@@ -273,7 +273,7 @@ public sealed class LauncherForm : Form
             await LauncherLogic.DownloadAndExtractAsync(
                 downloadUrl,
                 _settings.GamePath,
-                LauncherLogic.GetToken(_settings),
+                null,
                 progress,
                 _updateCts.Token
             );
@@ -327,7 +327,7 @@ public sealed class LauncherForm : Form
         {
             await LauncherLogic.DownloadAndApplyLauncherUpdateAsync(
                 downloadUrl,
-                LauncherLogic.GetToken(_settings),
+                null,
                 progress,
                 _updateCts.Token
             );
@@ -370,7 +370,6 @@ public sealed class LauncherForm : Form
     {
         if (s.TryGetProperty("gamePath", out var gp)) _settings.GamePath = gp.GetString() ?? _settings.GamePath;
         if (s.TryGetProperty("gitHubRepo", out var gr)) _settings.GitHubRepo = gr.GetString() ?? _settings.GitHubRepo;
-        if (s.TryGetProperty("gitHubToken", out var gt)) _settings.GitHubToken = gt.GetString() ?? _settings.GitHubToken;
         if (s.TryGetProperty("autoCheckOnStartup", out var ac)) _settings.AutoCheckOnStartup = ac.GetBoolean();
         if (s.TryGetProperty("closeLauncherOnPlay", out var cl)) _settings.CloseLauncherOnPlay = cl.GetBoolean();
         if (s.TryGetProperty("currentVersion", out var cv)) _settings.CurrentVersion = cv.GetString() ?? _settings.CurrentVersion;

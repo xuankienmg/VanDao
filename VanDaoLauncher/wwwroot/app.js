@@ -64,7 +64,6 @@ function toggleTheme() {
 function gatherCurrentSettings() {
   return {
     gitHubRepo: document.getElementById('setting-repo')?.value?.trim() || '',
-    gitHubToken: document.getElementById('setting-token')?.value?.trim() || '',
     gamePath: document.getElementById('setting-path')?.value?.trim() || '',
     currentVersion: document.getElementById('setting-version')?.value?.trim() || '',
     launcherVersion: document.getElementById('setting-launcher-version')?.value?.trim() || '',
@@ -202,7 +201,6 @@ function handleInitData(data) {
 
   // Update Settings Inputs
   document.getElementById('setting-repo').value = launcherState.settings.gitHubRepo || 'xuankienmg/VanDao';
-  document.getElementById('setting-token').value = launcherState.settings.gitHubToken || '';
   document.getElementById('setting-path').value = launcherState.settings.gamePath || 'D:\\Game VanDao';
   document.getElementById('setting-version').value = launcherState.currentVersion;
   document.getElementById('setting-launcher-version').value = launcherState.launcherVersion;

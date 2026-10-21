@@ -16,11 +16,12 @@
     <Version>1.0.0</Version>
   </PropertyGroup>
 
-  <!-- Single-file publish (framework-dependent — requires .NET 8 runtime) -->
+  <!-- Publish kèm .NET runtime để người chơi không phải cài .NET riêng. -->
   <PropertyGroup Condition="'$(PublishDir)' != ''">
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <SelfContained>false</SelfContained>
+    <SelfContained>true</SelfContained>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +31,8 @@
 
   <ItemGroup>
     <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Remove="**\launcher_settings.json" />
+    <None Remove="**\launcher_settings.json" />
   </ItemGroup>
 
 </Project>
