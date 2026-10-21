@@ -19,6 +19,11 @@ public static class SaveGuard
     /// <summary>Số nhân vật vừa bị đánh dấu ở lần khởi động này vì file từng bị bản cũ ghi vào (0 = không).</summary>
     public static int OldBuildRows { get; private set; }
 
+    /// <summary>Nhân vật admin thử nghiệm trong dev không chịu cảnh báo dữ liệu bản cũ.</summary>
+    public static bool AdminDataExempt(Player p, bool development) =>
+        development && (p.Tainted || p.Admin.Length > 0 || p.AdminPoints > 0);
+    public static bool DataFlagged(Player p, bool development) => p.Flagged && !AdminDataExempt(p, development);
+
     public static void Check(GameDbContext db, bool dev)
     {
         var conn = db.Database.GetDbConnection();

@@ -214,7 +214,7 @@ body.strip .strip-head:active{cursor:grabbing}
 body.strip .strip-head button{cursor:pointer}
 /* ---- trang phục (skin): nút trường bào + bảng chọn ---- */
 .iv-ward-btn{position:absolute;top:6px;right:6px;z-index:3;width:28px;height:28px;display:grid;place-items:center;padding:0;background:#2a2218;border:1px solid var(--bronze);color:var(--parch);cursor:pointer}
-.iv-ward-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.iv-ward-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .iv-ward-btn:hover,.iv-ward-btn.on{border-color:var(--gold);color:var(--gold);background:#3a2e18}
 .iv-ward{position:absolute;top:38px;left:6px;right:6px;z-index:4;padding:7px;background:#1a1410;border:2px solid var(--bronze);box-shadow:0 8px 24px #000c,inset 0 0 0 1px #0b0806}
 .wd-hd{display:flex;align-items:baseline;gap:6px;margin:0 0 6px}

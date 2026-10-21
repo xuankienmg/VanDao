@@ -1002,6 +1002,8 @@ public static class GameData
             "img/hero_luyenhu.png", "img/hero_luyenhu_stand.png", "img/med_luyenhu.png", "img/hoa_cau_ref_luyenhu.png"),
         new SkinDef("hop_the", "Thiên Hợp Tiên Y", "Tiên y trắng phủ hắc bào thêu kim vân, long giáp vàng đính lam ngọc, tóc bạc đội kim quan của đại năng Hợp Thể.", 6,
             "img/hero_hopthe.png", "img/hero_hopthe_stand.png", "img/med_hopthe.png", "img/hoa_cau_ref_hopthe.png"),
+        new SkinDef("hop_the_nu", "Thiên Hợp Tiên Cơ", "Tiên cơ tóc bạc đội kim quan lam ngọc, tiên y trắng phối hắc kim, dải lụa thêu vân và pháp hoàn vàng của cảnh giới Hợp Thể.", 6,
+            "img/hero_hopthe_nu.png", "img/hero_hopthe_nu_stand.png", "img/med_hopthe_nu.png", "img/hoa_cau_ref_hopthe_nu.png"),
     };
     public static readonly Dictionary<string, SkinDef> SkinById = Skins.ToDictionary(s => s.Id);
 

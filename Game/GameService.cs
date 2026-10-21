@@ -513,6 +513,25 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
 
     public static readonly string[] AdminFlags = { "god", "break", "fast", "fast2", "fast3", "fast5", "boss", "map" };
+    public async Task<(string? msg, string? kind)> AdminClearDataFlagAsync(Player p, string? targetId = null)
+    {
+        if (!Player.AdminEnabled) throw new GameException("Chỉ admin được gỡ cờ dữ liệu.");
+        if (!string.IsNullOrWhiteSpace(targetId))
+        {
+            if (!Guid.TryParse(targetId, out var target) || target == Guid.Empty) throw new GameException("ID người chơi không hợp lệ.");
+            if (target != p.Id)
+            {
+                if (lb is null) throw new GameException("Chưa cấu hình bảng xếp hạng online.");
+                await lb.ClearDataFlagAsync(target);
+                var local = await db.Players.SingleOrDefaultAsync(x => x.Id == target);
+                if (local is not null) local.Flagged = false;
+                return Log(p, $"[Admin] Đã gỡ cờ cảnh báo dữ liệu cho người chơi {target}.", "good");
+            }
+        }
+        if (lb is not null) await lb.ClearDataFlagAsync(p);
+        p.Flagged = false;
+        return Log(p, "[Admin] Đã gỡ cờ cảnh báo dữ liệu. Giữ nguyên trạng thái từng sử dụng admin.", "good");
+    }
     /// <summary>Admin thám hiểm nhanh: hệ số tăng tốc chuyến thám hiểm (×2 · ×3 · ×5; cờ cũ "fast" = ×3), 1 = tắt.</summary>
     private static double FastMult(Player p) => p.Cheat("fast5") ? 5 : p.Cheat("fast3") || p.Cheat("fast") ? 3 : p.Cheat("fast2") ? 2 : 1;
 

@@ -122,7 +122,7 @@ const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="
 let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
 // ---- Trang phục (skin): nút trường bào góc trên cột nhân vật → bảng chọn trang phục ----
 let wardOpen = false;
-const WARD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-4 2-3 6 4 2 2-4-1 12h10L16 9l2 4 4-2-3-6-4-2-3 4Z"/><path d="m9 3 5 7-3 4M15 3l-3 4M8 14h8"/></svg>';
+const WARD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a2 2 0 0 1 4 0c0 1.5-2 1.5-2 3L3 12h18l-9-5"/><path d="m8 12-2 9h12l-2-9M10 12l4 5-3 4M8 17h8"/></svg>';
 function wardrobeHtml(){
   const skins = DATA.skins || [], cur = S.skin || '';
   const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
@@ -248,7 +248,7 @@ function drawInventoryAvatar(t){
   const profile = SKIN_ACTOR_SHEETS[hero];
   const thanhSam = hero === 'img/hero_luyenkhi.png';
   const image = thanhSam ? skImg('img/skin/luyenkhi_inventory_breeze.png')
-    : profile ? skImg(`img/skin/${profile.id}_actions.png`) : null;
+    : profile ? skImg(profile.inventorySrc || `img/skin/${profile.id}_actions.png`) : null;
   const drawn = !!image;
   if (image){
     drawInventoryIdle(g,image,thanhSam ? {fw:384,fh:320,ax:192,ay:308,bodyHeight:210}
@@ -260,9 +260,12 @@ function drawInventoryAvatar(t){
 function renderInv(){
   const pane = $('pane-inv'), host = pane?.closest('aside.book'), hostTop = host?.scrollTop, SCROLLERS = '.iv-char-in, #ivGrid, .iv-cats';
   const keep = pane ? [pane.scrollTop, [...pane.querySelectorAll(SCROLLERS)].map(el => [el.scrollTop, el.scrollLeft])] : null;
-  const fxOpen = !!pane?.querySelector('details.iv-fx')?.open;
+  const fxStates = new Map([...(pane?.querySelectorAll('details.iv-fx') || [])].map(el => [el.classList.contains('iv-divine') ? 'divine' : 'sources', el.open]));
   renderInvInner();
-  if (fxOpen){ const d = pane.querySelector('details.iv-fx'); if (d) d.open = true; }
+  pane?.querySelectorAll('details.iv-fx').forEach(el => {
+    const key = el.classList.contains('iv-divine') ? 'divine' : 'sources';
+    if (fxStates.has(key)) el.open = fxStates.get(key);
+  });
   fitBagGrid();
   if (host) host.scrollTop = hostTop;
   if (keep){ pane.scrollTop = keep[0]; pane.querySelectorAll(SCROLLERS).forEach((el, i) => { const k = keep[1][i]; if (k){ el.scrollTop = k[0]; el.scrollLeft = k[1]; } }); }
