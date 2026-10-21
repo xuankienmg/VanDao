@@ -16,7 +16,7 @@
     <ApplicationIcon>wwwroot\img\app\icon.ico</ApplicationIcon>
     <!-- Phiên bản lấy TỰ ĐỘNG từ git tag gần nhất (vX.Y.Z) lúc build, xem target VersionFromGitTag bên dưới.
          Số dưới đây chỉ dùng khi không có git / chưa có tag. Ép số khác: dotnet publish -p:VersionFromTag=false -p:Version=1.2.3 -->
-    <Version>0.7.2</Version>
+    <Version>0.7.4</Version>
   </PropertyGroup>
 
   <!-- Version = tag vX.Y.Z gần nhất trên nhánh hiện tại (git describe). Không có git / không có tag thì giữ số ở trên. -->
@@ -48,6 +48,10 @@
     <Compile Remove="tools\**" />
     <Content Remove="tools\**" />
     <None Remove="tools\**" />
+    <!-- launcher: project riêng, không biên dịch vào game -->
+    <Compile Remove="VanDaoLauncher\**" />
+    <Content Remove="VanDaoLauncher\**" />
+    <None Remove="VanDaoLauncher\**" />
   </ItemGroup>
 
 </Project>

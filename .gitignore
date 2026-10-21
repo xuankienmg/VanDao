@@ -5,3 +5,6 @@ obj/
 *.db-wal
 .vs/
 publish/
+NguoiLuoiTuTien.exe
+launcher_settings.json
+GEMINI.md
