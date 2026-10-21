@@ -10,7 +10,9 @@ im=Image.open(sys.argv[1]).convert('RGBA')
 if im.size != (1024,1024):
     if im.width != im.height: raise ValueError(f'Expected square sheet, got {im.size}')
     im=im.resize((1024,1024),Image.Resampling.LANCZOS)
-im.save(out/'luyenkhi_actions_clean.png')
+source_art=root/'tools/art-sources/skin'
+source_art.mkdir(parents=True,exist_ok=True)
+im.save(source_art/'luyenkhi_actions_clean.png')
 # Each pose uses the same source pixel scale. Anchors are the midpoint of stance,
 # not the center of the weapon or trailing hair. Row baselines remain fixed.
 groups={
