@@ -344,7 +344,7 @@ function drawPixelBattle(t, dt, ph, r){
     ctx.restore();
   }
   if (refHero && !reduce && ph.name !== 'walk' && hsx === 1 && hsy === 1 && hrot === 0) hsy = 1 + .012 * Math.sin(t * 2.6);   // đứng chờ: thở nhẹ
-  if (refHero) hcBattleDraw(refHero, {ph, hx, hy, hAlpha, hFlash, g, sz, sx, sy, wolfX, t, casts: castsNow, basic: b.basic, sqx: hsx, sqy: hsy, rot: hrot,
+  if (refHero) hcBattleDraw(refHero, {ph, hx, hy, hAlpha, hFlash, g, sz, msz, sx, sy, wolfX, t, casts: castsNow, basic: b.basic, sqx: hsx, sqy: hsy, rot: hrot,
     cast: b.basic === 'hoa_cau'});
   if(typeof drawPetCompanion==='function')drawPetCompanion(ctx,b,ph.name==='pet'?petPhase:{...ph,name:ph.name==='fight'?'idle':ph.name},{heroX:hx,targetX:wolfX,targetSize:msz,ground:g,heroSize:sz,sx,sy,time:t,reduced:reduce,width:W,big});
   // Trạng thái nét cao sau sprite, trước số sát thương và HUD.
@@ -364,6 +364,9 @@ function drawPixelBattle(t, dt, ph, r){
   }
   if (monK >= 0 && wx !== null) monFx(monStyleOf(b.image), monK, {mx: wx * sx, my: (g - msz * .5) * sy, mw: msz * sx, mouthX: (wx - msz * .38) * sx, mouthY: (g - msz * .62) * sy,
     cx: (heroX + U(4)) * sx, cy: (g - sz * .55) * sy, gy: (g + 1) * sy, H: sz * sy, t, seed: ph.trip * 7 + ph.i});   // đè lên tu sĩ
+  const sheetSkill = [...castsNow].filter(c=>c.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0]?.skill || b.basic;
+  const sheetFxReady = !!refHero && ph.name === 'fight' && typeof fireFxAvailable === 'function' && fireFxAvailable(sheetSkill,S.realm);
+  if (!sheetFxReady){
   { const bdef = skById(b.basic);                                                 // đòn thường hệ Thủy (lượt không tung kỹ năng): nét cao
     if (ph.name === 'fight' && bdef?.element === 'thuy' && !castsNow.some(c => c.dmg > 0))
       tbDraw(ctx, bdef.anim, ph.s, (heroX + U(10)) * sx, (g - sz * .55) * sy, wolfX * sx, (g - sz * .45) * sy, sz * sy, t); }
@@ -375,6 +378,7 @@ function drawPixelBattle(t, dt, ph, r){
     tlaoDraw(ctx, ph.s, wolfX * sx, (g - sz * .45) * sy, sz * sy);
   if (ph.name === 'fight' && castsNow.some(c => c.anim === 'water_dragon' && c.dmg > 0))     // Thương Hải Quyết: thủy long nét cao
     tlDraw(ctx, ph.s, (heroX + sz * .3) * sx, wolfX * sx, (g - sz * .55) * sy, sz * sy);
+  }
   ctx.textAlign = 'center';
   if (wv && ph.name !== 'walk'){                                                      // ải 3 đợt: đợt đang đánh, góc phải trên
     const total = S.map.areas[Math.min(S.map.area, S.map.areas.length) - 1]?.waves?.length || B0.waves.length;

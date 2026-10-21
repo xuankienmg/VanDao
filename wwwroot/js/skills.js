@@ -37,7 +37,7 @@ let skEl = 'hoa', skSel = 'liet_diem', skFade = 0, skPick = null, skAnimT0 = 0;
 // Nộ: mỗi đòn đánh thường +RAGE_HIT, đủ RAGE_MAX thì tung kỹ năng ở ô 1 (khớp SkillData.RagePerHit / RageMax ở server)
 const RAGE_HIT = 25, RAGE_MAX = 100, RAGE_HITS = Math.ceil(RAGE_MAX / RAGE_HIT);
 const SLOT_NAMES = ['Đòn thường', 'Kỹ năng'], SLOT_IDX = [0, 1];
-const fitsSlot = (s, i) => !!s && (i === 0 ? s.category === 'Đòn thường' : ['Công','Tuyệt kỹ'].includes(s.category));
+const fitsSlot = (s, i) => !!s && (i === 0 ? s.category === 'Đòn thường' : ['Công','Tuyệt kỹ','Thủ','Khống','Thân pháp'].includes(s.category));
 const skTree = s => s.category === 'Đòn thường' ? 'basic' : (s.category === 'Căn cơ' || s.category === 'Bị động') ? 'passive' : 'active';
 const skBasicId = () => (S.skillSlots && S.skillSlots[0]) || 'hoa_cau';
 /** Ô chiến đấu (dùng chung cho Công pháp và Hành trang). */
@@ -56,7 +56,7 @@ const skById = id => DATA.skillTree.find(s => s.id === id);
 const skOfEl = el => DATA.skillTree.filter(s => s.element === el);
 const skLv = id => S.skills[id] || 0;
 const skCost = (s, lv) => lv === 0 ? s.cost : 1 + Math.floor(lv / 2);
-const elOf = id => DATA.elements.find(e => e.id === id);
+const elOf = id => { const e=DATA.elements.find(e=>e.id===id); return e ? {...e,open:!!S?.unlockedElements?.includes(id)} : undefined; };
 // Tranh cùng hệ được phân biệt bằng bảng màu riêng ở mọi ô và phần xem trước.
 const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', hon_nguyen_hoa:'hoa_long', hoa_dao_hop_nhat:'hoa_linh_can', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y', hon_nguyen_thuy:'thuy_lao', thuy_dao_hop_nhat:'thuy_linh_can'};
 const SK_ICON_FILTER = {
@@ -70,7 +70,7 @@ const SK_ICON_FILTER = {
   thuy_dao_hop_nhat:'hue-rotate(25deg) brightness(1.2)'
 };
 const skIconStyle = s => SK_ICON_FILTER[s.id] || 'none';
-const skIcon = s => `img/sk_${SK_ART[s.id] || s.id}.png`;
+const skIcon = s => ['tho','loi','bang','gio'].includes(s.element) ? `img/el_${s.element}.png` : `img/sk_${SK_ART[s.id] || s.id}.png`;
 const skFactor = (s, lv) => lv > 0 ? lv + (s.lead || 0) : 0;
 const realmName = i => DATA.realms[i]?.name || DATA.lockedRealms?.[i - DATA.realms.length] || '?';
 
@@ -80,7 +80,7 @@ function skState(s){
   const reqs = [{ok: S.realm >= s.minRealm, t: `${realmName(s.minRealm)} cảnh`}]
     .concat(s.req.map(r => { const [rid, rl] = r.split(':'); return {ok: skLv(rid) >= +rl, t: `${skById(rid).name} Lv. ${rl}`}; }));
   if (!max) reqs.push({ok: S.skillPoints >= cost, t: `${cost} điểm kỹ năng`});
-  const why = (el.open ? [] : ['Hệ chưa mở khóa']).concat(reqs.filter(r => !r.ok).map(r => 'Cần ' + r.t));
+  const why = (el.open ? [] : ['Cần học bí kíp công pháp hệ này']).concat(reqs.filter(r => !r.ok).map(r => 'Cần ' + r.t));
   const reqOk = el.open && reqs.slice(0, reqs.length - (max ? 0 : 1)).every(r => r.ok);
   const st = max ? 'max' : why.length ? (lv > 0 ? 'learned' : 'locked') : 'avail';
   return {lv, st, why, reqs, cost, max, reqOk, learned: lv > 0};
@@ -238,13 +238,13 @@ function renderSkill(){
     fireFxAvailable(skBasicId(),S.realm);
     if (S.skillSlots?.[1]) fireFxAvailable(S.skillSlots[1],S.realm);
   }
-  const el = elOf(skEl) || DATA.elements[0], list = skOfEl(el.id);
+  const el = elOf(skEl) || elOf(DATA.elements[0].id), list = skOfEl(el.id);
   if (!skById(skSel) || skById(skSel).element !== el.id) skSel = (list.find(s => skTree(s) === 'active') || list[0]).id;
   // đòn thường dùng chung mọi hệ (Hỏa Cầu): hệ chưa có đòn thường riêng thì hiện đòn thường chung
-  const basics = (list.some(s => skTree(s) === 'basic') ? list : DATA.skillTree).filter(s => skTree(s) === 'basic'), act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
+  const basics = (list.some(s => skTree(s) === 'basic') ? list : DATA.skillTree).filter(s => skTree(s) === 'basic' && elOf(s.element)?.open), act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
   const WX = {hoa: '&#10;Ngũ hành: Hỏa khắc Mộc +15% sát thương · Hỏa bị Thủy khắc −15%'};
   pane.innerHTML = `<div class="sk2" style="--ec:${el.color};--ec2:${el.color2}">
-    <nav class="sk-els" role="tablist" aria-label="Hệ tu luyện">${DATA.elements.map(e => `<button role="tab" class="${e.id === el.id ? 'on' : ''} ${e.open ? '' : 'lock'}" aria-selected="${e.id === el.id}" data-el="${e.id}" style="--c:${e.color}" data-tip="${e.name} hệ&#10;${e.desc}${e.open ? (WX[e.id] || '') : '&#10;Chưa mở khóa'}">
+    <nav class="sk-els" role="tablist" aria-label="Hệ tu luyện">${DATA.elements.map(e => elOf(e.id)).map(e => `<button role="tab" class="${e.id === el.id ? 'on' : ''} ${e.open ? '' : 'lock'}" aria-selected="${e.id === el.id}" data-el="${e.id}" style="--c:${e.color}" data-tip="${e.name} hệ&#10;${e.desc}${e.open ? (WX[e.id] || '') : '&#10;Chưa mở khóa'}">
       <img class="px" src="img/el_${e.id}.png" alt=""><span>${e.name.toUpperCase()}</span>${e.open ? '' : '<small>Chưa mở khóa</small>'}</button>`).join('')}</nav>
     <section class="sk2-bar">
       <div class="sk2-pts" data-tip="Điểm kỹ năng&#10;Chỉ dùng cho Chủ động và Bị động (đánh thường không tốn điểm)&#10;Đã nhận ${S.skillPointsTotal} · đã dùng ${S.skillPointsTotal - S.skillPoints}"><span>Điểm</span><b>${S.skillPoints}</b></div>
@@ -256,7 +256,7 @@ function renderSkill(){
   const root = pane.querySelector('.sk2');
   root.classList.add('sk-realms');
   const learnable = list.filter(s => skTree(s) !== 'basic' && skState(s).st === 'avail').length;
-  root.insertAdjacentHTML('beforeend', `<section class="sk-path-section"><header class="sk-path-heading"><h3>Đạo lộ ${el.name}</h3><span>${el.open ? `${learnable} có thể nâng · Rê chuột xem chi tiết · Nhấp đúp để trang bị` : 'Hệ này chưa mở công pháp'}</span></header><div class="sk-path-scroll" aria-label="Cây công pháp theo cảnh giới">${skRealmTree(el)}</div></section>`);
+  root.insertAdjacentHTML('beforeend', `<section class="sk-path-section"><header class="sk-path-heading"><h3>Đạo lộ ${el.name}</h3><span>${el.open ? `${learnable} có thể nâng · Rê chuột xem chi tiết · Nhấp đúp để trang bị` : 'Dùng bí kíp trong hành trang để mở cây kỹ năng'}</span></header><div class="sk-path-scroll" aria-label="Cây công pháp theo cảnh giới">${skRealmTree(el)}</div></section>`);
   skFade = 0;
   liveSkill();
 }
