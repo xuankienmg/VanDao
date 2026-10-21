@@ -3,7 +3,7 @@
 const FUSE_R = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine', 'immortal', 'dao', 'supreme'];
 const FUSE_N = ['Phàm', 'Linh', 'Huyền', 'Địa', 'Thiên', 'Thánh', 'Thần', 'Tiên', 'Đạo', 'Huyền Tiên'];
 let fuseSel = [];
-/** Tự chọn theo phẩm: 'low' = phẩm thấp nhất đủ 9 món, hoặc số phẩm 0..3 (nhớ lựa chọn). */
+/** Tự chọn theo phẩm: 'low' = phẩm thấp nhất đủ 9 món, hoặc số phẩm 0..8. */
 let fuseAutoQ = 'low';   // tự động điền: lấy từ phẩm thấp nhất đủ 9 món
 const FUSE_GRID = '<svg viewBox="0 0 16 16"><rect x="1" y="1" width="4" height="4"/><rect x="6" y="1" width="4" height="4"/><rect x="11" y="1" width="4" height="4"/><rect x="1" y="6" width="4" height="4"/><rect x="6" y="6" width="4" height="4"/><rect x="11" y="6" width="4" height="4"/><rect x="1" y="11" width="4" height="4"/><rect x="6" y="11" width="4" height="4"/><rect x="11" y="11" width="4" height="4"/></svg>';
 const FUSE_GO = '<svg viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6"/><path d="M20 5v14"/></svg>';
@@ -22,7 +22,7 @@ function lcBagList(){
   return gear.flatMap(k => Array.from({length: S.inventory[k]}, () => ({k, n: 1}))).concat(rest.map(k => ({k, n: S.inventory[k]})));
 }
 const lcCellTail = (k, n) => n > 1 ? `<span class="qty">${short(n)}</span>` : ITEM[k].slot ? `<span class="lv">${itemLv(ITEM[k])}</span>` : '';
-/** Trang bị trong túi ghép được (dưới Thiên cấp), mỗi món một ô; xếp phẩm thấp → cao, rồi cấp, tên. */
+/** Trang bị dưới Huyền Tiên, mỗi món một ô; xếp phẩm thấp → cao, rồi cấp, tên. */
 function fuseUnits(){
   const out = [];
   Object.keys(S.inventory).filter(k => ITEM[k]?.slot && ITEM[k].base && S.inventory[k] > 0 && fuseQOf(k) >= 0 && fuseQOf(k) < FUSE_R.length - 1)
@@ -51,13 +51,13 @@ function fuseCanAuto(pref = fuseAutoQ){
   const units = fuseUnits();
   if (pref !== 'low' && !(fuseSel.length && fuseQOf(fuseSel[0]) === pref)) return units.filter(k => fuseQOf(k) === pref).length >= 9;
   if (fuseSel.length) return fuseSel.length < 9 && units.filter(k => fuseQOf(k) === fuseQOf(fuseSel[0])).length >= 9;
-  return [0, 1, 2, 3, 4].some(q => units.filter(k => fuseQOf(k) === q).length >= 9);
+  return FUSE_R.slice(0, -1).some((_, q) => units.filter(k => fuseQOf(k) === q).length >= 9);
 }
 function renderFuse(){
   const pane = $('pane-fuse'); if (!pane || !S) return;
   fuseClean();
   const units = fuseUnits(), N = 9, q = fuseSel.length ? fuseQOf(fuseSel[0]) : -1;
-  const chance = q >= 0 ? (DATA.fuseChance?.[q] ?? [.9, .75, .6, .45, .3][q]) : null;
+  const chance = q >= 0 ? (DATA.fuseChance?.[q] ?? 0) : null;
   const used = {}, bag = lcBagList();
   // cột trái: cả hành trang; món không ghép được (đan, nguyên liệu, Thiên cấp…) hiện mờ
   const cells = bag.map(({k, n}) => {
@@ -89,7 +89,8 @@ function renderFuse(){
         <div class="fz-out" data-tip="Tỉ lệ thành công&#10;${rates}"><div class="iv-cell eq ${q >= 0 ? 'r-' + FUSE_R[q + 1] : ''}"><span class="q">?</span></div>
           <div class="fz-rate">${q >= 0 ? `<b>${Math.round(chance * 100)}%</b> thành công` : 'Chọn trang bị để xem tỉ lệ'}</div></div>
         <ul class="fz-rules">${q >= 0 ? `<li class="ok">Thành công: 1 món ${qWord(FUSE_R[q + 1])} ngẫu nhiên trong ${kindTxt}</li>
-          <li class="bad">Thất bại: 1 món ${qWord(FUSE_R[q])} ngẫu nhiên trong ${kindTxt}</li>` : `<li>Bỏ ${N} trang bị cùng phẩm vào lò.</li>`}</ul>
+          <li class="bad">${chance === 1 ? 'Chắc chắn thành công, không có nhánh thất bại.' : `Thất bại: trả lại 1 món ${qWord(FUSE_R[q])}, mất ${N - 1} món.`}</li>
+          <li>Loại và cảnh giới trang bị đầu ra được chọn từ ${N} món đã bỏ vào.</li>` : `<li>Bỏ ${N} trang bị cùng phẩm vào lò.</li>`}</ul>
         <div class="fz-act">
           <div class="fz-auto">
             <button class="fz-af" data-fz="auto" ${fuseCanAuto() ? '' : 'disabled'} data-tip="Tự động điền&#10;Lấy từ phẩm thấp nhất có đủ ${N} món (lò đang có món thì bù cùng phẩm), ưu tiên món bán rẻ">${FUSE_GRID}<span>Tự động điền</span></button>

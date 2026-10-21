@@ -19,7 +19,7 @@ public record GameDataDto(
     IEnumerable<SkinDef>? Skins = null,
     double[]? SpinWeights = null,
     int SpinPrice = 0,
-    IEnumerable<EquipmentSetDef>? EquipmentSets = null, IEnumerable<PetDef>? PetDefs = null, double[]? PetSpinWeights = null);
+    IEnumerable<EquipmentSetDef>? EquipmentSets = null, IEnumerable<PetDef>? PetDefs = null, double[]? PetSpinWeights = null, int PetSpinPrice = 0);
 
 public record RealmInfoDto(int Index, string Id, string Name, string Desc, string[] Stages,
     string Aura, string Lotus, string Sash, string Hero, string[] Resources,
@@ -45,7 +45,7 @@ public record ChapterInfoDto(int Index, string Name, string Realm, bool Enabled,
 public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear, int MinArea = 1);
 
 public record AreaDto(int Index, string Monster, string Place, int Hp, int Atk, int Def, bool Win, int Hits, bool Open, string Image = "",
-    List<WaveInfoDto>? Waves = null, bool Elite = false);
+    List<WaveInfoDto>? Waves = null, bool Elite = false, List<DropInfoDto>? Drops = null);
 
 /// <summary>Một đợt quái của ải (bảng thông tin ải trên bản đồ).</summary>
 public record WaveInfoDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int StoneMin = 0, int StoneMax = 0);
@@ -108,7 +108,9 @@ public record StateDto(
     string SpinHistory = "",
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
-    EffectState[]? CombatLimits = null, PetState? Pet = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+
+public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 
 public record StatSourceDto(string Name, double Atk = 0, double Def = 0, double Hp = 0,
     double AtkPct = 0, double DefPct = 0, double HpPct = 0, double Crit = 0, double Speed = 0, double Qi = 0);
@@ -167,11 +169,11 @@ public record CreatePlayerRequest(string? Name);
 
 public class GameException(string message) : Exception(message);
 
-public record PetState(List<PetDto> Owned, List<HatchDto> Hatch, int Capacity, int LevelCap, int GuardSlots, int HatchSlots);
+public record PetState(List<PetDto> Owned, List<HatchDto> Hatch, int Capacity, int LevelCap, int GuardSlots, int HatchSlots, int[]? StarCost = null, PetStarRecipe[]? StarRecipes = null);
 public record PetDto(Guid Id, string DefId, string Name, string Element, string Rarity, int Level, int Exp, int ExpNeed,
     int Form, string FormName, int Slot, int Atk, int Def, int Hp, int AptAtk, int AptDef, int AptHp,
     int ShareAtk, int ShareDef, int ShareHp, string TalentText, string SkillText, int SkillEvery,
-    CostDto[] EvolveCost, bool CanEvolve, string Image);
+    CostDto[] EvolveCost, bool CanEvolve, string Image, int AppearanceForm = -1, string EvolveHint = "", int Stars = 0, int ReleaseValue = 0, int StarPts = 0, string NextStarSkillText = "", string NextStarTalentText = "");
 public record HatchDto(int Slot, string Egg, DateTime ReadyAt, int ReadyInSeconds, bool Ready, int InstantCost);
-public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill);
+public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill, int[]? Hits = null, string Kind = "");
 public record PetBattleDto(Guid Id, string Name, string Image, string Element, PetCastDto[] Casts);

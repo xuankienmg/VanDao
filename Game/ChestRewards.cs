@@ -51,8 +51,17 @@ public static class ChestRewards
             var shift=GameData.DiffQualityShift[Math.Clamp(diff,0,2)];
             Add(PetData.EggIds[q],1,eggChance*(1-shift),"pet");
             Add(PetData.EggIds[Math.Min(4,q+1)],1,eggChance*shift,"pet");
-            Add("hoa_hinh_dan",1,diff>0?.03:.045,"pet");Add("than_thu_huyet",1,diff>0?.015:0,"pet");
-        }else Add("linh_thu_dan",chest=="ruong_hiem"?3:1,petChance,"pet");
+            var blood=PetLoot.BloodUnlocked(chapterIndex,diff);
+            Add("hoa_hinh_dan",1+chapterIndex/3+diff,blood?.03:.045,"pet");
+            Add("than_thu_huyet",1+Math.Max(0,chapterIndex-4)/3+diff,blood?.015:0,"pet");
+        }else Add("linh_thu_dan",Math.Min(PetLoot.MaxFoodDrop,(1+chapterIndex/2)*(chest=="ruong_hiem"?3:1)+diff),petChance,"pet");
+        if(chest=="ruong_thuong"){
+            var removed=list.Where(x=>x.Group=="pill").Sum(x=>x.Probability);
+            list.RemoveAll(x=>x.Group=="pill");
+            var itemOdds=list.GroupBy(x=>x.Item).ToDictionary(g=>g.Key,g=>g.Sum(x=>x.Probability));
+            var share=removed/itemOdds.Count;
+            for(var i=0;i<list.Count;i++)list[i]=list[i] with {Probability=list[i].Probability+share*list[i].Probability/itemOdds[list[i].Item]};
+        }
         if(Math.Abs(list.Sum(x=>x.Probability)-1)>1e-8||list.Any(x=>!GameData.ItemById.ContainsKey(x.Item)))throw new InvalidOperationException("Tổng xác suất rương không hợp lệ.");
         return list.AsReadOnly();
     }

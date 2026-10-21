@@ -56,7 +56,21 @@ button{font:inherit;cursor:pointer}
 .ib.gold.ready{background:var(--gold);color:#1a1405;border-color:var(--gold);animation:pulse 1.6s infinite}
 .ib.next.knock:not(:disabled){color:#ff9a6a;border-color:#7a4a32;background:#2a1a12}
 .ib.next.knock:hover:not(:disabled){color:#ffb48a;border-color:#ff9a6a}
-@media (prefers-reduced-motion:reduce){.ib.gold.ready{animation:none}}
+/* nút hố đen đỏ: vào thẳng ải Boss — lõi đen, đĩa bồi tụ nghiêng, các nhánh xoáy hút vào tâm */
+.ib.boss{border-color:#7a2a24;background:radial-gradient(circle at 50% 50%,#1a0605 0,#0a0303 70%)}
+.actions>#btnBoss{margin-left:auto;flex-shrink:0}
+.ib.boss:hover:not(:disabled){border-color:#ff5a4a;box-shadow:0 0 10px rgba(255,60,40,.45)}
+.ib.boss svg.bh{width:30px;height:30px;stroke:none;overflow:visible}
+.ib.boss .bh-arms{transform-origin:12px 12px;animation:bossSpin 3s linear infinite}
+.ib.boss .bh-halo{transform-origin:12px 12px;animation:bhPulse 2.4s ease-in-out infinite}
+.ib.boss .bh-disk{animation:bhDisk 1.6s ease-in-out infinite}
+.ib.boss:hover:not(:disabled) .bh-arms{animation-duration:1.2s}
+.ib.boss:disabled .bh-arms,.ib.boss:disabled .bh-halo,.ib.boss:disabled .bh-disk{animation:none}
+.ib.boss:disabled svg.bh{filter:grayscale(.7)}
+@keyframes bossSpin{to{transform:rotate(-360deg)}}
+@keyframes bhPulse{50%{transform:scale(1.12);opacity:.75}}
+@keyframes bhDisk{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.ib.gold.ready{animation:none}.ib.boss svg *{animation:none!important}}
 .trip{cursor:default;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
 .trip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .trip-bar{height:4px;border-radius:999px;background:#0a0f10;overflow:hidden}

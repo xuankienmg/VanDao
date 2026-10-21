@@ -8,7 +8,8 @@ function skinActorAction(skill){
 const SKIN_ACTOR_SHEETS = {
   'img/hero_trucco.png': {id:'trucco', bodyHeight:336, flight:'sword'},
   'img/hero_kimdan.png': {id:'kimdan', bodyHeight:305, flight:'sword'},
-  'img/hero_luyenhu.png': {id:'luyenhu', bodyHeight:360, flight:'air'}
+  'img/hero_luyenhu.png': {id:'luyenhu', bodyHeight:360, flight:'air'},
+  'img/hero_hopthe.png': {id:'hopthe', bodyHeight:259, flight:'air', airSource:'flight'}
 };
 function skinActorFlight(){ return SKIN_ACTOR_SHEETS[skinArt('hero')]?.flight || null; }
 function skinActorLoop(action, t){
@@ -19,12 +20,13 @@ function skinActorLoop(action, t){
 function drawSkinActor(g, action, progress, x, ground, height, alpha = 1){
   const hero = skinArt('hero'), profile = SKIN_ACTOR_SHEETS[hero];
   if (!profile && hero !== 'img/hero_luyenkhi.png') return false;
-  const rows = {idle:0, walk:0, run:1, slash:2, cast:3};
+  const rows = {idle:0, walk:0, run:1, groundRun:1, slash:2, cast:3};
   const counts = {idle:8, walk:8, run:7, slash:5, cast:3};
   const count = profile ? (rows[action] === undefined ? 0 : 4) : counts[action];
   const flying = profile?.flight && action === 'run';
   const stationaryHover = flying && profile.flight === 'air';
-  const image = skImg(profile ? `img/skin/${profile.id}_${flying && !stationaryHover ? 'flight' : 'actions'}.png` : `img/skin/luyenkhi_${action === 'idle' ? 'walk' : action}_v2.png`);
+  const flightSheet = flying && (!stationaryHover || profile.airSource === 'flight');
+  const image = skImg(profile ? `img/skin/${profile.id}_${flightSheet ? 'flight' : 'actions'}.png` : `img/skin/luyenkhi_${action === 'idle' ? 'walk' : action}_v2.png`);
   if (!image || !count) return false;
   const frame = stationaryHover ? 0 : Math.min(count - 1, Math.max(0, Math.floor(progress * count)));
   const scale = height / (profile?.bodyHeight || 210);
@@ -241,6 +243,12 @@ function live(){
   { const nb = $('btnNext'), f = mapFrontier(), R = S.map.realm + 1, a = S.map.area, boss = a > DATA.areas, can = !boss && a < f.top;
     nb.disabled = !can || busy; nb.classList.toggle('knock', can && f.knocked);
     nb.dataset.tip = boss ? 'Ải tiếp theo\nĐang khiêu chiến Boss' : can ? `Sang ải ${R}-${a + 1}${f.knocked ? ' (thử lại)' : ''}\nẢi cao nhất ${R}-${f.top}` : `Ải tiếp theo\nĐang ở ải cao nhất ${R}-${f.top}, thắng ải này để mở ải kế`; }
+  { const bb = $('btnBoss'), m = S.map, N = DATA.areas, R = m.realm + 1, open = m.areaMax >= N, inBoss = m.area > N,
+      keyN = S.inventory[m.keyItem] || 0, key = ITEM[m.keyItem]?.name || 'lệnh Boss', ok = keyN > 0 || adminBoss();
+    bb.style.display = open ? '' : 'none';                                           // chỉ hiện khi ải cao nhất đã là x-15
+    bb.disabled = !open || inBoss || !ok || busy;
+    bb.dataset.tip = inBoss ? `Khiêu chiến Boss\nĐang đánh Boss ${m.boss}` : !ok ? `Khiêu chiến Boss ${m.boss}\nCần ${key} (đang có 0)`
+      : `Khiêu chiến Boss ${m.boss}\nVào thẳng ải Boss chương ${R}, không cần mở Bản đồ\n${adminBoss() ? 'Admin: không tốn lệnh' : `Mỗi trận tốn 1 ${key} · còn ${fmt(keyN)}`}`; }
   trip.querySelector('i').style.width = Math.min(100, 100 - left / S.exploreCooldownMs * 100) + '%';
   $('tripText').textContent = left > 0 ? `${S.map.area > DATA.areas ? 'Boss' : 'Ải ' + (S.map.diff ? MAP_DIFFS[S.map.diff] + ' ' : '') + (S.map.realm + 1) + '-' + S.map.area + (mapFrontier().knocked ? ' ↓' : '')} · ${Math.ceil(left/1000)}s` : 'Đang về…';
   if (left <= 0 && performance.now() - lastPull > 1500){ lastPull = performance.now(); sync(); }
@@ -249,6 +257,7 @@ function live(){
   if (tipEl && !tipEl.hidden) showTip(tipEl._for);
 }
 function renderAll(){
+  if (typeof renderConceptNavigation === 'function') renderConceptNavigation();
   $('hudRealm').textContent = S.realmName;
   $('sRealm').textContent = S.realmName;
   $('sStage').textContent = `${S.stageName} · ${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')}/giây`;

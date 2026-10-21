@@ -65,8 +65,8 @@ async function mkAct(path){ await act(`market/${path}`); loadMarket(true); }
 async function marketClaimTick(){
   if (!S || busy || MODE === 'panel' || S.realm < 1) return;
   try {
-    const res = await api('POST', `/api/players/${S.id}/market/claim`);
-    if (res.message && !busy){ setState(res.state); notifyHost('changed'); }   // nhật ký đã ghi giao dịch
+    const req = api('POST', `/api/players/${S.id}/market/claim`), seq = postSeq, res = await req;
+    if (res.message && !busy && seq === postSeq){ setState(res.state); notifyHost('changed'); }   // nhật ký đã ghi giao dịch
   } catch(e){}
 }
 setInterval(marketClaimTick, 60000);

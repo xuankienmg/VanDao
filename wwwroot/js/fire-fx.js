@@ -3,7 +3,10 @@ const fireFxCache = new Map();
 function fireFxSpec(skillId, realmIndex = 0){
   const variant = skillId === 'hoa_cau' ? (realmIndex <= 0 ? 'small' : realmIndex === 1 ? 'medium' : 'large') : 'default';
   const data = typeof FIRE_FX_DATA === 'undefined' || !Array.isArray(FIRE_FX_DATA) ? [] : FIRE_FX_DATA;
-  return data.find(s => s.skillId === skillId && s.variant === variant) || null;
+  // Hợp Thể kế thừa timeline Luyện Hư, đổi kim diễm cho tuyệt kỹ mới.
+  const sourceId = skillId === 'hon_nguyen_hoa' ? 'hu_khong_hoa' : skillId;
+  const spec = data.find(s => s.skillId === sourceId && s.variant === variant);
+  return spec ? {...spec, filter: skillId === 'hon_nguyen_hoa' ? 'hue-rotate(35deg) saturate(.75) brightness(1.2)' : 'none'} : null;
 }
 function fireFxPlan(skillId, s01, realmIndex = 0){
   const spec = fireFxSpec(skillId, realmIndex);
@@ -54,6 +57,7 @@ function drawFireFx(ctx, plan, layout){
   const frame = layout.reducedMotion ? [2,6,9,14][plan.phase] : plan.frame;
   ctx.save();
   try {
+    ctx.filter = plan.filter || 'none';
     ctx.globalAlpha *= plan.alpha * (layout.reducedMotion ? .8 : 1);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(entry.image, frame%plan.columns*plan.frameWidth, Math.floor(frame/plan.columns)*plan.frameHeight, plan.frameWidth,plan.frameHeight,x-ax*size,y-ay*size,size,size);

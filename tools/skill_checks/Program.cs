@@ -31,7 +31,7 @@ foreach (var skill in SkillData.Skills.Where(s => SkillData.Elements.Any(e => e.
         Check(SkillData.ById[req.Split(':')[0]].MinRealm <= skill.MinRealm, "Prerequisite requires a higher realm: " + skill.Id);
 Check(SkillData.ById["hoa_long"].MinRealm == 3, "Fire dragon must unlock at Nguyen Anh");
 var fresh = SkillData.Skills.Where(s => s.MinRealm >= 4).ToArray();
-Check(fresh.Length == 8, "Eight new skills expected");
+Check(fresh.Length == 12, "Twelve advanced skills expected, including four Hop The skills");
 foreach (var s in fresh)
 {
     var p = new Player { Realm = s.MinRealm - 1, AdminPoints = 1000 };
@@ -69,7 +69,7 @@ foreach (var s in SkillData.Skills)
         Check(SkillData.ById.ContainsKey(r.Split(':')[0]), "Missing prerequisite");
 if (args.Length > 0)
     File.WriteAllText(args[0], JsonSerializer.Serialize(new { realms = GameData.Realms.Select(r => new { r.Name }), elements = SkillData.Elements, skillTree = SkillData.Skills }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-Console.WriteLine("PASS: eight skills enforce realms, prerequisites and points; learning/upgrading/equipping preserves prior progress.");
+Console.WriteLine("PASS: twelve advanced skills enforce realms, prerequisites and points; learning/upgrading/equipping preserves prior progress.");
 
 var alchemist = new Player { Realm = 2 };
 var recipe = GameData.Brews.Single(b => b.Out == "ngo_dao_dan");

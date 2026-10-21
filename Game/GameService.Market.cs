@@ -17,6 +17,7 @@ public partial class GameService
     /// <summary>Lý do không được mua / bán. Môi trường dev bỏ qua (thử chợ bằng nhân vật admin, cảnh giới thấp).</summary>
     private string? MarketBlocked(Player p) =>
         _market?.Dev == true ? null
+        : p.Flagged ? "Dữ liệu nhân vật từng được mở bằng bản game cũ nên không được giao dịch ở Chợ."
         : p.Tainted ? "Nhân vật đã dùng admin mode nên không được giao dịch. Tu lại từ đầu (không bật cờ admin) để vào Chợ."
         : p.Realm < MarketService.MinRealm ? "Cần đạt Trúc Cơ mới mua bán được ở Chợ."
         : null;

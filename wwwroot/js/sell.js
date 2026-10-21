@@ -7,11 +7,6 @@ const QUICK_HI = FUSE_R.indexOf('mythic');   // từ phẩm này trở lên ph�
 const SELL_N = 9;          // số ô của quầy bán
 const SELL_GO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.8a1.7 1.7 0 0 1 0 3.4h-2.6a1.7 1.7 0 0 0 0 3.4H14.5"/></svg>';
 const sellStack = k => !ITEM[k]?.slot;                  // món xếp chồng (đan dược…): bán theo số món
-function sellAllPool(){
-  const pool={};let n=0,gain=0;
-  for(const [k,c] of Object.entries(S.inventory))if(c>0&&ITEM[k]?.sell>0){pool[k]=c;n+=c;gain+=ITEM[k].sell*c;}
-  return{pool,n,gain};
-}
 const sellHi = k => sellStack(k) ? (ITEM[k].tier || 0) >= 2 : fuseQOf(k) >= 2;
 function sellClean(){                                   // bỏ / bớt món trong quầy mà túi không còn đủ (vừa mặc, ghép, dùng, bán…)
   const left = {...S.inventory};
@@ -49,13 +44,12 @@ function quickPools(){
 }
 function quickRow(){
   const pools = quickPools();
-  const all=sellAllPool(),armed=quickArm?.r==='all'&&Date.now()-quickArm.t<3000;
   const btns = FUSE_R.map((r, q) => {
     const o = pools[r], armed = quickArm && quickArm.r === r && Date.now() - quickArm.t < 3000, nm = RARITY[r]?.n ?? r;
     return `<button class="sl-q r-${r} ${armed ? 'armed' : ''}" data-sq="${r}" ${o.n && !busy ? '' : 'disabled'}
       data-tip="Bán nhanh mọi trang bị phẩm ${nm} trong hành trang&#10;${fmt(o.n)} món · +${fmt(o.gain)} linh thạch${q >= QUICK_HI ? '&#10;Bấm 2 lần để xác nhận' : ''}&#10;Đồ đang mặc không bị bán">${armed ? 'Bấm lại' : nm}<small>${short(o.n)}</small></button>`;
   }).join('');
-  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><p>Bán nhanh trang bị theo phẩm</p><div>${btns}</div><button class="fz-af ${armed?'armed':''}" data-sell-all ${all.n&&!busy?'':'disabled'} data-tip="Bán toàn bộ vật phẩm trong hành trang, gồm đan dược, nguyên liệu, rương, chìa khóa và vé. Không bán linh thạch hoặc đồ đang mặc. Bấm 2 lần để xác nhận.">${armed?'Xác nhận bán tất cả':'Bán tất cả vật phẩm'} · ${fmt(all.n)} món · +${fmt(all.gain)}</button></div>`;
+  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><p>Bán nhanh trang bị theo phẩm</p><div>${btns}</div></div>`;
 }
 function renderSell(){
   const pane = $('pane-sell'); if (!pane || !S) return;
@@ -106,17 +100,6 @@ function sellSetQty(k, n){
 $('pane-sell').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
   hideTip();
-  if(b.hasAttribute('data-sell-all')){
-    if(busy)return;
-    const all=sellAllPool();if(!all.n)return;
-    if(!(quickArm?.r==='all'&&Date.now()-quickArm.t<3000)){
-      quickArm={r:'all',t:Date.now()};renderSell();
-      setTimeout(()=>{if(quickArm?.r==='all'&&Date.now()-quickArm.t>=3000){quickArm=null;renderSell();}},3100);return;
-    }
-    quickArm=null;sellSel=[];sellConfirm=0;
-    await act('sell-bulk?max=9&pick=true&items='+encodeURIComponent(Object.entries(all.pool).map(([k,n])=>k+':'+n).join(',')));
-    renderSell();return;
-  }
   if (b.dataset.sl){
     const k = b.dataset.sl, all = [...$('pane-sell').querySelectorAll(`[data-sl="${CSS.escape(k)}"]`)], j = all.indexOf(b) + 1;
     if (j <= sellSel.filter(x => x.k === k).length) sellSel.splice(sellSel.map(x => x.k).lastIndexOf(k), 1);
@@ -155,9 +138,10 @@ $('pane-sell').addEventListener('click', async e => {
       setTimeout(() => { if (sellConfirm && Date.now() - sellConfirm >= 3000){ sellConfirm = 0; renderSell(); } }, 3100);
       return;
     }
+    if (busy) return;                                      // đang có thao tác khác: giữ nguyên quầy, không bán hụt
     const pool = {}; sellSel.forEach(x => pool[x.k] = (pool[x.k] || 0) + x.n);
-    sellSel = []; sellConfirm = 0;
-    await act('sell-bulk?max=9&pick=true&items=' + encodeURIComponent(Object.entries(pool).map(([k, c]) => k + ':' + c).join(',')));
+    sellConfirm = 0;
+    if (await act('sell-bulk?max=9&pick=true&items=' + encodeURIComponent(Object.entries(pool).map(([k, c]) => k + ':' + c).join(',')))) sellSel = [];
     renderSell();
   }
 });

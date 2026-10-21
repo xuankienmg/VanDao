@@ -50,10 +50,19 @@
       <div class="actions">
         <button class="ib" id="btnBag" aria-label="Hành trang" data-tip="Hành trang&#10;Trang bị, chỉ số và vật phẩm"><img class="mi" src="img/ui_hanh_trang.png" alt=""></button>
         <button class="ib" id="btnPanel" aria-label="Bản đồ" data-tip="Bản đồ&#10;Chọn ải diệt yêu · khu vực Boss"><img class="mi" src="img/ui_ban_do.png" alt=""></button>
-        <button class="ib" id="btnPet" aria-label="Linh thú" data-tip="Linh thú&#10;Xuất chiến, nuôi dưỡng và ấp trứng"></button>
         <button class="ib gold" id="btnAdvance" aria-label="Đột phá" data-tip="Đột phá"><img class="mi" src="img/ui_dot_pha.png" alt=""></button>
+
         <button class="ib next" id="btnNext" aria-label="Ải tiếp theo" data-tip="Ải tiếp theo"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6"/><path d="M13 6l6 6-6 6"/></svg></button>
         <div class="trip walk" id="trip"><div class="trip-bar"><i></i></div><span id="tripText">Thám hiểm</span></div>
+        <button class="ib boss" id="btnBoss" aria-label="Khiêu chiến Boss" data-tip="Khiêu chiến Boss" style="display:none"><svg class="bh" viewBox="0 0 24 24" aria-hidden="true">
+          <defs><radialGradient id="bhHalo"><stop offset=".25" stop-color="#ff3a20" stop-opacity=".9"/><stop offset=".55" stop-color="#b0120a" stop-opacity=".45"/><stop offset="1" stop-color="#400" stop-opacity="0"/></radialGradient>
+            <linearGradient id="bhArm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd09a"/><stop offset=".45" stop-color="#ff4a2a"/><stop offset="1" stop-color="#6a0800" stop-opacity="0"/></linearGradient></defs>
+          <circle class="bh-halo" cx="12" cy="12" r="11.5" fill="url(#bhHalo)"/>
+          <g class="bh-arms" fill="none" stroke="url(#bhArm)" stroke-linecap="round"><path d="M12 8.2c3.6-.4 6.6 1.8 7.4 5" stroke-width="1.6"/><path d="M15.8 12c.4 3.6-1.8 6.6-5 7.4" stroke-width="1.6"/><path d="M12 15.8c-3.6.4-6.6-1.8-7.4-5" stroke-width="1.6"/><path d="M8.2 12c-.4-3.6 1.8-6.6 5-7.4" stroke-width="1.6"/>
+            <path d="M12 6.4c4.6.2 7.6 3.4 7.4 7.6" stroke-width=".7" opacity=".7"/><path d="M12 17.6c-4.6-.2-7.6-3.4-7.4-7.6" stroke-width=".7" opacity=".7"/></g>
+          <ellipse class="bh-disk" cx="12" cy="12" rx="9" ry="2.4" fill="none" stroke="#ff7a3a" stroke-width=".9" opacity=".85" transform="rotate(-18 12 12)"/>
+          <circle cx="12" cy="12" r="3.6" fill="#000" stroke="#ffb27a" stroke-width=".8"/>
+          <circle cx="12" cy="12" r="2.6" fill="#000"/></svg></button>
       </div>
       <div class="tip" id="tip" role="tooltip" hidden></div>
       <div class="burst" id="burst" aria-live="assertive" hidden><b></b><small></small></div>
@@ -62,6 +71,7 @@
     </section>
 
     <aside class="book">
+      <div class="concept-header">
       <header class="game-brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="m4 25 9-10 7 6 8-14 8 18M3 30h34M10 34h20"/><circle cx="29" cy="9" r="4"/></svg><b>Người Lười TT</b><small>Tu luyện · Ngự thú · Vấn đạo</small></header>
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-req" aria-selected="true" data-tab="req">Đột phá</button>
@@ -72,6 +82,11 @@
         <button class="tab" role="tab" id="tab-pet" aria-selected="false" data-tab="pet">Linh thú</button>
         <button class="tab" role="tab" id="tab-market" aria-selected="false" data-tab="market">Chợ</button>
         <button class="tab adm" role="tab" id="tab-admin" aria-selected="false" data-tab="admin" hidden>Admin</button>
+      </div>
+      </div>
+      <div class="concept-tools" aria-label="Linh thạch hiện tại">
+        <div class="concept-wallet" title="Linh thạch hiện tại"><img src="img/stone/linh_thach.png" alt=""><span>Linh thạch</span><b class="concept-balance" id="navStones" aria-label="Linh thạch">—</b><button type="button" id="navMarket" aria-label="Mở Chợ" title="Mở Chợ">+</button></div>
+        <div class="concept-wallet premium" title="Thượng phẩm linh thạch hiện tại"><img src="img/stone/thuong_pham_linh_thach.png" alt=""><span>Thượng phẩm</span><b class="concept-balance" id="navPremium" aria-label="Thượng phẩm linh thạch">—</b></div>
       </div>
       <div class="pane" id="pane-req"></div>
       <div class="pane" id="pane-inv" hidden></div>

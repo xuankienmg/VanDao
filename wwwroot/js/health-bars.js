@@ -3,6 +3,7 @@ const battleHpTrails = new Map();
 function battleHpValue(value){ return Number.isFinite(value) ? Math.max(0,value) : 0; }
 /** GuardLeft là số khiên cuối lượt; chỉ đổi khi quái ra đòn ở mốc .85. */
 function battleGuardAt(battle,phase,waveStart=0){
+  if(phase.name==='pet')phase={...phase,name:'fight',s:0};
   const initial=battleHpValue(battle.guard),history=battle.guardLeft;
   if(phase.name==='fight'&&phase.s<.85&&Number.isFinite(battle.guardBefore?.[phase.i||0]))
     return battleHpValue(battle.guardBefore[phase.i||0]);

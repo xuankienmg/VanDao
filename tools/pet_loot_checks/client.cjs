@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const host={innerHTML:''};
+const items={linh_thu_dan:{name:'Linh Thú Đan'},tu_khi_dan:{name:'Tụ Khí Đan'},hoa_hinh_dan:{name:'Hóa Hình Đan'},than_thu_huyet:{name:'Thần Thú Huyết'},linh_thach:{name:'Linh thạch'},key:{name:'Lệnh'}};
+const m={realm:0,area:11,areaMax:15,diff:1,keyItem:'key',bossImage:'boss.png',bossLair:'Hang Boss',rewardMult:1.5,areas:Array.from({length:16},(_,i)=>({index:i+1,open:true,win:true,image:'monster.png',monster:'Monster',place:'Forest',hp:100,atk:20,def:10,drops:[]}))};
+m.areas[10].drops=[{item:'linh_thu_dan',min:8,max:10,chance:.123,gear:false},{item:'tu_khi_dan',min:2,max:4,chance:.287,gear:false}];
+const ctx=vm.createContext({S:{map:m,inventory:{},logs:[]},DATA:{areas:15,items:[],chapters:[{}]},ITEM:items,$:()=>host,fmt:String,adminBoss:()=>false,adminOn:false,itemTip:id=>id,itemImg:id=>id,localStorage:{getItem:()=>null}});
+vm.runInContext(fs.readFileSync('wwwroot/js/map.js','utf8'),ctx);ctx.renderMapInfo();
+assert.match(host.innerHTML,/Linh Thú Đan/);assert.match(host.innerHTML,/<b>8-10<\/b>/);assert.match(host.innerHTML,/12,3%/);
+assert.doesNotMatch(host.innerHTML,/<b>12-15<\/b>/);
+m.area=16;m.areas[15].drops=[{item:'hoa_hinh_dan',min:1,max:2,chance:.25,gear:false}];ctx.renderMapInfo();
+assert.match(host.innerHTML,/Hóa Hình Đan/);assert.match(host.innerHTML,/25%/);assert.doesNotMatch(host.innerHTML,/Thần Thú Huyết/);
+m.areas[15].drops.push({item:'than_thu_huyet',min:2,max:3,chance:.16,gear:false});ctx.renderMapInfo();
+assert.match(host.innerHTML,/Thần Thú Huyết/);assert.match(host.innerHTML,/16%/);
+console.log('PASS exact stage odds and quantities; low/high boss materials render correctly');

@@ -29,7 +29,8 @@ public sealed class PanelWindow : Form
         _ranking = ranking;
         if (ranking) _tab = "rank";
 
-        Owner = strip; // luôn nổi trên dải game, ẩn/hiện cùng dải
+        // Không đặt Owner: cửa sổ được sở hữu luôn nằm trên chủ của nó,
+        // khiến click vào dải game không thể đưa dải lên trước Tu luyện.
         Icon = strip.Icon;
         FormBorderStyle = FormBorderStyle.SizableToolWindow;
         ShowInTaskbar = false;

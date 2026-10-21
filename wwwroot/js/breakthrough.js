@@ -41,7 +41,7 @@ function btReqs(){
   for (const c of S.targetCost){
     const it = ITEM[c.item], ok = c.have >= c.need;
     rows.push({ok, ic: c.item, name: it.name, val: `${fmt(c.have)} / ${fmt(c.need)}`, boss: it.type === 'boss',
-      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${DATA.chapters?.find(x => x.bossItem === realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Hợp thành đan</a>' : ''});
+      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${DATA.chapters?.find(x => x.bossItem === realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Luyện chế đan</a>' : ''});
   }
   if (S.isPeak) rows.push({ok: true, key: 'peak', name: 'Tu luyện viên mãn', val: S.stageName});
   const debuff = btLeft(S.break.debuffMs), cd = btLeft(S.break.cooldownMs);
@@ -478,7 +478,7 @@ function initBreak(){
 
 const pct = v => `+${Math.round(v)}%`;
 // hành trang chia trang: 6 cột × 7 hàng mỗi trang, thanh "‹ 1 2 3 ›" dưới lưới
-const BAG_PER_PAGE = 48;                                        // 8 cột × 6 hàng
+let BAG_PER_PAGE = 48;                                          // 8 cột × 6 hàng; cửa sổ Tu luyện: fitBagGrid() đổi theo số cột × hàng vừa khung
 let bagPage = 0;
 /** Thanh phân trang: ‹ trước · số trang (rút gọn bằng … khi nhiều) · sau ›. cur bắt đầu từ 0. */
 function pagerHtml(cur, pages, attr){

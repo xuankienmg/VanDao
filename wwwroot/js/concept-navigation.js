@@ -1,4 +1,4 @@
-/* Concept navigation: small code-native bronze pictograms, independent of game state. */
+/* Reference-cropped navigation icons with SVG fallbacks for utility tabs. */
 const CONCEPT_ICONS={
  req:'<path d="M14 17c2 3 6 3 8 0m-5-3-4 3-3 3h20l-3-3-4-3m-8 1 3-5h4l3 5"/><circle cx="20" cy="7" r="3"/><path d="M9 25h22M13 29h14"/>',
  inv:'<path d="M14 7h12l-3 6c7 4 9 9 7 15-4 4-16 4-20 0-2-6 0-11 7-15zM15 13h10M18 18v9m4-9v9"/>',
@@ -9,8 +9,13 @@ const CONCEPT_ICONS={
  market:'<path d="M7 17h26L29 7H11zM10 17v15h20V17M5 32h30M17 32V23h7v9M16 7l-2 10m10-10 2 10"/>',
  admin:'<path d="m20 5 4 5 6 1 1 6 4 4-4 5-1 6-6 1-4 4-4-4-6-1-1-6-4-5 4-4 1-6 6-1z"/><circle cx="20" cy="21" r="5"/>'
 };
-function conceptIcon(key){return `<svg class="nav-icon" viewBox="0 0 40 40" aria-hidden="true">${CONCEPT_ICONS[key]||CONCEPT_ICONS.pet}</svg>`;}
-document.querySelectorAll('.book>.tabs>[data-tab]').forEach(button=>{
+function conceptIcon(key){if(['req','inv','craft','map','skill','pet'].includes(key))return `<img class="nav-icon nav-cut" src="img/header/nav-${key}.png" alt="" aria-hidden="true">`;return `<svg class="nav-icon" viewBox="0 0 40 40" aria-hidden="true">${CONCEPT_ICONS[key]||CONCEPT_ICONS.pet}</svg>`;}
+document.querySelectorAll('.book .tabs>[data-tab]').forEach(button=>{
  const label=button.textContent.trim();button.innerHTML=conceptIcon(button.dataset.tab)+`<span>${label}</span>`;
 });
 const petButton=document.getElementById('btnPet');if(petButton)petButton.innerHTML=conceptIcon('pet');
+function renderConceptNavigation(){
+ const balance=(id,key)=>{const node=document.getElementById(id);if(node)node.textContent=S?fmt(S.inventory?.[key]||0):'—';};
+ balance('navStones','linh_thach');balance('navPremium','thuong_pham_linh_thach');
+}
+document.getElementById('navMarket')?.addEventListener('click',()=>openTab('market'));

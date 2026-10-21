@@ -45,13 +45,8 @@ function showChestDrop(got){
   clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, 1800);
 }
 
-async function ddSynth(n){
-  const k = ddCur(), sd = synthOf(k); if (!sd) return;
-  const before = S.inventory[sd.to] || 0;
-  await act(`synth/${k}?n=${n}`);
-  if ((S.inventory[sd.to] || 0) > before) ddAnim = {t0: performance.now(), item: sd.to};
-}
 async function ddBrew(k, n){
+  if (busy || (n > 0 && brewMax(brewOf(k)) < n)) return;
   const before = S.inventory[k] || 0;
   await act(`brew/${k}?n=${n}`);
   if ((S.inventory[k] || 0) > before) ddAnim = {t0: performance.now(), item: k};
@@ -73,13 +68,14 @@ function initDan(){
     if (bw){ if (!bw.disabled) ddBrew(bw.dataset.brew, +bw.dataset.n); return; }
     const b = e.target.closest('[data-dd]'); if (!b || b.disabled) return;
     const id = b.dataset.dd;
-    if (id === 'synth') ddSynth(1);
-    else if (id === 'all') ddSynth(0);
+    if (id === 'brew') ddBrew(ddCur(),1);
+    else if (id === 'ten') ddBrew(ddCur(),10);
+    else if (id === 'all') ddBrew(ddCur(),0);
     else if (id === 'advance') openTab('req');
     else if (id === 'boss') ddGoBoss();
   });
   addEventListener('keydown', e => {
     if ($('pane-craft').hidden || e.ctrlKey || e.metaKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
-    if (e.key === 'Enter' && !e.target.closest('button')){ e.preventDefault(); if (synthMax(ddCur()) > 0) ddSynth(1); }
+    if (e.key === 'Enter' && !e.target.closest('button')){ e.preventDefault(); if (!busy && brewMax(brewOf(ddCur())) > 0) ddBrew(ddCur(),1); }
   });
 }

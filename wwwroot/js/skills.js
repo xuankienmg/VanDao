@@ -46,7 +46,7 @@ function skSlotsHtml(cls = ''){
     const id = i === 0 ? skBasicId() : (S.skillSlots || [])[1], s = id && skById(id), pick = skPick && fitsSlot(skById(skPick), i);
     const tip = s ? `${SLOT_NAMES[i]}: ${s.name}${i ? ` · Lv. ${skLv(id)}` : ` · mỗi lượt`}&#10;${s.effect}` : `${SLOT_NAMES[i]}: trống&#10;Chọn một kỹ năng chủ động đã lĩnh ngộ`;
     return `<button class="sk-slot ${i === 1 ? 'ult' : ''} ${s ? 'has' : ''} ${pick ? 'pick' : ''} ${cls}" data-slot="${i}" data-tip="${tip}" ${s && i ? `draggable="true" data-slotsk="${id}"` : ''}>
-      ${s ? `<img src="${skIcon(s)}" alt="">` : `<span class="emp">★</span>`}<small>${SLOT_NAMES[i]}</small></button>`;
+      ${s ? `<img style="--sk-icon-filter:${skIconStyle(s)}" src="${skIcon(s)}" alt="">` : `<span class="emp">★</span>`}<small>${SLOT_NAMES[i]}</small></button>`;
   }).join('');
 }
 try { skEl = localStorage.getItem('van-dao-sk-el') || 'hoa'; skSel = localStorage.getItem('van-dao-sk-sel') || 'liet_diem'; } catch(e){}
@@ -57,8 +57,19 @@ const skOfEl = el => DATA.skillTree.filter(s => s.element === el);
 const skLv = id => S.skills[id] || 0;
 const skCost = (s, lv) => lv === 0 ? s.cost : 1 + Math.floor(lv / 2);
 const elOf = id => DATA.elements.find(e => e.id === id);
-// Chiêu mới dùng lại tranh bí kíp và hiệu ứng cùng hệ.
-const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y'};
+// Tranh cùng hệ được phân biệt bằng bảng màu riêng ở mọi ô và phần xem trước.
+const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', hon_nguyen_hoa:'hoa_long', hoa_dao_hop_nhat:'hoa_linh_can', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y', hon_nguyen_thuy:'thuy_lao', thuy_dao_hop_nhat:'thuy_linh_can'};
+const SK_ICON_FILTER = {
+  than_hoa:'hue-rotate(-30deg) saturate(1.5)',
+  hoa_than_phap:'hue-rotate(35deg) saturate(1.3)',
+  hu_khong_hoa:'hue-rotate(255deg) saturate(1.3)',
+  thai_hu_hoa:'hue-rotate(285deg) saturate(1.2)',
+  hon_nguyen_hoa:'hue-rotate(25deg) saturate(.75) brightness(1.25)',
+  hoa_dao_hop_nhat:'hue-rotate(40deg) saturate(.7) brightness(1.3)',
+  hon_nguyen_thuy:'hue-rotate(35deg) saturate(1.3) brightness(1.15)',
+  thuy_dao_hop_nhat:'hue-rotate(25deg) brightness(1.2)'
+};
+const skIconStyle = s => SK_ICON_FILTER[s.id] || 'none';
 const skIcon = s => `img/sk_${SK_ART[s.id] || s.id}.png`;
 const skFactor = (s, lv) => lv > 0 ? lv + (s.lead || 0) : 0;
 const realmName = i => DATA.realms[i]?.name || DATA.lockedRealms?.[i - DATA.realms.length] || '?';
@@ -237,8 +248,8 @@ function renderSkill(){
       <img class="px" src="img/el_${e.id}.png" alt=""><span>${e.name.toUpperCase()}</span>${e.open ? '' : '<small>Chưa mở khóa</small>'}</button>`).join('')}</nav>
     <section class="sk2-bar">
       <div class="sk2-pts" data-tip="Điểm kỹ năng&#10;Chỉ dùng cho Chủ động và Bị động (đánh thường không tốn điểm)&#10;Đã nhận ${S.skillPointsTotal} · đã dùng ${S.skillPointsTotal - S.skillPoints}"><span>Điểm</span><b>${S.skillPoints}</b></div>
-      <div class="sk2-grp"><span>Đánh thường</span>${basics.map(b => `<button class="sk2-ico ${skBasicId() === b.id ? 'on' : ''}" data-basic="${b.id}" data-skcard="${b.id}" data-tip="${b.name}" ${el.open ? '' : 'disabled'}><img src="${skIcon(b)}" alt="${b.name}"></button>`).join('')}</div>
-      <div class="sk2-grp"><span>Kỹ năng</span><button class="sk2-ico slot ${act ? 'on' : ''}" data-slot="1" ${act ? 'draggable="true" data-slotsk="' + act.id + '"' : ''} ${act ? `data-sk="${act.id}" data-skcard="${act.id}" data-tip="${act.name}"` : 'data-tip="Ô kỹ năng trống&#10;Nhấp đúp hoặc kéo một kỹ năng chủ động đã lĩnh ngộ vào đây"'}>${act ? `<img src="${skIcon(act)}" alt="">` : '<span class="emp">+</span>'}</button></div>
+      <div class="sk2-grp"><span>Đánh thường</span>${basics.map(b => `<button class="sk2-ico ${skBasicId() === b.id ? 'on' : ''}" data-basic="${b.id}" data-skcard="${b.id}" data-tip="${b.name}" ${el.open ? '' : 'disabled'}><img style="--sk-icon-filter:${skIconStyle(b)}" src="${skIcon(b)}" alt="${b.name}"></button>`).join('')}</div>
+      <div class="sk2-grp"><span>Kỹ năng</span><button class="sk2-ico slot ${act ? 'on' : ''}" data-slot="1" ${act ? 'draggable="true" data-slotsk="' + act.id + '"' : ''} ${act ? `data-sk="${act.id}" data-skcard="${act.id}" data-tip="${act.name}"` : 'data-tip="Ô kỹ năng trống&#10;Nhấp đúp hoặc kéo một kỹ năng chủ động đã lĩnh ngộ vào đây"'}>${act ? `<img style="--sk-icon-filter:${skIconStyle(act)}" src="${skIcon(act)}" alt="">` : '<span class="emp">+</span>'}</button></div>
     </section>
   </div>`;
   // Một cây chung: các nhánh giữ liên kết khi đi qua ranh giới cảnh giới.
@@ -253,7 +264,7 @@ function renderSkill(){
 /** Bố trí bằng MinRealm; không phụ thuộc số hàng cố định hay tọa độ cây cũ. */
 function skRealmTree(el){
   const list = el.open ? skOfEl(el.id).filter(s => skTree(s) !== 'basic') : [];
-  const pos = new Map(), height = 100, rowHeight = 94 / DATA.realms.length;
+  const pos = new Map(), height = 100, rowHeight = 92 / DATA.realms.length;
   const bands = DATA.realms.map((realm, i) => {
     const top = 6 + i * rowHeight, tier = list.filter(s => s.minRealm === i);
     const active = tier.filter(s => skTree(s) === 'active'), passive = tier.filter(s => skTree(s) === 'passive');
@@ -271,7 +282,7 @@ function skRealmTree(el){
   }
   const nodes = list.map(s => {
     const st = skState(s), p = pos.get(s.id), tree = skTree(s);
-    return `<div class="sk-node-wrap" style="left:${p.x}%;top:${p.y}%"><button class="sk-n ${tree === 'active' ? 'act' : 'pas'} ${st.st} ${s.id === skSel ? 'sel' : ''} ${S.skillSlots?.[1] === s.id ? 'eq' : ''}" data-sk="${s.id}" data-skcard="${s.id}" data-tip="${s.name}" aria-label="${s.name}, cấp ${st.lv}/${s.maxLv}, ${realmName(s.minRealm)}${st.why.length ? ', ' + st.why.join(', ') : ''}" aria-pressed="${s.id === skSel}" ${tree === 'active' && st.lv > 0 ? 'draggable="true"' : ''}><span class="sk-ic"><img src="${skIcon(s)}" alt="">${st.max ? '<em>MAX</em>' : st.st === 'locked' ? '<i class="lk">▣</i>' : ''}</span><span class="sk-nm">${s.name}</span><span class="sk-lvt">${st.lv}/${s.maxLv}${S.skillSlots?.[1] === s.id ? ' · Đang dùng' : ''}</span></button>${st.max ? '' : `<button class="sk-node-up" data-up="${s.id}" ${st.why.length ? 'disabled' : ''} aria-label="${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name}, ${st.cost} điểm" data-tip="${st.why.length ? st.why.join('&#10;') : `${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name} · ${st.cost} điểm`}">+</button>`}</div>`;
+    return `<div class="sk-node-wrap" style="left:${p.x}%;top:${p.y}%"><button class="sk-n ${tree === 'active' ? 'act' : 'pas'} ${st.st} ${s.id === skSel ? 'sel' : ''} ${S.skillSlots?.[1] === s.id ? 'eq' : ''}" data-sk="${s.id}" data-skcard="${s.id}" data-tip="${s.name}" aria-label="${s.name}, cấp ${st.lv}/${s.maxLv}, ${realmName(s.minRealm)}${st.why.length ? ', ' + st.why.join(', ') : ''}" aria-pressed="${s.id === skSel}" ${tree === 'active' && st.lv > 0 ? 'draggable="true"' : ''}><span class="sk-ic"><img style="--sk-icon-filter:${skIconStyle(s)}" src="${skIcon(s)}" alt="">${st.max ? '<em>MAX</em>' : st.st === 'locked' ? '<i class="lk">▣</i>' : ''}</span><span class="sk-nm">${s.name}</span>${S.skillSlots?.[1] === s.id ? '<span class="sk-lvt">Đang dùng</span>' : ''}</button>${st.max ? '' : `<button class="sk-node-up" data-up="${s.id}" ${st.why.length ? 'disabled' : ''} aria-label="${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name}, ${st.cost} điểm" data-tip="${st.why.length ? st.why.join('&#10;') : `${st.lv ? 'Nâng cấp' : 'Lĩnh ngộ'} ${s.name} · ${st.cost} điểm`}">+</button>`}</div>`;
   }).join('');
   return `<div class="sk-realm-board"><div class="sk-lane-head"><span>Cảnh giới</span><b>Chủ động</b><b>Bị động</b></div>${bands}<svg class="sk-lines" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div>`;
 }
@@ -292,8 +303,8 @@ function skTreeHtml(el, tree, rows, cols){
     const st = skState(s), sel = s.id === skSel, cross = s.req.filter(r => skTree(skById(r.split(':')[0])) !== tree);
     const tip = `${s.name} · ${SK_TYPE[tree]}&#10;Lv. ${st.lv} / ${s.maxLv}&#10;${st.reqs.map(r => (r.ok ? '✓ ' : '✗ ') + r.t).join('&#10;')}`;
     return `<button class="sk-n ${tree === 'active' ? 'act' : 'pas'} ${st.st} ${sel ? 'sel' : ''} ${S.skillSlots?.[1] === s.id ? 'eq' : ''}" data-sk="${s.id}" data-skcard="${s.id}" ${tree === 'active' && st.lv > 0 ? 'draggable="true"' : ''} style="left:${X(s.col)}%;top:${Y(s.row)}%" data-tip="${tip}">
-      <span class="sk-ic"><img src="${skIcon(s)}" alt="">${st.st === 'locked' ? '<i class="lk">🔒</i>' : ''}${st.max ? '<em>MAX</em>' : st.st === 'avail' ? '<em class="pl">+</em>' : ''}</span>
-      <span class="sk-nm">${s.name}</span><span class="sk-lvt">Lv. ${st.lv} / ${s.maxLv}</span>${cross.length ? `<span class="sk-x" title="Cần thêm ở cây kia">⇄</span>` : ''}</button>`;
+      <span class="sk-ic"><img style="--sk-icon-filter:${skIconStyle(s)}" src="${skIcon(s)}" alt="">${st.st === 'locked' ? '<i class="lk">🔒</i>' : ''}${st.max ? '<em>MAX</em>' : st.st === 'avail' ? '<em class="pl">+</em>' : ''}</span>
+      <span class="sk-nm">${s.name}</span>${cross.length ? `<span class="sk-x" title="Cần thêm ở cây kia">⇄</span>` : ''}</button>`;
   }).join('');
   return `<div class="sk-grid ${tree}"><svg class="sk-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div>`;
 }
@@ -306,7 +317,7 @@ function skTipHtml(s){
   const pass = skPassive(s, lv);
   const isBasic = tree === 'basic';
   return `<div class="sk-card sk-tipcard">
-      <div class="sk-hd"><img src="${el.open ? skIcon(s) : `img/el_${el.id}.png`}" alt=""><div><p class="nm">${s.name}</p><p class="sub"><span style="color:${SK_CAT[s.category]}">${SK_TYPE[tree]}${s.category === 'Tuyệt kỹ' ? ' · Tuyệt kỹ' : ''}</span> · ${el.name} hệ</p></div></div>
+      <div class="sk-hd"><img style="--sk-icon-filter:${el.open ? skIconStyle(s) : 'none'}" src="${el.open ? skIcon(s) : `img/el_${el.id}.png`}" alt=""><div><p class="nm">${s.name}</p><p class="sub"><span style="color:${SK_CAT[s.category]}">${SK_TYPE[tree]}${s.category === 'Tuyệt kỹ' ? ' · Tuyệt kỹ' : ''}</span> · ${el.name} hệ</p></div></div>
       <dl class="sk-dl">
         <dt>Loại</dt><dd>${SK_TYPE[tree]}${s.category === 'Tuyệt kỹ' ? ' (tối thượng)' : ''}</dd>
         <dt>Hệ</dt><dd>${el.name}</dd>
@@ -363,7 +374,7 @@ function skPassiveFx(g, now, s){
     g.fillRect(60 + Math.sin(i * 2.3) * 26 + Math.sin(t * 2 + i) * 2, 56 - p * 50, .75, .75);
   }
   g.globalAlpha = 1;
-  if (img){ g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; const d = 40 + 2 * pulse; g.drawImage(img, 60 - d / 2, 30 - d / 2, d, d); g.imageSmoothingEnabled = false; }
+  if (img){ g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; const d = 40 + 2 * pulse; g.save(); g.filter = skIconStyle(s); g.drawImage(img, 60 - d / 2, 30 - d / 2, d, d); g.restore(); g.imageSmoothingEnabled = false; }
 }
 /** Xem trước Hỏa Cầu: nhân vật + hiệu ứng cắt nguyên từ bản thiết kế (img/hoa_cau_ref.png), đúng nhịp 8 pha + nghỉ.
  *  Canvas xem trước chạy ở độ phân giải ×HC_RES để giữ nét ảnh gốc; toạ độ vẫn theo lưới logic 120×60. */

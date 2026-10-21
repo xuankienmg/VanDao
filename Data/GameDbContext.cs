@@ -10,6 +10,16 @@ public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(
     public DbSet<LogEntry> Logs => Set<LogEntry>();
     public DbSet<EquippedItem> Equipment => Set<EquippedItem>();
 
+    /// <summary>Sau mỗi lần lưu: ghi Id nhật ký lớn nhất vào Meta (SaveGuard). Bản game cũ ghi nhật ký mà không cập nhật mốc này
+    /// → lần mở sau bản mới phát hiện được (SaveGuard.Check đánh dấu nhân vật).</summary>
+    public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        var n = await base.SaveChangesAsync(ct);
+        try { await Database.ExecuteSqlRawAsync("""INSERT INTO "Meta" ("Key", "Value") SELECT 'log_mark', CAST(COALESCE(MAX("Id"), 0) AS TEXT) FROM "Logs" WHERE 1 ON CONFLICT("Key") DO UPDATE SET "Value" = excluded."Value";""", ct); }
+        catch (Exception) { }   // chưa có bảng Meta (công cụ / test): bỏ qua
+        return n;
+    }
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Player>(e =>
@@ -77,9 +87,10 @@ public static class SchemaUpgrade
             ("Admin", "TEXT NOT NULL DEFAULT ''"), ("AdminPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("ElixirPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"), ("Redeemed", "TEXT NOT NULL DEFAULT ''"), ("SpinHistory", "TEXT NOT NULL DEFAULT ''"),
+            ("SpinDay", "TEXT NOT NULL DEFAULT ''"), ("SpinDailyUsed", "INTEGER NOT NULL DEFAULT 0"),
             ("Chapter", "INTEGER NOT NULL DEFAULT 0"), ("ChapterMax", "INTEGER NOT NULL DEFAULT 0"), ("MapVer", "INTEGER NOT NULL DEFAULT 0"),
             ("Diff", "INTEGER NOT NULL DEFAULT 0"), ("DiffProg", "TEXT NOT NULL DEFAULT ''"), ("Cleared", "TEXT NOT NULL DEFAULT ''"),
-            ("LbSecret", "TEXT NOT NULL DEFAULT ''"), ("Tainted", "INTEGER NOT NULL DEFAULT 0"),
+            ("LbSecret", "TEXT NOT NULL DEFAULT ''"), ("Tainted", "INTEGER NOT NULL DEFAULT 0"), ("Flagged", "INTEGER NOT NULL DEFAULT 0"),
         })
         {
             cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('Players') WHERE name = '{col}'";
@@ -110,6 +121,30 @@ public static class SchemaUpgrade
             """;
         cmd.ExecuteNonQuery();
         ReplaceSpears(cmd);
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Pets') WHERE name = 'AppearanceForm'";
+        if (Convert.ToInt64(cmd.ExecuteScalar()) == 0)
+        {
+            cmd.CommandText = "ALTER TABLE \"Pets\" ADD COLUMN \"AppearanceForm\" INTEGER NOT NULL DEFAULT -1";
+            cmd.ExecuteNonQuery();
+        }
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Pets') WHERE name = 'Quality'";
+        if (Convert.ToInt64(cmd.ExecuteScalar()) == 0)
+        {
+            cmd.CommandText = "ALTER TABLE \"Pets\" ADD COLUMN \"Quality\" INTEGER NOT NULL DEFAULT -1";   // -1: linh thú cũ giữ phẩm theo loài
+            cmd.ExecuteNonQuery();
+        }
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Pets') WHERE name = 'Stars'";
+        if (Convert.ToInt64(cmd.ExecuteScalar()) == 0)
+        {
+            cmd.CommandText = "ALTER TABLE \"Pets\" ADD COLUMN \"Stars\" INTEGER NOT NULL DEFAULT 0";
+            cmd.ExecuteNonQuery();
+        }
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Pets') WHERE name = 'StarPts'";
+        if (Convert.ToInt64(cmd.ExecuteScalar()) == 0)
+        {
+            cmd.CommandText = "ALTER TABLE \"Pets\" ADD COLUMN \"StarPts\" INTEGER NOT NULL DEFAULT 0";   // con đã có sao (luật cũ 1 con/sao): quy đổi trong PetData.Pts
+            cmd.ExecuteNonQuery();
+        }
         // vật phẩm đã bị gỡ khỏi game (vd. trang bị Trúc Cơ / Kim Đan bản cũ): xóa khỏi túi và ô trang bị để save cũ không lỗi
         var known = string.Join(",", VanDao.Game.GameData.AllItems.Select(i => $"'{i.Id.Replace("'", "''")}'"));
         cmd.CommandText = $"DELETE FROM \"Inventory\" WHERE \"ItemId\" NOT IN ({known}); DELETE FROM \"Equipment\" WHERE \"ItemId\" NOT IN ({known});";

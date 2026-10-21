@@ -37,8 +37,10 @@ public sealed class GameWindow : Form
         _url = serverUrl.TrimEnd('/') + "/";
 
         Text = "Người Lười TT";
-        using (var iconStream = typeof(GameWindow).Assembly.GetManifestResourceStream("VanDao.AppIcon.ico")!)
-            Icon = new Icon(iconStream);
+        using (var iconStream = typeof(GameWindow).Assembly.GetManifestResourceStream("VanDao.AppIcon.ico"))
+            Icon = iconStream is not null
+                ? new Icon(iconStream)
+                : Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? (Icon)SystemIcons.Application.Clone();
         _tray.Icon = Icon;
         _tray.Visible = true;
         FormBorderStyle = FormBorderStyle.None;
@@ -80,6 +82,8 @@ public sealed class GameWindow : Form
         Load += async (_, _) => await InitWebAsync();
         FormClosed += (_, _) =>
         {
+            _panel?.Dispose();
+            _rankPanel?.Dispose();
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
             _tray.Visible = false;
             _tray.Dispose();
@@ -379,6 +383,6 @@ public sealed class GameWindow : Form
         base.WndProc(ref m);
     }
 
-    // không lấy focus khi bấm vào lần đầu → bớt giành focus với cửa sổ đang làm việc
+    // Không giành focus khi vừa hiện; click vẫn kích hoạt cửa sổ bình thường.
     protected override bool ShowWithoutActivation => true;
 }

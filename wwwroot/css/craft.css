@@ -45,6 +45,9 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 .dd-fee img{width:14px;height:14px} .dd-fee .miss{color:#ff9a88}
 /* đan trong hành trang */
 .dd-cards{display:flex;align-items:stretch;gap:3px}
+#pane-craft .dd-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:5px}
+#pane-craft .dd-reagent{display:flex;flex-direction:column;align-items:center;gap:2px;margin:3px 0}
+#pane-craft .dd-reagent .dd-cnt{font-size:12px}
 .dd-cards .dd-card{flex:1}
 .dd-cards .dd-arr{align-self:center}
 .dd-tier{font-size:9.5px;color:#a08c66;letter-spacing:.06em;text-transform:uppercase}
@@ -242,13 +245,11 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 
 /* Bán: theo chiều rộng thực của pane (kể cả bảng desktop và zoom hệ thống). */
 #pane-sell{container:sell-pane / inline-size;min-width:0}
-.dd.sl{width:100%;min-width:0;grid-template-columns:minmax(0,1fr) minmax(236px,296px);grid-template-areas:"top top" "main side";align-items:start;align-content:start}
-.sl .dd-top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nav wallet" "hint hint";gap:8px 12px}
-.sl .lc-tabs{grid-area:nav;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));min-width:0}
-.sl .lc-tabs button{min-width:0;padding:7px 6px;font-size:14px;letter-spacing:.02em;white-space:normal;line-height:1.25;min-height:36px}
-.sl .dd-cult{grid-area:hint;width:100%;min-width:0}
+/* khung, thanh tab và cột phải dùng chung kích thước .dd của Luyện khí / Đan dược / Tài Xỉu (trước đây Bán có cột 236–296px và thanh tab giãn hết chiều ngang) */
+.dd.sl{width:100%;min-width:0;align-content:start}
+.sl .dd-cult{min-width:0}
 .sl .dd-cult > span{line-height:1.5;text-wrap:pretty}
-.sl .dd-stone{grid-area:wallet;min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end;gap:4px 6px}
+.sl .dd-stone{min-width:0;max-width:100%;flex-wrap:wrap;gap:4px 6px}
 .sl .dd-stone b{overflow-wrap:anywhere;min-width:0}
 .sl .dd-stone > span{white-space:nowrap}
 .sl .dd-sec{line-height:1.5;letter-spacing:.06em}
@@ -267,20 +268,7 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 .sl .sl-qty li{flex-wrap:wrap;min-width:0;gap:4px}
 .sl .sl-qty .nm{flex-basis:100%;white-space:normal;overflow-wrap:anywhere}
 .sl .sl-qty button,.sl .sl-qty input{height:28px}
-@container sell-pane (max-width:740px){
-  .sl .dd-top{grid-template-columns:minmax(0,1fr);grid-template-areas:"nav" "wallet" "hint"}
-  .sl .dd-stone{justify-self:start;justify-content:flex-start}
-}
-@container sell-pane (max-width:600px){
-  .dd.sl{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "main" "side"}
-  .sl .sl-desk{align-items:stretch}
-  .sl .fz-slots{align-self:center}
-  .sl .dd-sec,.sl .fz-arrow{text-align:center}
-  .sl .fz-bag .dd-sec{text-align:left}
-  .sl .sl-quick > div{grid-template-columns:repeat(5,minmax(0,1fr))}
-}
 @container sell-pane (max-width:360px){
-  .sl .lc-tabs button{font-size:12px;padding:6px 3px;letter-spacing:0}
   .sl .dd-stone > span{font-size:9px}
   .sl .dd-hp{margin-left:0;padding-left:4px}
   .sl .sl-quick > div{grid-template-columns:repeat(3,minmax(0,1fr))}

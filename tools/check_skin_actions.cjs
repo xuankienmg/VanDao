@@ -9,7 +9,7 @@ const source = fs.readFileSync('wwwroot/js/skill-preview.js', 'utf8').split('con
 vm.runInContext(source, sandbox);
 const g = {globalAlpha:1, save(){}, restore(){}, drawImage(...args){calls.push(args);} };
 let checks = 0;
-for (const id of ['trucco','kimdan','luyenhu','luyenkhi']){
+for (const id of ['trucco','kimdan','luyenhu','hopthe','luyenkhi']){
   hero = `img/hero_${id}.png`;
   for (const [action,row] of Object.entries({idle:0,run:1,slash:2,cast:3})){
     const count = id === 'luyenkhi' ? {idle:8,run:7,slash:5,cast:3}[action] : 4;
@@ -18,7 +18,7 @@ for (const id of ['trucco','kimdan','luyenhu','luyenkhi']){
     for (const p of [-1,0,.25,.5,.75,1,2]){
       assert(sandbox.drawSkinActor(g,action,p,100,200,48));
       const a = calls.at(-1);
-      const hover = id === 'luyenhu' && action === 'run';
+      const hover = (id === 'luyenhu' || id === 'hopthe') && action === 'run';
       assert.equal(a[1], hover ? 0 : Math.min(count-1,Math.max(0,Math.floor(p*count))) * width);
       assert.equal(a[2], id === 'luyenkhi' || action === 'run' ? 0 : row * height);
       assert.equal(a[3],width); assert.equal(a[4],height);
@@ -35,12 +35,18 @@ for (const id of ['trucco','kimdan','luyenhu','luyenkhi']){
 }
 hero = 'img/unknown.png';
 assert.equal(sandbox.drawSkinActor(g,'cast',0,0,0,48),false);
+hero = 'img/hero_hopthe.png';
+for(let i=0;i<4;i++){
+  assert(sandbox.drawSkinActor(g,'groundRun',(i+.1)/4,0,0,48));
+  const a=calls.at(-1);assert.equal(a[1],i*480);assert.equal(a[2],440);
+  assert(a[0].src.endsWith('hopthe_actions.png'));
+}
 const battleSource=fs.readFileSync('wwwroot/js/battle.js','utf8');
 const walkStart=battleSource.indexOf('    const flying = skinActorFlight();');
 const walkEnd=battleSource.indexOf("  } else if (ph.name === 'enter')",walkStart);
 const walkBranch=battleSource.slice(walkStart,walkEnd);
 Object.assign(sandbox,{reduce:false,sz:48,t:1,dt:1,hx:100,g:200,U:v=>v,Math:Object.assign(Object.create(Math),{random:()=>0})});
-for(const id of ['trucco','kimdan','luyenhu','luyenkhi']){
+for(const id of ['trucco','kimdan','luyenhu','hopthe','luyenkhi']){
   hero=`img/hero_${id}.png`;sandbox.pfx=[];sandbox.hy=0;
   vm.runInContext(`{${walkBranch}}`,sandbox);
   if(id==='luyenkhi') assert.equal(sandbox.pfx.length,1,'runner keeps foot dust');
