@@ -20,7 +20,7 @@ concurrency:
 jobs:
   build-and-release:
     runs-on: windows-latest
-    environment: Supabase
+    environment: Supbase
     steps:
       - uses: actions/checkout@v4
         with:
