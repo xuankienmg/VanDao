@@ -45,9 +45,10 @@ public sealed class LauncherForm : Form
 
         try
         {
-            var iconPath = Path.Combine(_settings.GamePath, "wwwroot", "img", "app", "icon.ico");
-            if (File.Exists(iconPath))
-                Icon = new Icon(iconPath);
+            using var iconStream = typeof(LauncherForm).Assembly.GetManifestResourceStream("VanDao.Launcher.AppIcon.ico");
+            Icon = iconStream is not null
+                ? new Icon(iconStream)
+                : Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? (Icon)SystemIcons.Application.Clone();
         }
         catch { }
 
