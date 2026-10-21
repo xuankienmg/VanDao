@@ -48,6 +48,8 @@ Dữ liệu người chơi ở `%LocalAppData%\VanDao\vandao.db`, giữ nguyên 
   offline — nhưng không dùng được Chợ / Bảng xếp hạng (không gửi `X-Game-Version`).
 - Người chơi tắt mạng thì vẫn chơi offline được bản cũ (theo lựa chọn "vẫn cho chơi, khóa tính năng online").
 
+Secrets có thể đặt trong Environment tên `Supabase` (workflow đã khai báo `environment: Supabase`) hoặc Repository secrets. Nếu Environment có quy tắc duyệt triển khai, cần duyệt job trước khi workflow được dùng secrets.
+
 ## Token GitHub trong Launcher
 
 Launcher không nhúng, nhận từ giao diện hoặc lưu GitHub token. File cấu hình cũ được ghi lại khi mở Launcher để loại trường token cũ. Token dùng cho GitHub Actions chỉ nằm trong môi trường workflow, không đưa vào ZIP.
