@@ -13,7 +13,8 @@ public sealed class LeaderboardOptions
     public bool Enabled => Url.Length > 0 && AnonKey.Length > 0;
 }
 
-public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default, bool Flagged = false, long Progress = 0, long PetPower = 0);
+public record LbPetDto(string Name, string Image, int Level, int Stars);
+public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default, bool Flagged = false, long Progress = 0, long PetPower = 0, LbPetDto? Pet = null);
 /// <summary>Hồ sơ một người trên bảng: trang bị đang mặc (ô → mã vật phẩm) và chỉ số chiến đấu lúc gửi điểm gần nhất.</summary>
 public record LbProfileDto(string Name, int Realm, int Stage, string RealmName, string StageName, long Power,
     Dictionary<string, string> Equipment, Dictionary<string, double> Stats, DateTime UpdatedAt, bool Me);
@@ -93,18 +94,26 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         var power = GameService.Power(p);
         var progress = GameService.LeaderboardProgress(p);
         var petPower = GameService.LeaderboardPetPower(p);
+        var bestPet = GameService.LeaderboardBestPet(p);
         var equipment = p.Equipment.Where(e => e.ItemId.Length > 0).OrderBy(e => e.Slot).ToDictionary(e => e.Slot, e => e.ItemId);
         var st = GameService.Stats(p);
-        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{progress}|{petPower}|{string.Join(',', equipment.Values)}";   // đổi trang bị cũng gửi sớm
+        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{progress}|{petPower}|{bestPet?.DefId}|{bestPet?.Level}|{bestPet?.StarPts}|{bestPet?.AppearanceForm}|{string.Join(',', equipment.Values)}";
         var now = DateTime.UtcNow;
         if (!force && _sent.TryGetValue(p.Id, out var last) && now - last.at < (last.key == key ? Refresh : MinGap)) return;
         _sent[p.Id] = (now, key);
+        var stats = new Dictionary<string, double> { ["progress"] = progress, ["pet_power"] = petPower, ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) };
+        if (bestPet is not null)
+        {
+            stats["pet_id:" + bestPet.DefId] = bestPet.Level;
+            stats["pet_stars"] = PetData.StarsOf(bestPet);
+            stats["pet_form"] = GameService.PetAppearance(bestPet);
+        }
         var body = new
         {
             p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = p.Realm, p_stage = p.Stage,
             p_level = GameService.Level(p), p_qi = Math.Round(p.Qi, 1), p_realm_name = r.Name, p_stage_name = r.Stages[p.Stage],
             p_power = power, p_version = Version, p_equipment = equipment, p_flagged = SaveGuard.DataFlagged(p, Dev),
-            p_stats = new Dictionary<string, double> { ["progress"] = progress, ["pet_power"] = petPower, ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) },
+            p_stats = stats,
         };
         _ = Task.Run(async () =>
         {
@@ -131,10 +140,20 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         return false;
     }
 
-    private sealed record Row(Guid PlayerId, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, long RealmRank, long PowerRank, bool Flagged = false, long Progress = 0, long PetPower = 0, long ProgressRank = 0, long PetRank = 0);
+    private sealed record Row(Guid PlayerId, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, long RealmRank, long PowerRank, bool Flagged = false, long Progress = 0, long PetPower = 0, long ProgressRank = 0, long PetRank = 0, Dictionary<string, double>? Stats = null);
+
+    private static LbPetDto? RankedPet(Dictionary<string, double>? stats)
+    {
+        if (stats is null) return null;
+        var marker = stats.FirstOrDefault(x => x.Key.StartsWith("pet_id:", StringComparison.Ordinal));
+        if (marker.Key is null || !PetData.ById.TryGetValue(marker.Key[7..], out var pet)) return null;
+        var form = (int)Math.Clamp(stats.GetValueOrDefault("pet_form"), 0, pet.Forms.Length - 1);
+        return new(pet.Name, pet.Forms[form].Image, (int)Math.Clamp(marker.Value, 1, 100),
+            (int)Math.Clamp(stats.GetValueOrDefault("pet_stars"), 0, PetData.MaxStars));
+    }
 
     private const string Cols = "player_id,name,realm,stage,realm_name,stage_name,power,realm_rank,power_rank,flagged";
-    private const string ExtendedCols = Cols + ",progress,pet_power,progress_rank,pet_rank";
+    private const string ExtendedCols = Cols + ",progress,pet_power,progress_rank,pet_rank,stats";
     private volatile bool _rankSchemaMissing;
     private const string OldCols = "player_id,name,realm,stage,realm_name,stage_name,power,realm_rank,power_rank";
 
@@ -177,7 +196,7 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             var mine = c.rows.FirstOrDefault(x => x.PlayerId == p.Id)
                        ?? (await ReadRows($"player_id=eq.{p.Id}")).FirstOrDefault();
             LbRowDto Dto(Row x) => new(by switch { "power" => x.PowerRank, "progress" => x.ProgressRank, "pet" => x.PetRank, _ => x.RealmRank }, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id, x.PlayerId,
-                x.Flagged && (x.PlayerId != p.Id || !SaveGuard.AdminDataExempt(p, Dev)), x.Progress, x.PetPower);
+                x.Flagged && (x.PlayerId != p.Id || !SaveGuard.AdminDataExempt(p, Dev)), x.Progress, x.PetPower, RankedPet(x.Stats));
             return new LeaderboardDto(true, by, c.rows.Select(Dto).ToList(), Excluded(p) || mine is null ? null : Dto(mine), Excluded(p), p.Name, Flagged: SaveGuard.DataFlagged(p, Dev));
         }
         catch (Exception ex)

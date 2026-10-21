@@ -21,8 +21,13 @@ public partial class GameService
         return best;
     }
 
-    public static long LeaderboardPetPower(Player p) => p.Pets
+    private static long RankedPetPower(Player p, Pet pet)
+    {
+        var s = PetStats(p, pet);
+        return (long)Math.Round(s.Atk * 2.0 + s.Def * 3.0 + s.Hp * .4 + (s.Crit + s.Speed) * 4);
+    }
+    public static Pet? LeaderboardBestPet(Player p) => p.Pets
         .Where(x => PetData.ById.ContainsKey(x.DefId))
-        .Select(x => { var s = PetStats(p, x); return (long)Math.Round(s.Atk * 2.0 + s.Def * 3.0 + s.Hp * .4 + (s.Crit + s.Speed) * 4); })
-        .DefaultIfEmpty(0).Max();
+        .OrderByDescending(x => RankedPetPower(p, x)).ThenBy(x => x.Id).FirstOrDefault();
+    public static long LeaderboardPetPower(Player p) => LeaderboardBestPet(p) is { } pet ? RankedPetPower(p, pet) : 0;
 }

@@ -61,3 +61,5 @@
 
 /* Four ranking categories wrap on compact game windows. */
 .lb-tabs{flex-wrap:wrap;gap:6px 14px}.lb-top{flex-wrap:wrap}
+
+.lb-pet{display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;text-align:right}.lb-pet img{width:44px;height:44px;object-fit:contain;flex:none}.lb-pet b{font-size:12px}.lb-pet small{display:block;color:var(--gold)}

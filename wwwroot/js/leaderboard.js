@@ -80,13 +80,15 @@ function lbProgressText(value){
   return `${['Thường', 'Khó', 'Ác mộng'][difficulty] || 'Thường'} · ${chapter}-${area}`;
 }
 function lbScore(r, by){
-  return by === 'progress' ? lbEsc(lbProgressText(r.progress)) : by === 'pet' ? `${fmt(r.petPower || 0)}<small>Lực chiến linh thú mạnh nhất</small>`
+  return by === 'progress' ? lbEsc(lbProgressText(r.progress)) : by === 'pet' ? (r.pet
+    ? `<span class="lb-pet"><img src="${lbEsc(r.pet.image)}" alt="${lbEsc(r.pet.name)}"><span><b>${lbEsc(r.pet.name)}</b><small>Cấp ${fmt(r.pet.level)} · ${fmt(r.pet.stars)} ★</small></span></span>`
+    : `<span>${fmt(r.petPower || 0)}<small>${r.petPower ? 'Chờ đồng bộ thông tin linh thú' : 'Chưa có linh thú'}</small></span>`)
     : by === 'power' ? fmt(r.power) : `${lbEsc(r.realmName)}<small>${lbEsc(r.stageName)}</small>`;
 }
 function lbRow(r, by){
   const top = r.rank <= 3 ? ` t${r.rank}` : '';
   const realmTxt = `${lbEsc(r.realmName)} · ${lbEsc(r.stageName)}`;
-  const main = by === 'power' ? fmt(r.power) : `${lbEsc(r.realmName)}<small>${lbEsc(r.stageName)}</small>`;
+  const main = lbScore(r, by);
   const sub = by === 'power' ? realmTxt : `Lực chiến ${fmt(r.power)}`;
   return `<li class="lb-row${top}${r.me ? ' me' : ''}"${r.id ? ` data-pid="${lbEsc(r.id)}" role="button" tabindex="0" aria-label="Xem trang bị của ${lbEsc(r.name)}" data-tip="Xem trang bị&#10;${lbEsc(r.name)}"` : ''}><span class="lb-rk">${r.rank}</span>
     <span class="lb-nm"><b>${lbEsc(r.name)}</b>${r.flagged ? `<sup class="lb-flag" aria-label="Đã đánh dấu" data-tip="${LB_FLAG_TIP}">*</sup>` : ''}${r.me ? '<em class="lb-you">Bạn</em>' : ''}<small>${sub}</small></span><span class="lb-val">${main}${devMode && r.flagged && r.id ? `<button type="button" data-lb-clear="${lbEsc(r.id)}" aria-label="Gỡ cờ dữ liệu cho ${lbEsc(r.name)}">Gỡ cờ</button>` : ''}</span></li>`;
