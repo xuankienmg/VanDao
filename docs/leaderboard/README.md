@@ -47,7 +47,7 @@ Game gửi tiến độ của nhân vật lên một bảng Postgres trên Supab
 Chạy lại toàn bộ `docs/leaderboard/supabase.sql` trong Supabase SQL Editor, rồi khởi động lại game. Script bổ sung bốn cột cuối view `leaderboard_public`: `progress`, `pet_power`, `progress_rank`, `pet_rank`. Không đổi chữ ký RPC hoặc xóa dữ liệu cũ.
 
 - **Vượt ải**: độ khó cao hơn → chương cao hơn → số ải đã hoàn thành. Ải vừa mở chưa được tính; Boss chỉ tính sau khi hạ. Điểm mã hóa `độ khó × 10000 + chương (từ 0) × 100 + ải hoàn thành`.
-- **Linh thú**: lực chiến của linh thú mạnh nhất đang sở hữu, dùng công thức lực chiến từ chỉ số thú (không cộng tổng chuồng, không phụ thuộc vị trí xuất chiến).
-- Cùng điểm: lực chiến nhân vật rồi ID người chơi để thứ tự ổn định. Cờ dữ liệu và quy tắc top 10 giữ như hai bảng cũ.
+- **Linh thú**: lực chiến của linh thú mạnh nhất đang sở hữu; bên phải hiện ảnh, cấp, số sao và lực chiến đúng con đó, dùng công thức lực chiến từ chỉ số thú (không cộng tổng chuồng, không phụ thuộc vị trí xuất chiến).
+- Cùng điểm: bảng Vượt ải dùng lực chiến nhân vật rồi ID; bảng Linh thú chỉ dùng ID để thứ tự ổn định, không dùng lực chiến nhân vật. Cờ dữ liệu và quy tắc top 10 giữ như hai bảng cũ.
 - Điểm gửi trong `p_stats.progress` và `p_stats.pet_power`; bản game cũ chưa gửi các trường này hiển thị 0. Thứ hạng cập nhật sau khi người chơi mở bản mới và đồng bộ điểm.
 - Nếu SQL chưa cập nhật, hai bảng cũ tiếp tục dùng được; hai tab mới hiện hướng dẫn chạy SQL. Sau khi cập nhật SQL hãy mở lại game.

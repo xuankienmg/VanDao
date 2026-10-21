@@ -77,7 +77,7 @@ public static class PetData
     public static int LevelCap(int realm) => new[] {20,40,60,80,90,100}[Math.Clamp(realm,0,5)];
     public static int Capacity(int realm) => 20 + Math.Max(0,realm) * 5;
     public static int GuardSlots(int realm) => 0;
-    public static int HatchSlots(int realm) => realm >= 2 ? 2 : 1;
+    public static int HatchSlots(int realm) => realm >= 5 ? 4 : realm >= 4 ? 3 : realm >= 2 ? 2 : 1;
     private static string[] SkillNames(string id) => id switch {
         "hoa_linh_ho" => ["Hỏa Vĩ", "Liệt Diễm Hồ Ảnh", "Cửu Vĩ Phần Thiên"],
         "bang_tinh_tho" => ["Sương Giáp", "Băng Kính Hộ Thân", "Quảng Hàn Thiên Mạc"],
