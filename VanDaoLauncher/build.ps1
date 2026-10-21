@@ -1,5 +1,5 @@
 # VanDao Launcher - Build & Deploy Script
-# Publishes framework-dependent exe and copies to game root
+# Publishes a compressed self-contained exe and copies to game root
 
 param(
     [string]$Configuration = "Release",
@@ -12,6 +12,9 @@ Write-Host ""
 
 # Clean previous
 if (Test-Path $OutputDir) {
+    $resolvedOutput = (Resolve-Path -LiteralPath $OutputDir).Path
+    $launcherRoot = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') + '\'
+    if (!$resolvedOutput.StartsWith($launcherRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'OutputDir must be inside the Launcher directory.' }
     Remove-Item -Recurse -Force $OutputDir
 }
 
@@ -22,7 +25,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host "Build FAILED!" -ForegroundColor Red; exit
 
 # Publish
 Write-Host "Publishing..." -ForegroundColor Yellow
-dotnet publish "$PSScriptRoot\VanDaoLauncher.csproj" -c $Configuration -r win-x64 -o $OutputDir
+dotnet publish "$PSScriptRoot\VanDaoLauncher.csproj" -c $Configuration -r win-x64 -o $OutputDir --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 if ($LASTEXITCODE -ne 0) { Write-Host "Publish FAILED!" -ForegroundColor Red; exit 1 }
 
 # Deploy to game root

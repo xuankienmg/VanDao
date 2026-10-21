@@ -105,15 +105,6 @@ public static class LauncherLogic
         _ => $"Kỳ {s + 1}"
     };
 
-    // Token đọc GitHub Releases nhúng ngầm giúp người chơi tự động cập nhật từ repo Private
-    private const string EmbeddedToken = "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";
-
-    public static string GetToken(LauncherSettings settings)
-    {
-        if (!string.IsNullOrWhiteSpace(settings.GitHubToken))
-            return settings.GitHubToken.Trim();
-        return EmbeddedToken;
-    }
 
     /// <summary>
     /// Kiểm tra phiên bản mới từ GitHub Releases (cả Game và Launcher)
@@ -144,7 +135,7 @@ public static class LauncherLogic
 
         try
         {
-            var token = GetToken(settings);
+            var token = string.Empty; // Public releases: never distribute a GitHub credential.
             // Lấy danh sách các releases gần nhất (để nhận diện cả release của Game lẫn Launcher)
             var apiUrl = $"https://api.github.com/repos/{settings.GitHubRepo.Trim()}/releases?per_page=10";
             using var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
@@ -158,7 +149,7 @@ public static class LauncherLogic
 
             if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                result.ErrorMessage = "Kho phát hành không tồn tại hoặc đang ở chế độ Riêng tư (Private). Cần chuyển repo sang Public để người chơi tải được, hoặc cấu hình GitHub Token trong Cài Đặt.";
+                result.ErrorMessage = "Kho phát hành không tồn tại hoặc đang ở chế độ Riêng tư (Private). Cần dùng repository phát hành Public để người chơi tải được.";
                 result.StatusText = "Không thể kiểm tra (Repo Private)";
                 return result;
             }

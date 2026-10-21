@@ -54,6 +54,9 @@
     <Compile Remove="VanDaoLauncher\**" />
     <Content Remove="VanDaoLauncher\**" />
     <None Remove="VanDaoLauncher\**" />
+    <!-- Local Launcher settings may contain credentials from older versions. -->
+    <Content Remove="**\launcher_settings.json" />
+    <None Remove="**\launcher_settings.json" />
   </ItemGroup>
 
 </Project>

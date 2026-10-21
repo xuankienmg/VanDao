@@ -7,7 +7,6 @@ public class LauncherSettings
 {
     public string GamePath { get; set; } = "";
     public string GitHubRepo { get; set; } = "xuankienmg/VanDao";
-    public string GitHubToken { get; set; } = "";
     public bool AutoCheckOnStartup { get; set; } = true;
     public bool CloseLauncherOnPlay { get; set; } = true;
     public string CurrentVersion { get; set; } = "0.7.0";
@@ -51,6 +50,8 @@ public class LauncherSettings
                         s.Save();
                     }
 
+                    // Rewrite legacy settings without any stored GitHub token.
+                    s.Save();
                     return s;
                 }
             }

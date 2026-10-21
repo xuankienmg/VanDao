@@ -8,9 +8,14 @@ Write-Host "=== Dong goi ban phat hanh Van Dao v$Version ===" -ForegroundColor C
 # 1. Build game ban Release gom toan bo DLL vao 1 file EXE duy nhat
 Write-Host "1. Dang bien dich Game (Release Single-File)..." -ForegroundColor Yellow
 $publishDir = "$GameRoot\bin\Publish_Game"
-if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
+if (Test-Path $publishDir) {
+    $resolvedPublish = (Resolve-Path -LiteralPath $publishDir).Path
+    $expectedPublish = [IO.Path]::GetFullPath((Join-Path $GameRoot 'bin\Publish_Game'))
+    if ($resolvedPublish -ne $expectedPublish) { throw 'Unexpected publish directory.' }
+    Remove-Item -LiteralPath $resolvedPublish -Recurse -Force
+}
 
-dotnet publish "$GameRoot\VanDao.csproj" -c Release -r win-x64 -o $publishDir -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --self-contained false
+dotnet publish "$GameRoot\VanDao.csproj" -c Release -r win-x64 -o $publishDir -p:VersionFromTag=false -p:Version=$Version -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true --self-contained true
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build game that bai!" -ForegroundColor Red
     exit 1
