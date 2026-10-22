@@ -36,7 +36,7 @@ public sealed class LauncherForm : Form
 
     public LauncherForm()
     {
-        Text = "Vạn Đạo Launcher";
+        Text = "Người Lười Tu Tiên Launcher";
         Size = new Size(1024, 640);
         MinimumSize = new Size(960, 600);
         FormBorderStyle = FormBorderStyle.None;
@@ -112,8 +112,10 @@ public sealed class LauncherForm : Form
             var candidates = new[]
             {
                 // Khi chạy từ thư mục gốc của game
+                Path.Combine(baseDir, "NguoiLuoiTuTienLauncher", "wwwroot"),
+                // Bản cài cũ: giao diện Launcher còn ở thư mục VanDaoLauncher (trước khi đổi tên)
                 Path.Combine(baseDir, "VanDaoLauncher", "wwwroot"),
-                // Khi chạy trực tiếp bên trong thư mục VanDaoLauncher
+                // Khi chạy trực tiếp bên trong thư mục NguoiLuoiTuTienLauncher
                 Path.Combine(baseDir, "wwwroot"),
                 // Khi chạy từ Visual Studio / build output
                 Path.GetFullPath(Path.Combine(baseDir, "..", "wwwroot")),
@@ -122,7 +124,7 @@ public sealed class LauncherForm : Form
             };
 
             var wwwrootDir = candidates.FirstOrDefault(Directory.Exists)
-                ?? Path.Combine(baseDir, "VanDaoLauncher", "wwwroot");
+                ?? Path.Combine(baseDir, "NguoiLuoiTuTienLauncher", "wwwroot");
 
             _web.CoreWebView2.SetVirtualHostNameToFolderMapping(
                 "vandaolauncher.local",
@@ -134,7 +136,7 @@ public sealed class LauncherForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi khởi tạo WebView2: {ex.Message}", "Lỗi Launcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(LauncherSettings.L("Lỗi khởi tạo WebView2: ", "WebView2 failed to start: ") + ex.Message, LauncherSettings.L("Lỗi Launcher", "Launcher error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -345,7 +347,7 @@ public sealed class LauncherForm : Form
                 type = "launcher_update_error",
                 message = ex.Message
             });
-            MessageBox.Show(ex.Message, "Lỗi cập nhật Launcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(ex.Message, LauncherSettings.L("Lỗi cập nhật Launcher", "Launcher update error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -368,7 +370,7 @@ public sealed class LauncherForm : Form
         else
         {
             SendToJs(new { type = "game_launch_failed", message = msg });
-            MessageBox.Show(msg, "Lỗi khởi chạy game", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(msg, LauncherSettings.L("Lỗi khởi chạy game", "Game launch error"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -381,6 +383,7 @@ public sealed class LauncherForm : Form
         if (s.TryGetProperty("currentVersion", out var cv)) _settings.CurrentVersion = cv.GetString() ?? _settings.CurrentVersion;
         if (s.TryGetProperty("launcherVersion", out var lv)) _settings.LauncherVersion = lv.GetString() ?? _settings.LauncherVersion;
         if (s.TryGetProperty("theme", out var th)) _settings.Theme = th.GetString() ?? _settings.Theme;
+        if (s.TryGetProperty("language", out var lg) && lg.GetString() is { } lang) _settings.SetLanguage(lang);
 
         _settings.Save();
         SendToJs(new { type = "settings_saved", settings = _settings });
@@ -390,7 +393,7 @@ public sealed class LauncherForm : Form
     {
         using var fbd = new FolderBrowserDialog
         {
-            Description = "Chọn thư mục cài đặt game Người Lười Tu Tiên",
+            Description = LauncherSettings.L("Chọn thư mục cài đặt game Người Lười Tu Tiên", "Choose the Người Lười Tu Tiên game folder"),
             SelectedPath = _settings.GamePath
         };
 

@@ -8,9 +8,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>VanDao.Launcher</RootNamespace>
-    <AssemblyName>VanDaoLauncher</AssemblyName>
-    <Title>Vạn Đạo Launcher</Title>
-    <Product>Vạn Đạo Launcher</Product>
+    <AssemblyName>NguoiLuoiTuTienLauncher</AssemblyName>
+    <Title>Người Lười Tu Tiên Launcher</Title>
+    <Product>Người Lười Tu Tiên Launcher</Product>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>..\wwwroot\img\app\icon.ico</ApplicationIcon>
     <Version>1.0.0</Version>

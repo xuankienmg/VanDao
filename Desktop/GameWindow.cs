@@ -222,26 +222,26 @@ public sealed class GameWindow : Form
     {
         _menu.Items.Clear();
 
-        var layout = new ToolStripMenuItem("Bố cục màn hình");
+        var layout = new ToolStripMenuItem(_s.L("Bố cục màn hình", "Screen layout"));
         foreach (var (dock, name) in new[]
         {
-            (StripDock.Auto, "Tự động theo thanh taskbar"),
-            (StripDock.BottomLeft, "Trên taskbar · trái"),
-            (StripDock.BottomCenter, "Trên taskbar · giữa"),
-            (StripDock.BottomRight, "Trên taskbar · phải"),
-            (StripDock.TopLeft, "Mép trên · trái"),
-            (StripDock.TopCenter, "Mép trên · giữa"),
-            (StripDock.TopRight, "Mép trên · phải"),
+            (StripDock.Auto, _s.L("Tự động theo thanh taskbar", "Auto (follow taskbar)")),
+            (StripDock.BottomLeft, _s.L("Trên taskbar · trái", "Above taskbar · left")),
+            (StripDock.BottomCenter, _s.L("Trên taskbar · giữa", "Above taskbar · center")),
+            (StripDock.BottomRight, _s.L("Trên taskbar · phải", "Above taskbar · right")),
+            (StripDock.TopLeft, _s.L("Mép trên · trái", "Top edge · left")),
+            (StripDock.TopCenter, _s.L("Mép trên · giữa", "Top edge · center")),
+            (StripDock.TopRight, _s.L("Mép trên · phải", "Top edge · right")),
         })
         {
             var d = dock;
             layout.DropDownItems.Add(new ToolStripMenuItem(name, null, (_, _) => SetDock(d)) { Checked = _s.Dock == d });
         }
         layout.DropDownItems.Add(new ToolStripSeparator());
-        layout.DropDownItems.Add(new ToolStripMenuItem("Tự do (kéo thanh tiêu đề để di chuyển)") { Checked = _s.Dock == StripDock.Manual, Enabled = false });
+        layout.DropDownItems.Add(new ToolStripMenuItem(_s.L("Tự do (kéo thanh tiêu đề để di chuyển)", "Free (drag the title bar to move)")) { Checked = _s.Dock == StripDock.Manual, Enabled = false });
         _menu.Items.Add(layout);
 
-        var size = new ToolStripMenuItem("Kích thước");
+        var size = new ToolStripMenuItem(_s.L("Kích thước", "Size"));
         foreach (var k in new[] { 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0 })
         {
             var v = k;
@@ -252,37 +252,58 @@ public sealed class GameWindow : Form
 
         _menu.Items.Add(new ToolStripSeparator());
 
-        _menu.Items.Add(new ToolStripMenuItem("Ghim luôn hiển thị", null, (_, _) => { _s.Pinned = !_s.Pinned; _s.Save(); ApplyPin(); })
-            { Checked = _s.Pinned });
-        _menu.Items.Add(new ToolStripMenuItem("Đặt lại vị trí", null, (_, _) => ResetPosition()) { ShortcutKeyDisplayString = "Shift+F12" });
-        _menu.Items.Add(new ToolStripMenuItem("Đặt lại kích thước", null, (_, _) => { _s.Scale = 1; _s.Save(); ApplySize(); }) { ShortcutKeyDisplayString = "Shift+F11" });
+        var lang = new ToolStripMenuItem(_s.L("Ngôn ngữ · Language", "Language · Ngôn ngữ"));
+        foreach (var (code, name) in new[] { ("vi", "Tiếng Việt"), ("en", "English") })
+        {
+            var c = code;
+            lang.DropDownItems.Add(new ToolStripMenuItem(name, null, (_, _) => SetLanguage(c)) { Checked = _s.Language == c });
+        }
+        _menu.Items.Add(lang);
+
         _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(new ToolStripMenuItem("Nhập code quà tặng…", null, (_, _) => ShowGiftCode()));
+        _menu.Items.Add(new ToolStripMenuItem(_s.L("Ghim luôn hiển thị", "Always on top"), null, (_, _) => { _s.Pinned = !_s.Pinned; _s.Save(); ApplyPin(); })
+            { Checked = _s.Pinned });
+        _menu.Items.Add(new ToolStripMenuItem(_s.L("Đặt lại vị trí", "Reset position"), null, (_, _) => ResetPosition()) { ShortcutKeyDisplayString = "Shift+F12" });
+        _menu.Items.Add(new ToolStripMenuItem(_s.L("Đặt lại kích thước", "Reset size"), null, (_, _) => { _s.Scale = 1; _s.Save(); ApplySize(); }) { ShortcutKeyDisplayString = "Shift+F11" });
+        _menu.Items.Add(new ToolStripSeparator());
+        _menu.Items.Add(new ToolStripMenuItem(_s.L("Nhập code quà tặng…", "Enter gift code…"), null, (_, _) => ShowGiftCode()));
         _menu.Items.Add(new ToolStripSeparator());
 
-        _menu.Items.Add(Visible ? "Ẩn xuống khay hệ thống" : "Hiện dải game", null, (_, _) => ToggleVisible());
-        _menu.Items.Add("Thoát", null, (_, _) => Close());
+        _menu.Items.Add(Visible ? _s.L("Ẩn xuống khay hệ thống", "Hide to system tray") : _s.L("Hiện dải game", "Show game strip"), null, (_, _) => ToggleVisible());
+        _menu.Items.Add(_s.L("Thoát", "Exit"), null, (_, _) => Close());
 
         foreach (ToolStripItem item in _menu.Items) item.ForeColor = Theme.Paper;
     }
 
     private void ShowMenuAtCursor() => _menu.Show(Cursor.Position);
 
+    /// <summary>Đổi ngôn ngữ: lưu cài đặt, menu dựng lại theo ngôn ngữ mới, các trang game tải lại (window.setLang).</summary>
+    private void SetLanguage(string lang)
+    {
+        if (_s.Language == lang) return;
+        _s.Language = lang;
+        _s.Save();
+        var js = $"window.setLang && window.setLang('{lang}')";
+        if (_web.CoreWebView2 is not null) _ = _web.ExecuteScriptAsync(js);
+        _panel?.SetLanguage(js);
+        _rankPanel?.SetLanguage(js);
+    }
+
     /// <summary>Hộp nhập code quà tặng; trang game gửi code lên server (window.redeemCode) và báo kết quả trên dải game.</summary>
     private void ShowGiftCode()
     {
         using var f = new Form
         {
-            Text = "Nhập code quà tặng", FormBorderStyle = FormBorderStyle.FixedToolWindow, StartPosition = FormStartPosition.CenterScreen,
+            Text = _s.L("Nhập code quà tặng", "Enter gift code"), FormBorderStyle = FormBorderStyle.FixedToolWindow, StartPosition = FormStartPosition.CenterScreen,
             TopMost = true, ShowInTaskbar = false, MinimizeBox = false, MaximizeBox = false,
             BackColor = Theme.Bar, ForeColor = Theme.Paper, Font = new Font("Segoe UI", 10f),
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
         };
-        var lbl = new Label { Text = "Nhập code để nhận quà (mỗi nhân vật nhận 1 lần):", AutoSize = true, Margin = new Padding(0, 0, 0, 6) };
+        var lbl = new Label { Text = _s.L("Nhập code để nhận quà (mỗi nhân vật nhận 1 lần):", "Enter a code to claim a gift (once per character):"), AutoSize = true, Margin = new Padding(0, 0, 0, 6) };
         var box = new TextBox { Width = LogicalToDeviceUnits(280), CharacterCasing = CharacterCasing.Upper, MaxLength = 32,
             BackColor = Theme.Ink, ForeColor = Theme.Paper, BorderStyle = BorderStyle.FixedSingle };
-        var ok = new Button { Text = "Nhận", DialogResult = DialogResult.OK, FlatStyle = FlatStyle.Flat, BackColor = Theme.Hover, ForeColor = Theme.Gold, AutoSize = true };
-        var cancel = new Button { Text = "Hủy", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, ForeColor = Theme.Paper, AutoSize = true };
+        var ok = new Button { Text = _s.L("Nhận", "Claim"), DialogResult = DialogResult.OK, FlatStyle = FlatStyle.Flat, BackColor = Theme.Hover, ForeColor = Theme.Gold, AutoSize = true };
+        var cancel = new Button { Text = _s.L("Hủy", "Cancel"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, ForeColor = Theme.Paper, AutoSize = true };
         ok.FlatAppearance.BorderColor = cancel.FlatAppearance.BorderColor = Theme.Line;
         var btns = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 8, 0, 0) };
         btns.Controls.AddRange(new Control[] { cancel, ok });
@@ -333,15 +354,16 @@ public sealed class GameWindow : Form
                 e.Handled = true; // thay menu trình duyệt bằng menu của game
                 ShowMenuAtCursor();
             };
-            _web.Source = new Uri($"{_url}?mode=strip&opaque=1");
+            _web.Source = new Uri($"{_url}?mode=strip&opaque=1&lang={_s.Language}");
         }
         catch (WebView2RuntimeNotFoundException)
         {
             Hide();
             _tray.ShowBalloonTip(8000, "Người Lười TT",
-                "Máy chưa cài Microsoft Edge WebView2 Runtime nên game mở trên trình duyệt. Thoát game từ biểu tượng ở khay hệ thống.",
+                _s.L("Máy chưa cài Microsoft Edge WebView2 Runtime nên game mở trên trình duyệt. Thoát game từ biểu tượng ở khay hệ thống.",
+                    "Microsoft Edge WebView2 Runtime is not installed, so the game opened in your browser. Exit the game from the system tray icon."),
                 ToolTipIcon.Info);
-            Process.Start(new ProcessStartInfo(_url) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo($"{_url}?lang={_s.Language}") { UseShellExecute = true });
         }
     }
 

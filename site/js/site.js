@@ -31,15 +31,17 @@
   // Cormorant Garamond chỉ có số kiểu cổ (0 trông như o), nên số phiên bản dùng font thân bài
   const num = t => Object.assign(document.createElement('span'), { className: 'num', textContent: t });
   const mb = n => Math.round(n / 1048576) + ' MB';
-  const date = s => new Date(s).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', year: 'numeric' });
+  const L = window.siteLang || { lang: 'vi', t: k => k, onChange(){} };
+  const date = s => new Date(s).toLocaleDateString(L.lang === 'en' ? 'en-GB' : 'vi-VN', { day: 'numeric', month: L.lang === 'en' ? 'short' : 'numeric', year: 'numeric' });
   const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // Markdown tối giản cho ghi chú GitHub: ##/### tiêu đề, gạch đầu dòng, **đậm**, [link](https://…)
+  // Markdown tối giản cho ghi chú GitHub: ##/### tiêu đề, gạch đầu dòng, **đậm**, [link](https://…).
+  // Trang không dẫn sang GitHub: link GitHub chỉ giữ chữ, URL GitHub trơn thì bỏ.
   function inline(s) {
     return esc(s)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>')
-      .replace(/(^|\s)(https:\/\/github\.com\/[^\s<]+)/g, '$1<a href="$2">$2</a>');
+      .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, (_, text, url) => /^https:\/\/([^/]+\.)?github\.com\//.test(url) ? text : `<a href="${url}">${text}</a>`)
+      .replace(/(^|\s)https:\/\/github\.com\/[^\s<]+/g, '$1');
   }
   function renderNotes(md) {
     const out = []; let list = null, group = null;
@@ -62,15 +64,18 @@
     const dl = document.getElementById('dl');
     dl.href = rel.zip_url;
     const main = dl.querySelector('.seal-main');
-    main.textContent = 'Tải ';
+    main.textContent = L.t('download') + ' ';
     main.append(num('v' + rel.version));
     document.getElementById('dlMeta').textContent = (rel.size ? mb(rel.size) + ', ' : '') + 'Windows 64-bit';
-    if (rel.published_at) document.getElementById('dlNote').textContent = `Miễn phí. Phát hành ngày ${date(rel.published_at)}. File ZIP gồm game và Launcher tự cập nhật.`;
+    if (rel.published_at) document.getElementById('dlNote').textContent = L.t('freeReleased', date(rel.published_at));
     document.getElementById('relVersion').replaceChildren(num('v' + rel.version));
     const meta = document.getElementById('relMeta');
-    meta.textContent = rel.published_at ? 'Phát hành ngày ' + date(rel.published_at) + '.' : '';
+    meta.textContent = rel.published_at ? L.t('released', date(rel.published_at)) : '';
     if (rel.body) document.getElementById('relNotes').innerHTML = renderNotes(rel.body);
   }
 
-  fromSite().catch(fromGitHub).then(apply).catch(err => console.warn('Không lấy được bản phát hành:', err.message));
+  // đổi ngôn ngữ: lang.js trả chữ gốc của nút tải / ghi chú, nên điền lại thông tin bản phát hành
+  let current = null;
+  L.onChange(() => { if (current) apply(current); });
+  fromSite().catch(fromGitHub).then(rel => { current = rel; apply(rel); }).catch(err => console.warn('Không lấy được bản phát hành:', err.message));
 })();

@@ -29,6 +29,14 @@ public class WindowSettings
 
     public double Opacity { get; set; } = 1.0;
 
+    /// <summary>Ngôn ngữ giao diện: "vi" (mặc định) hoặc "en".</summary>
+    public string Language { get; set; } = "vi";
+
+    [JsonIgnore] public bool En => Language == "en";
+
+    /// <summary>Chọn chữ theo ngôn ngữ đang dùng.</summary>
+    public string L(string vi, string en) => En ? en : vi;
+
     /// <summary>Kích thước riêng cho tab Hành trang (rộng hơn để chứa nhân vật + túi).</summary>
     public int? InvW { get; set; }
     public int? InvH { get; set; }

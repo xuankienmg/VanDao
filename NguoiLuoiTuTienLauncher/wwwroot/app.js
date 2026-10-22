@@ -61,8 +61,30 @@ function toggleTheme() {
   });
 }
 
+// Ngôn ngữ (dùng chung với game qua window.json): lưu rồi tải lại trang, i18n.js dịch giao diện khi là English
+const currentLang = () => (window.LANG === 'en' ? 'en' : 'vi');
+
+function setLanguage(lang) {
+  lang = lang === 'en' ? 'en' : 'vi';
+  postMessage({ type: 'save_settings', settings: { ...gatherCurrentSettings(), language: lang } });
+  if (lang !== currentLang()) window.setLang(lang);
+}
+
+function toggleLanguage() {
+  setLanguage(currentLang() === 'en' ? 'vi' : 'en');
+}
+
+function showLanguage() {
+  const btn = document.getElementById('lang-toggle-btn');
+  if (btn) btn.textContent = currentLang().toUpperCase();
+  const sel = document.getElementById('setting-language');
+  if (sel) sel.value = currentLang();
+}
+document.addEventListener('DOMContentLoaded', showLanguage);
+
 function gatherCurrentSettings() {
   return {
+    language: currentLang(),
     gitHubRepo: document.getElementById('setting-repo')?.value?.trim() || '',
     gamePath: document.getElementById('setting-path')?.value?.trim() || '',
     currentVersion: document.getElementById('setting-version')?.value?.trim() || '',
@@ -185,6 +207,10 @@ function handleInitData(data) {
   launcherState.currentVersion = data.settings.currentVersion || '0.7.0';
   launcherState.launcherVersion = data.settings.launcherVersion || '1.0.0';
 
+  // Ngôn ngữ đã lưu (có thể vừa đổi trong game) khác trang đang hiện → tải lại bằng ngôn ngữ đó
+  const savedLang = data.settings.language === 'en' ? 'en' : 'vi';
+  if (savedLang !== currentLang()) { window.setLang(savedLang); return; }
+
   // Apply saved theme
   applyTheme(data.settings.theme || 'dark');
 
@@ -219,6 +245,35 @@ function updateStatus(text) {
   }
 }
 
+/** Markdown tối giản của ghi chú GitHub → HTML an toàn: ###/#### tiêu đề, gạch đầu dòng, **đậm**, `code`.
+ *  Bỏ "## Có gì mới" (thẻ đã có tiêu đề); link chỉ giữ chữ vì bấm vào sẽ mở ngay trong Launcher. */
+function markdownToHtml(md) {
+  const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\([^)\s]+\)/g, '$1');
+  const out = [];
+  let list = null;
+  const flush = () => { if (list) { out.push('<ul>' + list.join('') + '</ul>'); list = null; } };
+  for (const raw of String(md).replace(/\r/g, '').split('\n')) {
+    const line = raw.trim();
+    let m;
+    if (!line || /^##\s/.test(line)) { flush(); continue; }
+    if ((m = line.match(/^#{1,6}\s+(.*)/))) { flush(); out.push('<h4>' + inline(m[1]) + '</h4>'); }
+    else if ((m = line.match(/^[-*]\s+(.*)/))) (list ||= []).push('<li>' + inline(m[1]) + '</li>');
+    else { flush(); out.push('<p>' + inline(line) + '</p>'); }
+  }
+  flush();
+  return out.join('');
+}
+
+/** Ghi chú markdown → một dòng chữ trơn (cho thẻ tóm tắt). */
+const markdownToText = md => String(md).replace(/\r/g, '').split('\n')
+  .map(l => l.trim()).filter(l => l && !/^##\s/.test(l))
+  .map(l => l.replace(/^#{1,6}\s+|^[-*]\s+/, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)\s]+\)/g, '$1'))
+  .join(' · ');
+
 function renderReleaseNotes(data) {
   const available = !!data.releaseTitle || data.changelog != null || !!data.publishedAt;
   const version = data.latestVersion;
@@ -230,10 +285,14 @@ function renderReleaseNotes(data) {
   const date = data.publishedAt ? new Date(data.publishedAt) : null;
   document.getElementById('patch-date-title').textContent = date && !Number.isNaN(date.getTime())
     ? date.toLocaleDateString('vi-VN') : '';
-  document.getElementById('patch-body-text').textContent = notes;
+  const body = document.getElementById('patch-body-text');
+  body.innerHTML = markdownToHtml(notes);
+  body.classList.add('md-notes');
+  body.classList.remove('whitespace-pre-wrap');
   document.getElementById('card-latest-title').textContent = title;
   document.getElementById('card-latest-tag').textContent = available && version ? `CẬP NHẬT v${version}` : 'Thông tin cập nhật';
-  document.getElementById('card-latest-desc').textContent = notes.length > 100 ? notes.substring(0, 100) + '…' : notes;
+  const plain = markdownToText(notes);
+  document.getElementById('card-latest-desc').textContent = plain.length > 100 ? plain.substring(0, 100) + '…' : plain;
   document.getElementById('patch-badge-new').classList.toggle('hidden', !data.hasUpdate);
 }
 
@@ -267,9 +326,11 @@ function renderReleaseList(data) {
       'background: rgba(229, 193, 88, 0.18); color: var(--gold-accent);'));
     const time = formatReleaseTime(release.publishedAt);
     head.append(tags, el('span', 'text-[11px]', time ? `Phát hành ${time}` : '', 'color: var(--text-dimmer);'));
+    const notes = el('div', 'md-notes text-[12px] leading-relaxed', null, 'color: var(--text-muted);');
+    notes.innerHTML = markdownToHtml(release.changelog?.trim() || 'Bản phát hành này chưa có ghi chú cập nhật.');
     card.append(head,
       el('h3', 'text-sm font-semibold', release.title || `Bản phát hành v${release.version}`, 'color: var(--text-primary);'),
-      el('div', 'text-[12px] space-y-1.5 whitespace-pre-wrap leading-relaxed', release.changelog?.trim() || 'Bản phát hành này chưa có ghi chú cập nhật.', 'color: var(--text-muted);'));
+      notes);
     return card;
   }));
 }
@@ -420,7 +481,7 @@ function promptLauncherUpdate() {
   }
 
   const ver = launcherState.latestLauncherVersion || 'Mới';
-  if (!confirm(`Bạn có muốn tải và cập nhật Vạn Đạo Launcher lên phiên bản v${ver}? Launcher sẽ tự động khởi động lại sau khi cập nhật.`)) {
+  if (!confirm(`Bạn có muốn tải và cập nhật Launcher lên phiên bản v${ver}? Launcher sẽ tự động khởi động lại sau khi cập nhật.`)) {
     return;
   }
 

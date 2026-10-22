@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace VanDao.Launcher;
@@ -13,14 +14,66 @@ public class LauncherSettings
     public string LauncherVersion { get; set; } = "1.0.0";
     public string Theme { get; set; } = "dark";
 
+    /// <summary>Ngôn ngữ giao diện "vi" | "en", dùng chung với game: nguồn chính là Language trong %LocalAppData%\VanDao\window.json.</summary>
+    public string Language { get; set; } = "vi";
+
+    /// <summary>Ngôn ngữ đang dùng cho chữ native (hộp thoại, tiêu đề lỗi).</summary>
+    public static string Lang { get; private set; } = "vi";
+
+    /// <summary>Chọn chữ theo ngôn ngữ đang dùng.</summary>
+    public static string L(string vi, string en) => Lang == "en" ? en : vi;
+
+    private static string GameWindowFile => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VanDao", "window.json");
+
+    /// <summary>Ngôn ngữ game đang dùng (null nếu game chưa lưu cài đặt cửa sổ).</summary>
+    private static string? ReadGameLanguage()
+    {
+        try
+        {
+            if (!File.Exists(GameWindowFile)) return null;
+            return JsonNode.Parse(File.ReadAllText(GameWindowFile))?["Language"]?.GetValue<string>();
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Ghi ngôn ngữ vào window.json của game, giữ nguyên các cài đặt cửa sổ khác.</summary>
+    private static void WriteGameLanguage(string lang)
+    {
+        try
+        {
+            var root = File.Exists(GameWindowFile) ? JsonNode.Parse(File.ReadAllText(GameWindowFile)) as JsonObject : null;
+            root ??= new JsonObject();
+            if (root["Language"]?.GetValue<string>() == lang) return;
+            root["Language"] = lang;
+            Directory.CreateDirectory(Path.GetDirectoryName(GameWindowFile)!);
+            File.WriteAllText(GameWindowFile, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { /* không ghi được cũng không chặn Launcher */ }
+    }
+
+    /// <summary>Đổi ngôn ngữ cho cả Launcher và game.</summary>
+    public void SetLanguage(string lang)
+    {
+        Language = Lang = lang == "en" ? "en" : "vi";
+        WriteGameLanguage(Language);
+    }
+
     public static string GetSettingsFile()
     {
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        var inSubDir = Path.Combine(baseDir, "VanDaoLauncher", "launcher_settings.json");
+        var inSubDir = Path.Combine(baseDir, "NguoiLuoiTuTienLauncher", "launcher_settings.json");
         var inBaseDir = Path.Combine(baseDir, "launcher_settings.json");
 
         if (File.Exists(inSubDir)) return inSubDir;
-        if (Directory.Exists(Path.Combine(baseDir, "VanDaoLauncher"))) return inSubDir;
+        // Bản cài cũ (thư mục VanDaoLauncher, trước khi đổi tên): chép cài đặt sang thư mục mới để không mất đường dẫn game
+        var legacy = Path.Combine(baseDir, "VanDaoLauncher", "launcher_settings.json");
+        if (File.Exists(legacy))
+        {
+            try { Directory.CreateDirectory(Path.GetDirectoryName(inSubDir)!); File.Copy(legacy, inSubDir); return inSubDir; }
+            catch { return legacy; }
+        }
+        if (Directory.Exists(Path.Combine(baseDir, "NguoiLuoiTuTienLauncher"))) return inSubDir;
         if (File.Exists(inBaseDir)) return inBaseDir;
 
         return inSubDir;
@@ -50,6 +103,8 @@ public class LauncherSettings
                         s.Save();
                     }
 
+                    s.Language = Lang = ReadGameLanguage() ?? (s.Language == "en" ? "en" : "vi");
+
                     // Rewrite legacy settings without any stored GitHub token.
                     s.Save();
                     return s;
@@ -60,6 +115,7 @@ public class LauncherSettings
 
         var settings = new LauncherSettings { GamePath = DetectGamePath() };
         settings.CurrentVersion = DetectGameVersion(settings.GamePath);
+        settings.Language = Lang = ReadGameLanguage() ?? "vi";
         settings.Save();
         return settings;
     }
