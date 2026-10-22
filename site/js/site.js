@@ -1,5 +1,5 @@
 // Điền nút tải và ghi chú phát hành từ release.json (workflow deploy-site sinh ra lúc deploy).
-// Thiếu hoặc lỗi thì hỏi thẳng GitHub API; vẫn lỗi thì nút tải chưa có link.
+// Thiếu hoặc lỗi thì hỏi thẳng GitHub API; vẫn lỗi thì nút giữ link /releases/latest có sẵn trong HTML.
 (() => {
   const REPO = 'xuankienmg/nguoi-luoi-tu-tien';
   const isGameZip = a => /^VanDao_v\d+\.\d+\.\d+\.zip$/i.test(a.name) && a.state === 'uploaded';
@@ -70,11 +70,6 @@
     const meta = document.getElementById('relMeta');
     meta.textContent = rel.published_at ? 'Phát hành ngày ' + date(rel.published_at) + '.' : '';
     if (rel.body) document.getElementById('relNotes').innerHTML = renderNotes(rel.body);
-    if (rel.sha256) {
-      const h = document.getElementById('relHash');
-      h.textContent = `SHA-256 của ${rel.zip_name || 'VanDao_' + rel.tag + '.zip'}: ${rel.sha256}`;
-      h.hidden = false;
-    }
   }
 
   fromSite().catch(fromGitHub).then(apply).catch(err => console.warn('Không lấy được bản phát hành:', err.message));
