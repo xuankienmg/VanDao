@@ -30,8 +30,18 @@ h3{font:600 23px/1.2 var(--f-display);margin:0 0 .4em;color:var(--gold)}
   background:linear-gradient(90deg,rgba(236,235,229,.94) 0%,rgba(236,235,229,.8) 38%,rgba(236,235,229,0) 70%);
 }
 .hero-text{position:relative;padding:clamp(28px,6vh,64px) var(--gutter) 24px;max-width:720px;align-self:center}
-.brand{display:flex;align-items:center;gap:10px;margin:0 0 clamp(24px,6vh,56px);font:600 22px/1 var(--f-display)}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 clamp(24px,6vh,56px)}
+.brand{display:flex;align-items:center;gap:10px;margin:0;font:600 22px/1 var(--f-display)}
 .brand img{border-radius:6px}
+/* chọn ngôn ngữ: hai ô dính nhau, ô đang chọn tô mực */
+.lang{display:flex;border:1px solid rgba(29,35,38,.35);border-radius:4px;overflow:hidden;flex:none}
+.lang button{font:600 13px/1 var(--f-body);letter-spacing:.06em;padding:7px 10px;min-width:40px;border:0;background:rgba(236,235,229,.7);color:var(--paper-ink);cursor:pointer}
+.lang button+button{border-left:1px solid rgba(29,35,38,.35)}
+.lang button[aria-pressed="true"]{background:var(--paper-ink);color:var(--paper)}
+.lang button:hover:not([aria-pressed="true"]){background:#fff}
+.lang button:focus-visible{outline:2px solid var(--seal);outline-offset:-2px}
+.release-lang{margin:0 0 1em;color:var(--muted);font-size:15px}
+.release-lang:empty{display:none}
 .hero h1{font:700 clamp(46px,8vw,96px)/.98 var(--f-display);letter-spacing:-.01em;margin:0 0 .35em;max-width:11ch}
 .lede{font-size:clamp(17px,1.6vw,19px);max-width:34em;margin:0 0 32px;color:#2c3437}
 
