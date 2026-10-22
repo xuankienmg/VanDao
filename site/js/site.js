@@ -1,7 +1,7 @@
 // Điền nút tải và ghi chú phát hành từ release.json (workflow deploy-site sinh ra lúc deploy).
 // Thiếu hoặc lỗi thì hỏi thẳng GitHub API; vẫn lỗi thì nút giữ link /releases/latest có sẵn trong HTML.
 (() => {
-  const REPO = 'xuankienmg/VanDao';
+  const REPO = 'xuankienmg/nguoi-luoi-tu-tien';
   const isGameZip = a => /^VanDao_v\d+\.\d+\.\d+\.zip$/i.test(a.name) && a.state === 'uploaded';
 
   async function fromSite() {
