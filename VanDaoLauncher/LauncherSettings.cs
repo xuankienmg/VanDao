@@ -6,7 +6,7 @@ namespace VanDao.Launcher;
 public class LauncherSettings
 {
     public string GamePath { get; set; } = "";
-    public string GitHubRepo { get; set; } = "xuankienmg/VanDao";
+    public string GitHubRepo { get; set; } = "xuankienmg/nguoi-luoi-tu-tien";
     public bool AutoCheckOnStartup { get; set; } = true;
     public bool CloseLauncherOnPlay { get; set; } = true;
     public string CurrentVersion { get; set; } = "0.7.0";
