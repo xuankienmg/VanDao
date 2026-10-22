@@ -50,7 +50,7 @@ jobs:
         shell: pwsh
         run: |
           $credentialPattern = '(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
-          $sourceFiles = Get-ChildItem VanDaoLauncher -Recurse -File -Include *.cs,*.js,*.html,*.json | Where-Object { $_.FullName -notmatch '[\\/](bin|obj|publish)[\\/]' -and $_.Name -ne 'launcher_settings.json' }
+          $sourceFiles = Get-ChildItem NguoiLuoiTuTienLauncher -Recurse -File -Include *.cs,*.js,*.html,*.json | Where-Object { $_.FullName -notmatch '[\\/](bin|obj|publish)[\\/]' -and $_.Name -ne 'launcher_settings.json' }
           foreach ($sourceFile in $sourceFiles) {
             if ([IO.File]::ReadAllText($sourceFile.FullName) -match $credentialPattern) { throw "GitHub credential found in Launcher source: $($sourceFile.Name)" }
           }
@@ -59,16 +59,16 @@ jobs:
           $launcherDir = Join-Path $stageRoot 'launcher'
           dotnet publish VanDao.csproj -c Release -r win-x64 -o $gameDir --self-contained true -p:VersionFromTag=false -p:Version=$env:VERSION -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
           if ($LASTEXITCODE -ne 0) { throw 'Game publish failed.' }
-          dotnet publish VanDaoLauncher/VanDaoLauncher.csproj -c Release -r win-x64 -o $launcherDir --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          dotnet publish NguoiLuoiTuTienLauncher/NguoiLuoiTuTienLauncher.csproj -c Release -r win-x64 -o $launcherDir --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
           if ($LASTEXITCODE -ne 0) { throw 'Launcher publish failed.' }
           # Package only runtime output; stage outside the source tree to avoid nested publish files.
           foreach ($dir in @($gameDir, $launcherDir)) {
             Get-ChildItem -LiteralPath $dir -File | Where-Object Extension -in '.pdb', '.xml' | Remove-Item -Force
           }
-          Copy-Item (Join-Path $launcherDir 'VanDaoLauncher.exe') $gameDir -Force
-          $launcherUi = Join-Path $gameDir 'VanDaoLauncher'
+          Copy-Item (Join-Path $launcherDir 'NguoiLuoiTuTienLauncher.exe') $gameDir -Force
+          $launcherUi = Join-Path $gameDir 'NguoiLuoiTuTienLauncher'
           New-Item -ItemType Directory -Path $launcherUi -Force | Out-Null
-          Copy-Item VanDaoLauncher/wwwroot $launcherUi -Recurse -Force
+          Copy-Item NguoiLuoiTuTienLauncher/wwwroot $launcherUi -Recurse -Force
           if (Get-ChildItem $gameDir -Recurse -File -Filter launcher_settings.json) { throw 'Local Launcher settings must not be packaged.' }
           $zipPath = Join-Path $env:RUNNER_TEMP "VanDao_$env:TAG.zip"
           Compress-Archive -Path "$gameDir/*" -DestinationPath $zipPath -Force

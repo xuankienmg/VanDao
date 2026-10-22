@@ -580,3 +580,18 @@ body.light #hero-tagline {
   font-size: 14px;
   color: var(--gold-light);
 }
+
+/* Ghi chú phát hành (markdown từ GitHub → HTML, xem markdownToHtml trong app.js) */
+.md-notes h4 {
+  margin: 14px 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gold-accent);
+}
+.md-notes h4:first-child { margin-top: 0; }
+.md-notes ul { margin: 0; padding-left: 16px; list-style: disc; }
+.md-notes li { margin: 3px 0; }
+.md-notes li::marker { color: var(--gold-accent); }
+.md-notes p { margin: 4px 0; }
+.md-notes strong { font-weight: 600; color: var(--text-primary); }
+.md-notes code { font-family: Consolas, monospace; font-size: 11.5px; padding: 0 4px; border-radius: 3px; background: rgba(229, 193, 88, 0.08); }

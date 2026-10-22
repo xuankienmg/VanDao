@@ -63,7 +63,7 @@ public static class LauncherLogic
 
     static LauncherLogic()
     {
-        Http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("VanDaoLauncher", "1.0"));
+        Http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("NguoiLuoiTuTienLauncher", "1.0"));
     }
 
     /// <summary>
@@ -410,7 +410,7 @@ public static class LauncherLogic
             {
                 using var handler = new HttpClientHandler { AllowAutoRedirect = false };
                 using var redirectClient = new HttpClient(handler);
-                redirectClient.DefaultRequestHeaders.Add("User-Agent", "VanDaoLauncher");
+                redirectClient.DefaultRequestHeaders.Add("User-Agent", "NguoiLuoiTuTienLauncher");
                 using var apiReq = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
                 apiReq.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
                 if (!string.IsNullOrWhiteSpace(token))
@@ -611,13 +611,15 @@ public static class LauncherLogic
                 sourceDir = Directory.GetDirectories(sourceDir)[0];
             }
 
-            // Tạo script batch tự động đóng launcher cũ, chép đè, và bật lại launcher mới
+            // Tạo script batch tự động đóng launcher cũ, chép đè, và bật lại launcher mới.
+            // Tên exe lấy theo file đang chạy (VanDaoLauncher.exe ở bản cài cũ, NguoiLuoiTuTienLauncher.exe từ khi đổi tên).
+            var exeName = Path.GetFileName(Environment.ProcessPath) is { Length: > 0 } running ? running : "NguoiLuoiTuTienLauncher.exe";
             var updaterBat = Path.Combine(Path.GetTempPath(), $"vandao_launcher_patcher_{Guid.NewGuid():N}.bat");
             var script = $@"@echo off
 chcp 65001 >nul
 timeout /t 1 /nobreak >nul
 :wait_process
-tasklist /fi ""imagename eq VanDaoLauncher.exe"" 2>nul | findstr /i ""VanDaoLauncher.exe"" >nul
+tasklist /fi ""imagename eq {exeName}"" 2>nul | findstr /i ""{exeName}"" >nul
 if not errorlevel 1 (
     timeout /t 1 /nobreak >nul
     goto wait_process
@@ -625,7 +627,7 @@ if not errorlevel 1 (
 xcopy /s /e /y ""{sourceDir}\*"" ""{launcherDir}\"" >nul
 rmdir /s /q ""{extractTemp}"" 2>nul
 if exist ""{tempZip}"" del /f /q ""{tempZip}"" 2>nul
-start """" ""{Path.Combine(launcherDir, "VanDaoLauncher.exe")}""
+start """" ""{Path.Combine(launcherDir, exeName)}""
 (goto) 2>nul & del ""%~f0""
 ";
 
@@ -644,7 +646,7 @@ start """" ""{Path.Combine(launcherDir, "VanDaoLauncher.exe")}""
         }
         catch (Exception ex)
         {
-            throw new Exception($"Lỗi cập nhật Launcher: {ex.Message}");
+            throw new Exception(LauncherSettings.L("Lỗi cập nhật Launcher: ", "Launcher update error: ") + ex.Message);
         }
     }
 
@@ -690,11 +692,11 @@ start """" ""{Path.Combine(launcherDir, "VanDaoLauncher.exe")}""
                 return (true, "Khởi chạy qua dotnet run thành công");
             }
 
-            return (false, "Không tìm thấy NguoiLuoiTuTien.exe hoặc VanDao.csproj");
+            return (false, LauncherSettings.L("Không tìm thấy NguoiLuoiTuTien.exe hoặc VanDao.csproj", "Couldn't find NguoiLuoiTuTien.exe or VanDao.csproj"));
         }
         catch (Exception ex)
         {
-            return (false, $"Lỗi khởi chạy: {ex.Message}");
+            return (false, LauncherSettings.L("Lỗi khởi chạy: ", "Launch error: ") + ex.Message);
         }
     }
 }

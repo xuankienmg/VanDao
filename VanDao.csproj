@@ -51,9 +51,9 @@
     <Content Remove="tools\**" />
     <None Remove="tools\**" />
     <!-- launcher: project riêng, không biên dịch vào game -->
-    <Compile Remove="VanDaoLauncher\**" />
-    <Content Remove="VanDaoLauncher\**" />
-    <None Remove="VanDaoLauncher\**" />
+    <Compile Remove="NguoiLuoiTuTienLauncher\**;VanDaoLauncher\**" />
+    <Content Remove="NguoiLuoiTuTienLauncher\**;VanDaoLauncher\**" />
+    <None Remove="NguoiLuoiTuTienLauncher\**;VanDaoLauncher\**" />
     <!-- Local Launcher settings may contain credentials from older versions. -->
     <Content Remove="**\launcher_settings.json" />
     <None Remove="**\launcher_settings.json" />

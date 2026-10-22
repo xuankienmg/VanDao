@@ -26,7 +26,7 @@ Get-ChildItem -Path $publishDir -Filter "*.pdb" | Remove-Item -Force
 Get-ChildItem -Path $publishDir -Filter "*.xml" | Remove-Item -Force
 if (Test-Path "$publishDir\web.config") { Remove-Item "$publishDir\web.config" -Force }
 if (Test-Path "$publishDir\docs") { Remove-Item "$publishDir\docs" -Recurse -Force }
-if (Test-Path "$publishDir\VanDaoLauncher") { Remove-Item "$publishDir\VanDaoLauncher" -Recurse -Force }
+if (Test-Path "$publishDir\NguoiLuoiTuTienLauncher") { Remove-Item "$publishDir\NguoiLuoiTuTienLauncher" -Recurse -Force }
 if (Test-Path "$publishDir\launcher_settings.json") { Remove-Item "$publishDir\launcher_settings.json" -Force }
 
 # 3. Nen thanh file zip
