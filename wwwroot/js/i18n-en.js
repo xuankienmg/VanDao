@@ -1,5 +1,6 @@
 /* Vấn Đạo · js/i18n-en.js: từ điển Tiếng Việt → English cho js/i18n.js. Kiểm tra đoạn còn thiếu: node tools/i18n_extract.cjs */
 window.I18N_EN = {
+"Người Lười Tu Tiên":"Người Lười Tu Tiên",
 ", hoàn {0} Linh Thú Đan":", refunded {0} Spirit Beast Pill",
 ", lượt sau quái nhận thêm {0}% sát thương.":", next turn the monster takes {0}% extra damage.",
 ": {0}–{1} món · {2}":": {0}–{1} items · {2}",
