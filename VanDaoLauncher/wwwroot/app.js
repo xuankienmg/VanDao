@@ -200,7 +200,7 @@ function handleInitData(data) {
   document.getElementById('patch-tag-title').textContent = 'v' + launcherState.currentVersion;
 
   // Update Settings Inputs
-  document.getElementById('setting-repo').value = launcherState.settings.gitHubRepo || 'xuankienmg/VanDao';
+  document.getElementById('setting-repo').value = launcherState.settings.gitHubRepo || 'xuankienmg/nguoi-luoi-tu-tien';
   document.getElementById('setting-path').value = launcherState.settings.gamePath || 'D:\\Game VanDao';
   document.getElementById('setting-version').value = launcherState.currentVersion;
   document.getElementById('setting-launcher-version').value = launcherState.launcherVersion;
