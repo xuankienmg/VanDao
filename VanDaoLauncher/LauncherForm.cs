@@ -245,7 +245,10 @@ public sealed class LauncherForm : Form
             latestLauncherVersion = check.LatestLauncherVersion,
             launcherDownloadUrl = check.LauncherDownloadUrl,
             launcherAssetSize = check.LauncherAssetSize,
-            launcherChangelog = check.LauncherChangelog
+            launcherChangelog = check.LauncherChangelog,
+
+            // Nhật ký cập nhật: các bản game gần nhất
+            recentReleases = check.RecentReleases
         });
     }
 

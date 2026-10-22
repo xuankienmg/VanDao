@@ -237,8 +237,46 @@ function renderReleaseNotes(data) {
   document.getElementById('patch-badge-new').classList.toggle('hidden', !data.hasUpdate);
 }
 
+/** Ngày giờ phát hành theo giờ máy người chơi, vd "22/10/2026 · 14:30". */
+function formatReleaseTime(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} · ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Nhật ký cập nhật: mỗi bản phát hành gần nhất một thẻ (phiên bản, ngày giờ, tiêu đề, ghi chú). */
+function renderReleaseList(data) {
+  const list = document.getElementById('patch-notes-list');
+  const releases = Array.isArray(data.recentReleases) ? data.recentReleases : [];
+  if (!list || releases.length === 0) return;               // không có danh sách: giữ thẻ đơn của renderReleaseNotes
+  const el = (tag, className, text, style) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (style) node.setAttribute('style', style);
+    if (text != null) node.textContent = text;
+    return node;
+  };
+  list.replaceChildren(...releases.map((release, index) => {
+    const card = el('div', 'patch-card space-y-4');
+    const head = el('div', 'flex items-center justify-between gap-3');
+    const tags = el('div', 'flex items-center gap-2');
+    tags.append(el('span', 'px-2.5 py-1 rounded font-bold text-[11px] tracking-wide', release.version ? `v${release.version}` : 'Bản phát hành',
+      'background: rgba(229, 193, 88, 0.1); color: var(--gold-light); border: 1px solid rgba(229, 193, 88, 0.2);'));
+    if (index === 0) tags.append(el('span', 'px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase', 'Mới nhất',
+      'background: rgba(229, 193, 88, 0.18); color: var(--gold-accent);'));
+    const time = formatReleaseTime(release.publishedAt);
+    head.append(tags, el('span', 'text-[11px]', time ? `Phát hành ${time}` : '', 'color: var(--text-dimmer);'));
+    card.append(head,
+      el('h3', 'text-sm font-semibold', release.title || `Bản phát hành v${release.version}`, 'color: var(--text-primary);'),
+      el('div', 'text-[12px] space-y-1.5 whitespace-pre-wrap leading-relaxed', release.changelog?.trim() || 'Bản phát hành này chưa có ghi chú cập nhật.', 'color: var(--text-muted);'));
+    return card;
+  }));
+}
+
 function handleUpdateChecked(data) {
   renderReleaseNotes(data);
+  renderReleaseList(data);
   launcherState.currentVersion = data.currentVersion || launcherState.currentVersion;
   launcherState.launcherVersion = data.currentLauncherVersion || launcherState.launcherVersion;
 
