@@ -1,0 +1,72 @@
+name: Deploy Website
+
+# Trang giới thiệu & tải game (thư mục site/) lên GitHub Pages.
+# Chạy khi sửa site/, sau mỗi lần "Build & Release Game" thành công, hoặc chạy tay.
+# Cài đặt một lần: Settings → Pages → Source = GitHub Actions.
+
+on:
+  push:
+    branches: [master]
+    paths: ['site/**', '.github/workflows/deploy-site.yml']
+  workflow_run:
+    workflows: ['Build & Release Game']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    # Không dùng environment Supbase: trang không được chạm tới khóa service_role.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Write release.json from the latest game release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cp -r site _site
+          touch _site/.nojekyll
+          # Cùng quy tắc với Launcher: bỏ draft/prerelease, lấy release mới nhất có VanDao_vX.Y.Z.zip đã upload xong.
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=20" --jq '
+            [ .[] | select(.draft | not) | select(.prerelease | not)
+              | . as $r
+              | ($r.assets[] | select((.name | test("^VanDao_v[0-9]+\\.[0-9]+\\.[0-9]+\\.zip$")) and .state == "uploaded")) as $a
+              | { tag: $r.tag_name, version: ($r.tag_name | ltrimstr("v")), published_at: $r.published_at,
+                  html_url: $r.html_url, body: ($r.body // ""),
+                  zip_name: $a.name, zip_url: $a.browser_download_url, size: $a.size,
+                  sha256: (($a.digest // "") | ltrimstr("sha256:")) } ]
+            | first // error("No published release with a game ZIP")
+          ' > _site/release.json
+          jq -r '"Release on site: \(.tag) \(.zip_url) (\(.size) bytes)"' _site/release.json
+
+      - name: Refuse to publish secrets
+        run: |
+          set -euo pipefail
+          if grep -rIEl 'service_role|sb_secret_|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}' _site; then
+            echo '::error::Secret-like string found in the site; deploy stopped.'; exit 1
+          fi
+          # Không có JWT nào của Supabase trên trang (kể cả anon) trừ khi cố ý thêm sau này.
+          if grep -rIEl 'eyJhbGciOi' _site; then echo '::error::JWT found in the site.'; exit 1; fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

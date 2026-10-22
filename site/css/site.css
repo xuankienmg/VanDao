@@ -1,0 +1,162 @@
+/* Người Lười Tu Tiên — trang giới thiệu.
+   Trên: giấy dó + tranh thủy mặc (ngày). Dưới: mực đêm giống giao diện game. */
+:root{
+  --paper:#ecebe5; --paper-ink:#1d2326; --mist:#5d6663;
+  --night:#0e1416; --night-2:#141d20; --line:#2b3a3e;
+  --text:#ebe4d3; --muted:#97a5a2; --gold:#e6c46a; --jade:#7fd3c4;
+  --seal:#a43126; --seal-hi:#c0402f;
+  --f-display:"Cormorant Garamond","Noto Serif",Georgia,serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --gutter:clamp(16px,5vw,64px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--night);color:var(--text);font:400 17px/1.6 var(--f-body)}
+img{max-width:100%;height:auto}
+a{color:var(--jade)}
+a:focus-visible,.seal:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+code{font-family:inherit;background:rgba(255,255,255,.06);padding:0 .3em;border-radius:3px;white-space:nowrap}
+h2{font:600 clamp(32px,4.4vw,48px)/1.1 var(--f-display);margin:0 0 .6em;color:var(--text)}
+h3{font:600 23px/1.2 var(--f-display);margin:0 0 .4em;color:var(--gold)}
+
+/* ---------- Hero ---------- */
+.hero{
+  position:relative;min-height:min(100svh,880px);color:var(--paper-ink);
+  background:var(--paper) url(../img/ink-mountains.jpg) center 30%/cover no-repeat;
+  display:grid;grid-template-rows:1fr auto;overflow:hidden;
+}
+.hero::before{ /* sương trái để chữ dễ đọc */
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(236,235,229,.94) 0%,rgba(236,235,229,.8) 38%,rgba(236,235,229,0) 70%);
+}
+.hero-text{position:relative;padding:clamp(28px,6vh,64px) var(--gutter) 24px;max-width:720px;align-self:center}
+.brand{display:flex;align-items:center;gap:10px;margin:0 0 clamp(24px,6vh,56px);font:600 22px/1 var(--f-display)}
+.brand img{border-radius:6px}
+.hero h1{font:700 clamp(46px,8vw,96px)/.98 var(--f-display);letter-spacing:-.01em;margin:0 0 .35em;max-width:11ch}
+.lede{font-size:clamp(17px,1.6vw,19px);max-width:34em;margin:0 0 32px;color:#2c3437}
+
+.cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px}
+.seal{ /* nút tải như con dấu son */
+  display:inline-flex;flex-direction:column;gap:2px;text-decoration:none;color:#fff;
+  background:var(--seal);padding:14px 26px 12px;border-radius:4px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22),inset 0 0 0 5px var(--seal);
+  transition:background-color .15s;
+}
+.seal:hover{background:var(--seal-hi)}
+.seal-main{font:700 24px/1.1 var(--f-display);letter-spacing:.01em}
+.num{font:600 .8em/1 var(--f-body);letter-spacing:0}
+.seal-sub{font-size:13px;opacity:.88}
+.cta-note{margin:0;font-size:14px;color:var(--mist);max-width:22em}
+
+/* Màn hình giả: dải game nằm ngay trên taskbar */
+.desk{position:relative;display:flex;flex-direction:column;align-items:flex-end}
+.strip{
+  width:280px;margin-right:clamp(16px,12vw,180px);margin-bottom:6px;
+  background:linear-gradient(#18232a,#0e1416);color:var(--text);
+  border:1px solid #3a4a4e;border-radius:6px 6px 4px 4px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:12px;overflow:hidden;
+}
+.scene{
+  position:relative;height:96px;overflow:hidden;
+  background:#9aa39f url(../img/ink-mountains.jpg) 70% 60%/360px auto;
+}
+.scene::after{content:"";position:absolute;inset:auto 0 0;height:18px;background:linear-gradient(transparent,rgba(14,20,22,.65))}
+.scene img{position:absolute;bottom:6px;width:72px;height:72px;image-rendering:pixelated}
+.hero-sprite{left:40px;animation:lunge 2.4s steps(1) infinite}
+.wolf{right:40px;transform:scaleX(-1);animation:hit 2.4s infinite}
+.slash{position:absolute;left:118px;bottom:28px;width:44px;height:3px;background:#dff6ff;border-radius:2px;opacity:0;transform:rotate(-24deg);box-shadow:0 0 8px #8fe3ff;animation:slash 2.4s infinite}
+.dmg{position:absolute;right:58px;bottom:62px;font:700 15px/1 var(--f-body);color:#ffd27a;text-shadow:0 1px 0 #000;opacity:0;animation:dmg 2.4s infinite;z-index:1}
+.strip-head{display:flex;align-items:baseline;gap:8px;padding:6px 10px 2px}
+.strip-head b{font:700 16px/1 var(--f-display);color:var(--gold)}
+.strip-head span{color:var(--muted)}
+.qi{margin:4px 10px 6px;height:6px;border-radius:3px;background:#22302f;overflow:hidden}
+.qi i{display:block;height:100%;width:38%;background:linear-gradient(90deg,#4fb8a6,var(--jade));animation:qi 9.6s linear infinite}
+.strip-actions{display:flex;align-items:center;gap:8px;padding:0 10px 8px}
+.strip-actions img{width:20px;height:20px;padding:3px;box-sizing:content-box;border:1px solid var(--line);border-radius:4px;background:#121b1e}
+.trip{margin-left:auto;position:relative;color:var(--muted);font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.trip i{position:absolute;inset:0 auto 0 0;width:0;background:rgba(127,211,196,.18);animation:trip 2.4s linear infinite}
+
+.taskbar{
+  align-self:stretch;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:rgba(32,36,40,.86);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08);
+  position:relative;
+}
+.taskbar span{display:block;width:36px;height:36px;border-radius:6px}
+.tb-start{background:conic-gradient(#4aa3f0 0 25%,#62b5ff 0 50%,#3d8fd8 0 75%,#57aaf5 0) center/18px 18px no-repeat;}
+.tb-app{background:rgba(255,255,255,.07)}
+.tb-game{display:grid!important;place-items:center;background:rgba(255,255,255,.12)!important;box-shadow:inset 0 -2px 0 #7fb8ff}
+.tb-clock{position:absolute;right:16px;width:auto!important;height:auto!important;color:#e8ecef;font-size:13px}
+
+@keyframes lunge{0%,30%{transform:translateX(0)}31%,52%{transform:translateX(44px)}53%,100%{transform:translateX(0)}}
+@keyframes slash{0%,32%{opacity:0}34%,44%{opacity:1}48%,100%{opacity:0}}
+@keyframes hit{0%,34%{transform:scaleX(-1) translateX(0);filter:none}36%,42%{transform:scaleX(-1) translateX(-6px);filter:brightness(1.8)}46%,100%{transform:scaleX(-1) translateX(0);filter:none}}
+@keyframes dmg{0%,35%{opacity:0;transform:translateY(0)}38%{opacity:1}70%{opacity:0;transform:translateY(-22px)}100%{opacity:0}}
+@keyframes qi{from{width:20%}to{width:96%}}
+@keyframes trip{from{width:0}to{width:100%}}
+@media (prefers-reduced-motion:reduce){
+  .hero-sprite,.wolf,.slash,.dmg,.qi i,.trip i{animation:none}
+}
+
+/* ---------- Sections ---------- */
+main>section{padding:clamp(56px,9vw,112px) var(--gutter);max-width:1240px;margin:0 auto}
+
+.feature-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:36px 56px;margin:0}
+.feature-list dt{display:flex;align-items:center;gap:12px;font:600 24px/1.2 var(--f-display);color:var(--gold);margin-bottom:8px}
+.feature-list dt img{width:32px;height:32px;object-fit:contain}
+.feature-list dd{margin:0;color:#cfd6d2;max-width:36em}
+
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:clamp(180px,21vw,300px);gap:16px;padding-top:0!important}
+.gallery figure{margin:0;position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--night-2)}
+.gallery img{display:block;width:100%;height:100%;object-fit:cover}
+.gallery figcaption{position:absolute;left:0;bottom:0;padding:6px 12px;font-size:13px;color:var(--text);background:rgba(14,20,22,.82);border-top-right-radius:6px}
+.g-main{grid-column:span 2;grid-row:span 2}
+.g-tall{grid-row:span 2}
+.g-wide{grid-column:span 2}
+
+.install{display:grid;grid-template-columns:1.25fr 1fr;gap:clamp(32px,6vw,80px);border-top:1px solid var(--line)}
+.install ol{margin:0;padding:0;list-style:none;counter-reset:step}
+.install ol li{counter-increment:step;position:relative;padding:0 0 22px 52px;max-width:36em}
+.install ol li::before{
+  content:counter(step);position:absolute;left:0;top:-2px;width:34px;height:34px;display:grid;place-items:center;
+  font:700 20px/1 var(--f-display);color:var(--gold);border:1px solid var(--gold);border-radius:50%;
+}
+.install ol li b{color:var(--text)}
+.aside{color:var(--muted);font-size:15px;margin:4px 0 0 52px}
+.install-side{display:grid;gap:20px;align-content:start}
+.note{padding:22px 24px;background:var(--night-2);border-left:3px solid var(--gold);border-radius:0 6px 6px 0}
+.note p,.note ul{margin:0;color:#cfd6d2}
+.note ul{padding-left:1.1em}
+.note li{margin-bottom:4px}
+.note .small{margin-top:10px;font-size:14px;color:var(--muted)}
+#smartscreen{border-left-color:var(--seal-hi)}
+
+.release{border-top:1px solid var(--line)}
+.release-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 24px}
+.release-head h2 span{color:var(--gold)}
+.release-meta{margin:0 0 24px;color:var(--muted)}
+.release-notes{columns:2 340px;column-gap:56px;color:#cfd6d2}
+.release-notes h3,.release-notes h4{break-after:avoid;margin-top:0}
+.release-notes h4{font:600 20px/1.25 var(--f-display);color:var(--gold);margin:0 0 .3em}
+.release-notes ul{margin:0 0 22px;padding-left:1.1em;break-inside:avoid-column}
+.release-notes li{margin-bottom:4px}
+.release-notes strong{color:var(--text);font-weight:600}
+.release-links{display:flex;flex-wrap:wrap;gap:8px 24px;margin:12px 0 0;font-size:15px}
+.hash{color:var(--muted);word-break:break-all}
+
+.foot{padding:32px var(--gutter) 40px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+.foot p{max-width:1240px;margin:0 auto}
+.foot b{color:var(--text)}
+
+/* ---------- Nhỏ ---------- */
+@media (max-width:860px){
+  .hero::before{background:linear-gradient(180deg,rgba(236,235,229,.92) 0%,rgba(236,235,229,.82) 60%,rgba(236,235,229,.4) 100%)}
+  .strip{margin-right:auto;margin-left:auto}
+  .gallery{grid-template-columns:1fr;grid-auto-rows:auto}
+  .g-main,.g-tall,.g-wide{grid-column:auto;grid-row:auto}
+  .gallery figure{aspect-ratio:4/3}
+  .install{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  .taskbar .tb-app:nth-of-type(n+3){display:none}
+  code{white-space:normal}
+}
