@@ -7,7 +7,7 @@ const fs = require('fs'), path = require('path'), cp = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 // giữ nguyên ở mọi ngôn ngữ: tên game, nhãn đã song ngữ, tên ngôn ngữ trong ô chọn
-const KEEP = new Set(['Người Lười TT', 'Người Lười Tu Tiên', 'Người Lười Tu Tiên Launcher', '☯ NGƯỜI LƯỜI TU TIÊN', 'NGƯỜI LƯỜI', 'TU TIÊN',
+const KEEP = new Set(['Người Lười Tu Tiên', 'Người Lười Tu Tiên Launcher', '☯ NGƯỜI LƯỜI TU TIÊN', 'NGƯỜI LƯỜI', 'TU TIÊN',
   'Tiếng Việt', 'Ngôn ngữ · Language', 'Ngôn ngữ / Language', 'Choose the Người Lười Tu Tiên game folder']);
 const SKIP = [/(^|\/)i18n[^/]*\.js$/,/fx-data\.js$/, /^wwwroot\/fx-preview\//];
 
