@@ -16,6 +16,15 @@ public class DownloadProgressReport
     public string Status { get; set; } = "";
 }
 
+/// <summary>Một bản phát hành game hiển thị trong Nhật ký cập nhật.</summary>
+public class ReleaseNote
+{
+    public string Version { get; set; } = "";
+    public string? Title { get; set; }
+    public string? PublishedAt { get; set; }
+    public string Changelog { get; set; } = "";
+}
+
 public class UpdateCheckResult
 {
     // Game update info
@@ -37,10 +46,16 @@ public class UpdateCheckResult
     public string? LauncherDownloadUrl { get; set; }
     public long LauncherAssetSize { get; set; }
     public string? LauncherChangelog { get; set; }
+
+    // Các bản phát hành game gần nhất (mới → cũ) cho Nhật ký cập nhật
+    public List<ReleaseNote> RecentReleases { get; set; } = new();
 }
 
 public static class LauncherLogic
 {
+    /// <summary>Số bản phát hành game hiển thị trong Nhật ký cập nhật.</summary>
+    public const int RecentReleaseCount = 2;
+
     private static readonly HttpClient Http = new()
     {
         Timeout = TimeSpan.FromSeconds(30)
@@ -175,6 +190,7 @@ public static class LauncherLogic
             var vCurLauncher = ParseVersion(settings.LauncherVersion);
 
             Version? maxFoundGameVer = null;
+            var gameReleases = new List<(Version Ver, ReleaseNote Note)>();
             Version? maxFoundLauncherVer = null;
 
             foreach (var release in doc.RootElement.EnumerateArray())
@@ -241,6 +257,14 @@ public static class LauncherLogic
                         }
                     }
 
+                    gameReleases.Add((ver, new ReleaseNote
+                    {
+                        Version = verStr,
+                        Title = release.TryGetProperty("name", out var noteName) ? noteName.GetString() : tagName,
+                        PublishedAt = release.TryGetProperty("published_at", out var notePublished) ? notePublished.GetString() : null,
+                        Changelog = body
+                    }));
+
                     if (maxFoundGameVer == null || ver > maxFoundGameVer)
                     {
                         maxFoundGameVer = ver;
@@ -256,6 +280,9 @@ public static class LauncherLogic
                     }
                 }
             }
+
+            // Nhật ký cập nhật: 2 bản game mới nhất theo số phiên bản
+            result.RecentReleases = gameReleases.OrderByDescending(r => r.Ver).Take(RecentReleaseCount).Select(r => r.Note).ToList();
 
             // Kết luận cập nhật Game
             if (maxFoundGameVer != null && maxFoundGameVer > vCurGame)
