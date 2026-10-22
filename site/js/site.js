@@ -1,5 +1,5 @@
 // Điền nút tải và ghi chú phát hành từ release.json (workflow deploy-site sinh ra lúc deploy).
-// Thiếu hoặc lỗi thì hỏi thẳng GitHub API; vẫn lỗi thì nút giữ link /releases/latest có sẵn trong HTML.
+// Thiếu hoặc lỗi thì hỏi thẳng GitHub API; vẫn lỗi thì nút tải chưa có link.
 (() => {
   const REPO = 'xuankienmg/nguoi-luoi-tu-tien';
   const isGameZip = a => /^VanDao_v\d+\.\d+\.\d+\.zip$/i.test(a.name) && a.state === 'uploaded';
@@ -22,7 +22,7 @@
       return {
         tag: rel.tag_name, version: rel.tag_name.replace(/^v/i, ''), published_at: rel.published_at,
         zip_url: zip.browser_download_url, size: zip.size, sha256: (zip.digest || '').replace(/^sha256:/, ''),
-        body: rel.body || '', html_url: rel.html_url
+        body: rel.body || ''
       };
     }
     throw new Error('Chưa có bản phát hành kèm ZIP');
@@ -68,9 +68,7 @@
     if (rel.published_at) document.getElementById('dlNote').textContent = `Miễn phí. Phát hành ngày ${date(rel.published_at)}. File ZIP gồm game và Launcher tự cập nhật.`;
     document.getElementById('relVersion').replaceChildren(num('v' + rel.version));
     const meta = document.getElementById('relMeta');
-    meta.textContent = rel.published_at ? 'Phát hành ngày ' + date(rel.published_at) + '. ' : '';
-    const a = document.createElement('a'); a.href = rel.html_url || `https://github.com/${REPO}/releases/tag/${rel.tag}`; a.textContent = 'Xem trên GitHub';
-    meta.append(a);
+    meta.textContent = rel.published_at ? 'Phát hành ngày ' + date(rel.published_at) + '.' : '';
     if (rel.body) document.getElementById('relNotes').innerHTML = renderNotes(rel.body);
     if (rel.sha256) {
       const h = document.getElementById('relHash');

@@ -1,5 +1,5 @@
-/* Vấn Đạo · css/admin.css: chế độ Admin (Ctrl+Shift+A). Tách từ index.html (tools/split_index.py). */
-/* ---- Admin mode (Ctrl+Shift+A) ---- */
+/* Vấn Đạo · css/admin.css: chế độ Admin. Tách từ index.html (tools/split_index.py). */
+/* ---- Admin mode ---- */
 .tab.adm{color:#ff8a60} .tab.adm[aria-selected="true"]{border-bottom-color:#ff6a3a}
 body.admin-on::after{content:'ADMIN';position:fixed;right:6px;bottom:4px;z-index:50;font:700 9px/1 system-ui;letter-spacing:.15em;color:#ff8a60;opacity:.7;pointer-events:none}
 .adm-p{display:flex;flex-direction:column;gap:10px;padding:10px 12px;font-size:12px}

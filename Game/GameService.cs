@@ -524,7 +524,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             SkillData.PointsForBreak(next != r));
     }
 
-    // ================= Admin mode (bật/tắt bằng Ctrl+Shift+A ở giao diện) =================
+    // ================= Admin mode =================
 
     public static readonly string[] AdminFlags = { "god", "break", "fast", "fast05", "fast2", "fast3", "fast5", "boss", "map", "petevo" };
     public async Task<(string? msg, string? kind)> AdminClearDataFlagAsync(Player p, string? targetId = null)

@@ -87,7 +87,6 @@ window.playBreak = playBreak;
 
 // Các hàm cửa sổ desktop (C#) gọi vào
 // =====================================================================
-// ADMIN MODE: Ctrl+Shift+A bật/tắt (nhớ trong máy). Hiện tab Admin với lệnh gian lận để thử game.
 // Cờ god / break / fast lưu ở server theo nhân vật (S.admin), các lệnh khác thực hiện một lần.
 // =====================================================================
 let adminOn = false, devMode = false;   // devMode: server chạy môi trường Development (GET /api/env) — chỉ khi đó mới có admin mode
@@ -99,10 +98,13 @@ function setAdmin(on){
   const t = $('tab-admin'); if (t) t.hidden = !on;
   if (S && DATA) renderMap();                   // mô tả ô ải chỉ hiện khi bật admin
   if (on){ renderAdmin(true); openTab('admin'); } else if ($('tab-admin')?.getAttribute('aria-selected') === 'true') openTab('req');
-  localLog(on ? 'Admin mode: BẬT (Ctrl+Shift+A để tắt)' : 'Admin mode: TẮT', on ? 'good' : '');
+  localLog(on ? 'Admin mode: BẬT' : 'Admin mode: TẮT', on ? 'good' : '');
 }
 addEventListener('keydown', e => {
-  if (devMode && e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){ e.preventDefault(); setAdmin(!adminOn); }
+  if (devMode && e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){
+    e.preventDefault(); if (e.repeat) return;
+    if (Date.now() - adminArmAt < 1000){ adminArmAt = 0; setAdmin(!adminOn); } else adminArmAt = Date.now();
+  }
   // phím ẩn Alt+Shift+R: reset nhân vật về từ đầu (bấm 2 lần trong 3 giây để xác nhận, giống nút trong Admin)
   if (e.altKey && e.shiftKey && !e.ctrlKey && e.code === 'KeyR'){
     e.preventDefault();
@@ -110,7 +112,7 @@ addEventListener('keydown', e => {
     else { resetArmAt = Date.now(); localLog('Nhấn Alt+Shift+R lần nữa trong 3 giây để reset nhân vật về từ đầu (mất toàn bộ tiến trình).', 'bad'); }
   }
 });
-let resetArmAt = 0;
+let resetArmAt = 0, adminArmAt = 0;
 const adminAct = (action, arg, n) => act(`admin/${action}?${new URLSearchParams({...(arg != null ? {arg} : {}), ...(n ? {n} : {})})}`);
 let admKey = '';
 /** Admin: cờ "boss" — khiêu chiến Boss không cần chìa khóa. */
@@ -151,7 +153,7 @@ function renderAdmin(force){
   const F = (id, n, d) => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) ? 'on' : ''}" title="${d}">${n}: ${flags.includes(id) ? 'BẬT' : 'tắt'}</button>`;
   pane.innerHTML = `<div class="adm-p">
     <section><h4>Chế độ</h4><div class="adm-row">${F('god', 'Bất tử', 'Quái không gây sát thương, không thua trận')}${F('break', 'Đột phá chắc chắn', 'Tỉ lệ 100%, bỏ điều tức')}<span class="adm-grp">Tốc độ thám hiểm: ${[['fast05', '0.5'], ['fast2', '2'], ['fast3', '3'], ['fast5', '5']].map(([id, k]) => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) || (id === 'fast3' && flags.includes('fast')) ? 'on' : ''}" title="${k === '0.5' ? 'Mỗi chuyến chậm gấp đôi' : `Mỗi chuyến nhanh gấp ${k} lần`} · bấm lần nữa để tắt">×${k}</button>`).join('')}</span>${F('boss', 'Boss không cần chìa khóa', 'Khiêu chiến Boss không cần và không tiêu hao chìa khóa, đánh liên tục tới khi rời ải Boss')}${F('map', 'Mở full bản đồ', 'Mở mọi chương, mọi ải và cả mức Khó / Ác mộng · không đánh dấu đã hạ Boss nên vẫn nhận thưởng hạ Boss lần đầu · tắt là về tiến độ thật')}</div>
-      <small>Ctrl+Shift+A để ẩn / hiện admin mode. Cờ chế độ lưu theo nhân vật cho tới khi tắt.</small></section>
+      <small>Cờ chế độ lưu theo nhân vật cho tới khi tắt.</small></section>
     <section><h4>Tài nguyên & vật phẩm</h4>
       <div class="adm-row"><button data-adm="stones" data-n="1000">+1.000 linh thạch</button><button data-adm="stones" data-n="100000">+100.000</button><button data-adm="stones" data-n="10000000">+10 triệu</button></div>
       <div class="adm-row"><select id="admItem">${itemOpts}</select>

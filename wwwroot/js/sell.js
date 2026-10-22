@@ -2,6 +2,7 @@
    Trang bị: mỗi món một ô quầy. Đan dược: cả chồng vào một ô, chỉnh số món bằng −/+ ở dưới quầy. */
 let sellSel = [];          // các ô quầy: {k, n} — trang bị n = 1 (mỗi món một phần tử), đan dược mỗi loại một phần tử
 let sellConfirm = 0;
+let quickRarity = '';
 let quickArm = null;       // bán nhanh phẩm Thánh trở lên: {r, t} — bấm lần 2 trong 3 giây
 const QUICK_HI = FUSE_R.indexOf('mythic');   // từ phẩm này trở lên phải bấm 2 lần       // bấm Bán lần 1 khi có đồ Lam / đan Trúc Cơ trở lên: chờ bấm lần 2 trong 3 giây
 const SELL_N = 9;          // số ô của quầy bán
@@ -43,14 +44,15 @@ function quickPools(){
   return out;
 }
 function quickRow(){
-  const pools = quickPools();
-  const btns = FUSE_R.map((r, q) => {
-    const o = pools[r], armed = quickArm && quickArm.r === r && Date.now() - quickArm.t < 3000, nm = RARITY[r]?.n ?? r;
-    return `<button class="sl-q r-${r} ${armed ? 'armed' : ''}" data-sq="${r}" ${o.n && !busy ? '' : 'disabled'}
-      data-tip="Bán nhanh mọi trang bị phẩm ${nm} trong hành trang&#10;${fmt(o.n)} món · +${fmt(o.gain)} linh thạch${q >= QUICK_HI ? '&#10;Bấm 2 lần để xác nhận' : ''}&#10;Đồ đang mặc không bị bán">${armed ? 'Bấm lại' : nm}<small>${short(o.n)}</small></button>`;
+  const pools = quickPools(), selected = pools[quickRarity];
+  const armed = quickArm && quickArm.r === quickRarity && Date.now() - quickArm.t < 3000;
+  const options = FUSE_R.map(r => {
+    const o = pools[r], nm = RARITY[r]?.n ?? r;
+    return `<option value="${r}" ${r === quickRarity ? 'selected' : ''} ${o.n ? '' : 'disabled'}>${nm} · ${fmt(o.n)} món · +${fmt(o.gain)} linh thạch</option>`;
   }).join('');
-  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><p>Bán nhanh trang bị theo phẩm</p><div>${btns}</div></div>`;
+  return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><label for="slQuickRarity">Bán nhanh</label><select id="slQuickRarity" ${busy ? 'disabled' : ''}><option value="">Chọn phẩm</option>${options}</select><button class="sl-quick-go ${armed ? 'armed' : ''}" data-sq="${quickRarity}" ${selected?.n && !busy ? '' : 'disabled'} title="Bán toàn bộ trang bị thuộc phẩm đã chọn trong túi. Từ phẩm Thánh cần bấm hai lần để xác nhận.">${armed ? 'Xác nhận' : 'Bán'}</button></div>`;
 }
+
 function renderSell(){
   const pane = $('pane-sell'); if (!pane || !S) return;
   sellClean();
@@ -76,7 +78,7 @@ function renderSell(){
       <header class="dd-top">${lcNav('sell')}<div class="dd-cult"><span>Bỏ tối đa <b>${SELL_N} ô</b> vào quầy rồi bán một lần · vật phẩm bán theo chồng · đồ đang mặc không tính</span></div>
         <div class="dd-stone" data-tip="Linh thạch hiện có">${itemImg('linh_thach')}<span>Linh thạch</span><b>${fmt(S.inventory.linh_thach || 0)}</b>${hpStoneHtml('dd-hp')}</div></header>
       <section class="dd-main fz-bag" aria-label="Hành trang"><p class="dd-sec">Hành trang · trang bị phẩm thấp → cao, rồi đan dược, vật phẩm khác</p>
-        <div class="fz-bar"><span>Bán được ${sellable} ô · đã chọn ${sellSel.length}/${SELL_N}</span></div>
+        <div class="fz-bar"><span>Bán được ${sellable} ô · đã chọn ${sellSel.length}/${SELL_N}</span>${quickRow()}</div>
         <div class="iv-grid fz-grid">${cells || '<p class="fz-empty">Hành trang trống.</p>'}</div>
       </section>
       <aside class="fz-forge sl-desk" aria-label="Quầy bán"><p class="dd-sec">Quầy bán</p>
@@ -85,7 +87,6 @@ function renderSell(){
         <div class="fz-arrow">↓</div>
         <div class="sl-sum"><span>${fmt(count)} món</span><b>+${fmt(gain)}</b>${itemImg('linh_thach')}</div>
         ${hi ? `<p class="sl-warn">Có đồ từ ${qWord('rare')} / đan từ Trúc Cơ trở lên · bấm Bán 2 lần để xác nhận</p>` : ''}
-        ${quickRow()}
         <div class="fz-act">
           <div class="fz-auto"><button class="fz-af" data-sz="auto" ${!full && sellFree().length ? '' : 'disabled'} data-tip="Tự động điền&#10;Bù đủ ${SELL_N} ô bằng trang bị phẩm thấp nhất, bán rẻ nhất trước (không lấy đan dược)">${FUSE_GRID}<span>Tự động điền</span></button></div>
           <button class="dd-synth-btn fz-go ${armed ? 'sl-arm' : ''}" data-sz="go" ${sellSel.length && !busy ? '' : 'disabled'}>${SELL_GO}${armed ? 'Bấm lần nữa' : 'Bán'}</button>
@@ -145,5 +146,7 @@ $('pane-sell').addEventListener('click', async e => {
     renderSell();
   }
 });
-$('pane-sell').addEventListener('change', e => { const k = e.target.dataset?.pqi; if (k) sellSetQty(k, +e.target.value); });
+$('pane-sell').addEventListener('change', e => {
+  if (e.target.id === 'slQuickRarity'){ quickRarity = e.target.value; quickArm = null; renderSell(); $('slQuickRarity')?.focus(); return; }
+  const k = e.target.dataset?.pqi; if (k) sellSetQty(k, +e.target.value); });
 $('pane-sell').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.pqi) e.target.blur(); });
