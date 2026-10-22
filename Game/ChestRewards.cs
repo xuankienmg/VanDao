@@ -62,6 +62,15 @@ public static class ChestRewards
             var share=removed/itemOdds.Count;
             for(var i=0;i<list.Count;i++)list[i]=list[i] with {Probability=list[i].Probability+share*list[i].Probability/itemOdds[list[i].Item]};
         }
+        if(chest==GameData.BossChest){
+            // Preserve enlightenment and pet odds; take the manual budget from gear/pill/herb.
+            var budget=list.Where(x=>x.Group is "gear" or "pill" or "herb").Sum(x=>x.Probability);
+            if(budget<CultivationManuals.BossChance)throw new InvalidOperationException("Không đủ ngân sách xác suất công pháp.");
+            for(var i=0;i<list.Count;i++)if(list[i].Group is "gear" or "pill" or "herb")
+                list[i]=list[i] with {Probability=list[i].Probability*(budget-CultivationManuals.BossChance)/budget};
+            var manuals=CultivationManuals.Available;
+            foreach(var manual in manuals)Add(manual.Item,1,CultivationManuals.BossChance/manuals.Length,"manual");
+        }
         if(Math.Abs(list.Sum(x=>x.Probability)-1)>1e-8||list.Any(x=>!GameData.ItemById.ContainsKey(x.Item)))throw new InvalidOperationException("Tổng xác suất rương không hợp lệ.");
         return list.AsReadOnly();
     }

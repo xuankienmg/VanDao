@@ -120,7 +120,9 @@
     if(lore){
       if(talent){talent.remove();lore.querySelector('h4')?.remove();}
       lore.insertAdjacentHTML('afterbegin','<h4 class="pet-skill-title">Kỹ năng linh thú</h4>');
-      lore.insertAdjacentHTML('beforeend','<small class="pet-skill-rules">Mỗi sao tăng 6% chỉ số, kỹ năng và thiên phú. Sát thương tính theo công chủ nhân; không bạo kích hoặc kích hoạt liên kích. Khiên linh thú tối đa 30% máu; hiệu ứng cùng loại chỉ làm mới thời gian.</small>');
+      const rules=document.createElement('button');rules.type='button';rules.className='pet-owner-info pet-rules-info';rules.textContent='ⓘ';rules.setAttribute('aria-label','Luật kỹ năng linh thú');
+      rules.dataset.tip='Mỗi sao tăng 6% chỉ số, kỹ năng và thiên phú.\nSát thương tính theo công chủ nhân; không bạo kích hoặc kích hoạt liên kích.\nKhiên linh thú tối đa 30% máu; hiệu ứng cùng loại chỉ làm mới thời gian.';
+      lore.querySelector('.pet-skill-title')?.append(rules);
     }
     const selected=(state().owned||[]).find(p=>String(p.id)===ui.selected);
     detail.querySelector('.pet-detail-head>div:last-child')?.insertAdjacentHTML('beforeend',`<span class="pet-badge pet-form-badge" data-form="${num(selected?.form)}">${paw}${esc(selected?.formName||['Ấu thể','Thành thể','Thần thú'][num(selected?.form)])}</span>`);
@@ -278,7 +280,7 @@
     const focused=root.contains(document.activeElement)?document.activeElement:null;
     if (!force&&focused?.matches('select')) return;
     const focusKey=focused?.dataset.petAction, focusSelect=focused?.dataset.petSelect;
-    const scrolls=[...root.querySelectorAll('.pet-detail,.pet-cards,.pet-body')].map(el=>[el.className,el.scrollTop]);
+    const scrolls=[...root.querySelectorAll('.pet-detail,.pet-cards,.pet-star-list,.pet-body')].map(el=>[el.className,el.scrollTop]);
     ui.signature=signature;
     const next=document.createElement('div');
     next.innerHTML=`<div class="pet-ui"><div class="pet-top"><header class="pet-header"><span class="pet-heading-icon"><img src="img/header/pet-emblem.png" alt=""></span><div><h2>Linh thú</h2><p>Duyên lành đồng hành</p></div><span>${f((state().owned||[]).length)} linh thú</span></header><nav class="pet-tabs" aria-label="Linh thú">${[['stable','Chuồng thú'],['star','Ghép sao'],['hatch','Ấp trứng'],['codex','Thú điển']].map(([k,label])=>`<button type="button" data-pet-action="tab:${k}" aria-current="${ui.tab===k?'page':'false'}" class="${ui.tab===k?'active':''}">${label}</button>`).join('')}</nav></div><div class="pet-status" role="${ui.error?'alert':'status'}">${ui.error?esc(ui.error):''}</div><div class="pet-body">${ui.tab==='hatch'?hatch():ui.tab==='codex'?codex():ui.tab==='star'?starTab():stable()}</div></div>`;

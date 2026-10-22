@@ -169,7 +169,7 @@ public static class GameData
         new ItemDef("ruong_hiem",   "Rương hiếm",   "chest", "#5aa2e6", "Rương lam khảm ngọc, phù văn còn sáng. Chỉ rơi ở ải 10–15 mỗi chương.", Rarity: "rare", Kind: "Rương",
             Use: "Nhận một nhóm thưởng: 57% trang bị (gồm pháp bảo), 26,5% linh thảo; còn lại là đan lên tầng. Từ Nguyên Anh: 4% Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo."),
         new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
-            Use: "Nhận một nhóm thưởng: 67% trang bị (gồm pháp bảo), 19,5% linh thảo; còn lại là đan lên tầng. Từ Nguyên Anh: 5% Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo, tỉ lệ cao hơn rương hiếm."),
+            Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, đan dược, linh thú hoặc công pháp. Có 1% nhận một bí kíp ngẫu nhiên trong 3 hệ Hỏa, Thủy, Mộc. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
         // ---- đan theo cảnh giới: dùng để lên tầng và đột phá, luyện từ linh thảo ----
         new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, có từ Boss, Rương hiếm hoặc Rương Boss.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. Luyện chế từ linh thảo và linh thạch tại mục Đan dược."),
@@ -607,7 +607,7 @@ public static class GameData
         return null;
     }
 
-    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(PetData.Items).Concat(GearVariants)
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(PetData.Items).Concat(CultivationManuals.Items).Concat(GearVariants)
         .Select(it => PixelIcons.Contains(it.Id) ? it with { Icon = $"img/{it.Id}.png" } : it)
         .Select(it => it with { Sell = SellPrice(it) }).ToList();
 
@@ -1064,7 +1064,7 @@ public static class GameData
         }))).ToList();
     public static readonly string[] LockedRealmsCn = { "", "" };
 
-    public static readonly Dictionary<string, int> StartingInventory = new() { ["linh_thach"] = 30, ["tu_khi_dan"] = 1 };
+    public static readonly Dictionary<string, int> StartingInventory = new() { ["linh_thach"] = 30, ["tu_khi_dan"] = 1, [CultivationManuals.Starter] = 1 };
 
     /// <summary>Thời gian vắng mặt tối đa được cộng tu vi và thám hiểm bù.</summary>
     public const double MaxOfflineSeconds = 7200;

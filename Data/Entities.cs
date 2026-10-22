@@ -51,6 +51,8 @@ public class Player
 
     // ---- Công pháp: cấp từng kỹ năng ("id:cấp;id:cấp") và số lần hạ Boss (cho điểm kỹ năng) ----
     public string Skills { get; set; } = "";
+    public string LearnedManuals { get; set; } = "";
+    public int ManualVersion { get; set; }
     public int BossKills { get; set; }
     /// <summary>Điểm công pháp vĩnh viễn nhận từ Ngộ Đạo Đan.</summary>
     public int ElixirPoints { get; set; }

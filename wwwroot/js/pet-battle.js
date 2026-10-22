@@ -142,12 +142,32 @@ function drawPetCompanion(context,battle,phase,options){
   const label=pet.name||'Linh thú',half=context.measureText(label).width/2+3,tx=Math.min(width-half,Math.max(half,x)),ty=feet-h-jump-5;
   context.strokeText(label,tx,ty);context.fillText(label,tx,ty);context.restore();
 }
-function petBattleFeedback(battle,phase,seen,emit,x,y){
-  if(phase.name!=='fight'||phase.s<.45)return;
+function petCastHitSchedule(cast){
+  if(Array.isArray(cast.hits)&&cast.hits.length)
+    return cast.hits.map((damage,index)=>({damage,at:cast.hits.length>1?.18+.64*(.36+index*.12):.45}));
+  return cast.dmg>0?[{damage:cast.dmg,at:.45}]:[];
+}
+function petBattleFeedback(battle,phase,seen,emit,x,y,targetX=x,targetY=y){
+  if(phase.name!=='fight')return;
   for(const cast of battle.pet?.casts||[]){
     if(cast.turn!==phase.i)continue;
-    const key=`${phase.trip}:pet:${phase.i}:${(battle.pet.casts||[]).indexOf(cast)}`;if(seen[key])continue;seen[key]=1;
-    const amount=(cast.dmg>0?` −${cast.dmg}`:'')+(cast.heal>0?` · Hồi +${cast.heal}`:'')+(cast.guard>0?` · Khiên +${cast.guard}`:'');
-    emit({type:'dodge',x,y,text:(cast.skill||'Linh thuật')+amount,col:'#d6dbaa',life:0,max:1});
+    const key=`${phase.trip}:pet:${phase.i}:${(battle.pet.casts||[]).indexOf(cast)}`;
+    const hits=petCastHitSchedule(cast);
+    const start=hits[0]?.at??.45;
+    if(phase.s>=start&&!seen[key]){
+      seen[key]=1;
+      emit({type:'dodge',x,y,text:cast.skill||'Linh thuật',col:'#d6dbaa',life:0,max:1});
+    }
+    hits.forEach((hit,index)=>{
+      const hitKey=key+':hit:'+index;
+      if(phase.s<hit.at||seen[hitKey])return;
+      seen[hitKey]=1;
+      if(hit.damage>0)emit({type:'num',source:'pet',x:targetX,y:targetY,text:'-'+hit.damage,col:'#cfb0ff',life:0,max:1});
+    });
+    if(phase.s>=.45&&!seen[key+':support']){
+      seen[key+':support']=1;
+      if(cast.heal>0)emit({type:'num',source:'pet',x,y,text:'+'+cast.heal,col:'#99d4a3',life:0,max:1});
+      if(cast.guard>0)emit({type:'label',x,y,text:'Khiên +'+cast.guard,col:'#a8e4fc',life:0,max:1});
+    }
   }
 }

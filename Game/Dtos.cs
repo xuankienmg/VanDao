@@ -108,7 +108,7 @@ public record StateDto(
     string SpinHistory = "",
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
-    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
 
 public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 
@@ -119,7 +119,7 @@ public record StatSourceDto(string Name, double Atk = 0, double Def = 0, double 
 /// Treasure / Gear = % từng món gốc (pháp bảo / trang bị), Pill = % ra đan (PillItem, PillMin–PillMax viên).</summary>
 public record ChestOddsDto(string Chest, int Level, double[] Quality, List<ItemQtyPctDto> Treasure, List<ItemQtyPctDto> Gear,
     string PillItem, int PillMin, int PillMax, double Pill,
-    List<ItemQtyPctDto>? Herbs = null, int HerbMin = 1, int HerbMax = 1, double Herb = 0, double Enlightenment = 0, List<ItemQtyPctDto>? Pets = null);
+    List<ItemQtyPctDto>? Herbs = null, int HerbMin = 1, int HerbMax = 1, double Herb = 0, double Enlightenment = 0, List<ItemQtyPctDto>? Pets = null, List<ItemQtyPctDto>? Manuals = null);
 public record ItemQtyPctDto(string Item, double Pct);
 
 public record BonusDto(double QiPct, double SpeedPct);

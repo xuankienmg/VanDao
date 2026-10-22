@@ -47,7 +47,7 @@ function skFrame(now){
   if (!c._sized){ const w = c.parentElement.getBoundingClientRect().width; if (w){ const sc = Math.max(1, Math.floor(w / 120)); c.style.width = 120 * sc + 'px'; c.style.height = 60 * sc + 'px'; c._sized = true; } }
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
   const s = skById(skSel), el = elOf(s.element), open = el.open;
-  const res = open && (s.element === 'hoa' || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;                         // Hỏa Cầu dùng ảnh gốc, cần canvas nét hơn
+  const res = open && (s.element === 'hoa' || s.element === 'moc' || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;
   if (c.width !== 120 * res){ c.width = 120 * res; c.height = 60 * res; }
   g.setTransform(res, 0, 0, res, 0, 0); g.imageSmoothingEnabled = false;
   const fps = 8, cycle = 12, t = now / 1000, f = Math.floor(t * fps) % cycle;    // 8 khung + 4 khung nghỉ
@@ -56,11 +56,11 @@ function skFrame(now){
   g.fillStyle = '#0d0a08'; g.fillRect(0, 0, 120, 60);
   for (let x = 0; x < 120; x++) P(x, 52, '#2a221a'), P(x, 53, '#1a140f');
   const hero = skImg(skinArt('hero').replace('.png', '_48.png')), mon = skImg('img/quai_yeu_lang_48.png'), sheet = skImg('img/fx_hoa_cau.png');
-  if (open && s.element === 'hoa' && typeof fireFxAvailable === 'function' && fireFxAvailable(s.id, S.realm)){
+  if (open && typeof fireFxAvailable === 'function' && fireFxAvailable(s.id, S.realm)){
     if (!drawSkinActor(g,skinActorAction(s),Math.min(1,((now-skAnimT0)%2600)/1200),26,52,46) && hero) g.drawImage(hero,2,6);
     if (mon) g.drawImage(mon,72,6);
     const progress=((now-skAnimT0)%2600)/2200;
-    drawFireSkillFx(g,s.id,Math.min(1,progress),S.realm,{handX:38,handY:28,targetX:94,targetY:32,groundY:52,heroHeight:46,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
+    drawFireSkillFx(g,s.id,Math.min(1,progress),S.realm,{handX:38,handY:28,targetX:94,targetY:30,groundY:52,heroHeight:46,targetWidth:48,targetHeight:48,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches});
     return;
   }
   if (open && s.id === 'hoa_cau'){ hcPreview(g, now - skAnimT0, hero, mon, P); return; }

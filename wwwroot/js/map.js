@@ -80,6 +80,11 @@ function mapStateOf(a){
 function mapPos(i){
   return {x: 3.5 + (i - 1) * 91 / DATA.areas, y: i > DATA.areas ? 52 : 54 + 16 * Math.sin(i * 0.95)};
 }
+function mapMonsterTip(monster, hidden = false){
+  if(hidden)return 'Chưa thám thính được quái này.';
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+  return `${esc(monster.name || monster.monster)}&#10;Tấn công: ${fmt(monster.atk)}&#10;Phòng thủ: ${fmt(monster.def)}&#10;Máu: ${fmt(monster.hp)}`;
+}
 /** Bảng dưới: thông tin ải đang rê chuột (mặc định ải đang đánh). */
 function renderMapInfo(){
   const host = $('mpxInfo'); if (!host) return;
@@ -113,22 +118,22 @@ function renderMapInfo(){
         ? `<p class="mpx-st">Máu ${a.waves.map(w => `<b>${fmt(w.hp)}</b>`).join(' · ')} · Công ${a.waves.map(w => `<b>${fmt(w.atk)}</b>`).join(' · ')}</p>`
         : `<p class="mpx-st">Máu <b>${fmt(a.hp)}</b> · Công <b>${fmt(a.atk)}</b> · Thủ <b>${fmt(a.def)}</b></p>`) + `
       <p class="mpx-pr ${a.win ? 'ok' : 'bad'}">${a.win ? `Dự đoán: thắng sau ${a.hits} đòn` : 'Dự đoán: thua, cần mạnh hơn'}</p>`
-    : `<p class="mpx-hid">${st === 'win' ? 'Đã vượt qua ải này.' : st === 'lose' ? 'Yêu khí dày đặc, cẩn thận.' : 'Đang giao chiến tại đây.'}</p>`;
+    : st === 'win' ? '<p class="mpx-hid">Đã vượt qua ải này.</p>' : st === 'lose' ? '<p class="mpx-hid">Yêu khí dày đặc, cẩn thận.</p>' : '';
   const fr = mapFrontier(m);
   const bossOpen = m.areaMax >= N, canBoss = bossOpen && (keyN > 0 || adminBoss());
   const foot = boss ? `<p class="mpx-key"><span class="mp-need ${keyN > 0 ? 'ok' : ''}">${itemImg(m.keyItem)} ${keyN} / 1</span>
       ${st === 'cur' ? '<i>Đang khiêu chiến · mỗi trận tốn 1 lệnh</i>' : !bossOpen ? `<i class="bad">Mở ải ${R}-${N} trước</i>` : !canBoss ? `<i class="bad">Cần ${ITEM[m.keyItem].name}</i>` : `<i>Bấm Boss để khiêu chiến${m.realm === m.chapterMax && DATA.chapters[R]?.enabled ? ` · thắng mở chương ${R + 1}` : ''}</i>`}</p>`
-    : `<p class="mpx-key"><i class="${st === 'locked' ? 'bad' : ''}">${st === 'locked' ? `Thắng ải ${R}-${a.index - 1} để mở` : st === 'cur' ? 'Đang xuất chinh ở ải này' : 'Bấm vào ải để xuất chinh'}</i></p>`;
+    : st === 'cur' ? '' : `<p class="mpx-key"><i class="${st === 'locked' ? 'bad' : ''}">${st === 'locked' ? `Thắng ải ${R}-${a.index - 1} để mở` : 'Bấm vào ải để xuất chinh'}</i></p>`;
   const knock = st === 'cur' && fr.knocked ? `<p class="mpx-down">⚑ Thua ở ${R}-${fr.top}, đang luyện ở ${R}-${a.index} <button data-retry="${fr.top}">Thử lại ${R}-${fr.top}</button></p>` : '';
   const hdImg = src => `<img src="${src.replace('.png', '_hd.png')}" onerror="this.onerror=null;this.src=this.src.replace('_hd.png','_48.png')" alt="">`;
   // ải thường: 3 đợt quái (ảnh nhỏ + tên); ải Boss: 1 ảnh lớn
   const mon = !boss && a.waves?.length > 1
     ? `<section class="mpx-mon"><div class="tx"><p class="ey">Ải ${R}-${a.index} · ${a.place} · ${a.waves.length} đợt</p>${knock}
-        <div class="mpx-wv">${a.waves.map((w, i) => `<div class="w ${w.tier}"><span class="pic ${hidden ? 'unk' : ''}">${hdImg(w.image)}</span>
+        <div class="mpx-wv">${a.waves.map((w, i) => `<div class="w ${w.tier}"><span class="pic ${hidden ? 'unk' : ''}" data-tip="${mapMonsterTip(w,hidden)}">${hdImg(w.image)}</span>
           <small><i>Đợt ${i + 1}${w.tier === 'elite' ? ' · tinh anh' : ''}</i>${hidden ? '???' : w.name}</small></div>`).join('')}</div>
         ${stats}${foot}</div></section>`
     : `<section class="mpx-mon ${boss ? 'bs' : ''}">
-      <div class="pic ${hidden ? 'unk' : ''}">${hdImg(img.replace('_hd.png', '.png'))}</div>
+      <div class="pic ${hidden ? 'unk' : ''}" data-tip="${mapMonsterTip(a.waves?.[0] || a,hidden)}">${hdImg(img.replace('_hd.png', '.png'))}</div>
       <div class="tx"><p class="ey">${boss ? `Ải ${R}-${B} · Boss` : `Ải ${R}-${a.index}`} · ${boss ? m.bossLair : a.place}</p>
         <p class="nm">${hidden ? '???' : a.monster}</p>${stats}${foot}</div></section>`;
   host.innerHTML = `${mon}

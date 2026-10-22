@@ -580,7 +580,7 @@ function hcBattleDraw(ref, o){
   const dmgCasts = (o.casts || []).filter(c => c.dmg > 0);
   const wetTurn = dmgCasts.length ? dmgCasts.some(c => skById(c.skill)?.element === 'thuy') : skById(o.basic)?.element === 'thuy';
   const fireSkill = dmgCasts.length ? [...dmgCasts].sort((a,b) => b.dmg-a.dmg)[0].skill : o.basic;
-  const newFireReady = !wetTurn && s >= 0 && typeof fireFxAvailable === 'function' && fireFxAvailable(fireSkill, S.realm);
+  const newFireReady = s >= 0 && typeof fireFxAvailable === 'function' && fireFxAvailable(fireSkill, S.realm);
   const pose = s < 0 || s >= .5 ? 0 : s < .1 ? 0 : wetTurn || newFireReady ? (s < .3 ? 0 : 7) : s < .2 ? 1 : s < .3 ? 2 : s < .36 ? 3 : 7;
   const q = kH * HC_REF.scale[pose], fx = o.hx * sx, fy = (g + 1 + o.hy) * sy, ft = HC_REF.feet[pose];
   ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
@@ -610,8 +610,8 @@ function hcBattleDraw(ref, o){
   }
   ctx.globalAlpha = 1;
   const newFireDrawn = newFireReady && drawFireSkillFx(ctx, fireSkill, s, S.realm, {
-    handX:fx+sz*sx*.25, handY:fy-sz*sy*.55, targetX:o.wolfX*sx, targetY:(g-sz*.45)*sy,
-    groundY:(g+1)*sy, heroHeight:sz*sy, reducedMotion:reduce
+    handX:fx+sz*sx*.25, handY:fy-sz*sy*.55, targetX:o.wolfX*sx, targetY:(g+1-(o.msz||sz)*.5)*sy,
+    groundY:(g+1)*sy, heroHeight:sz*sy, targetWidth:(o.msz||sz)*sx, targetHeight:(o.msz||sz)*sy, reducedMotion:reduce
   });
   if (!newFireDrawn && plan) skBattleDraw(plan, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, hAlpha: o.hAlpha});
   ultFx(!newFireDrawn && plan && plan.main && plan.row === 5 ? s : -1, {fx, fy, sz, sx, sy, g, wolfX: o.wolfX, t});
