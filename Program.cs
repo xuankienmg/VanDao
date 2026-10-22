@@ -61,7 +61,7 @@ public static class Program
         builder.Services.AddSingleton<MarketService>();   // Chợ giao dịch: dùng chung project Supabase
 
         var app = builder.Build();
-        Player.AdminEnabled = app.Environment.IsDevelopment();   // admin mode (Ctrl+Shift+A) chỉ có khi chạy dev
+        Player.AdminEnabled = app.Environment.IsDevelopment();   // admin mode chỉ có khi chạy dev
 
         using (var scope = app.Services.CreateScope())
         {
@@ -218,7 +218,7 @@ public static class Program
         api.MapPost("/players/{id:guid}/diff/{d:int}", (Guid id, int d, GameService game) =>
             Run(id, game, p => game.SelectDiff(p, d)));
 
-        // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
+        // admin mode: lệnh gian lận để thử game
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
             Player.AdminEnabled ? (action == "clearflag"
                 ? RunAsync(id, game, p => game.AdminClearDataFlagAsync(p, arg))
