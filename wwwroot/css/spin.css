@@ -1,4 +1,4 @@
-/* Vấn Đạo · css/spin.css: Luyện chế → Tài Xỉu (vòng quay 10 phẩm trang bị). Dùng chung khung .dd của craft.css. */
+/* Vấn Đạo · css/spin.css: Luyện chế → Vòng quay (vòng quay 10 phẩm trang bị). Dùng chung khung .dd của craft.css. */
 .sp-main{align-items:center}
 .sp .dd-top{flex-wrap:wrap;gap:6px 10px}
 .sp .dd-top .dd-cult{order:3;flex-basis:100%}
@@ -16,7 +16,7 @@
 .sp-rim{fill:none;stroke:var(--c);stroke-width:3;opacity:.85}
 .sp-nm{fill:var(--c);font:600 7.4px var(--f-body);text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#0b0806;stroke-width:1.6}
 .sp-no{fill:#e9dfc4;font:700 11px var(--f-display);text-anchor:middle;dominant-baseline:middle;opacity:.85}
-.sp-ic{width:26px;height:26px;display:grid;place-items:center}
+.sp-ic{width:100%;height:100%;display:grid;place-items:center}
 .sp-ic img{width:24px;height:24px;image-rendering:pixelated}
 .sp-seg.on .sp-bg{fill:color-mix(in srgb,var(--c) 38%,#17120e);animation:sp-win 1s ease-in-out 3}
 .sp-seg.on .sp-rim{stroke-width:5;opacity:1}
@@ -44,7 +44,7 @@
 .sp-btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px} .sp-btns .dd-all{flex:1;white-space:nowrap}
 .sp-note{margin:5px 0 0;font-size:10.5px;color:#8a9690}
 .sp-odds ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.sp-odds li{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:0 6px;padding:2px 4px;font-size:11.5px;border:1px solid transparent}
+.sp-odds li{display:grid;grid-template-columns:minmax(0,1fr) auto;white-space:nowrap;align-items:center;gap:0 6px;padding:2px 4px;font-size:11.5px;border:1px solid transparent}
 .sp-odds li b:last-of-type{font-variant-numeric:tabular-nums;color:var(--parch)}
 .sp-odds li.on{border-color:#8a6a2a;background:#2a2414}
 .sp-n{display:grid;place-items:center;width:18px;height:18px;font-size:10px;font-weight:700;color:#0b0806;background:var(--c)}
@@ -90,5 +90,4 @@ body.panel .sp-stage{width:min(100%,280px)}
 .sp-pet .sp-ptr{border-top-color:#c9a2ff}
 .sp-pet .sp-hub{border-color:#8a5fc8}
 .sp-pet .sp-hub:hover:not(:disabled){border-color:#c9a2ff}
-.sp-pet .sp-ic{width:34px;height:34px}
 .sp-pet .sp-ic img{width:32px;height:32px}

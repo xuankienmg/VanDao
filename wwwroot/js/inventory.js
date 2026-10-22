@@ -15,6 +15,8 @@ const RARITY = {
   dao:       {n:'Đạo',         c:'#FFD700', v:204800},
   supreme:   {n:'Huyền Tiên', c:'#E0FFFF', v:819200},
 };
+// Pet-only quality: non-enumerable so the ten gear/spin quality slots stay unchanged.
+Object.defineProperty(RARITY,'ancient',{value:{n:'Thượng Cổ',c:'#d7d4ff',v:0},enumerable:false});
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['qiPct','Tu vi','%']];
@@ -115,9 +117,12 @@ function chestOddsHtml(k){
     ${(o.pets || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b></p>`).join('')}
     ${(o.manuals || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b> · Công pháp</p>`).join('')}</div>`;
 }
-function itemImg(k, cls = ''){
+function itemImg(k, cls = '', detail = false){
   const it = ITEM[k];
-  return it.icon ? `<img class="px ${cls}" src="${it.icon}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">` : icon(k);
+  const ticketClass = k === 've_tai_xiu' ? ' ticket-premium ticket-gear' : k === 've_linh_thu' ? ' ticket-premium ticket-pet' : '';
+  const imageSrc = detail && k === 'thu_dan_thuong_co' ? 'img/pet/egg_thuong_co_hd.png' : it.icon;
+  const eggClass = k === 'thu_dan_thuong_co' ? ' ancient-egg-art' : '';
+  return it.icon ? `<img class="px ${cls}${ticketClass}${eggClass}" src="${imageSrc}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">` : icon(k);
 }
 const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
@@ -430,7 +435,7 @@ function gearFxHtml(){
   const limits = (S.combatLimits || []).map(e => `<p>${e.name}: <b>${e.effective}${e.unit}</b> <small>(tổng ${e.raw}, trần ${e.cap})</small></p>`).join('');
   const divine=snapshot.divine;
   const divineHtml=divine ? `<details class="iv-fx iv-divine" ${divine.tier ? 'open' : ''}><summary>◇ Thần thông bộ · ${divine.tier ? divine.name : 'Chưa kích hoạt'}</summary><p>${divine.setName ? `Bộ ${divine.setName} · ` : ''}Cần 10 món cùng bộ; chỉ kích hoạt mốc phẩm cao nhất.</p>${(divine.progress||[]).map(p=>`<p style="opacity:${p.active?1:.65}">${p.active?'◆':'◇'} <b>${p.quality} · ${p.name} (${p.count}/10)</b><br>${p.description}</p>`).join('')}</details>` : '';
-  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div>${divineHtml}<details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp vừa tăng tốc độ thám hiểm vừa tăng né tránh; cộng Vân bộ và công pháp, tổng né tối đa 50%.</small></details>`;
+  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div>${divineHtml}<details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp tăng né tránh; cộng Vân bộ và công pháp, tổng né tối đa 50%. Thân pháp giảm thời gian di chuyển giữa các ải (tối đa 60%), không tăng tốc độ đánh.</small></details>`;
 }
 function itemSetHtml(it){
   const def = (DATA.equipmentSets || []).find(s => s.id === it.setId);

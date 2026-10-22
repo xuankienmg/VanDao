@@ -245,7 +245,7 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 
 /* Bán: theo chiều rộng thực của pane (kể cả bảng desktop và zoom hệ thống). */
 #pane-sell{container:sell-pane / inline-size;min-width:0}
-/* khung, thanh tab và cột phải dùng chung kích thước .dd của Luyện khí / Đan dược / Tài Xỉu (trước đây Bán có cột 236–296px và thanh tab giãn hết chiều ngang) */
+/* khung, thanh tab và cột phải dùng chung kích thước .dd của Luyện khí / Đan dược / Vòng quay (trước đây Bán có cột 236–296px và thanh tab giãn hết chiều ngang) */
 .dd.sl{width:100%;min-width:0;align-content:start}
 .sl .dd-cult{min-width:0}
 .sl .dd-cult > span{line-height:1.5;text-wrap:pretty}

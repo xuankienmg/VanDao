@@ -1,11 +1,12 @@
-/* Vấn Đạo · js/spin.js: Luyện chế → Tài Xỉu: đổi linh thạch lấy vé, quay vòng 10 phẩm trang bị (Phàm → Huyền Tiên)
-   hoặc vòng Linh Thú 5 ô (Thú Đản Phàm → Thiên, vé riêng: Vé Linh Thú). */
+/* Vấn Đạo · js/spin.js: Luyện chế → Vòng quay: đổi linh thạch lấy vé, quay vòng 10 phẩm trang bị (Phàm → Huyền Tiên)
+   hoặc vòng Linh Thú 6 ô (Thú Đản Phàm → Thượng Cổ, vé riêng: Vé Linh Thú). */
 const SPIN_TICKET = 've_tai_xiu';
-const PET_TICKET = 've_linh_thu', PET_EGGS = ['thu_dan_pham', 'thu_dan_linh', 'thu_dan_huyen', 'thu_dan_dia', 'thu_dan_thien'];
-/** Cấu hình vòng đang xem: trang bị 10 ô × 36° · Linh Thú 5 ô × 72°. */
+const PET_TICKET = 've_linh_thu', PET_EGGS = ['thu_dan_pham', 'thu_dan_linh', 'thu_dan_huyen', 'thu_dan_dia', 'thu_dan_thien', 'thu_dan_thuong_co'];
+/** Cấu hình vòng đang xem: trang bị 10 ô × 36° · Linh Thú 6 ô × 60°. */
 const spinCfg = () => spinMode === 'pet'
-  ? {n: 5, ticket: PET_TICKET, price: DATA.petSpinPrice || 3e5, w: DATA.petSpinWeights || [45, 30, 17, 7, 1], icon: q => PET_EGGS[q], title: 'Quay Linh Thú', mode: '&mode=pet', what: 'Thú Đản', big: 3}
-  : {n: 10, ticket: SPIN_TICKET, price: DATA.spinPrice || 1e5, w: spinW(), icon: q => spinIcon(q), title: 'Tài Xỉu', mode: '', what: 'trang bị', big: 4};
+  ? {n: 6, ticket: PET_TICKET, price: DATA.petSpinPrice || 3e5, w: DATA.petSpinWeights || [45, 30, 17, 7, .9, .1], icon: q => PET_EGGS[q], title: 'Quay Linh Thú', mode: '&mode=pet', what: 'Thú Đản', big: 3}
+  : {n: 10, ticket: SPIN_TICKET, price: DATA.spinPrice || 1e5, w: spinW(), icon: q => spinIcon(q), title: 'Vòng quay', mode: '', what: 'trang bị', big: 4};
+const spinRarities = () => spinMode==='pet' ? ['common','uncommon','rare','epic','legendary','ancient'] : FUSE_R;
 const spinSeg = () => 360 / spinCfg().n;
 let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';
 let spinMode='gear';
@@ -33,8 +34,9 @@ const spinIcon = q => { const p = spinPool(q); return (p.find(i => i.slot === 'w
 
 const spinPt = (r, a) => [r * Math.sin(a * Math.PI / 180), -r * Math.cos(a * Math.PI / 180)];
 function spinDisc(){
-  const R1 = 92, R0 = 26, cfg = spinCfg(), SEG = 360 / cfg.n, ic = cfg.n <= 5 ? 34 : 26;
-  const segs = FUSE_R.slice(0, cfg.n).map((r, i) => {
+  // pad: chừa chỗ cho quầng sáng quanh icon (foreignObject cắt mọi thứ tràn ra ngoài khung)
+  const R1 = 92, R0 = 26, cfg = spinCfg(), SEG = 360 / cfg.n, ic = cfg.n <= 5 ? 34 : 26, pad = 10;
+  const segs = spinRarities().slice(0, cfg.n).map((r, i) => {
     const a0 = -SEG / 2, a1 = SEG / 2;
     const [x0, y0] = spinPt(R1, a0), [x1, y1] = spinPt(R1, a1), [x2, y2] = spinPt(R0, a1), [x3, y3] = spinPt(R0, a0);
     const col = RARITY[r].c, k = cfg.icon(i), nm = RARITY[r].n.split(' ');
@@ -43,8 +45,8 @@ function spinDisc(){
       <path class="sp-bg ${i % 2 ? 'alt' : ''}" d="M${x0},${y0} A${R1},${R1} 0 0 1 ${x1},${y1} L${x2},${y2} A${R0},${R0} 0 0 0 ${x3},${y3} Z"/>
       <path class="sp-rim" d="M${x0},${y0} A${R1},${R1} 0 0 1 ${x1},${y1}"/>
       ${name}
-      ${k ? `<foreignObject x="${-ic / 2}" y="${-44 - ic}" width="${ic}" height="${ic}"><div xmlns="http://www.w3.org/1999/xhtml" class="sp-ic">${itemImg(k)}</div></foreignObject>` : ''}
-      <text class="sp-no" y="-33">${i + 1}</text></g>`;
+      ${k ? `<foreignObject x="${-ic / 2 - pad}" y="${-44 - ic - pad}" width="${ic + pad * 2}" height="${ic + pad * 2}"><div xmlns="http://www.w3.org/1999/xhtml" class="sp-ic">${itemImg(k, '', true)}</div></foreignObject>` : ''}
+      </g>`;
   }).join('');
   const dots = Array.from({length: 20}, (_, i) => { const [x, y] = spinPt(96, i * 18 + 9); return `<circle class="sp-dot ${i % 2 ? 'b' : ''}" cx="${x}" cy="${y}" r="1.7"/>`; }).join('');
   return `<svg class="sp-svg" viewBox="-100 -100 200 200" aria-hidden="true">
@@ -100,7 +102,7 @@ function renderSpin(){
   const hn = spinHistory().length; $('spHistN').textContent = hn || '';
   { const hp = $('spHistPop');                                   // chỉ vẽ lại khi có lượt mới, giữ vị trí cuộn
     if (hp && !hp.hidden){ const h = spinHistHtml(); if (hp.dataset.h !== h){ const top = hp.scrollTop; hp.innerHTML = h; hp.dataset.h = h; hp.scrollTop = top; } } }
-  $('spOdds').innerHTML = FUSE_R.slice(0, cfg.n).map((r, i) => `<li class="${spinLast?.q === i ? 'on' : ''}"><span class="sp-n" style="--c:${RARITY[r].c}">${i + 1}</span>${qWord(r)}<b>${spinPct(w[i])}</b></li>`).join('');
+  $('spOdds').innerHTML = spinRarities().slice(0, cfg.n).map((r, i) => `<li class="${spinLast?.q === i ? 'on' : ''}">${qWord(r)}<b>${spinPct(w[i])}</b></li>`).join('');
 }
 
 /** Danh sách món của một lượt quay, phẩm cao → thấp, gộp món trùng. */
@@ -128,11 +130,11 @@ function spinShowPop(r, err){
     clearTimeout(spinPopTimer); spinPopTimer = setTimeout(spinHidePop, 3500); return;
   }
   const ids = r.outs.flatMap(o => Array(o.qty || 1).fill(o.item));
-  const best = ids.slice().sort((a, b) => FUSE_R.indexOf(ITEM[b]?.rarity) - FUSE_R.indexOf(ITEM[a]?.rarity))[0];
+  const best = ids.slice().sort((a, b) => spinRarities().indexOf(ITEM[b]?.rarity) - spinRarities().indexOf(ITEM[a]?.rarity))[0];
   const big = r.q >= spinCfg().big, it = ITEM[best];
-  el.className = `sp-pop ${big ? 'big' : ''}`; el.style.setProperty('--c', RARITY[FUSE_R[r.q]].c);
+  el.className = `sp-pop ${big ? 'big' : ''}`; el.style.setProperty('--c', RARITY[spinRarities()[r.q]].c);
   el.innerHTML = `<div class="sp-pop-box">
-    <p class="sp-pop-t">${big ? 'Đại vận!' : spinCfg().title} · ô ${r.q + 1} ${qWord(FUSE_R[r.q])}</p>
+    <p class="sp-pop-t">${big ? 'Đại vận!' : spinCfg().title} · ${qWord(spinRarities()[r.q])}</p>
     ${it ? `<div class="sp-pop-best r-${it.rarity}">${itemImg(best)}</div><p class="sp-pop-nm rc-${it.rarity}">${it.name}</p>` : ''}
     ${ids.length > 1 ? `<div class="sp-pop-list">${spinItemsHtml(ids, 'sp-item')}</div>` : ''}
     <p class="sp-pop-hint">Đã vào hành trang · bấm để đóng</p></div>`;
@@ -150,8 +152,8 @@ function spinHistHtml(){
   const p2 = n => String(n).padStart(2, '0');
   const tf = t => { const d = new Date(t * 1000); return `${p2(d.getHours())}:${p2(d.getMinutes())} · ${p2(d.getDate())}/${p2(d.getMonth() + 1)}`; };
   return `<p class="dd-sec">Lịch sử quay · ${h.length} lần gần nhất</p><ol>${h.map(e => {
-    const top = Math.max(...e.ids.map(k => FUSE_R.indexOf(ITEM[k]?.rarity)));
-    return `<li><span class="sp-ht"><time>${tf(e.t)}</time> · quay ×${e.ids.length}${top >= 0 ? ` · cao nhất ${qWord(FUSE_R[top])}` : ''}</span><div class="sp-hl">${spinItemsHtml(e.ids, 'sp-hi')}</div></li>`; }).join('')}</ol>`;
+    const historyRarities=[...FUSE_R,"ancient"], top = Math.max(...e.ids.map(k => historyRarities.indexOf(ITEM[k]?.rarity)));
+    return `<li><span class="sp-ht"><time>${tf(e.t)}</time> · quay ×${e.ids.length}${top >= 0 ? ` · cao nhất ${qWord(historyRarities[top])}` : ''}</span><div class="sp-hl">${spinItemsHtml(e.ids, 'sp-hi')}</div></li>`; }).join('')}</ol>`;
 }
 function spinHistShow(on){
   const b = $('spHist'); let pop = $('spHistPop');
@@ -187,7 +189,7 @@ async function spinGo(n){
   catch(e){ spinBusy = false; busy = false; localLog(e.message, 'bad'); renderSpin(); spinShowPop(null, e.message); return; }
   const outs0 = res.craft?.outputs?.length ? res.craft.outputs : [res.craft.output];
   // ô dừng: trang bị theo recipe "spin:q"; Linh Thú theo Thú Đản phẩm cao nhất trong lượt
-  const q = spinMode === 'pet' ? Math.max(0, ...outs0.map(o => FUSE_R.indexOf(ITEM[o.item]?.rarity)))
+  const q = spinMode === 'pet' ? Math.max(0, ...outs0.map(o => spinRarities().indexOf(ITEM[o.item]?.rarity)))
     : Math.max(0, +(res.craft?.recipe || 'spin:0').split(':')[1] || 0);
   const disc = $('spDisc');
   disc?.querySelectorAll('.sp-seg.on').forEach(x => x.classList.remove('on'));
@@ -202,7 +204,7 @@ async function spinGo(n){
     spinLast = {q, outs: outs0};
     setState(res.state); notifyHost('changed');
     $('spDisc')?.querySelector(`.sp-seg[data-q="${q}"]`)?.classList.add('on');
-    if (q >= cfg.big && typeof rings !== 'undefined') rings.push({t: 0, c: RARITY[FUSE_R[q]].c, big: q >= cfg.big + 2 || (spinMode === 'pet' && q >= 4)});
+    if (q >= cfg.big && typeof rings !== 'undefined') rings.push({t: 0, c: RARITY[spinRarities()[q]].c, big: q >= cfg.big + 2 || (spinMode === 'pet' && q >= 4)});
     renderSpin(); live();
     spinShowPop(spinLast);
   }, fast ? 250 : 4400);

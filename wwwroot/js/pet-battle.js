@@ -24,9 +24,16 @@ function petAttackKind(pet,cast){
   if(cast.guard>0)return 'frost';if(cast.heal>0)return 'deer';
   return {hoa:'fox',loi:pet.name==='Thanh Long'?'dragon':'eagle',thuy:'leech',gio:'tiger'}[pet.element]||'cat';
 }
+function petSceneForPhase(battle,phase){
+  const post=phase.name==='fight'&&!phase.rep&&phase.s>=.85;
+  return {post,phase:{...phase,name:phase.name==='pet'||post?'fight':'idle'},
+    battle:{...battle,pet:battle.pet?{...battle.pet,casts:(battle.pet.casts||[]).filter(c=>(c.at>=.85)===post)}:null}};
+}
 function petAttackPlan(pet,cast,phase){
-  if(phase.name!=='fight'||cast.turn!==phase.i||!Number.isFinite(phase.s)||phase.s<.18||phase.s>=.82)return null;
-  const progress=(phase.s-.18)/.64,kind=petAttackKind(pet,cast);
+  const special=cast.isMiracle||cast.at>=.85;
+  const start=special?(cast.at>=.85?.70:.10):.18,end=special?1:.82;
+  if(phase.name!=='fight'||cast.turn!==phase.i||!Number.isFinite(phase.s)||phase.s<start||phase.s>=end)return null;
+  const progress=(phase.s-start)/(end-start),kind=petAttackKind(pet,cast);
   const strikes=['dragon','eagle'].includes(kind)?Math.max(1,Math.min(3,cast.hits?.length||3)):1;
   return {kind,progress,strikes,alpha:Math.min(1,progress/.08,(1-progress)/.16)};
 }
@@ -60,11 +67,34 @@ function drawPetAttackEffects(g,pet,phase,layout){
         const impact=Math.max(0,Math.min(1,(p-.44)/.56));
         if(reduced){
           // One soft, stationary frame; no flashing, travel or camera shake.
-          const support=['frost','turtle','xuanwu','deer','crane','regen'].includes(kind);
+          const support=['frost','turtle','xuanwu','deer','crane','regen','butterfly','butterfly_rebirth'].includes(kind);
           petAttackSprite(g,support?PET_ATTACK_ART.ward:kind==='fox'||kind==='phoenix'||kind==='burn'?PET_ATTACK_ART.flame:PET_ATTACK_ART.moon,support?8:15,support?heroX:targetX,support?heroY:targetY,height*.8,'saturate(.7)',0,.45);
           continue;
         }
-        if(kind==='dragon'||kind==='eagle'){
+        if(kind==='butterfly_rebirth'){
+          const bloom=Math.sin(p*Math.PI),colors=['#f6c9ff','#c4a4ff','#9bcaff','#93e7df','#c1efaf','#fff1b0','#ffc8d2'];
+          g.translate(heroX,heroY);g.shadowColor='#d1b6ff';g.shadowBlur=height*.13;
+          for(let side of [-1,1]){
+            g.save();g.scale(side,1);g.globalAlpha=plan.alpha*.48;
+            g.fillStyle='#c8c1ff';g.strokeStyle='#f1eaff';g.lineWidth=1.5;
+            g.beginPath();g.moveTo(0,0);g.bezierCurveTo(height*.12,-height*.7,height*.8,-height*.8,height*.48,-height*.12);g.bezierCurveTo(height*.9,height*.45,height*.1,height*.6,0,0);g.fill();g.stroke();g.restore();
+          }
+          colors.forEach((color,i)=>{g.strokeStyle=color;g.globalAlpha=plan.alpha*.5;g.lineWidth=1.5;g.beginPath();g.ellipse(0,height*.45,height*(.22+i*.045)*bloom,height*(.05+i*.015),0,0,Math.PI*2);g.stroke();});
+          g.strokeStyle='#f7efff';g.lineWidth=2;g.beginPath();g.moveTo(0,-height*.3);g.lineTo(0,height*.25);g.stroke();
+        }else if(kind==='ancient_thunder'||kind==='ancient_thunder_miracle'){
+          const miracle=kind==='ancient_thunder_miracle',peak=miracle?.66:.48;
+          const pulse=Math.max(0,1-Math.abs(p-peak)/(miracle?.32:.23));
+          if(pulse>0){
+            g.globalAlpha=plan.alpha*pulse;g.shadowColor='#a46aff';g.shadowBlur=height*.14;
+            const points=[[targetX-height*.16,0]];
+            for(let step=1;step<=12;step++){const k=step/12;points.push([targetX+(step===12?0:Math.sin(step*3.8)*height*.17),targetY*k]);}
+            for(const [width,color] of [[height*.085,'#7945d9'],[height*.035,'#c095ff'],[height*.012,'#f8ebff']]){
+              g.strokeStyle=color;g.lineWidth=Math.max(1,width*(miracle?1.7:1));g.lineJoin='round';g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();
+            }
+            if(miracle){g.strokeStyle='#c5a0ff';g.lineWidth=2;g.beginPath();g.ellipse(targetX,targetY+height*.3,height*(.3+p*.25),height*.12,0,0,Math.PI*2);g.stroke();}
+            petAttackSprite(g,PET_ATTACK_ART.moon,15+Math.floor(impact*5),targetX,targetY,height*.9,'hue-rotate(65deg)',0,pulse);
+          }
+        }else if(kind==='dragon'||kind==='eagle'){
           const gold=kind==='dragon';
           for(let i=0;i<strikes;i++){
             const at=.36+i*.12,pulse=Math.max(0,1-Math.abs(p-at)/.13);if(!pulse)continue;
@@ -98,6 +128,9 @@ function drawPetAttackEffects(g,pet,phase,layout){
             const k=kind==='burn'?p:Math.max(0,(p-.30)/.70);
             petAttackSprite(g,PET_ATTACK_ART.flame,Math.min(15,Math.floor(k*16)),targetX,targetY+height*.20,height*(kind==='burn'?.85:1.45));
           }
+        }else if(kind==='butterfly'){
+          petAttackSprite(g,PET_ATTACK_ART.ward,7+Math.floor(p*4)%4,heroX,heroY,height*(.9+p*.2),'saturate(.35) brightness(1.4)',0,.85);
+          for(let i=0;i<3;i++)petAttackSprite(g,PET_ATTACK_ART.moon,10+i,heroX+(i-1)*height*.22,heroY+height*(.4-((p+i*.2)%1)*.8),height*.25,'hue-rotate(-110deg) saturate(.8)',0,.6);
         }else if(['frost','turtle','xuanwu'].includes(kind)){
           const filter=kind==='turtle'?'hue-rotate(190deg) saturate(.8)':kind==='xuanwu'?'hue-rotate(-30deg)':'none';
           const f=p<.25?Math.floor(p/.25*7):p<.78?7+Math.floor(p*8)%4:18+Math.floor((p-.78)/.22*7);
@@ -143,20 +176,21 @@ function drawPetCompanion(context,battle,phase,options){
   context.strokeText(label,tx,ty);context.fillText(label,tx,ty);context.restore();
 }
 function petCastHitSchedule(cast){
+  if(cast.isMiracle)return cast.dmg>0?[{damage:cast.dmg,at:cast.at??.9}]:[];
   if(Array.isArray(cast.hits)&&cast.hits.length)
     return cast.hits.map((damage,index)=>({damage,at:cast.hits.length>1?.18+.64*(.36+index*.12):.45}));
-  return cast.dmg>0?[{damage:cast.dmg,at:.45}]:[];
+  return cast.dmg>0?[{damage:cast.dmg,at:cast.at??.45}]:[];
 }
 function petBattleFeedback(battle,phase,seen,emit,x,y,targetX=x,targetY=y){
   if(phase.name!=='fight')return;
   for(const cast of battle.pet?.casts||[]){
     if(cast.turn!==phase.i)continue;
-    const key=`${phase.trip}:pet:${phase.i}:${(battle.pet.casts||[]).indexOf(cast)}`;
+    const key=`${phase.trip}:pet:${phase.i}:${(battle.pet.casts||[]).indexOf(cast)}:${cast.kind||''}:${cast.isMiracle?'miracle':'normal'}`;
     const hits=petCastHitSchedule(cast);
-    const start=hits[0]?.at??.45;
+    const start=hits[0]?.at??cast.at??.45;
     if(phase.s>=start&&!seen[key]){
       seen[key]=1;
-      emit({type:'dodge',x,y,text:cast.skill||'Linh thuật',col:'#d6dbaa',life:0,max:1});
+      emit({type:'dodge',x,y,text:(cast.isMiracle?'Thần thông · ':'')+(cast.skill||'Linh thuật'),col:cast.heal>0&&!(cast.dmg>0)?HEAL_COL:'#d6dbaa',life:0,max:1});
     }
     hits.forEach((hit,index)=>{
       const hitKey=key+':hit:'+index;
@@ -164,10 +198,11 @@ function petBattleFeedback(battle,phase,seen,emit,x,y,targetX=x,targetY=y){
       seen[hitKey]=1;
       if(hit.damage>0)emit({type:'num',source:'pet',x:targetX,y:targetY,text:'-'+hit.damage,col:'#cfb0ff',life:0,max:1});
     });
-    if(phase.s>=.45&&!seen[key+':support']){
+    if(phase.s>=(cast.at??.45)&&!seen[key+':support']){
       seen[key+':support']=1;
-      if(cast.heal>0)emit({type:'num',source:'pet',x,y,text:'+'+cast.heal,col:'#99d4a3',life:0,max:1});
+      if(cast.heal>0)emit({type:'num',source:'pet',x,y,text:'+'+cast.heal,col:HEAL_COL,life:0,max:1});
       if(cast.guard>0)emit({type:'label',x,y,text:'Khiên +'+cast.guard,col:'#a8e4fc',life:0,max:1});
+      if(cast.paralyzeTurns>0){const c=(typeof BATTLE_CONTROL!=='undefined'&&BATTLE_CONTROL[cast.controlKind||'paralyze'])||{name:'Tê liệt',col:'#d4adff'};emit({type:'label',x:targetX,y:targetY,text:c.name+' · '+cast.paralyzeTurns+' lượt',col:c.col,life:0,max:1});}
     }
   }
 }
