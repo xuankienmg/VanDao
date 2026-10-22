@@ -157,6 +157,7 @@ function initSkill(){
       });
       return;
     }
+    const ac = e.target.closest('[data-activate]'); if (ac){ hideTip(); act(`manual/${ac.dataset.activate}`); return; }   // kích hoạt công pháp hệ đang xem
     const bs = e.target.closest('[data-basic]'); if (bs){ act(`skillslot/0?skill=${bs.dataset.basic}`); return; }
     if (e.target.closest('[data-anim]')){ skAnimT0 = performance.now(); return; }          // phát lại animation từ đầu
     const eq = e.target.closest('[data-equip-sk]');

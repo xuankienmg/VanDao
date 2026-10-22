@@ -149,6 +149,10 @@ public static class Program
         api.MapPost("/players/{id:guid}/skin", (Guid id, string? skin, GameService game) =>
             Run(id, game, p => game.SetSkin(p, skin)));
 
+        // kích hoạt công pháp một hệ: đòn thường theo hệ đó, bị động hệ khác còn 50%
+        api.MapPost("/players/{id:guid}/manual/{element}", (Guid id, string element, GameService game) =>
+            Run(id, game, p => game.ActivateManual(p, element)));
+
         api.MapPost("/players/{id:guid}/skillslot/{slot:int}", (Guid id, int slot, string? skill, GameService game) =>
             Run(id, game, p => game.SetSkillSlot(p, slot, skill)));
 

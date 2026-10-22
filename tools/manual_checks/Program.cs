@@ -111,5 +111,56 @@ using(var cmd=db.Database.GetDbConnection().CreateCommand()){
     cmd.CommandText="SELECT LearnedManuals FROM Players LIMIT 1";
     Check(Convert.ToString(cmd.ExecuteScalar())=="","legacy schema default unlocks incorrect");
 }
+// ---- Công pháp vận hành: một hệ, đòn thường theo hệ đó, bị động hệ khác còn 50% ----
+{
+    var ap=await game.CreateAsync("Active manual");
+    CultivationManuals.Unlock(ap,"hoa");CultivationManuals.Unlock(ap,"thuy");
+    var lvA=ap.SkillLevels();lvA["hoa_linh_can"]=5;lvA["thuy_linh_can"]=3;lvA["nhu_thuy"]=5;ap.SetSkillLevels(lvA);
+    ap.ActiveManual="";CultivationManuals.SyncActive(ap);
+    Check(ap.ActiveManual=="thuy"&&ap.Slots()[SkillData.BasicSlot]=="thuy_cau","legacy default should pick highest-level manual and its basic");
+    double CpAtk(Player x)=>game.BuildStateAsync(x).Result.StatSources!.First(s=>s.Name=="Công pháp").AtkPct;
+    var atkThuy=CpAtk(ap);
+    game.ActivateManual(ap,"hoa");
+    Check(ap.ActiveManual=="hoa"&&ap.Slots()[SkillData.BasicSlot]=="hoa_cau","activate should switch basic attack");
+    var atkHoa=CpAtk(ap);
+    Check(atkHoa>0&&Math.Abs(atkThuy-atkHoa*CultivationManuals.InactiveRate)<.0001,$"inactive passives should be halved ({atkThuy} vs {atkHoa})");
+    game.SetSkillSlot(ap,SkillData.BasicSlot,"thuy_cau");
+    Check(ap.ActiveManual=="thuy","equipping another basic should activate its manual");
+    Reject(()=>game.SetSkillSlot(ap,SkillData.BasicSlot,null),"basic slot should not be clearable");
+    Reject(()=>game.ActivateManual(ap,"moc"),"cannot activate a manual not learned");
+    ap.ActiveManual="moc";CultivationManuals.SyncActive(ap);
+    Check(ap.ActiveManual=="thuy","invalid saved manual should fall back to highest learned");
+}
+// ---- Kỹ năng chủ động hệ Hỏa: 10% × cấp cơ hội thiêu đốt khi tung ----
+{
+    Check(SkillData.ActiveBurnChance(SkillData.ById["liet_diem"],5)==50&&SkillData.ActiveBurnChance(SkillData.ById["liet_diem"],1)==10,"fire active burn chance should be 10% per level");
+    Check(SkillData.ActiveBurnChance(SkillData.ById["hoa_cau"],5)==0&&SkillData.ActiveBurnChance(SkillData.ById["thuy_cau"],5)==0,"basic attacks should not get active burn chance");
+    var bp=await game.CreateAsync("Fire burn");
+    CultivationManuals.Unlock(bp,"hoa");
+    var lvB=bp.SkillLevels();lvB["liet_diem"]=5;bp.SetSkillLevels(lvB);
+    bp.SkillSlots="hoa_cau,liet_diem";
+    var b=GameService.Battle(bp);
+    Check(b.BurnPct>0&&b.Burn>0,"equipped fire active skill should enable burn");
+    var ib=new CombatBurn();
+    Check(ib.Ignite(1000,false)==50&&ib.TurnsLeft==1,"ignite should burn this turn and one more");
+    var ib2=new CombatBurn();ib2.Tick(1000,true);
+    Check(ib2.Ignite(1000,true)==0&&ib2.TurnsLeft==1,"ignite after a tick should only refresh");
+}
+// ---- Nhóm debuff (thiêu đốt · tê liệt · choáng · đóng băng): quái chỉ mang 1, cái mới nhất đè cái cũ ----
+{
+    var owner=new CombatStats(1000,10000,100);
+    var phoenixDef=PetData.ById.Values.First(d=>d.Skill=="phoenix");
+    var frostDef=PetData.ById.Values.First(d=>d.Skill=="frost");
+    var fire=new PetCombat(phoenixDef,0,owner,random:new FixedRandom(0));
+    int hpA=10000;fire.Cast(0,ref hpA,100000,100000,0,1);
+    Check(fire.Burning&&fire.NewDebuff=="burn","phoenix should apply burn debuff");
+    fire.ClearDebuffs();
+    Check(!fire.Burning,"owner debuff should clear pet burn");
+    var ice=new PetCombat(frostDef,0,owner,random:new FixedRandom(0));
+    ice.Cast(3,ref hpA,100000,100000,0,1);
+    Check(ice.NewDebuff=="freeze"&&ice.Paralyzed&&ice.Shatter(4),"frost should freeze");
+    ice.ClearDebuffs();
+    Check(!ice.Paralyzed&&!ice.Shatter(4),"owner burn should clear freeze and shatter");
+}
 Console.WriteLine($"PASS {count} manual authorization, consumption, respec, reset, persistence, legacy/schema migration and chest distribution checks.");
 class FixedRandom(double value):Random{public override double NextDouble()=>value;}

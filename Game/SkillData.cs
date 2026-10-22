@@ -223,6 +223,9 @@ public static class SkillData
 
     /// <summary>Thiêu đốt (Phần Cốt): % cơ hội kích hoạt mỗi lượt, từ lượt 2.</summary>
     public const int BurnChance = 30;
+    /// <summary>Kỹ năng chủ động hệ Hỏa (có sát thương): mỗi lần tung có ActiveBurnPerLv% × cấp cơ hội gây thiêu đốt (cùng hiệu ứng với bị động).</summary>
+    public const int ActiveBurnPerLv = 10;
+    public static int ActiveBurnChance(SkillDef s, int lv) => s.Element == "hoa" && s.Tree == "active" && s.DmgBase > 0 ? ActiveBurnPerLv * Math.Max(0, lv) : 0;
     public static bool FitsSlot(SkillDef s, int slot) =>
         slot == BasicSlot ? s.Category == "Đòn thường" : s.Category is "Công" or "Tuyệt kỹ" or "Khống" or "Thủ" or "Thân pháp";
 
