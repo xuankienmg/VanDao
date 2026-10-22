@@ -1295,8 +1295,9 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     /// <summary>Thời lượng một chuyến: đi đường + số lượt đánh + kết thúc. Tấn công cao thì hạ quái nhanh hơn.</summary>
     private static double ExploreSeconds(Player p)
     {
+        var travelFactor = 1 - Math.Clamp(Stats(p).Speed, 0, 60) / 100;
         var t = Math.Max(GameData.MinExploreSeconds,
-            GameData.WalkSeconds
+            GameData.WalkSeconds * travelFactor
             + Battle(p).Hits * GameData.HitSeconds
             + (Math.Max(1, Battle(p).Waves?.Count ?? 1) - 1) * GameData.WaveSeconds
             + GameData.EndSeconds);
@@ -1327,7 +1328,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             Limit("crit", "Bạo kích chung", crit, 100),
             Limit("basic_crit", "Bạo kích đòn thường", Math.Min(100, crit) + (basic?.Crit ?? 0), 100),
             Limit("lien_kich", "Liên kích (gồm thần thông)", Math.Min(30,Raw("lien_kich") + PetTalent(p,"extra")) + (dao ? 20 : 0), dao ? 50 : 30),
-            Limit("speed", "Thân pháp", (p.Realm >= 1 ? GameData.BaseSpeed[Math.Min(p.Realm, GameData.BaseSpeed.Length - 1)] + items.Sum(i => i.SpeedPct) + Raw("speed") : 0) + sk.speed + PetTalent(p,"speed"), 60),
+            Limit("speed", "Thân pháp: giảm thời gian di chuyển", (p.Realm >= 1 ? GameData.BaseSpeed[Math.Min(p.Realm, GameData.BaseSpeed.Length - 1)] + items.Sum(i => i.SpeedPct) + Raw("speed") : 0) + sk.speed + PetTalent(p,"speed"), 60),
             Limit("pha_giap", "Tổng bỏ qua thủ", Raw("pha_giap") + extra.pen + PetTalent(p,"pen"), 80),
             Limit("ho_the", "Tổng giảm sát thương", Raw("ho_the") + guard + PetTalent(p,"guard"), 60),
             Limit("than_phap", "Tổng né tránh (Thân pháp + Vân bộ)", Stats(p).Speed + Raw("than_phap") + dodge, CombatDodge.MaxChance),

@@ -3,7 +3,7 @@ namespace VanDao.Game;
 /// <summary>
 /// Vật phẩm. Trang bị có Slot và chỉ số cộng thêm (đơn vị %):
 /// Atk = tấn công, Hp = máu, Def = phòng thủ (giá trị cộng thẳng);
-/// QiPct = tốc độ tu vi, SpeedPct = thân pháp, tăng né tránh (đơn vị %).
+/// QiPct = tốc độ tu vi, SpeedPct = thân pháp, tăng né tránh và giảm thời gian di chuyển (đơn vị %).
 /// </summary>
 public record ItemDef(string Id, string Name, string Type, string Color, string Desc,
     string? Icon = null, string? Slot = null, double QiPct = 0, double SpeedPct = 0,

@@ -504,12 +504,19 @@ function battlePhase(){
   const b = S.battle, hits = Math.max(1, b.hits), ws = b.waves || [], gap = .8;   // gap = GameData.WaveSeconds
   const petTurns = new Set((b.pet?.casts || []).filter(c=>!(c.at>=.85)).map(c=>c.turn).filter(i=>Number.isInteger(i)&&i>=0&&i<hits));
   const cd = (S.exploreCooldownMs || 8000) / 1000, left = exploreLeft() / 1000;
-  const raw = 2.5 + hits * 1 + petTurns.size * PET_CAST_SECONDS + (b.extra || []).slice(0, hits).filter(Boolean).length * EX_REP + Math.max(0, ws.length - 1) * gap + 1, f = cd / raw;   // thời gian thực → thời gian kịch bản
-  const e = Math.max(0, Math.min(raw, (cd - left) / f));
+  const travelFactor = 1 - Math.max(0, Math.min(60, S.stats?.speed || 0)) / 100;
+  const walk = 2.5 * travelFactor;
+  const combatBase = hits + Math.max(0, ws.length - 1) * gap + 1;
+  const combatRaw = combatBase + petTurns.size * PET_CAST_SECONDS + (b.extra || []).slice(0, hits).filter(Boolean).length * EX_REP;
+  const tripScale = cd / (walk + combatBase);
+  // Giữ cùng nhịp chiến đấu ở mọi mức Thân pháp; chỉ rút ngắn pha di chuyển.
+  const f = tripScale * combatBase / combatRaw;
+  const travel = walk * tripScale;
+  const e = Math.max(0, cd - left);
   const trip = Math.round((recvAt + S.exploreReadyInMs) / 250);
-  if (e < 2.0) return {name:'walk', k:e/2, trip};
-  if (e < 2.5) return {name:'enter', k:(e-2)/.5, trip, wave: 0};
-  let x = e - 2.5;
+  if (e < travel * .8) return {name:'walk', k:e/(travel*.8), trip};
+  if (e < travel) return {name:'enter', k:(e-travel*.8)/(travel*.2), trip, wave: 0};
+  let x = (e - travel) / f;
   for (let w = 0; w < Math.max(1, ws.length); w++){
     const s0 = ws.length ? ws[w].start : 0, n = ws.length ? (ws[w + 1]?.start ?? hits) - s0 : hits;
     if (w > 0){ if (x < gap) return {name:'enter', k: x / gap, trip, wave: w}; x -= gap; }
