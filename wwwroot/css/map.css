@@ -62,6 +62,7 @@ html:not(.panel) .mpx-wrap{flex:none;height:300px}
 .mpx-n .o{position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;overflow:hidden;
   background:radial-gradient(circle at 50% 40%,#fbf6ea,#e4dccb 75%);border:2px solid #4a3a28;box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .12s,box-shadow .12s}
 .mpx-n .lb{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);padding:0 6px;white-space:nowrap;font-size:11px;font-weight:700;line-height:16px;
+  display:block;container-type:normal;   /* .lb của leaderboard.css (flex + container inline-size) làm nền nhãn co lại hẹp hơn chữ */
   color:#f0e2bc;background:rgba(23,18,14,.82);border:1px solid #6b5a3e;font-variant-numeric:tabular-nums}
 .mpx-n .now{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:0 6px;white-space:nowrap;font-size:10.5px;font-weight:700;line-height:15px;
   color:#0b2a26;background:var(--cy);box-shadow:0 1px 4px rgba(0,0,0,.4)}
