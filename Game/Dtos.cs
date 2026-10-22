@@ -147,7 +147,9 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     int[]? BasicDamage = null, bool[]? BasicCritical = null,
     int[]? ExtraDamage = null, bool[]? ExtraCritical = null,
     bool[]? Dodged = null, double DodgeChance = 0,
-    int[]? HeroHpBefore = null, int[]? GuardBefore = null, int[]? BurnDamage = null, DivineBattleDto? Divine = null, PetBattleDto? Pet = null);
+    int[]? HeroHpBefore = null, int[]? GuardBefore = null, int[]? BurnDamage = null, DivineBattleDto? Divine = null, PetBattleDto? Pet = null,
+    string[]? MonControl = null,           // loại khống chặn lượt phản công: "paralyze" · "stun" · "freeze" · "" (mảng theo lượt)
+    bool[]? Shatter = null);               // lượt quái đóng băng từ lượt trước nhận thêm sát thương
 
 public record DivineTurnDto(bool Nullified, bool Saved, bool Boosted, bool Charged);
 public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineTurnDto[] Turns);
@@ -173,7 +175,8 @@ public record PetState(List<PetDto> Owned, List<HatchDto> Hatch, int Capacity, i
 public record PetDto(Guid Id, string DefId, string Name, string Element, string Rarity, int Level, int Exp, int ExpNeed,
     int Form, string FormName, int Slot, int Atk, int Def, int Hp, int AptAtk, int AptDef, int AptHp,
     int ShareAtk, int ShareDef, int ShareHp, string TalentText, string SkillText, int SkillEvery,
-    CostDto[] EvolveCost, bool CanEvolve, string Image, int AppearanceForm = -1, string EvolveHint = "", int Stars = 0, int ReleaseValue = 0, int StarPts = 0, string NextStarSkillText = "", string NextStarTalentText = "");
+    CostDto[] EvolveCost, bool CanEvolve, string Image, int AppearanceForm = -1, string EvolveHint = "", int Stars = 0, int ReleaseValue = 0, int StarPts = 0, string NextStarSkillText = "", string NextStarTalentText = "", PetMiracleDef? Miracle = null);
 public record HatchDto(int Slot, string Egg, DateTime ReadyAt, int ReadyInSeconds, bool Ready, int InstantCost);
-public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill, int[]? Hits = null, string Kind = "");
+/// <param name="ParalyzeTurns">Số lượt quái bị khống bởi lần thi triển này (mọi loại khống); ControlKind = "paralyze" · "stun" · "freeze".</param>
+public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill, int[]? Hits = null, string Kind = "", int ParalyzeTurns = 0, bool IsMiracle = false, double At = .45, string ControlKind = "");
 public record PetBattleDto(Guid Id, string Name, string Image, string Element, PetCastDto[] Casts);

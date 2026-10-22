@@ -9,6 +9,38 @@ db.Database.OpenConnection();db.Database.EnsureCreated();
 var game=new GameService(db);var count=0;
 void Check(bool ok,string message){if(!ok)throw new Exception(message);count++;}
 void Reject(Action action,string message){try{action();}catch(GameException){count++;return;}throw new Exception(message);}
+foreach (var ticket in new[] { GameData.SpinTicket, GameData.PetSpinTicket }) {
+    Check(GameService.Tradable(GameData.ItemById[ticket], true), "admin cannot trade ticket: " + ticket);
+    Check(!GameService.Tradable(GameData.ItemById[ticket]), "normal player can list ticket: " + ticket);
+}
+foreach (var admin in new[] { new Player { Admin = "god" }, new Player { AdminPoints = 1 }, new Player { Tainted = true } }) {
+    Check(GameService.CanSellSpinTickets(admin, true), "development admin cannot list tickets");
+    Check(!GameService.CanSellSpinTickets(admin, false), "admin can list tickets outside development");
+}
+Check(!GameService.CanSellSpinTickets(new Player(), true), "ordinary development player can list tickets");
+Check(!GameService.CanSellSpinTickets(new Player(), false), "ordinary player can list tickets");
+var qiPills = new[] { "bo_nguyen_dan_ha", "bo_nguyen_dan_trung", "bo_nguyen_dan_thuong" };
+for (var tier = 0; tier < qiPills.Length; tier++) {
+    var pillId = qiPills[tier];
+    Check(GameData.ItemById.ContainsKey(pillId), "missing qi pill: " + pillId);
+    var pill = GameData.ItemById[pillId];
+    Check(pill.UseQiSeconds == new[] { 300, 1800, 7200 }[tier], "wrong qi pill potency");
+    var recipe = GameData.Brews.Single(b => b.Out == pillId);
+    var brewer = await game.CreateAsync("Qi pill " + tier);
+    brewer.Realm = 2;
+    foreach (var (item, qty) in recipe.In) brewer.Add(item, qty * 2);
+    var beforeBrew = recipe.In.ToDictionary(kv => kv.Key, kv => brewer.Count(kv.Key));
+    game.Brew(brewer, pillId, 2);
+    Check(brewer.Count(pillId) == 2 && recipe.In.All(kv => brewer.Count(kv.Key) == beforeBrew[kv.Key] - kv.Value * 2), "brew did not consume exact materials");
+    brewer.Qi = 0;
+    var stateBefore = await game.BuildStateAsync(brewer);
+    game.UseItem(brewer, pillId);
+    Check(Math.Abs(brewer.Qi - Math.Min(stateBefore.QiReq, stateBefore.Rate * pill.UseQiSeconds)) < .001, "incorrect qi gain");
+    Check(brewer.Count(pillId) == 1, "qi pill not consumed");
+    brewer.Qi = stateBefore.QiReq - 1;
+    game.UseItem(brewer, pillId);
+    Check(brewer.Qi == stateBefore.QiReq, "qi pill overflowed cultivation cap");
+}
 var p=await game.CreateAsync("Manual checks");
 Check(p.Count(CultivationManuals.Starter)==1&&CultivationManuals.Unlocked(p).Length==0,"new player starts with unread fire manual");
 Reject(()=>game.UpgradeSkill(p,"liet_diem"),"locked tree learned without book");

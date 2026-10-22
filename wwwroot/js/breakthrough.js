@@ -149,7 +149,7 @@ function renderReq(){
   // tu vi + nút đột phá
   const ready = btReady(), running = !!btProc || btLock;
   const why = top ? '' : reqs.find(r => !r.ok);
-  $('btFoot').innerHTML = `<p class="bt-ql">Tu vi hiện tại</p><p class="bt-qv btq"></p>
+  $('btFoot').innerHTML = `<p class="bt-ql">Thời gian đủ tu vi</p><p class="bt-qv" id="btQiTime" title="Ước tính theo tốc độ tu luyện hiện tại, chưa tính tu vi nhận từ thám hiểm."></p>
     <div class="bt-bar"><i id="btBar"></i><em id="btPct"></em></div>
     ${top ? '' : `<button class="bt-go ${ready ? 'ready' : ''}" id="btGo" ${ready && !running ? '' : 'disabled'} aria-label="${peak ? `Thử đột phá ${nextName}` : `${S.realmName} ${S.stageName} → ${nextName}`}"><b>${running ? 'Đang đột phá…' : 'Đột Phá'}</b></button>
     <p class="bt-why ${ready ? '' : 'bad'}" id="btWhy">${running ? '&nbsp;' : ready ? 'Đủ điều kiện' : `Chưa đủ: ${why ? why.name : ''}`}</p>`}`;
@@ -160,6 +160,12 @@ function renderReq(){
 function liveBreak(){
   if (!S || !$('btFoot')) return;
   const q = qiNow(), pct = Math.min(1, q / S.qiReq);
+  const timer = $('btQiTime');
+  if (timer){
+    const seconds = S.rate > 0 ? Math.ceil(Math.max(0, S.qiReq - q) / S.rate) : Infinity;
+    timer.textContent = q >= S.qiReq ? 'Đã đủ tu vi' : !Number.isFinite(seconds) ? 'Tạm dừng' :
+      [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map(n => String(n).padStart(2, '0')).join(':');
+  }
   document.querySelectorAll('#pane-req .btq').forEach(el => el.textContent = `${fmt(q)} / ${fmt(S.qiReq)}`);
   const bar = $('btBar'); if (bar){ bar.style.width = (pct * 100).toFixed(1) + '%'; bar.classList.toggle('full', pct >= 1); $('btPct').textContent = Math.floor(pct * 100) + '%'; }
   const body = document.querySelector('#pane-req .btbody');

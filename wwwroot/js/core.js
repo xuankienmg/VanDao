@@ -107,7 +107,8 @@ async function sync(){
    ============================================================ */
 function icon(k){
   const it = ITEM[k], c = it.color;
-  if (it.icon) return `<img class="ic" src="${it.icon}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">`;
+  const ticketClass = k === 've_tai_xiu' ? ' ticket-premium ticket-gear' : k === 've_linh_thu' ? ' ticket-premium ticket-pet' : '';
+  if (it.icon) return `<img class="ic${ticketClass}" src="${it.icon}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">`;
   const shapes = {
     stone:`<path d="M12 2.5 20 8.5 16.8 20.5H7.2L4 8.5Z" fill="${c}" opacity=".9"/><path d="M12 2.5 9.5 8.5 12 20.5 14.5 8.5Z M4 8.5H20" fill="none" stroke="#0e1416" stroke-opacity=".35" stroke-width="1"/>`,
     pill:`<circle cx="12" cy="12" r="8" fill="${c}"/><ellipse cx="9.3" cy="9" rx="3" ry="2" fill="#fff" opacity=".55"/>`,

@@ -1,4 +1,9 @@
 using VanDao.Game;
+if(args.Length==2&&args[0]=="thunder-fixture"){await ThunderDragonChecks.WriteFixture(args[1]);return;}
+ThunderDragonChecks.Run();
+PetMiracleChecks.Run();
+ButterflyChecks.Run();
+ControlChecks.Run();
 int checks=0;
 void Check(bool value,string message){if(!value)throw new Exception(message);checks++;}
 foreach(var def in PetData.Definitions){

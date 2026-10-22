@@ -1,14 +1,33 @@
 namespace VanDao.Game;
 
 /// <summary>Trạng thái kỹ năng linh thú trong một trận; hiệu ứng cùng loại chỉ làm mới thời gian.</summary>
-public sealed class PetCombat(PetDef definition, int form, CombatStats owner, int stars = 0)
+/// <param name="pet">Chỉ số riêng của linh thú (cộng vào Lực tuyệt kỹ); null = 0.</param>
+/// <param name="quality">Phẩm riêng của con (Phàm → Thượng Cổ); −1 = phẩm gốc của loài.</param>
+public sealed class PetCombat(PetDef definition, int form, CombatStats owner, int stars = 0, Random? random = null, bool allowMiracle = true, CombatStats? pet = null, int quality = -1)
 {
     private readonly int _form = Math.Clamp(form, 0, 2);
+    // Lực tuyệt kỹ: Công linh thú + Công chủ nhân × Đồng tâm · Lực hỗ trợ: Máu linh thú + Máu chủ nhân × Đồng tâm
+    private readonly double _power = (pet?.Atk ?? 0) + owner.Atk * PetData.SkillBond[Math.Clamp(form, 0, 2)];
+    private readonly double _life = (pet?.Hp ?? 0) + owner.Hp * PetData.SkillBond[Math.Clamp(form, 0, 2)];
+    private readonly double _coef = PetData.SkillCoef(definition.Skill, form, quality);
+    private int _burnTick;
     private readonly double _starScale = PetData.StarScale(stars);
     private double TalentValue => definition.TalentValue * _starScale;
     private int _turn, _markUntil = -1, _downUntil = -1, _dodgeUntil = -1, _reflectUntil = -1;
     private int _burnLeft, _hotLeft;
     private int _ownerTurns;
+    private readonly Random _rng = random ?? new Random(0);
+    private int _paralyzedUntil = -1;                 // lượt cuối quái bị khống (tê liệt / choáng / đóng băng)
+    private string _controlKind = "paralyze";
+    private int _shatterTurn = -1;                     // lượt quái đóng băng nhận thêm sát thương (sau lượt bị đóng băng)
+    private bool _miracleUsed;
+    public bool MiracleUsed => _miracleUsed;
+    /// <summary>Quái đang bị khống (mọi loại) ở lượt hiện tại: mất lượt phản công.</summary>
+    public bool Paralyzed => _turn <= _paralyzedUntil;
+    /// <summary>Loại khống đang có hiệu lực: "paralyze" · "stun" · "freeze", rỗng nếu không bị khống.</summary>
+    public string ControlKind => Paralyzed ? _controlKind : "";
+    /// <summary>Lượt này quái còn đóng băng từ lượt trước: nhận thêm FreezeDamageBonus sát thương.</summary>
+    public bool Shatter(int turn) => turn == _shatterTurn;
     public bool SkillReady => _ownerTurns >= definition.SkillEvery;
     public void RecordOwnerTurn() => _ownerTurns = Math.Min(definition.SkillEvery, _ownerTurns + 1);
     public int Shield { get; private set; }
@@ -24,10 +43,25 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
         return Shield;
     }
     public void Absorb(int damage) => Shield = Math.Max(0, Shield - damage);
+    public PetCastDto? TryMiracle(int turn, ref int hp, int monsterHp, int defense, double takeK, bool counterPending = true)
+    {
+        if(_miracleUsed || !allowMiracle || definition.Rarity!="ancient" || definition.Miracle is null)return null;
+        _turn=turn;
+        if(definition.Id=="that_thai_ho_diep" && hp<=0){
+            hp=Math.Max(1,(int)(owner.Hp*.25));_miracleUsed=true;
+            return new(turn,0,hp,0,definition.Miracle.Name,Kind:"butterfly_rebirth",IsMiracle:true,At:counterPending?.45:.90);
+        }
+        if(definition.Id=="thai_co_loi_long" && hp>0 && (long)hp*100 <= (long)owner.Hp*30 && monsterHp>0){
+            var damage=Math.Min(monsterHp,Hit(250,defense,takeK,30));
+            _paralyzedUntil=turn+(counterPending?0:1);_controlKind="paralyze";_miracleUsed=true;
+            return new(turn,damage,0,0,definition.Miracle.Name,new[]{damage},"ancient_thunder_miracle",1,true,counterPending?.45:.90,"paralyze");
+        }
+        return null;
+    }
     public int Healing(int requested, int hp)
     {
         if (hp <= 0) return 0;
-        var bonus = definition.Talent == "healing" && hp < owner.Hp * .5 ? 1 + TalentValue / 100 : 1;
+        var bonus = definition.Talent == "healing_all" || definition.Talent == "healing" && hp < owner.Hp * .5 ? 1 + TalentValue / 100 : 1;
         return Math.Clamp((int)Math.Round(requested * bonus), 0, Math.Max(0, owner.Hp - hp));
     }
     public int AmplifyOwner(int damage, bool critical, bool targetBurning)
@@ -38,10 +72,17 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     }
     private int Hit(double percent, int defense, double takeK, double pen = 0) =>
         Math.Max(1, (int)Math.Round(Math.Max(1, owner.Atk * percent / 100 - Math.Floor(defense * (1 - pen / 100))) * takeK));
-    private int AddShield(double percent)
+    /// <summary>Sát thương tuyệt kỹ: trừ thủ một lần cho cả chiêu (sàn 5%), rồi chia đều cho số đòn.</summary>
+    private int[] SkillHits(double percent, int defense, double takeK, int count = 1, double pen = 0)
+    {
+        var raw = _power * percent / 100;
+        var total = Math.Max(1, (int)Math.Round(Math.Max(raw * .05, raw - Math.Floor(defense * (1 - pen / 100))) * takeK));
+        return Enumerable.Range(0, count).Select(i => total / count + (i < total % count ? 1 : 0)).ToArray();
+    }
+    private int AddShield(double amount)
     {
         var old = Shield;
-        Shield = Math.Min((int)(owner.Hp * .30), Shield + (int)(owner.Hp * percent / 100));
+        Shield = Math.Min((int)(owner.Hp * .30), Shield + (int)amount);
         return Shield - old;
     }
     public PetCastDto? BeginTurn(int turn, ref int hp, int monsterHp, int defense, double takeK)
@@ -50,13 +91,13 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
         if (_burnLeft > 0)
         {
             _burnLeft--;
-            var damage = Math.Min(monsterHp, Hit(Tier(15, 25, 35), defense, takeK));
+            var damage = Math.Min(monsterHp, _burnTick);
             return new(turn, damage, 0, 0, Name + " · Thiêu đốt", Kind: "burn");
         }
         if (_hotLeft > 0)
         {
             _hotLeft--;
-            var heal = Healing((int)(owner.Hp * Tier(1, 1.5, 2) / 100), hp); hp += heal;
+            var heal = Healing((int)(_life * _coef * .15 / 100), hp); hp += heal;
             return new(turn, 0, heal, 0, Name + " · Hồi phục", Kind: "regen");
         }
         return null;
@@ -65,37 +106,57 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     {
         _ownerTurns = 0; // Only a real cast consumes the accumulated turns; wave transitions do not.
         _turn = turn;
-        var damage = 0; var heal = 0; var guard = 0; var hits = new List<int>();
-        void Strike(double percent, double pen = 0)
+        var damage = 0; var heal = 0; var guard = 0; var paralyze = 0; var hits = new List<int>();
+        void Strike(double percent, int count = 1, double pen = 0)
         {
-            var hit = Math.Min(Math.Max(0, monsterHp - damage), Hit(percent, defense, takeK, pen));
-            hits.Add(hit); damage += hit;
+            foreach (var raw in SkillHits(percent, defense, takeK, count, pen))
+            {
+                var hit = Math.Min(Math.Max(0, monsterHp - damage), raw);
+                hits.Add(hit); damage += hit;
+            }
         }
+        double Life(double share) => _life * _coef * share / 100;   // lượng hồi / khiên theo Lực hỗ trợ
         switch (definition.Skill)
         {
-            case "fox": Strike(Tier(70, 105, 140)); _markUntil = turn + 2; break;
-            case "frost": guard = AddShield(Tier(6, 9, 12)); _downUntil = turn + 1; break;
-            case "deer": heal = Healing((int)(owner.Hp * Tier(5, 8, 11) / 100), hp); _hotLeft = 2; break;
-            case "turtle": guard = AddShield(Tier(8, 12, 16)); break;
-            case "eagle": for (var i = 0; i < 3; i++) Strike(Tier(25, 38, 52)); break;
+            case "fox": Strike(_coef); _markUntil = turn + 2; break;
+            case "frost": guard = AddShield(Life(1)); _downUntil = turn + 1; break;
+            case "deer": heal = Healing((int)Life(.7), hp); _hotLeft = 2; break;            // 70% hồi ngay, 2 × 15% hồi dần
+            case "turtle": guard = AddShield(Life(1)); break;
+            case "eagle": Strike(_coef, 3); break;
             case "leech":
-                Strike(Tier(65, 100, 135));
+                Strike(_coef);
                 heal = Healing(Math.Min((int)(damage * Tier(20, 25, 30) / 100), (int)(owner.Hp * Tier(4, 6, 8) / 100)), hp);
                 break;
-            case "crane": heal = Healing((int)(owner.Hp * Tier(4, 6, 8) / 100), hp); _dodgeUntil = turn + 1; break;
-            case "cat": Strike(Tier(90, 135, 180), Tier(15, 25, 35)); break;
-            case "phoenix": Strike(Tier(80, 120, 160)); _burnLeft = 2; break;
-            case "xuanwu": guard = AddShield(Tier(10, 15, 20)); _reflectUntil = turn + 1; break;
-            case "dragon": for (var i = 0; i < 3; i++) Strike(Tier(35, 55, 75), _form == 2 && i == 2 ? Tier(20,20,20) : 0); break;
-            case "tiger": Strike(Tier(110, 165, 220) * (monsterHp < monsterMaxHp * .30 ? 1 + Tier(25,25,25)/100 : 1)); break;
+            case "crane": heal = Healing((int)Life(1), hp); _dodgeUntil = turn + 1; break;
+            case "cat": Strike(_coef, 1, Tier(15, 25, 35)); break;
+            case "phoenix":                                                                  // 60% đòn đầu, 2 × 20% thiêu đốt
+                Strike(_coef * .6); _burnLeft = 2;
+                _burnTick = SkillHits(_coef * .2, defense, takeK)[0];
+                break;
+            case "xuanwu": guard = AddShield(Life(1)); _reflectUntil = turn + 1; break;
+            case "dragon": Strike(_coef, 3, _form == 2 ? 20 : 0); break;
+            case "tiger": Strike(_coef * (monsterHp < monsterMaxHp * .30 ? 1.25 : 1)); break;
+            case "butterfly":                                                                // 45% hồi máu, 55% khiên
+                heal = Healing((int)Life(.45), hp);
+                guard = AddShield(Life(.55));
+                break;
+            case "ancient_thunder": Strike(_coef); break;
+        }
+        // Khống chế theo hệ (PetData.ControlOf): chỉ gieo khi chiêu có khống chế
+        var (controlKind, controlChance) = PetData.ControlOf(definition.Skill);
+        var controlled = "";
+        if (controlChance > 0 && monsterHp - damage > 0 && _rng.NextDouble() < controlChance)
+        {
+            _paralyzedUntil = turn; _controlKind = controlKind; paralyze = 1; controlled = controlKind;
+            if (controlKind == "freeze") _shatterTurn = turn + 1;
         }
         hp += heal;
-        return new(turn, damage, heal, guard, Name, hits.Count > 0 ? hits.ToArray() : null, definition.Skill);
+        return new(turn, damage, heal, guard, Name, hits.Count > 0 ? hits.ToArray() : null, definition.Skill, paralyze, ControlKind: controlled);
     }
     public PetCastDto? Reflect(int turn, int monsterHp, int defense, double takeK)
     {
         if (turn > _reflectUntil || monsterHp <= 0) return null;
-        return new(turn, Math.Min(monsterHp, Hit(Tier(15, 25, 35), defense, takeK)), 0, 0, Name + " · Phản đòn", Kind: "reflect");
+        return new(turn, Math.Min(monsterHp, SkillHits(PetData.ReflectCoef(_form, quality), defense, takeK)[0]), 0, 0, Name + " · Phản đòn", Kind: "reflect",At:.9);
     }
-    public void NextWave() { _burnLeft = 0; _markUntil = _downUntil = -1; }
+    public void NextWave() { _burnLeft = 0; _markUntil = _downUntil = _paralyzedUntil = _shatterTurn = -1; }
 }

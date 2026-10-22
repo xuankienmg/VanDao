@@ -2,25 +2,31 @@ namespace VanDao.Game;
 
 public record PetForm(string Name, string Image, double ShareMult, string SkillName);
 public record PetStarRecipe(int TargetStars, int SameSpeciesStars, int OtherCount, int OtherStars);
+public record PetMiracleDef(string Name,string Description);
 public record PetDef(string Id, string Name, string Element, string Rarity, string Role, string Desc,
     PetForm[] Forms, string TalentText, string SkillText, int SkillEvery,
-    string Talent, double TalentValue, string Skill, int Atk, int Def, int Hp);
+    string Talent, double TalentValue, string Skill, int Atk, int Def, int Hp, PetMiracleDef? Miracle = null);
 
 public static class PetData
 {
+    public static PetMiracleDef? MiracleFor(string id) => id switch {
+        "that_thai_ho_diep" => new("Thất Thải Niết Bàn","Nhận sát thương chí tử sau cứu mạng trang bị: hồi sinh với 25% máu tối đa. Một lần mỗi trận, không đặt lại khi đổi đợt quái. Không thêm khiên/bất tử, không hưởng tăng hồi máu hoặc sao."),
+        "thai_co_loi_long" => new("Thái Cổ Thiên Kiếp","Còn sống và máu ≤30%: giáng sét tím gây 250% công, bỏ qua 30% phòng thủ địch và chắc chắn tê liệt 1 lượt. Một lần mỗi trận, không cộng dồn tê liệt. Không tăng theo sao, không đặt lại chu kỳ tuyệt kỹ."),
+        _ => null
+    };
     public const string StarterEgg = "thu_dan_hoa_ho";
     public static int EggQuality(string id) => id == StarterEgg ? 1 : Array.IndexOf(EggIds, id);
-    public static readonly string[] Qualities = { "common", "uncommon", "rare", "epic", "legendary" };
-    public static readonly string[] EggIds = { "thu_dan_pham", "thu_dan_linh", "thu_dan_huyen", "thu_dan_dia", "thu_dan_thien" };
-    public static readonly int[] HatchSeconds = { 600, 1800, 3600, 14400, 28800 };
-    public static readonly double[] PetSpinWeights = { 45, 30, 17, 7, 1 };
+    public static readonly string[] Qualities = { "common", "uncommon", "rare", "epic", "legendary", "ancient" };
+    public static readonly string[] EggIds = { "thu_dan_pham", "thu_dan_linh", "thu_dan_huyen", "thu_dan_dia", "thu_dan_thien", "thu_dan_thuong_co" };
+    public static readonly int[] HatchSeconds = { 600, 1800, 3600, 14400, 28800, 43200 };
+    public static readonly double[] PetSpinWeights = { 45, 30, 17, 7, .9, .1 };
     // Calibrated against peak-stage, full same-realm Huyen gear at aptitude 90.
     // Runtime scaling depends only on realm, never on the owner's actual gear.
     public static readonly double[] RealmStatScale = { .36, .385, 1.47, 2.98, 13.3, 59.8, 299.0 };
     // Phẩm Phàm → Thiên (10/2026: giãn từ .8–1.6 để các phẩm khác nhau rõ hơn).
-    public static readonly double[] RarityStatScale = { .7, 1, 1.35, 1.8, 2.4 };
-    /// <summary>Khoảng tư chất khi nở theo phẩm Thú Đản (Phàm → Thiên).</summary>
-    public static readonly int[] AptMin = { 40, 50, 60, 70, 80 }, AptMax = { 75, 85, 90, 95, 100 };
+    public static readonly double[] RarityStatScale = { .7, 1, 1.35, 1.8, 2.4, 3.2 };
+    /// <summary>Khoảng tư chất theo phẩm linh thú (Phàm → Thượng Cổ); Hồ Điệp dùng tư chất Thượng Cổ.</summary>
+    public static readonly int[] AptMin = { 40, 50, 60, 70, 80, 90 }, AptMax = { 75, 85, 90, 95, 100, 100 };
     // ---- linh thú thừa: ghép cùng loài lên sao, phóng sinh (lẻ / hàng loạt) hoàn Linh Thú Đan ----
     public const int MaxStars = 5;
     /// <summary>Ngưỡng điểm cũ chỉ để đọc dữ liệu đã lưu, không còn là chi phí ghép.</summary>
@@ -51,12 +57,12 @@ public static class PetData
     }
     /// <summary>Mỗi sao +6% chỉ số, hệ số kỹ năng và thiên phú (5 sao: +30%).</summary>
     public const double StarBonus = .06;
-    /// <summary>Linh Thú Đan nhận khi phóng sinh theo phẩm Phàm → Thiên (cộng nửa số đan đã cho ăn; mỗi sao tính thêm một phần).</summary>
-    public static readonly int[] ReleaseFood = { 5, 10, 20, 40, 80 };
+    /// <summary>Linh Thú Đan nhận khi phóng sinh theo phẩm Phàm → Thượng Cổ (cộng nửa số đan đã cho ăn; mỗi sao tính thêm một phần).</summary>
+    public static readonly int[] ReleaseFood = { 5, 10, 20, 40, 80, 160 };
     public static int ReleaseValue(VanDao.Data.Pet pet, PetDef d) => pet.FoodSpent / 2 + ReleaseFood[QualityOf(pet, d)] * (1 + StarsFrom(Pts(pet)));
     public static int SpeciesQuality(PetDef d) => Array.IndexOf(Qualities, d.Rarity);
     /// <summary>Phẩm của con linh thú: Quality riêng (vd. Phàm từ Thú Đản Phàm), không có thì theo loài.</summary>
-    public static int QualityOf(VanDao.Data.Pet pet, PetDef d) => pet.Quality is >= 0 and < 5 ? pet.Quality : SpeciesQuality(d);
+    public static int QualityOf(VanDao.Data.Pet pet, PetDef d) => pet.Quality >= 0 && pet.Quality < Qualities.Length ? pet.Quality : SpeciesQuality(d);
     /// <summary>Chỉ số gốc của loài đã nhân phẩm loài; con mang phẩm khác loài thì đổi theo tỉ lệ.</summary>
     public static double QualityAdjust(VanDao.Data.Pet pet, PetDef d) => RarityStatScale[QualityOf(pet, d)] / RarityStatScale[SpeciesQuality(d)];
     public static double StatScale(int realm, PetDef def) =>
@@ -91,37 +97,86 @@ public static class PetData
         "huyen_vu" => ["Huyền Thủy Thuẫn", "Quy Xà Hộ Trận", "Bắc Minh Thiên Bích"],
         "thanh_long" => ["Thanh Lôi Thổ Tức", "Cửu Thiên Lôi Dẫn", "Thanh Long Thiên Phạt"],
         "bach_ho" => ["Bạch Hổ Liệt Trảo", "Canh Kim Phá Quân", "Bạch Hổ Tru Thiên"],
+        "that_thai_ho_diep" => ["Thất Thải Linh Quang", "Điệp Vũ Hồi Xuân", "Thượng Cổ Thất Thải"],
+        "thai_co_loi_long" => ["Tử Điện Giáng", "Thiên Lôi Phán Quyết", "Thái Cổ Lôi Phạt"],
         _ => throw new ArgumentOutOfRangeException(nameof(id), id, "Chưa đặt tên tuyệt kỹ cho linh thú.")
     };
     private static PetDef Make(string id,string name,string el,int q,string role,string talent,double value,string text,string skill)
     {
         var k = RarityStatScale[q];
-        return new(id,name,el,Qualities[q],role,"Ấp từ Thú Đản; trưởng thành ở cấp 30 và 60.",
-            Enumerable.Range(0,3).Select(f=>new PetForm(new[]{"Ấu thể","Thành thể","Thần thú"}[f],$"img/pet/{id}{(id=="thanh_long"?"_loi":"")}_{f}.png",new[]{.10,.15,.22}[f],SkillNames(id)[f])).ToArray(),
-            text,SkillDescription(skill,0,0),skill is "fox" or "frost" or "turtle"?5:skill=="phoenix"?3:4,
-            talent,value,skill,(int)Math.Round(24*k),(int)Math.Round(12*k),(int)Math.Round(120*k));
+        return new(id,name,el,Qualities[q],role,q==5?"Phẩm Thượng Cổ, cao hơn Thiên. Nở từ Thượng Cổ Thú Đản; trưởng thành ở cấp 30 và 60.":"Ấp từ Thú Đản; trưởng thành ở cấp 30 và 60.",
+            Enumerable.Range(0,3).Select(f=>new PetForm((id=="thai_co_loi_long"?new[]{"Ấu thể","Trưởng thành","Thượng Cổ"}:new[]{"Ấu thể","Thành thể","Thần thú"})[f],$"img/pet/{id}{(id=="thanh_long"?"_loi":"")}_{f}.png",new[]{.10,.15,.22}[f],SkillNames(id)[f])).ToArray(),
+            text,SkillDescription(skill,0,0,q),SkillEveryOf(skill),
+            talent,value,skill,(int)Math.Round(24*k),(int)Math.Round(12*k),(int)Math.Round(120*k),q==5?MiracleFor(id):null);
     }
     public static double StarScale(int stars) => 1 + Math.Clamp(stars,0,MaxStars) * StarBonus;
+    // ---- Tuyệt kỹ: Lực tuyệt kỹ = Công linh thú + Công chủ nhân × Đồng tâm (hỗ trợ: Máu linh thú + Máu chủ nhân × Đồng tâm) ----
+    /// <summary>Đồng tâm theo hình thái: phần chỉ số chủ nhân cộng vào Lực tuyệt kỹ.</summary>
+    public static readonly double[] SkillBond = { .3, .4, .5 };
+    /// <summary>Ngân sách sát thương mỗi lượt (% Lực tuyệt kỹ, hình thái cuối) theo phẩm Phàm → Thượng Cổ.</summary>
+    public static readonly double[] SkillBudget = { 20, 25, 30, 36, 42, 50 };
+    /// <summary>Chiêu hồi máu / khiên dùng 15% ngân sách sát thương của phẩm.</summary>
+    public const double SupportShare = .15;
+    /// <summary>Hệ số hình thái của ngân sách: Ấu thể · Thành thể · Thần thú.</summary>
+    public static readonly double[] SkillFormK = { .5, .75, 1 };
+    public static int SkillEveryOf(string skill) => skill is "fox" or "frost" or "turtle" ? 5 : skill is "phoenix" or "butterfly" or "ancient_thunder" ? 3 : 4;
+    /// <summary>Phẩm gốc của loài mang chiêu (dùng cho mô tả khi không biết phẩm riêng của con).</summary>
+    private static readonly Dictionary<string,int> SkillQuality = new() {
+        ["fox"]=1,["frost"]=1,["deer"]=2,["turtle"]=2,["eagle"]=2,["leech"]=3,["crane"]=3,["cat"]=3,
+        ["phoenix"]=4,["xuanwu"]=4,["dragon"]=4,["tiger"]=4,["butterfly"]=5,["ancient_thunder"]=5 };
+    /// <summary>Khống chế quái theo hệ linh thú: Lôi → tê liệt · Băng → đóng băng · Thổ / Phong → choáng (mỗi lần tung tuyệt kỹ, 1 lượt).</summary>
+    public static (string Kind, double Chance) ControlOf(string skill) => skill switch {
+        "ancient_thunder" => ("paralyze", .5), "cat" => ("paralyze", .25), "eagle" => ("paralyze", .2), "dragon" => ("paralyze", .2),
+        "frost" => ("freeze", .3), "turtle" => ("stun", .25), "tiger" => ("stun", .25), _ => ("", 0) };
+    public static string ControlName(string kind) => kind switch { "paralyze" => "tê liệt", "stun" => "choáng", "freeze" => "đóng băng", _ => "" };
+    /// <summary>Quái đang đóng băng nhận thêm 10% sát thương (lượt kế tiếp, trước khi băng vỡ).</summary>
+    public const double FreezeDamageBonus = .10;
+    /// <summary>Phần ngân sách trả cho hiệu ứng phụ của chiêu (đánh dấu, xuyên thủ, giảm công…); khống chế tính 0,4 × tỉ lệ.</summary>
+    private static double SkillEffectCost(string skill,int form) => (skill switch {
+        "fox" => .15, "leech" => .2, "cat" => .25, "tiger" => .1, "dragon" => form==2 ? .1 : 0,
+        "frost" => .25, "turtle" => .2, "crane" => .3, "xuanwu" => .3, _ => 0 }) + .4 * ControlOf(skill).Chance;
+    public static bool SkillIsSupport(string skill) => skill is "frost" or "deer" or "turtle" or "crane" or "butterfly" or "xuanwu";
+    /// <summary>Hệ số chiêu (% Lực tuyệt kỹ mỗi lần thi triển) = ngân sách × lượt hồi chiêu × hệ số hình thái × (1 − chi phí hiệu ứng).</summary>
+    public static double SkillCoef(string skill,int form,int quality=-1)
+    {
+        var f=Math.Clamp(form,0,2);var q=quality is >= 0 and < 6 ? quality : SkillQuality.GetValueOrDefault(skill,1);
+        return SkillBudget[q]*(SkillIsSupport(skill)?SupportShare:1)*SkillEveryOf(skill)*SkillFormK[f]*(1-SkillEffectCost(skill,f));
+    }
+    /// <summary>Hệ số phản đòn của Huyền Vũ: 15% hệ số sát thương nếu chiêu là chiêu đánh.</summary>
+    public static double ReflectCoef(int form,int quality=-1)
+    {
+        var f=Math.Clamp(form,0,2);var q=quality is >= 0 and < 6 ? quality : SkillQuality["xuanwu"];
+        return SkillBudget[q]*SkillEveryOf("xuanwu")*SkillFormK[f]*.15;
+    }
     public static string Percent(double value) => value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture).Replace('.',',');
-    public static string SkillDescription(string skill,int form,int stars)
+    /// <param name="quality">Phẩm riêng của con; −1 = phẩm gốc của loài.</param>
+    public static string SkillDescription(string skill,int form,int stars,int quality=-1)
     {
         var f=Math.Clamp(form,0,2);var scale=StarScale(stars);
         string V(double a,double b,double c)=>Percent((f==0?a:f==1?b:c)*scale);
-        return skill switch {
-            "fox" => $"Gây {V(70,105,140)}% công. Đánh dấu 2 lượt kế tiếp: đòn bạo kích chủ nhân tăng {V(5,8,12)}% sát thương.",
-            "frost" => $"Tạo khiên {V(6,9,12)}% máu tối đa, giảm {V(5,8,12)}% công địch trong 2 lượt.",
-            "deer" => $"Hồi {V(5,8,11)}% máu tối đa; hồi thêm {V(1,1.5,2)}% mỗi lượt trong 2 lượt kế tiếp.",
-            "turtle" => $"Tạo khiên {V(8,12,16)}% máu tối đa. Khi khiên còn: giảm thêm {V(3,5,7)}% sát thương nhận vào.",
-            "eagle" => $"Đánh 3 lần, mỗi lần gây {V(25,38,52)}% công; tính phòng thủ riêng từng lần.",
-            "leech" => $"Gây {V(65,100,135)}% công. Hồi {V(20,25,30)}% sát thương thực gây ra, tối đa {V(4,6,8)}% máu tối đa.",
-            "crane" => $"Hồi {V(4,6,8)}% máu tối đa, tăng {V(5,8,12)}% né tránh trong 2 lượt.",
-            "cat" => $"Gây {V(90,135,180)}% công, bỏ qua {V(15,25,35)}% phòng thủ địch.",
-            "phoenix" => $"Gây {V(80,120,160)}% công; thiêu đốt thêm {V(15,25,35)}% công mỗi lượt trong 2 lượt kế tiếp.",
-            "xuanwu" => $"Tạo khiên {V(10,15,20)}% máu tối đa. Trong 2 lượt, khi bị đánh phản {V(15,25,35)}% công.",
-            "dragon" => $"Gọi 3 tia sét, mỗi tia gây {V(35,55,75)}% công."+(f==2?$" Tia cuối bỏ qua {V(20,20,20)}% phòng thủ địch.":""),
-            "tiger" => $"Gây {V(110,165,220)}% công; mục tiêu dưới 30% máu chịu thêm {V(25,25,25)}% sát thương chiêu.",
+        var c=SkillCoef(skill,f,quality);string C(double share=1)=>Percent(Math.Round(c*share,1));
+        var bond=Percent(SkillBond[f]*100);
+        var power=$" (Lực tuyệt kỹ = Công linh thú + {bond}% Công chủ nhân; thủ địch trừ một lần cho cả chiêu)";
+        var life=$" (Lực hỗ trợ = Máu linh thú + {bond}% Máu chủ nhân)";
+        var (ck,cc)=ControlOf(skill);
+        var control=ck.Length==0||skill=="ancient_thunder"?"":$" {Percent(cc*100)}% cơ hội khiến quái {ControlName(ck)} 1 lượt"+(ck=="freeze"?$", lượt sau quái nhận thêm {Percent(FreezeDamageBonus*100)}% sát thương.":".");
+        return (skill switch {
+            "fox" => $"Gây {C()}% Lực tuyệt kỹ. Đánh dấu 2 lượt kế tiếp: đòn bạo kích chủ nhân tăng {V(5,8,12)}% sát thương."+power,
+            "frost" => $"Tạo khiên {C()}% Lực hỗ trợ, giảm {V(5,8,12)}% công địch trong 2 lượt."+life,
+            "deer" => $"Hồi {C(.7)}% Lực hỗ trợ; hồi thêm {C(.15)}% mỗi lượt trong 2 lượt kế tiếp."+life,
+            "turtle" => $"Tạo khiên {C()}% Lực hỗ trợ. Khi khiên còn: giảm thêm {V(3,5,7)}% sát thương nhận vào."+life,
+            "eagle" => $"Đánh 3 lần, tổng {C()}% Lực tuyệt kỹ chia đều mỗi lần."+power,
+            "leech" => $"Gây {C()}% Lực tuyệt kỹ. Hồi {V(20,25,30)}% sát thương thực gây ra, tối đa {V(4,6,8)}% máu tối đa."+power,
+            "crane" => $"Hồi {C()}% Lực hỗ trợ, tăng {V(5,8,12)}% né tránh trong 2 lượt."+life,
+            "cat" => $"Gây {C()}% Lực tuyệt kỹ, bỏ qua {V(15,25,35)}% phòng thủ địch."+power,
+            "phoenix" => $"Gây {C(.6)}% Lực tuyệt kỹ; thiêu đốt thêm {C(.2)}% mỗi lượt trong 2 lượt kế tiếp."+power,
+            "xuanwu" => $"Tạo khiên {C()}% Lực hỗ trợ. Trong 2 lượt, khi bị đánh phản {Percent(Math.Round(ReflectCoef(f,quality),1))}% Lực tuyệt kỹ."+life,
+            "dragon" => $"Gọi 3 tia sét, tổng {C()}% Lực tuyệt kỹ chia đều mỗi tia."+(f==2?" Cả chiêu bỏ qua 20% phòng thủ địch.":"")+power,
+            "tiger" => $"Gây {C()}% Lực tuyệt kỹ; mục tiêu dưới 30% máu chịu thêm 25% sát thương chiêu."+power,
+            "butterfly" => $"Hồi {C(.45)}% Lực hỗ trợ và tạo khiên {C(.55)}% Lực hỗ trợ. Tổng khiên linh thú tối đa 30% máu tối đa."+life,
+            "ancient_thunder" => $"Gọi sét tím từ trời xuống gây {C()}% Lực tuyệt kỹ; 50% cơ hội khiến đối thủ tê liệt trong 1 lượt. Mỗi 3 lượt chủ nhân kích hoạt."+power,
             _ => throw new ArgumentOutOfRangeException(nameof(skill))
-        };
+        })+control;
     }
     public static string TalentDescription(PetDef def,int stars)
     {
@@ -130,10 +185,11 @@ public static class PetData
             "crit"=>$"chủ nhân +{v}% bạo kích.",
             "guard"=>$"chủ nhân giảm {v}% sát thương nhận vào.",
             "healing"=>$"dưới 50% máu, chủ nhân nhận thêm {v}% hiệu quả hồi máu.",
+            "healing_all"=>$"chủ nhân nhận thêm {v}% hiệu quả hồi máu ở mọi ngưỡng máu.",
             "def"=>$"chủ nhân +{v}% phòng thủ.",
             "extra"=>$"chủ nhân +{v}% liên kích.",
             "qi"=>$"chủ nhân +{v}% tốc độ thu tu vi.",
-            "speed"=>$"chủ nhân +{v}% thân pháp thám hiểm.",
+            "speed"=>$"chủ nhân +{v}% thân pháp.",
             "pen"=>$"chủ nhân +{v}% xuyên thủ.",
             "burn_damage"=>$"chủ nhân gây thêm {v}% sát thương lên mục tiêu đang cháy.",
             "shield"=>$"đầu trận nhận khiên bằng {v}% máu tối đa.",
@@ -150,16 +206,22 @@ public static class PetData
         Make("kim_giap_quy","Kim Giáp Quy","tho",2,"def","def",10,"Kim Giáp Kiên Tâm: chủ nhân +10% phòng thủ.","turtle"),
         Make("loi_van_dieu","Lôi Vân Điêu","loi",2,"atk","extra",5,"Lôi Đình Truy Kích: chủ nhân +5% liên kích.","eagle"),
         Make("bich_thuy_giao","Bích Thủy Giao","thuy",3,"qi","qi",10,"Thủy Linh Dẫn Khí: chủ nhân +10% tốc độ thu tu vi.","leech"),
-        Make("thanh_phong_hac","Thanh Phong Hạc","gio",3,"crit","speed",5,"Thanh Phong Đồng Hành: chủ nhân +5% thân pháp thám hiểm.","crane"),
+        Make("thanh_phong_hac","Thanh Phong Hạc","gio",3,"crit","speed",5,"Thanh Phong Đồng Hành: chủ nhân +5% thân pháp.","crane"),
         Make("tu_dien_mieu","Tử Điện Miêu","loi",3,"atk","pen",8,"Tử Điện Xuyên Tâm: chủ nhân +8% xuyên thủ.","cat"),
         Make("chu_tuoc","Chu Tước","hoa",4,"atk","burn_damage",10,"Bất Diệt Chân Hỏa: chủ nhân gây thêm 10% sát thương lên mục tiêu đang cháy.","phoenix"),
         Make("huyen_vu","Huyền Vũ","thuy",4,"def","shield",10,"Bắc Minh Hộ Chủ: đầu trận nhận khiên bằng 10% máu tối đa.","xuanwu"),
         Make("thanh_long","Thanh Long","loi",4,"atk","atk",8,"Lôi Long Chi Uy: chủ nhân +8% tấn công.","dragon"),
-        Make("bach_ho","Bạch Hổ","gio",4,"crit","critdmg",20,"Canh Kim Sát Phạt: chủ nhân +20% sát thương bạo kích (150% → 170%).","tiger") };
+        Make("bach_ho","Bạch Hổ","gio",4,"crit","critdmg",20,"Canh Kim Sát Phạt: chủ nhân +20% sát thương bạo kích (150% → 170%).","tiger"),
+        Make("that_thai_ho_diep","Thất Thải Hồ Điệp","moc",5,"hp","healing_all",18,"Thất Thải Tiên Duyên: chủ nhân nhận thêm 18% hiệu quả hồi máu ở mọi ngưỡng máu.","butterfly"),
+        Make("thai_co_loi_long","Thái Cổ Lôi Long","loi",5,"atk","pen",12,"Lôi Uy Xuyên Giáp: chủ nhân +12% xuyên thủ.","ancient_thunder") };
     public static readonly IReadOnlyDictionary<string,PetDef> ById = Definitions.ToDictionary(x=>x.Id);
     // Common eggs contain the two entry species; egg quality controls aptitude, species retains its own rarity.
     public static PetDef[] Pool(int quality) => quality==0 ? Definitions.Take(2).ToArray() : Definitions.Where(d=>d.Rarity==Qualities[quality]).ToArray();
+    public static PetDef RollHatch(int quality, Random rng)
+    {
+        var pool=Pool(quality);return pool[rng.Next(pool.Length)];
+    }
     public static Dictionary<string,int> EvolveCost(int form) => form==0 ? new(){["hoa_hinh_dan"]=10,["linh_thach"]=10000,["kim_o_tinh_hach"]=2} : form==1 ? new(){["than_thu_huyet"]=10,["hoa_hinh_dan"]=20,["linh_thach"]=100000,["huyet_giao_hach"]=3} : new();
-    public static readonly ItemDef[] Items = EggIds.Select((id,q)=>new ItemDef(id,new[]{"Phàm","Linh","Huyền","Địa","Thiên"}[q]+" Thú Đản","egg","#bda5ef","Ấp trong menu Linh thú.",Icon:$"img/pet/egg_{new[]{"pham","linh","huyen","dia","thien"}[q]}.png",Rarity:Qualities[q],Kind:"Thú Đản"))
+    public static readonly ItemDef[] Items = EggIds.Select((id,q)=>new ItemDef(id,new[]{"Phàm","Linh","Huyền","Địa","Thiên","Thượng Cổ"}[q]+" Thú Đản","egg","#bda5ef",q==5?"Ấp 12 giờ, nở Thất Thải Hồ Điệp hoặc Thái Cổ Lôi Long phẩm Thượng Cổ (mỗi loài 50%). Nhận từ Quay Linh Thú (0,1%).":"Ấp trong menu Linh thú.",Icon:$"img/pet/egg_{new[]{"pham","linh","huyen","dia","thien","thuong_co"}[q]}.png",Rarity:Qualities[q],Kind:"Thú Đản"))
         .Concat(new[]{new ItemDef(StarterEgg,"Trứng Hỏa Hồ","egg","#edaa73","Quà khởi đầu. Ấp chắc chắn nhận Hỏa Linh Hồ.",Icon:"img/pet/egg_linh.png",Rarity:"uncommon",Kind:"Thú Đản"),new ItemDef("linh_thu_dan","Linh Thú Đan","petfood","#abd78a","+100 EXP linh thú. Rơi ở ải thường, chia tỉ lệ với đan tiến giai; chương và ải cao rơi nhiều hơn.",Icon:"img/pet/linh_thu_dan.png"),new ItemDef("hoa_hinh_dan","Hóa Hình Đan","petmaterial","#bda5ef","Nguyên liệu tiến hóa. Có thể rơi từ Boss và Rương Boss.",Icon:"img/pet/hoa_hinh_dan.png"),new ItemDef("than_thu_huyet","Thần Thú Huyết","petmaterial","#efab86","Nguyên liệu thần thú. Rơi từ Boss chương 5 trở đi hoặc mức Khó / Ác mộng và Rương Boss tương ứng.",Icon:"img/pet/than_thu_huyet.png")}).ToArray();
 }

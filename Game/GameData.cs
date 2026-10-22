@@ -3,7 +3,7 @@ namespace VanDao.Game;
 /// <summary>
 /// Vật phẩm. Trang bị có Slot và chỉ số cộng thêm (đơn vị %):
 /// Atk = tấn công, Hp = máu, Def = phòng thủ (giá trị cộng thẳng);
-/// QiPct = tốc độ tu vi, SpeedPct = tốc độ thám hiểm (đơn vị %).
+/// QiPct = tốc độ tu vi, SpeedPct = thân pháp, tăng né tránh (đơn vị %).
 /// </summary>
 public record ItemDef(string Id, string Name, string Type, string Color, string Desc,
     string? Icon = null, string? Slot = null, double QiPct = 0, double SpeedPct = 0,
@@ -157,12 +157,12 @@ public static class GameData
         // thượng phẩm linh thạch: chưa có nguồn nhận / công dụng — tạm chỉ hiện số dư (0) cạnh linh thạch
         new ItemDef("thuong_pham_linh_thach", "Thượng phẩm linh thạch", "stone", "#4fd6e6", "Linh thạch tinh thuần ngưng tụ từ linh mạch ngàn năm, linh khí cuộn xoáy bên trong.", "img/stone/thuong_pham_linh_thach.png",
             Rarity: "epic", Kind: "Linh thạch", Use: "Chưa mở: sẽ có trong bản cập nhật sau."),
-        // vé Tài Xỉu: đổi bằng linh thạch ở Luyện chế → Tài Xỉu, mỗi vé quay 1 lần nhận 1 trang bị (GameService.Spin)
-        new ItemDef("ve_tai_xiu", "Vé Tài Xỉu", "ticket", "#f2c94c", "Thẻ ngọc khắc vòng thập phẩm, truyền linh lực vào là vòng quay tự chuyển.", Rarity: "epic", Kind: "Vé quay",
-            Use: "Dùng ở Luyện chế → Tài Xỉu: mỗi vé quay 1 lần, nhận 1 trang bị cảnh giới hiện tại, phẩm Phàm → Huyền Tiên."),
-        // vé Linh Thú: đổi bằng linh thạch ở Luyện chế → Tài Xỉu → Quay Linh Thú, mỗi vé quay vòng 5 ô nhận 1 Thú Đản (GameService.PetSpin)
+        // vé Vòng quay: đổi bằng linh thạch ở Luyện chế → Vòng quay, mỗi vé quay 1 lần nhận 1 trang bị (GameService.Spin)
+        new ItemDef("ve_tai_xiu", "Vé vòng quay", "ticket", "#f2c94c", "Thẻ ngọc khắc vòng thập phẩm, truyền linh lực vào là vòng quay tự chuyển.", Rarity: "epic", Kind: "Vé quay",
+            Use: "Dùng ở Luyện chế → Vòng quay: mỗi vé quay 1 lần, nhận 1 trang bị cảnh giới hiện tại, phẩm Phàm → Huyền Tiên."),
+        // vé Linh Thú: đổi bằng linh thạch ở Luyện chế → Vòng quay → Quay Linh Thú, mỗi vé quay vòng 5 ô nhận 1 Thú Đản (GameService.PetSpin)
         new ItemDef("ve_linh_thu", "Vé Linh Thú", "ticket", "#a77be0", "Thẻ ngọc tím khắc ngũ sắc Thú Đản, truyền linh lực vào là vòng quay Linh Thú tự chuyển.", Rarity: "epic", Kind: "Vé quay",
-            Use: "Dùng ở Luyện chế → Tài Xỉu → Quay Linh Thú: mỗi vé quay 1 lần, nhận 1 Thú Đản Phàm → Thiên."),
+            Use: "Dùng ở Luyện chế → Vòng quay → Quay Linh Thú: mỗi vé quay 1 lần, nhận 1 Thú Đản Phàm → Thiên."),
         // ---- rương: rơi khi diệt yêu, mở ra nhận 1 phần thưởng ngẫu nhiên theo cảnh giới (GameService.OpenChest) ----
         new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
             Use: "Nhận trang bị, linh thảo hoặc thức ăn linh thú. Không ra đan tiến giai; tỉ lệ đan cũ chia đều cho các vật phẩm còn lại. Xem bảng tỉ lệ theo cảnh giới trong Hành trang."),
@@ -217,6 +217,15 @@ public static class GameData
         new ItemDef("am_duong_ban_dao", "Âm Dương Bàn Đào", "herb", "#ff8aa8", "Đào tiên nửa âm nửa dương, ba ngàn năm mới kết một quả.", "img/herb/herb_24.png", Rarity: "divine", Kind: "Linh thảo",
             Use: "Linh thảo bậc 5 · luyện Hợp Thể Đan (1 cây phụ) hoặc Hợp Thể Phá Chướng Đan (3 cây)."),
         // ---- đan đặc biệt: luyện từ linh dược, dùng trong Hành trang ----
+        new ItemDef("bo_nguyen_dan_ha", "Bổ Nguyên Đan · Hạ phẩm", "pill", "#6fd39a", "Đan tăng tu vi bậc 1, dễ luyện từ linh thảo phổ thông.", "img/dan/dan_01.png",
+            Rarity: "uncommon", Kind: "Đan tăng tu vi", UseQiSeconds: 300, Tier: 1,
+            Use: "Dùng: nhận ngay tu vi tương đương 5 phút tu luyện theo tốc độ hiện tại. Không vượt giới hạn tu vi của tầng hiện tại."),
+        new ItemDef("bo_nguyen_dan_trung", "Bổ Nguyên Đan · Trung phẩm", "pill", "#4fd6df", "Đan tăng tu vi bậc 2, cần nhiều linh thảo bậc cao hơn.", "img/dan/dan_04.png",
+            Rarity: "rare", Kind: "Đan tăng tu vi", UseQiSeconds: 1800, Tier: 2,
+            Use: "Dùng: nhận ngay tu vi tương đương 30 phút tu luyện theo tốc độ hiện tại. Không vượt giới hạn tu vi của tầng hiện tại."),
+        new ItemDef("bo_nguyen_dan_thuong", "Bổ Nguyên Đan · Thượng phẩm", "pill", "#c58cff", "Đan tăng tu vi bậc 3, khó luyện do cần nhiều linh dược quý hiếm và linh thạch.", "img/dan/dan_08.png",
+            Rarity: "epic", Kind: "Đan tăng tu vi", UseQiSeconds: 7200, Tier: 3,
+            Use: "Dùng: nhận ngay tu vi tương đương 2 giờ tu luyện theo tốc độ hiện tại. Không vượt giới hạn tu vi của tầng hiện tại."),
         new ItemDef("ngo_dao_dan", "Ngộ Đạo Đan", "elixir", "#3fc9b0", "Đan khai mở ngộ tính, luyện từ linh dược vùng Nguyên Anh.", "img/dan/dan_16.png",
             MinRealm: 3, Rarity: "legendary", Kind: "Đan dược", Use: "Dùng từ Nguyên Anh: +1 điểm công pháp vĩnh viễn mỗi viên. Luyện từ 5 Thiên Niên Nhân Sâm, 3 Cửu Diệp Hồn Liên và 1.000 linh thạch."),
         new ItemDef("tay_tuy_dan", "Tẩy Tủy Đan", "elixir", "#3fd04a", "Đan gột rửa kinh mạch, xóa sạch dấu vết công pháp đã tu.", "img/dan/dan_07.png",
@@ -453,7 +462,7 @@ public static class GameData
     // Phẩm đầu chắc chắn; phẩm cuối vẫn hiếm nhưng không còn cần trung bình 161 món/1 lần lên phẩm.
     public static readonly double[] FuseChance = { 1.00, 0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25 };   // Phàm→Linh … Đạo→Huyền Tiên
 
-    // ---- Tài Xỉu (Luyện chế): đổi SpinTicketPrice linh thạch lấy 1 vé; mỗi lượt quay ra 1 trang bị bộ cảnh giới hiện tại, phẩm theo SpinWeights ----
+    // ---- Vòng quay (Luyện chế): đổi SpinTicketPrice linh thạch lấy 1 vé; mỗi lượt quay ra 1 trang bị bộ cảnh giới hiện tại, phẩm theo SpinWeights ----
     public const string SpinTicket = "ve_tai_xiu";
     // Kinh tế linh thạch (10/2026): linh thạch rơi chỉ tăng ~×2.5 mỗi cảnh giới (trước ~×6), phí tầng/đột phá/luyện chế/giá bán đan giảm theo cùng tỉ lệ
     public const int SpinTicketPrice = 100_000, SpinMaxBatch = 10, SpinHistoryKeep = 30;
@@ -1046,6 +1055,9 @@ public static class GameData
     /// <summary>Đan phương trực tiếp từ linh thảo và linh thạch, không tiêu hao đan bậc dưới.</summary>
     public static readonly string[] PillHerbs = { "tu_linh_thao", "bich_ngoc_linh_thao", "tu_van_sam", "thien_nien_sam", "kien_moc_mieu", "hon_nguyen_dao_lien" };
     public static readonly IReadOnlyList<BrewDef> Brews = new[] {
+        new BrewDef("bo_nguyen_dan_ha", new() { ["tu_linh_thao"] = 5, ["huyet_can_thao"] = 2, ["linh_thach"] = 50 }),
+        new BrewDef("bo_nguyen_dan_trung", new() { ["bich_ngoc_linh_thao"] = 10, ["hoa_tam_hoa"] = 5, ["linh_thach"] = 500 }),
+        new BrewDef("bo_nguyen_dan_thuong", new() { ["tu_van_sam"] = 20, ["loi_mach_thao"] = 10, ["thien_nien_sam"] = 5, ["linh_thach"] = 5000 }),
         new BrewDef("tu_khi_dan", new() { ["tu_linh_thao"] = 2, ["linh_thach"] = 5 }),
         new BrewDef("truc_co_dan", new() { ["tu_linh_thao"] = 2, ["huyet_can_thao"] = 1, ["linh_thach"] = 15 }),
         new BrewDef("ngung_kim_dan", new() { ["bich_ngoc_linh_thao"] = 2, ["hoa_tam_hoa"] = 1, ["linh_thach"] = 80 }),
@@ -1106,7 +1118,7 @@ public static class GameData
     /// <summary>Mỗi chuyến thám hiểm cho thêm tu vi bằng tốc độ tu luyện × số giây này.</summary>
     public const double ExploreQiSeconds = 6;   // chuyến 3 đợt dài hơn ~1.5 lần (trước 4)
 
-    /// <summary>Thời gian thám hiểm tối thiểu dù trang bị tăng tốc nhiều.</summary>
+    /// <summary>Thời gian thám hiểm tối thiểu.</summary>
     public const double MinExploreSeconds = 3;
 
     /// <summary>Hệ số tu vi mỗi lần bấm Vận công (nhân với tốc độ tu luyện).</summary>

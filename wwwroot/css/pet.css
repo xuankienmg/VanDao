@@ -338,6 +338,55 @@ body.panel #pane-pet .pet-ui{min-height:0}
 #pane-pet .pet-quality-2{color:#8bc7f4;background:#183143}
 #pane-pet .pet-quality-3{color:#d4a4f0;background:#32223f}
 #pane-pet .pet-quality-4{color:#f4d37b;background:#413519}
+#pane-pet .pet-quality-5{color:#ffe3b6;background:linear-gradient(110deg,#4b274d,#254b48);border-color:#dcb5e9;box-shadow:0 0 8px #e6baf233}
+.r-ancient{--rc:#d7d4ff;--rbg:#343152;border-color:#c6bced!important;background-color:#25243c}
+.rc-ancient,.qn.rc-ancient{color:#d7d4ff}
+#pane-pet .pet-detail:has(>.pet-miracle){grid-template-areas:'head head' 'portrait growth' 'stats stats' 'lore lore' 'miracle miracle' 'actions actions' 'feed release' 'evolve evolve'}
+#pane-pet .pet-miracle{grid-area:miracle;border:1px solid #b9a0e877;background:linear-gradient(120deg,#30243cbb,#173e3c99);padding:10px 12px;border-radius:5px;min-width:0}
+#pane-pet .pet-miracle h4{color:#dfc4ff;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#pane-pet .pet-miracle b{display:block;color:#f1dca8;font-size:13px;margin:4px 0}
+#pane-pet .pet-miracle p,#pane-pet .pet-codex-miracle{font-size:11px;line-height:1.6;color:#c9d5cf;overflow-wrap:anywhere}
+/* Thượng Cổ egg: opalescent multicolor field and a separate luminous border. */
+.ancient-egg-art,:is(.iv-cell,.sp-pop-best,.sp-item,.sp-hi).r-ancient{
+  border:2px solid transparent!important;
+  background:linear-gradient(125deg,#18394d,#403467,#613858,#4b5234,#224e4a) padding-box,
+    linear-gradient(125deg,#8eeaff,#bba1ff,#ffa6d5,#ffe5a1,#a7f4ce,#8eeaff) border-box;
+  background-size:240% 240%;background-position:0% 50%;
+  box-shadow:inset 0 0 8px #dbd5ff18,0 0 7px #b8a1ff55;
+  animation:ancient-egg-shimmer 8s ease-in-out infinite alternate;
+}
+.ancient-egg-art{box-sizing:border-box;border-radius:6px;padding:0;border:0!important;box-shadow:none}
+.r-ancient .ancient-egg-art{background:none;animation:none}
+#pane-pet .pet-nest-stage:before{display:none}
+#pane-pet .pet-nest .pet-egg-art img{image-rendering:auto;filter:none}
+#pane-pet .pet-nest .ancient-egg-art,.sp-ic .ancient-egg-art{background:none;border:0!important;border-radius:0;padding:0;box-shadow:none;animation:none;image-rendering:auto}
+/* Thượng Cổ: viền cầu vồng xoay + vệt sáng trắng vàng quét chéo + ảnh trứng đổi quầng cầu vồng */
+:is(.iv-cell,.sp-pop-best,.sp-item,.sp-hi).r-ancient{position:relative;overflow:hidden;
+  background:linear-gradient(125deg,#18394d,#403467,#613858,#4b5234,#224e4a) padding-box,
+    conic-gradient(from var(--rim),#ff8fb1,#ffc983,#fff3a6,#9ff5b8,#8ee3ff,#b4a2ff,#ffa6ea,#ff8fb1) border-box;
+  background-size:240% 240%,100% 100%;
+  animation:ancient-egg-shimmer 8s ease-in-out infinite alternate,rd-rim 3.2s linear infinite,ancient-pulse 2.6s ease-in-out infinite}
+:is(.iv-cell,.sp-pop-best,.sp-item,.sp-hi).r-ancient:not(.msel)::after,#pane-pet .pet-egg-art:has(>.ancient-egg-art)::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(115deg,transparent 38%,#fff6 45%,#fff4c8e6 49%,#ffd76ecc 51%,#fff6 55%,transparent 62%) 0 0/300% 100% no-repeat;
+  mix-blend-mode:screen;animation:ancient-sweep 3.4s ease-in-out infinite}
+.ancient-egg-art{animation:ancient-egg-shimmer 8s ease-in-out infinite alternate,ancient-egg-glow 4s linear infinite}
+.r-ancient .ancient-egg-art,#pane-pet .pet-nest .ancient-egg-art,.sp-ic .ancient-egg-art{animation:ancient-egg-glow 4s linear infinite}
+/* ổ ấp: quầng cầu vồng xoay phía sau, vệt sáng chỉ quét trong hình trứng */
+#pane-pet .pet-egg-art:has(>.ancient-egg-art){position:relative;isolation:isolate}
+#pane-pet .pet-egg-art:has(>.ancient-egg-art)::before{content:"";position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;z-index:-1;pointer-events:none;
+  background:conic-gradient(from var(--rim),#ff8fb1,#ffc983,#fff3a6,#9ff5b8,#8ee3ff,#b4a2ff,#ffa6ea,#ff8fb1);
+  filter:blur(16px);opacity:.5;animation:rd-rim 6s linear infinite,ancient-halo 3s ease-in-out infinite}
+#pane-pet .pet-egg-art:has(>.ancient-egg-art)::after{inset:auto;left:50%;top:50%;width:108px;height:108px;margin:-54px 0 0 -54px;
+  -webkit-mask:url(../img/pet/egg_thuong_co_hd.png) center/contain no-repeat;mask:url(../img/pet/egg_thuong_co_hd.png) center/contain no-repeat}
+@keyframes ancient-egg-shimmer{to{background-position:100% 50%}}
+@keyframes ancient-sweep{0%{background-position:100% 0}60%,100%{background-position:0 0}}
+@keyframes ancient-pulse{0%,100%{box-shadow:inset 0 0 8px #fff3c822,0 0 6px #b8a1ff66}50%{box-shadow:inset 0 0 12px #fff3c855,0 0 12px #ffe39a99}}
+@keyframes ancient-halo{0%,100%{opacity:.4;transform:scale(.92)}50%{opacity:.7;transform:scale(1.06)}}
+@keyframes ancient-egg-glow{0%{filter:drop-shadow(0 0 3px #fff6d6) drop-shadow(0 0 6px #ff9fc8)}20%{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 7px #ffd56b) brightness(1.08)}
+  40%{filter:drop-shadow(0 0 3px #fff6d6) drop-shadow(0 0 6px #9ff5b8)}60%{filter:drop-shadow(0 0 3px #fff6d6) drop-shadow(0 0 6px #8ee3ff)}
+  80%{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 7px #b4a2ff) brightness(1.08)}100%{filter:drop-shadow(0 0 3px #fff6d6) drop-shadow(0 0 6px #ff9fc8)}}
+@media(prefers-reduced-motion:reduce){.ancient-egg-art,:is(.iv-cell,.sp-pop-best,.sp-item,.sp-hi).r-ancient,
+  :is(.iv-cell,.sp-pop-best,.sp-item,.sp-hi).r-ancient::after,#pane-pet .pet-egg-art:has(>.ancient-egg-art)::before,#pane-pet .pet-egg-art:has(>.ancient-egg-art)::after{animation:none}}
 #pane-pet .pet-form-badge{color:#efc570;background:#3b301b}
 #pane-pet .pet-form-badge[data-form='0']{color:#a9d6ad;background:#213627}
 #pane-pet .pet-form-badge[data-form='2']{color:#ddb0f6;background:#372344}
@@ -490,3 +539,27 @@ body.panel #pane-pet .pet-ui{min-height:0}
 #pane-pet .pet-collection .pet-card{box-sizing:border-box;height:clamp(138px,16cqw,190px);min-height:0;max-height:none;aspect-ratio:auto}
 #pane-pet .pet-collection .pet-card .pet-art{flex:1 1 0;min-height:0;height:0;overflow:hidden;padding-top:28px}
 #pane-pet .pet-collection .pet-card>strong{flex-shrink:0;box-sizing:border-box;min-height:26px}
+/* Thẻ linh thú Thượng Cổ: nền tinh vân, hào quang cầu vồng xoay sau linh thú, sao lấp lánh, viền cầu vồng */
+#pane-pet .pet-card.pet-ancient,#pane-pet .pet-card.pet-ancient.selected,#pane-pet .pet-card.pet-ancient:hover{isolation:isolate;border:2px solid transparent!important;
+  background:radial-gradient(ellipse 60% 22% at 50% 84%,#fff1c266,#ffd77a22 45%,transparent 75%) padding-box,
+    radial-gradient(circle at 18% 22%,#7d4dff40,transparent 45%) padding-box,radial-gradient(circle at 85% 35%,#29c7e033,transparent 42%) padding-box,
+    radial-gradient(circle at 60% 95%,#ff6fb122,transparent 50%) padding-box,linear-gradient(170deg,#140b2e,#0a1530 55%,#05080f) padding-box,
+    conic-gradient(from var(--rim),#ff8fb1,#ffc983,#fff3a6,#9ff5b8,#8ee3ff,#b4a2ff,#ffa6ea,#ff8fb1) border-box;
+  animation:rd-rim 4s linear infinite,ancient-card-glow 3s ease-in-out infinite}
+#pane-pet .pet-card.pet-ancient.selected{animation:rd-rim 2.4s linear infinite,ancient-card-glow-on 2.4s ease-in-out infinite}
+#pane-pet .pet-card.pet-ancient::before{content:"";position:absolute;left:50%;top:52%;width:118%;aspect-ratio:1;translate:-50% -50%;z-index:0;pointer-events:none;border-radius:50%;
+  background:conic-gradient(from var(--rim),#ff8fb1,#ffc983,#fff3a6,#9ff5b8,#8ee3ff,#b4a2ff,#ffa6ea,#ff8fb1);
+  -webkit-mask:radial-gradient(circle,#000 0 18%,#0008 38%,transparent 66%);mask:radial-gradient(circle,#000 0 18%,#0008 38%,transparent 66%);
+  filter:blur(10px);opacity:.42;mix-blend-mode:screen;animation:rd-rim 9s linear infinite}
+#pane-pet .pet-card.pet-ancient::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle,#fff 0 1px,transparent 1.6px),radial-gradient(circle,#ffe7a8 0 .8px,transparent 1.4px),radial-gradient(circle,#c9b8ff 0 .9px,transparent 1.5px);
+  background-size:53px 61px,37px 43px,71px 47px;background-position:7px 11px,19px 5px,31px 27px;
+  -webkit-mask:linear-gradient(#000 0 70%,transparent 92%);mask:linear-gradient(#000 0 70%,transparent 92%);animation:ancient-stars 3.2s ease-in-out infinite alternate}
+#pane-pet .pet-card.pet-ancient .pet-art,#pane-pet .pet-card.pet-ancient>strong{position:relative;z-index:1}
+#pane-pet .pet-card.pet-ancient .pet-art img{filter:drop-shadow(0 4px 5px #000a) drop-shadow(0 0 8px #d9c8ff66)}
+#pane-pet .pet-card.pet-ancient>strong{background:linear-gradient(90deg,#0a0618e8,#1a1236ee 50%,#0a0618e8);color:#fff1c9;text-shadow:0 0 6px #b4a2ffaa}
+#pane-pet .pet-card.pet-ancient .pet-slot{z-index:3}
+@keyframes ancient-card-glow{0%,100%{box-shadow:0 0 6px #b4a2ff55,inset 0 0 18px #7d4dff22}50%{box-shadow:0 0 12px #ffd77a77,inset 0 0 22px #ffd77a1f}}
+@keyframes ancient-card-glow-on{0%,100%{box-shadow:0 0 12px #fff1c299,inset 0 0 20px #b4a2ff33}50%{box-shadow:0 0 20px #ffd77acc,inset 0 0 26px #ffd77a33}}
+@keyframes ancient-stars{from{opacity:.35}to{opacity:.95}}
+@media(prefers-reduced-motion:reduce){#pane-pet .pet-card.pet-ancient,#pane-pet .pet-card.pet-ancient::before,#pane-pet .pet-card.pet-ancient::after{animation:none}}
