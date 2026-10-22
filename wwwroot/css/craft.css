@@ -273,3 +273,13 @@ img.ic{image-rendering:pixelated;object-fit:contain}
   .sl .dd-hp{margin-left:0;padding-left:4px}
   .sl .sl-quick > div{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* Quick sale sits at the right end of the inventory summary. */
+.sl .fz-bar{flex-wrap:wrap;gap:6px 12px}
+.sl .fz-bar > span{flex:1 1 auto}
+.sl .fz-bar .sl-quick{display:flex;align-items:center;gap:6px;width:auto;max-width:100%;margin-left:auto;min-width:0}
+.sl-quick label{white-space:nowrap;color:#a9b4ae;font-size:11px}
+.sl-quick select{min-width:0;max-width:240px;width:clamp(110px,18vw,240px);height:28px;padding:3px 6px;background:#171b20;color:var(--parch);border:1px solid #545044;border-radius:3px;font:inherit;font-size:11px}
+.sl .fz-bar .sl-quick-go{height:28px;white-space:nowrap}
+.sl .fz-bar .sl-quick-go.armed{background:#762719;border-color:#edac72;color:#fff0d3}
+.sl-quick select:focus-visible,.sl-quick-go:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
