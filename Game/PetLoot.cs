@@ -73,6 +73,11 @@ public static class PetLoot
             var blood=1+Math.Max(0,chapter-4)/3+diff;
             drops.Add(new("than_thu_huyet",blood,blood+1,Math.Min(.30,.12+.02*Math.Max(0,chapter-4)+.04*diff)));
         }
+        // bồi dưỡng linh thú: đan tư chất + trang bị linh thú (mỗi ô 1/3 tỉ lệ, phẩm theo chương và mức khó)
+        drops.Add(new(PetTraining.RerollItem,1,1+diff,Math.Min(.35,.15+.05*diff)));
+        drops.Add(new(PetTraining.TrainItem,1,2+diff,Math.Min(.45,.25+.05*diff)));
+        var tier=PetTraining.DropTier(chapter,diff);
+        foreach(var slot in PetTraining.Slots)drops.Add(new(PetTraining.GearId(slot.Id,tier),1,1,(.12+.03*diff)/PetTraining.Slots.Length));
         if(realm>=0){
             var pill=GameData.Realms[realm].StageCost(0).Keys.First(k=>k!="linh_thach");
             drops.Add(new(pill,quantity,quantity+2,.25));

@@ -140,17 +140,27 @@ let invCat = 'all', invSel = null, compareOn = true, dropArm = 0;
 // ---- Trang phục (skin): nút trường bào góc trên cột nhân vật → bảng chọn trang phục ----
 let wardOpen = false;
 const WARD_ICON = '<img src="img/ui_trang_phuc.png" width="24" height="24" alt="" aria-hidden="true">';
+const wardrobeThumb = src => src?.replace(/_stand\.png$/, '_thumb.webp');
+async function changeWardrobeGender(gender){
+  if (busy || gender === skinGender()) return;
+  const buttons = () => document.querySelectorAll('#pane-inv [data-gender]');
+  buttons().forEach(button => { button.disabled = true; });
+  try { await act('gender?gender=' + encodeURIComponent(gender)); }
+  finally { buttons().forEach(button => { button.disabled = busy; }); }
+}
 function wardrobeHtml(){
-  const skins = DATA.skins || [], cur = S.skin || '';
+  const gender = skinGender(), skins = (DATA.skins || []).filter(s => (s.gender || 'male') === gender);
+  const wearing = curSkin() || (DATA.skins || []).find(s => !s.unlockItem && s.heroStand === realm().heroStand);
+  const cur = wearing?.id || '';
   const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
-      <span class="wd-fig">${img ? `<img src="${img}" alt="">` : '<b>⟳</b>'}</span><b class="wd-nm">${name}</b><small>${note}</small></button>`;
-  const list = [card('', 'Theo cảnh giới', realm().heroStand, 'Tự đổi khi đột phá', false)]
-    .concat(skins.map(s => { const shut = !skinOpen(s), locked = shut || S.realm < s.minRealm;
+      <span class="wd-fig">${img ? `<img src="${wardrobeThumb(img)}" alt="" decoding="async">` : '<b>⟳</b>'}</span><b class="wd-nm">${name}</b><small>${note}</small></button>`;
+  const list = skins.map(s => { const shut = !skinOpen(s), locked = !skinWearable(s);
       // trang phục cần rương: chưa mở rương thì khóa, ghi tên rương cần mở
-      return card(s.id, s.name, s.heroStand, shut ? `${LOCK_SVG} Mở ${ITEM[s.unlockItem]?.name || 'rương trang phục'}` : locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : DATA.realms[s.minRealm].name, locked); }));
+      return card(s.id, s.name, s.heroStand, shut ? `${LOCK_SVG} Mở ${ITEM[s.unlockItem]?.name || 'rương trang phục'}` : locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : s.unlockItem ? 'Đã mở khóa' : DATA.realms[s.minRealm].name, locked); });
   return `<button class="iv-ward-btn ${wardOpen ? 'on' : ''}" id="wardBtn" aria-label="Trang phục" aria-expanded="${wardOpen}" ${wardOpen ? '' : 'data-tip="Trang phục&#10;Đổi ngoại hình nhân vật ở Hành trang, Đột phá và màn hình chính"'}>${WARD_ICON}</button>
     <div class="iv-ward" ${wardOpen ? '' : 'hidden'} role="dialog" aria-label="Trang phục">
       <p class="wd-hd"><b>Trang phục</b><span>Chỉ đổi ngoại hình, không đổi chỉ số</span><button class="wd-x" data-wardclose aria-label="Đóng">×</button></p>
+      <div class="wd-genders" role="group" aria-label="Giới tính nhân vật">${[['male','Nam'],['female','Nữ']].map(([id,label]) => `<button type="button" data-gender="${id}" aria-pressed="${gender === id}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</div>
       <div class="wd-list">${list.join('')}</div></div>`;
 }
 // ---- chọn nhiều món để bán: Ctrl + nhấp chọn từng món, Shift + nhấp chọn một dải, hoặc bật chế độ "Chọn nhiều" (nhấp là chọn) ----
@@ -266,7 +276,7 @@ function drawInventoryAvatar(t){
   const profile = SKIN_ACTOR_SHEETS[hero];
   const thanhSam = hero === 'img/hero_luyenkhi.png';
   const image = thanhSam ? skImg('img/skin/luyenkhi_inventory_breeze.png')
-    : profile ? skImg(profile.inventorySrc || `img/skin/${profile.id}_actions.png`) : null;
+    : profile && !profile.static ? skImg(profile.inventorySrc || `img/skin/${profile.id}_actions.png`) : null;
   const drawn = !!image;
   if (image){
     drawInventoryIdle(g,image,thanhSam ? {fw:384,fh:320,ax:192,ay:308,bodyHeight:210}
@@ -530,6 +540,8 @@ function initInventory(){
   pane.addEventListener('click', e => {
     if (e.target.closest('#wardBtn')){ wardOpen = !wardOpen; hideTip(); renderInv(); return; }
     if (e.target.closest('[data-wardclose]')){ wardOpen = false; renderInv(); return; }
+    const gender = e.target.closest('[data-gender]');
+    if (gender){ if (!gender.disabled) changeWardrobeGender(gender.dataset.gender); return; }
     const sk = e.target.closest('[data-skin]');
     if (sk){ if (!sk.disabled && sk.dataset.skin !== (S.skin || '')) act('skin?skin=' + encodeURIComponent(sk.dataset.skin)); return; }
     if (wardOpen && !e.target.closest('.iv-ward')){ wardOpen = false; renderInv(); }

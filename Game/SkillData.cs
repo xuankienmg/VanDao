@@ -96,6 +96,11 @@ public static class SkillData
             "Hợp nhất nguyên thần và linh hỏa, bùng nổ kim diễm: 640% công ở cấp 1, thêm 40% mỗi cấp.", "ultimate", DmgBase: 640, DmgPerLv: 40, Code: "FIRE_ULTIMATE_003", AnimId: "FIRE_ULTIMATE_003"),
         new("hoa_dao_hop_nhat", "hoa", "Hỏa Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_hoa:3" },
             "Thân thần hợp nhất trong linh hỏa: công +4%, sát thương chiêu thức +3% và xuyên thấu +1% mỗi cấp.", "passive", AtkPct: 4, SkillPct: 3, Pen: 1, Code: "FIRE_PASSIVE_012"),
+        // ---- Đại Thừa ----
+        new("thai_so_hoa", "hoa", "Thái Sơ Diệt Thế Diễm", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_hoa:3" },
+            "Đạo hỏa thái sơ thiêu rụi một phương thiên địa: 780% công ở cấp 1, thêm 46% mỗi cấp.", "ultimate", DmgBase: 780, DmgPerLv: 46, Code: "FIRE_ULTIMATE_004", AnimId: "FIRE_ULTIMATE_003"),
+        new("hoa_dao_dai_thua", "hoa", "Đại Thừa Hỏa Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "hoa_dao_hop_nhat:3" },
+            "Hỏa đạo viên mãn: công +5%, sát thương chiêu thức +4% và xuyên thấu +1% mỗi cấp.", "passive", AtkPct: 5, SkillPct: 4, Pen: 1, Code: "FIRE_PASSIVE_013"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
@@ -147,6 +152,11 @@ public static class SkillData
             "Nguyên thần hợp chân thủy, huyền hải hóa lao bùng nổ: 605% công ở cấp 1, thêm 38% mỗi cấp.", "water_prison", DmgBase: 605, DmgPerLv: 38, Code: "WATER_ULTIMATE_003", AnimId: "WATER_PRISON_001"),
         new("thuy_dao_hop_nhat", "thuy", "Thủy Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_thuy:3" },
             "Thân thần hòa huyền hải: máu +4%, phòng thủ +3% và sát thương chiêu thức +3% mỗi cấp.", "passive", HpPct: 4, DefPct: 3, SkillPct: 3, Code: "WATER_PASSIVE_010"),
+        // ---- Đại Thừa ----
+        new("thai_so_thuy", "thuy", "Thái Sơ Thương Minh", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_thuy:3" },
+            "Biển thái sơ nhấn chìm vạn vật vào thủy lao: 735% công ở cấp 1, thêm 44% mỗi cấp.", "water_prison", DmgBase: 735, DmgPerLv: 44, Code: "WATER_ULTIMATE_004", AnimId: "WATER_PRISON_001"),
+        new("thuy_dao_dai_thua", "thuy", "Đại Thừa Thủy Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "thuy_dao_hop_nhat:3" },
+            "Thủy đạo viên mãn: máu +5%, phòng thủ +4% và sát thương chiêu thức +4% mỗi cấp.", "passive", HpPct: 5, DefPct: 4, SkillPct: 4, Code: "WATER_PASSIVE_011"),
         // ===== MỘC: Thanh Diệp Nhận + 7 chủ động + 11 bị động =====
         new("thanh_diep_nhan", "moc", "Thanh Diệp Nhận", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
             "Lá ngọc hóa nhận bay thẳng vào mục tiêu, gây 115% công.", "wood_leaf", DmgBase: 115, Code: "WOOD_BASIC_001", AnimId: "WOOD_LEAF_001"),
@@ -164,6 +174,8 @@ public static class SkillData
             "Rễ Kiến Mộc xuyên qua khe hư không. Sát thương 465% công, thêm 31% mỗi cấp.", "wood_hu_khong_kien_moc", DmgBase: 465, DmgPerLv: 31, Code: "WOOD_ACTIVE_006", AnimId: "WOOD_HU_KHONG_KIEN_MOC"),
         new("hon_nguyen_moc", "moc", "Hỗn Nguyên Vạn Mộc", "Tuyệt kỹ", 7, 1, 5, 6, 8, new[] { "hu_khong_kien_moc:3" },
             "Vạn mộc hợp thành thần thụ, linh quang bùng phát. Sát thương 575% công, thêm 36% mỗi cấp.", "wood_hon_nguyen_moc", DmgBase: 575, DmgPerLv: 36, Code: "WOOD_ACTIVE_007", AnimId: "WOOD_HON_NGUYEN_MOC"),
+        new("thai_so_moc", "moc", "Thái Sơ Kiến Mộc", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_moc:3" },
+            "Kiến Mộc thái sơ chống trời, rễ xuyên cửu u. Sát thương 700% công, thêm 43% mỗi cấp.", "wood_hon_nguyen_moc", DmgBase: 700, DmgPerLv: 43, Code: "WOOD_ACTIVE_008", AnimId: "WOOD_HON_NGUYEN_MOC"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 1, 5, 0, 1, Array.Empty<string>(),
             "Máu và tốc độ tu luyện +2% mỗi cấp.", "root", Code: "WOOD_PASSIVE_000", HpPct: 2, QiPct: 2),
         new("sinh_tuc", "moc", "Sinh Tức", "Bị động", 1, 1, 5, 0, 1, new[] { "moc_linh_can:1" },
@@ -186,6 +198,8 @@ public static class SkillData
             "Sát thương chiêu thức và máu +3% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_009", SkillPct: 3, HpPct: 3),
         new("moc_dao_hop_nhat", "moc", "Mộc Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_moc:3" },
             "Máu +4%, sát thương chiêu thức +3%, phòng thủ +2% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_010", HpPct: 4, SkillPct: 3, DefPct: 2),
+        new("moc_dao_dai_thua", "moc", "Đại Thừa Mộc Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "moc_dao_hop_nhat:3" },
+            "Mộc đạo viên mãn: máu +5%, sát thương chiêu thức +4%, phòng thủ +3% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_011", HpPct: 5, SkillPct: 4, DefPct: 3),
     }.Concat(ElementSkillData.Skills).ToArray();
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);

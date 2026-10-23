@@ -131,7 +131,7 @@ function renderAdmin(force){
   const keepItem = $('admItem')?.value, keepN = $('admN')?.value, keepRealm = $('admRealm')?.value;
   const keepGear = $('admGear')?.value, keepQ = $('admQ')?.value, keepGN = $('admGN')?.value, keepPetN = $('admPetN')?.value, keepPet = $('admPet')?.value, keepPetStar = $('admPetStar')?.value, keepEl = $('admEl')?.value;
   // Linh thú: mọi Thú Đản + đan dược / nguyên liệu linh thú (theo thứ tự khai báo ở server)
-  const petItems = DATA.items.filter(i => ['egg', 'petfood', 'petmaterial'].includes(i.type));
+  const petItems = DATA.items.filter(i => ['egg', 'petfood', 'petmaterial', 'petgear'].includes(i.type));
   // trang bị: chọn theo món gốc (nhóm theo bộ, kèm cấp + cảnh giới yêu cầu), phẩm chọn riêng
   const bases = DATA.items.filter(i => i.base && i.id.endsWith('q0'));
   const sets = [...new Set(bases.map(b => b.set || 'Khác'))];
@@ -141,7 +141,7 @@ function renderAdmin(force){
     ['stone', 'Tài nguyên'], ['pill', 'Đan đột phá'], ['elixir', 'Đan đặc biệt'],
     ['herb', 'Linh thảo'], ['boss', 'Nguyên liệu Boss'], ['key', 'Chìa khóa'],
     ['chest', 'Rương'], ['ticket', 'Vé'], ['equip', 'Trang bị'],
-    ['manual', 'Công pháp'], ['pet', 'Linh thú', ['egg', 'petfood', 'petmaterial']],   // Linh thú: Thú Đản + đan dược / nguyên liệu linh thú
+    ['manual', 'Công pháp'], ['pet', 'Linh thú', ['egg', 'petfood', 'petmaterial', 'petgear']],   // Linh thú: Thú Đản + đan dược / nguyên liệu linh thú
   ];
   const itemGroup = it => itemTypes.find(([type, , types]) => (types || [type]).includes(it.type))?.[0] || 'other';
   const items = DATA.items.filter(i => !i.base).sort((a, b) =>
@@ -209,7 +209,7 @@ function openTab(name, exact){
   const top = name === 'fuse' || name === 'sell' || name === 'spin' ? 'craft' : name;
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === top));
   ['req','inv','craft','fuse','sell','spin','map','skill','pet','market','rank','admin'].forEach(id => $('pane-'+id).hidden = id !== name);
-  if (name === 'pet') renderPet();
+  if (name === 'pet') renderPet(); else renderPane(name);        // tab đang ẩn đã bỏ qua lần vẽ trước → vẽ lại khi mở
   if (name === 'rank') loadRank();                              // bảng xếp hạng: tải khi mở tab
   if (name === 'market') loadMarket();                          // Chợ: tải khi mở tab
   document.querySelectorAll('[data-lc]').forEach(b => { b.classList.toggle('on', b.dataset.lc === name); b.setAttribute('aria-selected', b.dataset.lc === name); });

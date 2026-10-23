@@ -21,6 +21,7 @@ public class Player
 
     /// <summary>Trang phục đang mặc (GameData.Skins); rỗng = tự đổi theo cảnh giới.</summary>
     public string Skin { get; set; } = "";
+    public string Gender { get; set; } = "male";
     /// <summary>Trang phục đã mở khóa bằng rương trang phục (SkinDef.UnlockItem), cách nhau dấu phẩy.</summary>
     public string SkinsUnlocked { get; set; } = "";
 
@@ -198,5 +199,11 @@ public class Pet
     public int AptHp { get; set; } = 100;
     public int Slot { get; set; }
     public int FoodSpent { get; set; }
+    /// <summary>Thức tỉnh huyết mạch (0–3) sau 5★: mỗi cấp +10% chỉ số.</summary>
+    public int Awaken { get; set; }
+    /// <summary>Trang bị linh thú đang mặc (id vật phẩm, rỗng = trống): Hạng Khuyên · Linh Giáp · Hộ Mệnh Phù.</summary>
+    public string GearCollar { get; set; } = "";
+    public string GearArmor { get; set; } = "";
+    public string GearCharm { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -1,0 +1,45 @@
+using System.Text.Json;
+using VanDao.Game;
+
+var root = Path.GetFullPath(args.FirstOrDefault() ?? ".");
+var site = Path.Combine(root, "site");
+if (!Directory.Exists(Path.Combine(root, "wwwroot", "img"))) throw new Exception("Run from the game repository root, or pass its path.");
+var images = new HashSet<string>();
+void Image(string? path) { if (path?.StartsWith("img/") == true) images.Add(path); }
+foreach (var item in GameData.AllItems) Image(item.Icon);
+foreach (var pet in PetData.Definitions) foreach (var form in pet.Forms) Image(form.Image);
+var chapters = GameData.Chapters.Select(c => new {
+    c.Index, c.Name, c.Realm, c.Enabled, c.BossLair, c.KeyItem, c.BossItem,
+    difficulties = Enumerable.Range(0, GameData.DiffNames.Length).Select(d => new {
+        name = GameData.DiffNames[d],
+        drops = GameData.DiffDrops(c, d),
+        herbChapter = GameData.DiffHerbChapter(c, d),
+        areas = Enumerable.Range(1, GameData.BossArea).Select(a => new {
+            index = a, place = GameData.AreaPlace(c, a),
+            waves = GameData.AreaWaves(c, a, d).Select(w => {
+                Image(w.Image);
+                var stones = GameData.StoneRange(c, a, w.Tier, d);
+                return new { w.Name, w.Image, w.Tier, w.Hp, w.Atk, w.Def, stoneMin = stones.Min, stoneMax = stones.Max };
+            }).ToArray()
+        }).ToArray()
+    }).ToArray()
+}).ToArray();
+var data = new {
+    items = GameData.AllItems, slots = GameData.Slots, brews = GameData.Brews,
+    pets = PetData.Definitions, sets = EquipmentEffects.Sets, herbDrops = GameData.HerbDrops,
+    realms = GameData.Realms.Select((r, i) => new { index = i, r.Name, r.Desc, r.Stages, r.BagSlots, r.EquipSlots, r.BreakCost, r.BreakChance }),
+    chapters, qualityKeys = GameData.RarityOrder, qualityNames = GameData.QualityName, qualityColors = GameData.QualityColor,
+    petHatchSeconds = PetData.HatchSeconds, petEggIds = PetData.EggIds
+};
+Directory.CreateDirectory(Path.Combine(site, "data"));
+File.WriteAllText(Path.Combine(site, "data", "wiki.json"), JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+var copied = 0;
+foreach (var image in images.Order()) {
+    var source = Path.Combine(root, "wwwroot", image);
+    if (!File.Exists(source)) throw new Exception($"Missing wiki image: {image}");
+    var dest = Path.Combine(site, "img", "wiki", image[4..]);
+    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+    File.Copy(source, dest, true);
+    copied++;
+}
+Console.WriteLine($"Wiki: {GameData.AllItems.Count} items, {PetData.Definitions.Length} pets, {chapters.Length} chapters, {copied} images.");

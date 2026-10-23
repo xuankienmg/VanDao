@@ -7,7 +7,7 @@ name: Deploy Website
 on:
   push:
     branches: [master]
-    paths: ['site/**', '.github/workflows/deploy-site.yml']
+    paths: ['site/**', 'Game/**', 'Data/**', 'wwwroot/img/**', 'tools/wiki_export/**', '.github/workflows/deploy-site.yml']
   workflow_run:
     workflows: ['Build & Release Game']
     types: [completed]
@@ -34,6 +34,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: master
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Export wiki from current game data
+        run: dotnet run --project tools/wiki_export -- .
 
       - name: Write release.json from the latest game release
         env:

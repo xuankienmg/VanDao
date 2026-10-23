@@ -22,7 +22,7 @@ public static class PetData
     public static readonly double[] PetSpinWeights = { 45, 30, 17, 7, .9, .1 };
     // Calibrated against peak-stage, full same-realm Huyen gear at aptitude 90.
     // Runtime scaling depends only on realm, never on the owner's actual gear.
-    public static readonly double[] RealmStatScale = { .36, .385, 1.47, 2.98, 13.3, 59.8, 299.0 };
+    public static readonly double[] RealmStatScale = { .36, .385, 1.47, 2.98, 13.3, 59.8, 299.0, 1495.0 };
     // Phẩm Phàm → Thiên (10/2026: giãn từ .8–1.6 để các phẩm khác nhau rõ hơn).
     public static readonly double[] RarityStatScale = { .7, 1, 1.35, 1.8, 2.4, 3.2 };
     /// <summary>Khoảng tư chất theo phẩm linh thú (Phàm → Thượng Cổ); Hồ Điệp dùng tư chất Thượng Cổ.</summary>

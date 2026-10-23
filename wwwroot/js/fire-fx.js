@@ -1,15 +1,25 @@
 /* Shared manual VFX timeline for preview and combat; sheets contain effects only. */
 const fireFxCache = new Map();
+const FX_ALIAS = {
+  hon_nguyen_hoa: ['hu_khong_hoa', 'hue-rotate(35deg) saturate(.75) brightness(1.2)'],
+  thai_so_hoa:    ['hu_khong_hoa', 'hue-rotate(-20deg) saturate(1.6) brightness(1.15)'],   // Đại Thừa: tạm dùng hiệu ứng Hư Không Diễm
+  thai_so_thuy:   ['hon_nguyen_thuy', 'hue-rotate(-25deg) saturate(1.4) brightness(1.15)'],
+  thai_so_moc:    ['hon_nguyen_moc', 'hue-rotate(30deg) saturate(1.3) brightness(1.15)'],
+  thai_so_tho:    ['hon_nguyen_tho', 'hue-rotate(-15deg) saturate(1.4) brightness(1.15)'],
+  thai_so_loi:    ['hon_nguyen_loi', 'hue-rotate(25deg) saturate(1.3) brightness(1.2)'],
+  thai_so_bang:   ['hon_nguyen_bang', 'hue-rotate(-20deg) saturate(1.3) brightness(1.15)'],
+  thai_so_phong:  ['hon_nguyen_phong', 'hue-rotate(25deg) saturate(1.3) brightness(1.15)'],
+};
 function fireFxSpec(skillId, realmIndex = 0){
   const variant = skillId === 'hoa_cau' ? (realmIndex <= 0 ? 'small' : realmIndex === 1 ? 'medium' : 'large') : 'default';
   const fire = typeof FIRE_FX_DATA === 'undefined' || !Array.isArray(FIRE_FX_DATA) ? [] : FIRE_FX_DATA;
   const extra = typeof WATER_WOOD_FX_DATA === 'undefined' || !Array.isArray(WATER_WOOD_FX_DATA) ? [] : WATER_WOOD_FX_DATA;
   const elements = typeof FOUR_ELEMENTS_FX_DATA === 'undefined' || !Array.isArray(FOUR_ELEMENTS_FX_DATA) ? [] : FOUR_ELEMENTS_FX_DATA;
   const data = [...fire, ...extra, ...elements];
-  // Hợp Thể kế thừa timeline Luyện Hư, đổi kim diễm cho tuyệt kỹ mới.
-  const sourceId = skillId === 'hon_nguyen_hoa' ? 'hu_khong_hoa' : skillId;
+  // Hợp Thể / Đại Thừa kế thừa timeline chiêu bậc dưới, chỉ đổi màu (FX_ALIAS: chiêu → [chiêu nguồn, bộ lọc]).
+  const [sourceId, filter] = FX_ALIAS[skillId] || [skillId, 'none'];
   const spec = data.find(s => s.skillId === sourceId && (s.variant || 'default') === variant);
-  return spec ? {...spec, filter: skillId === 'hon_nguyen_hoa' ? 'hue-rotate(35deg) saturate(.75) brightness(1.2)' : 'none'} : null;
+  return spec ? {...spec, filter} : null;
 }
 function fireFxPlan(skillId, s01, realmIndex = 0){
   const spec = fireFxSpec(skillId, realmIndex);

@@ -6,6 +6,8 @@
 const KEY = 'van-dao-player-id';
 const Q = new URLSearchParams(location.search);
 const MODE = Q.get('mode') || 'full';          // full | strip | panel
+/** Tab đang ẩn (hoặc dải taskbar, không có bảng): khỏi vẽ, đỡ giật. Không đọc layout nên rẻ, gọi mỗi khung được. */
+const paneOff = id => MODE === 'strip' || !!document.getElementById('pane-' + id)?.hidden;
 document.documentElement.classList.add(MODE);
 document.body.classList.add(MODE);
 if (Q.get('opaque') === '1') document.body.classList.add('opaque');
@@ -26,7 +28,11 @@ const realm = () => DATA.realms[S.realm];
 /** Trang phục đang mặc (S.skin, rỗng = theo cảnh giới) → bộ ảnh nhân vật: 'hero' (sprite chiến đấu) · 'heroStand' · 'heroMed' (ngồi thiền) · 'heroCast' (tung chiêu). */
 /** Trang phục cần rương trang phục (unlockItem) chỉ dùng được khi đã mở rương đó (S.skinsUnlocked). */
 const skinOpen = s => !s.unlockItem || (S?.skinsUnlocked || []).includes(s.id);
-const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && S.realm >= x.minRealm && skinOpen(x))) || null;
+// trang phục mở bằng rương: mặc ngay, không cần cảnh giới (khớp GameService.SkinWearable)
+const skinWearable = s => skinOpen(s) && (!!s.unlockItem || S.realm >= s.minRealm);
+const skinGender = () => S?.gender || (DATA.skins?.find(x => x.id === S?.skin)?.gender) || 'male';
+const autoSkin = () => skinGender() === 'female' ? (DATA.skins || []).filter(s => s.gender === 'female' && s.minRealm <= S.realm && skinWearable(s)).sort((a,b) => b.minRealm - a.minRealm)[0] || null : null;
+const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && skinWearable(x))) || (S ? autoSkin() : null);
 const skinArt = k => curSkin()?.[k] || realm()[k];
 /** Chương có Boss rơi nguyên liệu đột phá item: " (chương N)" để ghi kèm tên Boss. */
 const bossChapterTag = item => { const c = (DATA.chapters || []).find(x => x.bossItem === item); return c ? ` · chương ${c.index + 1}` : ''; };
