@@ -14,8 +14,8 @@ Chỉ cần chạy thêm `supabase.sql` trong thư mục này ở **SQL Editor**
 |---|---|---|
 | Cảnh giới tối thiểu | Trúc Cơ | `market_rules()` trong SQL + `MarketService.MinRealm` |
 | Thuế | 5% trừ vào tiền người bán nhận (linh thạch bị đốt) | `market_rules()` + `MarketService.TaxPct` |
-| Tin đang treo | tối đa 10 / người | `market_rules()` + `MarketService.MaxOpen` |
-| Giao dịch | tối đa 30 / 24 giờ (treo bán + mua) | `market_rules()` + `MarketService.MaxDaily` |
+| Tin đang treo | tối đa 5 / người | `market_rules()` + `MarketService.MaxOpen` |
+| Giao dịch | tối đa 10 / 24 giờ (treo bán + mua) | `market_rules()` + `MarketService.MaxDaily` |
 | Thời hạn tin | 3 ngày, hết hạn tự trả đồ | `market_rules()` + `MarketService.ListingDays` |
 | Không giao dịch được | linh thạch, chìa khóa Boss, vé quay | `GameService.Tradable` |
 | Admin mode | nhân vật `Tainted` không mua / bán được (vẫn nhận lại đồ, tiền) | `GameService.MarketBlocked` |

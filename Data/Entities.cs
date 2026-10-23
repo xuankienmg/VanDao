@@ -53,6 +53,8 @@ public class Player
     public string Skills { get; set; } = "";
     public string LearnedManuals { get; set; } = "";
     public int ManualVersion { get; set; }
+    /// <summary>Công pháp đang kích hoạt (hệ): quyết định đòn đánh thường; bị động hệ khác chỉ phát huy CultivationManuals.InactiveRate. Rỗng = tự chọn hệ cấp cao nhất.</summary>
+    public string ActiveManual { get; set; } = "";
     public int BossKills { get; set; }
     /// <summary>Điểm công pháp vĩnh viễn nhận từ Ngộ Đạo Đan.</summary>
     public int ElixirPoints { get; set; }

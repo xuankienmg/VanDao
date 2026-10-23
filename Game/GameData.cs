@@ -227,7 +227,7 @@ public static class GameData
             Rarity: "epic", Kind: "Đan tăng tu vi", UseQiSeconds: 7200, Tier: 3,
             Use: "Dùng: nhận ngay tu vi tương đương 2 giờ tu luyện theo tốc độ hiện tại. Không vượt giới hạn tu vi của tầng hiện tại."),
         new ItemDef("ngo_dao_dan", "Ngộ Đạo Đan", "elixir", "#3fc9b0", "Đan khai mở ngộ tính, luyện từ linh dược vùng Nguyên Anh.", "img/dan/dan_16.png",
-            MinRealm: 3, Rarity: "legendary", Kind: "Đan dược", Use: "Dùng từ Nguyên Anh: +1 điểm công pháp vĩnh viễn mỗi viên. Luyện từ 5 Thiên Niên Nhân Sâm, 3 Cửu Diệp Hồn Liên và 1.000 linh thạch."),
+            MinRealm: 3, Rarity: "legendary", Kind: "Đan dược", Use: "Dùng từ Nguyên Anh: +1 điểm công pháp vĩnh viễn mỗi viên. Luyện từ 5 Thiên Niên Nhân Sâm, 3 Cửu Diệp Hồn Liên và 10.000 linh thạch."),
         new ItemDef("tay_tuy_dan", "Tẩy Tủy Đan", "elixir", "#3fd04a", "Đan gột rửa kinh mạch, xóa sạch dấu vết công pháp đã tu.", "img/dan/dan_07.png",
             Rarity: "epic", Kind: "Đan dược", Use: "Dùng: tẩy toàn bộ công pháp, hoàn lại mọi điểm kỹ năng để lĩnh ngộ lại (giữ linh căn bẩm sinh)."),
         new ItemDef("pha_chuong_dan_0", "Trúc Cơ Phá Chướng Đan", "elixir", "#a8302a", "Đan phá bình chướng Luyện Khí → Trúc Cơ.", "img/dan/dan_03.png",
@@ -851,8 +851,8 @@ public static class GameData
             Cn = "", BagSlots = 60, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(119.6 * Math.Pow(1.38, s)),    // cả cảnh giới ≈ 5.400 tu vi = 30 phút ở tốc độ gốc 3/giây (không đồ, không thám hiểm)
             Rate = s => 3 + s * 0.6,
-            StageCost = s => new() { ["linh_thach"] = 10 + 10 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
-            BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 500, ["kim_o_tinh_hach"] = 1 }, BreakChance = .55,
+            StageCost = s => new() { ["linh_thach"] = 5 + 5 * s, ["tu_khi_dan"] = s < 3 ? 1 : 2 },
+            BreakCost = new() { ["truc_co_dan"] = 1, ["linh_thach"] = 200, ["kim_o_tinh_hach"] = 1 }, BreakChance = .55,
             StatMult = 1,
             Boss = new MonsterDef("Tứ Tý Ma Viên", "img/boss_tu_ty_ma_vien.png", Hp: 140, Atk: 23, Def: 5),
             BossItem = "kim_o_tinh_hach",
@@ -872,8 +872,8 @@ public static class GameData
             Cn = "", BagSlots = 100, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(20930 * Math.Pow(1.6, s)),     // cả cảnh giới ≈ 108.000 tu vi = 2 giờ ở tốc độ gốc 15/giây (không đồ, không thám hiểm)
             Rate = s => 18 + s * 6,
-            StageCost = s => new() { ["linh_thach"] = 50 * (s + 1), ["truc_co_dan"] = s + 1 },
-            BreakCost = new() { ["ngung_kim_dan"] = 1, ["linh_thach"] = 800, ["huyet_giao_hach"] = 1 }, BreakChance = .4,
+            StageCost = s => new() { ["linh_thach"] = 20 * (s + 1), ["truc_co_dan"] = s + 1 },
+            BreakCost = new() { ["ngung_kim_dan"] = 1, ["linh_thach"] = 300, ["huyet_giao_hach"] = 1 }, BreakChance = .4,
             StatMult = 6,
             Boss = new MonsterDef("Hắc Giao", "img/boss_hac_giao.png", Hp: 940, Atk: 172, Def: 52),
             BossItem = "huyet_giao_hach",
@@ -893,8 +893,8 @@ public static class GameData
             Cn = "", BagSlots = 160, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(580120 * Math.Pow(1.7, s)),    // cả cảnh giới ≈ 3,24 triệu tu vi = 8 giờ ở tốc độ gốc 112,6/giây
             Rate = s => 140 + s * 50,
-            StageCost = s => new() { ["linh_thach"] = 150 * (s + 1), ["ngung_kim_dan"] = s + 1 },
-            BreakCost = new() { ["ket_anh_dan"] = 1, ["linh_thach"] = 3000, ["hac_lan_yeu_hach"] = 1 }, BreakChance = .30,
+            StageCost = s => new() { ["linh_thach"] = 100 * (s + 1), ["ngung_kim_dan"] = s + 1 },
+            BreakCost = new() { ["ket_anh_dan"] = 1, ["linh_thach"] = 2000, ["hac_lan_yeu_hach"] = 1 }, BreakChance = .30,
             StatMult = 35,
             Boss = new MonsterDef("Băng Phượng", "img/boss_bang_phuong.png", Hp: 5600, Atk: 860, Def: 260),
             BossItem = "hac_lan_yeu_hach",
@@ -936,8 +936,8 @@ public static class GameData
             Cn = "", BagSlots = 300, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(185500000 * Math.Pow(1.7, s)), // cả cảnh giới ≈ 1 tỷ tu vi = 72 giờ ở tốc độ gốc ~4.000/giây
             Rate = s => 5000 + s * 1500,
-            StageCost = s => new() { ["linh_thach"] = 1600 * (s + 1), ["hoa_than_dan"] = s + 1 },
-            BreakCost = new() { ["luyen_hu_dan"] = 1, ["linh_thach"] = 30000, ["am_ma_ma_hach"] = 1 }, BreakChance = .20,
+            StageCost = s => new() { ["linh_thach"] = 2500 * (s + 1), ["hoa_than_dan"] = s + 1 },
+            BreakCost = new() { ["luyen_hu_dan"] = 1, ["linh_thach"] = 45000, ["am_ma_ma_hach"] = 1 }, BreakChance = .20,
             StatMult = 900,
             Boss = new MonsterDef("Ám Ma", "img/boss_am_ma.png", Hp: 1, Atk: 1, Def: 1),
             BossItem = "am_ma_ma_hach",
@@ -956,8 +956,8 @@ public static class GameData
             Cn = "", BagSlots = 400, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(3100000000 * Math.Pow(1.7, s)),   // cả cảnh giới ≈ 16 tỷ tu vi (×16 Hóa Thần, cùng nhịp các cảnh giới trước)
             Rate = s => 28000 + s * 8000,
-            StageCost = s => new() { ["linh_thach"] = 3500 * (s + 1), ["luyen_hu_dan"] = s + 1 },
-            BreakCost = new() { ["hop_the_dan"] = 1, ["linh_thach"] = 70000, ["thao_thiet_yeu_hach"] = 1 }, BreakChance = .15,
+            StageCost = s => new() { ["linh_thach"] = 9000 * (s + 1), ["luyen_hu_dan"] = s + 1 },
+            BreakCost = new() { ["hop_the_dan"] = 1, ["linh_thach"] = 175000, ["thao_thiet_yeu_hach"] = 1 }, BreakChance = .15,
             StatMult = 4500,
             Boss = new MonsterDef("Thao Thiết", "img/boss_thao_thiet.png", Hp: 1, Atk: 1, Def: 1),
             BossItem = "thao_thiet_yeu_hach",
@@ -977,7 +977,7 @@ public static class GameData
             Cn = "", BagSlots = 500, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(52000000000 * Math.Pow(1.7, s)),  // cả cảnh giới ≈ 270 tỷ tu vi (×16 Luyện Hư, cùng nhịp các cảnh giới trước)
             Rate = s => 155000 + s * 45000,
-            StageCost = s => new() { ["linh_thach"] = 8000 * (s + 1), ["hop_the_dan"] = s + 1 },
+            StageCost = s => new() { ["linh_thach"] = 32000 * (s + 1), ["hop_the_dan"] = s + 1 },
             BreakCost = null, BreakChance = 1, // điền khi thêm Đại Thừa
             StatMult = 22500,
             Boss = new MonsterDef("Cùng Kỳ Vương", "img/boss_cung_ky_vuong.png", Hp: 1, Atk: 1, Def: 1),
@@ -1055,24 +1055,24 @@ public static class GameData
     /// <summary>Đan phương trực tiếp từ linh thảo và linh thạch, không tiêu hao đan bậc dưới.</summary>
     public static readonly string[] PillHerbs = { "tu_linh_thao", "bich_ngoc_linh_thao", "tu_van_sam", "thien_nien_sam", "kien_moc_mieu", "hon_nguyen_dao_lien" };
     public static readonly IReadOnlyList<BrewDef> Brews = new[] {
-        new BrewDef("bo_nguyen_dan_ha", new() { ["tu_linh_thao"] = 5, ["huyet_can_thao"] = 2, ["linh_thach"] = 50 }),
-        new BrewDef("bo_nguyen_dan_trung", new() { ["bich_ngoc_linh_thao"] = 10, ["hoa_tam_hoa"] = 5, ["linh_thach"] = 500 }),
-        new BrewDef("bo_nguyen_dan_thuong", new() { ["tu_van_sam"] = 20, ["loi_mach_thao"] = 10, ["thien_nien_sam"] = 5, ["linh_thach"] = 5000 }),
-        new BrewDef("tu_khi_dan", new() { ["tu_linh_thao"] = 2, ["linh_thach"] = 5 }),
-        new BrewDef("truc_co_dan", new() { ["tu_linh_thao"] = 2, ["huyet_can_thao"] = 1, ["linh_thach"] = 15 }),
-        new BrewDef("ngung_kim_dan", new() { ["bich_ngoc_linh_thao"] = 2, ["hoa_tam_hoa"] = 1, ["linh_thach"] = 80 }),
-        new BrewDef("ket_anh_dan", new() { ["tu_van_sam"] = 2, ["loi_mach_thao"] = 1, ["linh_thach"] = 300 }),
-        new BrewDef("hoa_than_dan", new() { ["thien_nien_sam"] = 2, ["cuu_diep_hon_lien"] = 1, ["linh_thach"] = 1600 }),
-        new BrewDef("luyen_hu_dan", new() { ["kien_moc_mieu"] = 2, ["bat_tu_phuong_hoa"] = 1, ["linh_thach"] = 6000 }),
-        new BrewDef("hop_the_dan", new() { ["hon_nguyen_dao_lien"] = 2, ["am_duong_ban_dao"] = 1, ["linh_thach"] = 15000 }),
-        new BrewDef("linh_thu_dan", new() { ["tay_tuy_thao"] = 2, ["linh_thach"] = 100 }),
-        new BrewDef("hoa_hinh_dan", new() { ["thien_nien_sam"] = 3, ["linh_thach"] = 1000 }),
-        new BrewDef("than_thu_huyet", new() { ["cuu_diep_hon_lien"] = 5, ["linh_thach"] = 5000 }),
-        new BrewDef("tay_tuy_dan", new() { ["tay_tuy_thao"] = 5, ["linh_thach"] = 1000 }),
-        new BrewDef("ngo_dao_dan", new() { ["thien_nien_sam"] = 5, ["cuu_diep_hon_lien"] = 3, ["linh_thach"] = 1000 }) }
+        new BrewDef("bo_nguyen_dan_ha", new() { ["tu_linh_thao"] = 10, ["huyet_can_thao"] = 4, ["cuu_diep_hon_lien"] = 1, ["linh_thach"] = 50000 }),
+        new BrewDef("bo_nguyen_dan_trung", new() { ["bich_ngoc_linh_thao"] = 20, ["hoa_tam_hoa"] = 10, ["cuu_diep_hon_lien"] = 3, ["linh_thach"] = 100000 }),
+        new BrewDef("bo_nguyen_dan_thuong", new() { ["tu_van_sam"] = 40, ["loi_mach_thao"] = 20, ["thien_nien_sam"] = 10, ["cuu_diep_hon_lien"] = 5, ["linh_thach"] = 250000 }),
+        new BrewDef("tu_khi_dan", new() { ["tu_linh_thao"] = 2, ["linh_thach"] = 20 }),
+        new BrewDef("truc_co_dan", new() { ["tu_linh_thao"] = 2, ["huyet_can_thao"] = 1, ["linh_thach"] = 60 }),
+        new BrewDef("ngung_kim_dan", new() { ["bich_ngoc_linh_thao"] = 2, ["hoa_tam_hoa"] = 1, ["linh_thach"] = 500 }),
+        new BrewDef("ket_anh_dan", new() { ["tu_van_sam"] = 2, ["loi_mach_thao"] = 1, ["linh_thach"] = 3000 }),
+        new BrewDef("hoa_than_dan", new() { ["thien_nien_sam"] = 2, ["cuu_diep_hon_lien"] = 1, ["linh_thach"] = 25000 }),
+        new BrewDef("luyen_hu_dan", new() { ["kien_moc_mieu"] = 2, ["bat_tu_phuong_hoa"] = 1, ["linh_thach"] = 150000 }),
+        new BrewDef("hop_the_dan", new() { ["hon_nguyen_dao_lien"] = 2, ["am_duong_ban_dao"] = 1, ["linh_thach"] = 600000 }),
+        new BrewDef("linh_thu_dan", new() { ["tay_tuy_thao"] = 2, ["linh_thach"] = 1000 }),
+        new BrewDef("hoa_hinh_dan", new() { ["thien_nien_sam"] = 3, ["linh_thach"] = 10000 }),
+        new BrewDef("than_thu_huyet", new() { ["cuu_diep_hon_lien"] = 5, ["linh_thach"] = 50000 }),
+        new BrewDef("tay_tuy_dan", new() { ["tay_tuy_thao"] = 5, ["linh_thach"] = 10000 }),
+        new BrewDef("ngo_dao_dan", new() { ["thien_nien_sam"] = 5, ["cuu_diep_hon_lien"] = 3, ["linh_thach"] = 10000 }) }
         .Concat(Enumerable.Range(0, BreakHerbs.Length).Select(r => new BrewDef(BreakPillId(r), new()
         {
-            [PillHerbs[r]] = 3, [BreakHerbs[r]] = 3, ["linh_thach"] = Realms[r].BreakCost?.GetValueOrDefault("linh_thach") ?? 0,
+            [PillHerbs[r]] = 3, [BreakHerbs[r]] = 3, ["linh_thach"] = (Realms[r].BreakCost?.GetValueOrDefault("linh_thach") ?? 0) * 10,
         }))).ToList();
     public static readonly string[] LockedRealmsCn = { "", "" };
 

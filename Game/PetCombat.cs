@@ -22,6 +22,11 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     private int _shatterTurn = -1;                     // lượt quái đóng băng nhận thêm sát thương (sau lượt bị đóng băng)
     private bool _miracleUsed;
     public bool MiracleUsed => _miracleUsed;
+    /// <summary>Debuff linh thú vừa gây ở lần gọi Cast / TryMiracle gần nhất: "burn" · "paralyze" · "stun" · "freeze" · rỗng.
+    /// Nhóm debuff (thiêu đốt, tê liệt, choáng, đóng băng) mỗi lúc chỉ có 1 trên quái — cái mới nhất đè cái cũ.</summary>
+    public string NewDebuff { get; private set; } = "";
+    /// <summary>Chủ nhân vừa gây debuff mới (thiêu đốt): xóa thiêu đốt / khống chế linh thú đang để lại trên quái.</summary>
+    public void ClearDebuffs() { _burnLeft = 0; _paralyzedUntil = _shatterTurn = -1; }
     /// <summary>Quái đang bị khống (mọi loại) ở lượt hiện tại: mất lượt phản công.</summary>
     public bool Paralyzed => _turn <= _paralyzedUntil;
     /// <summary>Loại khống đang có hiệu lực: "paralyze" · "stun" · "freeze", rỗng nếu không bị khống.</summary>
@@ -45,6 +50,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     public void Absorb(int damage) => Shield = Math.Max(0, Shield - damage);
     public PetCastDto? TryMiracle(int turn, ref int hp, int monsterHp, int defense, double takeK, bool counterPending = true)
     {
+        NewDebuff="";
         if(_miracleUsed || !allowMiracle || definition.Rarity!="ancient" || definition.Miracle is null)return null;
         _turn=turn;
         if(definition.Id=="that_thai_ho_diep" && hp<=0){
@@ -53,7 +59,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
         }
         if(definition.Id=="thai_co_loi_long" && hp>0 && (long)hp*100 <= (long)owner.Hp*30 && monsterHp>0){
             var damage=Math.Min(monsterHp,Hit(250,defense,takeK,30));
-            _paralyzedUntil=turn+(counterPending?0:1);_controlKind="paralyze";_miracleUsed=true;
+            ClearDebuffs();_paralyzedUntil=turn+(counterPending?0:1);_controlKind="paralyze";_miracleUsed=true;NewDebuff="paralyze";
             return new(turn,damage,0,0,definition.Miracle.Name,new[]{damage},"ancient_thunder_miracle",1,true,counterPending?.45:.90,"paralyze");
         }
         return null;
@@ -105,7 +111,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
     public PetCastDto Cast(int turn, ref int hp, int monsterHp, int monsterMaxHp, int defense, double takeK)
     {
         _ownerTurns = 0; // Only a real cast consumes the accumulated turns; wave transitions do not.
-        _turn = turn;
+        _turn = turn; NewDebuff = "";
         var damage = 0; var heal = 0; var guard = 0; var paralyze = 0; var hits = new List<int>();
         void Strike(double percent, int count = 1, double pen = 0)
         {
@@ -130,7 +136,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
             case "crane": heal = Healing((int)Life(1), hp); _dodgeUntil = turn + 1; break;
             case "cat": Strike(_coef, 1, Tier(15, 25, 35)); break;
             case "phoenix":                                                                  // 60% đòn đầu, 2 × 20% thiêu đốt
-                Strike(_coef * .6); _burnLeft = 2;
+                Strike(_coef * .6); ClearDebuffs(); _burnLeft = 2; NewDebuff = "burn";   // thiêu đốt đè khống chế cũ
                 _burnTick = SkillHits(_coef * .2, defense, takeK)[0];
                 break;
             case "xuanwu": guard = AddShield(Life(1)); _reflectUntil = turn + 1; break;
@@ -147,7 +153,8 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
         var controlled = "";
         if (controlChance > 0 && monsterHp - damage > 0 && _rng.NextDouble() < controlChance)
         {
-            _paralyzedUntil = turn; _controlKind = controlKind; paralyze = 1; controlled = controlKind;
+            ClearDebuffs();                                                         // khống chế mới đè debuff cũ (kể cả thiêu đốt)
+            _paralyzedUntil = turn; _controlKind = controlKind; paralyze = 1; controlled = controlKind; NewDebuff = controlKind;
             if (controlKind == "freeze") _shatterTurn = turn + 1;
         }
         hp += heal;

@@ -41,6 +41,36 @@ public static class CultivationManuals
         .Where(id => Available.Any(m => m.Element == id)).Distinct().ToArray();
     public static bool IsUnlocked(Player p, string element) => Unlocked(p).Contains(element);
     public static void Unlock(Player p, string element) => p.LearnedManuals = string.Join(',', p.LearnedManuals.Split(',', StringSplitOptions.RemoveEmptyEntries).Append(element).Distinct());
+    /// <summary>Bị động (chỉ số cộng thêm) của các hệ không kích hoạt chỉ còn tỉ lệ này.</summary>
+    public const double InactiveRate = .5;
+
+    /// <summary>Đòn đánh thường của một hệ (null nếu hệ chưa có).</summary>
+    public static SkillDef? BasicOf(string element) => SkillData.Skills.FirstOrDefault(s => s.Element == element && s.Tree == "basic");
+
+    /// <summary>Công pháp đang kích hoạt: hệ đã chọn nếu còn hợp lệ, không thì hệ đã học có tổng cấp kỹ năng cao nhất (hòa: theo thứ tự All).</summary>
+    public static string Active(Player p)
+    {
+        var unlocked = Unlocked(p);
+        if (unlocked.Contains(p.ActiveManual) && BasicOf(p.ActiveManual) is not null) return p.ActiveManual;
+        var lv = p.SkillLevels();
+        return All.Select(m => m.Element).Where(e => unlocked.Contains(e) && BasicOf(e) is not null)
+            .OrderByDescending(e => lv.Where(kv => SkillData.ById.TryGetValue(kv.Key, out var s) && s.Element == e).Sum(kv => kv.Value))
+            .FirstOrDefault() ?? "hoa";
+    }
+
+    /// <summary>Hệ số bị động của một hệ: 100% nếu đang kích hoạt, InactiveRate nếu không.</summary>
+    public static double Rate(string active, string element) => element == active ? 1 : InactiveRate;
+
+    /// <summary>Chốt công pháp kích hoạt và đặt đòn thường của hệ đó vào ô đòn thường.</summary>
+    public static void SyncActive(Player p)
+    {
+        p.ActiveManual = Active(p);
+        if (BasicOf(p.ActiveManual) is not { } basic) return;
+        var slots = p.Slots();
+        slots[SkillData.BasicSlot] = basic.Id;
+        p.SkillSlots = string.Join(',', slots);
+    }
+
     public static void Migrate(Player p)
     {
         if (p.ManualVersion > 0) return;

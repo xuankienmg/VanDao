@@ -21,7 +21,7 @@ public sealed class MarketService(LeaderboardOptions opt, ILogger<MarketService>
     // Chỉ để hiển thị và kiểm tra sớm phía game; luật thật nằm ở market_rules() trong SQL — sửa thì sửa cả hai.
     public const int MinRealm = 1;          // Trúc Cơ
     public const double TaxPct = 5;
-    public const int MaxOpen = 10, MaxDaily = 30, ListingDays = 3;
+    public const int MaxOpen = 5, MaxDaily = 10, ListingDays = 3;
     public const long MaxPrice = 2_000_000_000;   // linh thạch lưu kiểu int
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };

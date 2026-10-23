@@ -70,6 +70,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         // đòn thường đã bỏ (Hỏa Tiễn, Thủy Châm) → đổi sang đòn thường còn lại cùng hệ
         if (p.SkillSlots.Length > 0)
             p.SkillSlots = string.Join(',', p.SkillSlots.Split(',').Select(x => SkillData.RemovedBasics.TryGetValue(x.Trim(), out var to) ? to : x));
+        // công pháp kích hoạt: bản cũ chưa chọn → hệ cấp cao nhất; ô đòn thường luôn theo hệ đang kích hoạt
+        CultivationManuals.SyncActive(p);
         // luật điểm mới (tầng/kỳ +1, đại cảnh giới +12, hạ Boss không cho điểm): đã dùng quá số điểm → tẩy kỹ năng, hoàn điểm
         if (SkillPoints(p) < 0)
         {
@@ -155,7 +157,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) + p.ElixirPoints,
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p));
+            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p), CultivationManuals.Active(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -623,7 +625,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             {
                 // về đúng trạng thái nhân vật mới tạo: giữ Id, tên, ngày tạo và cờ admin mode
                 var now = DateTime.UtcNow;
-                p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0; p.PillBonus = 0; p.LearnedManuals = ""; p.ManualVersion = 1;
+                p.Realm = 0; p.Stage = 0; p.Qi = 0; p.Bonus = 0; p.PillBonus = 0; p.LearnedManuals = ""; p.ManualVersion = 1; p.ActiveManual = "";
                 p.Area = 1; p.AreaMax = 1; p.Chapter = 0; p.ChapterMax = 0; p.Diff = 0; p.DiffProg = ""; p.Cleared = ""; p.BossKills = 0;
                 p.BreakCooldownUntil = p.DebuffUntil = DateTime.MinValue;
                 p.Skills = ""; p.SkillSlots = ""; p.AdminPoints = 0; p.Redeemed = ""; p.SpinHistory = "";
@@ -737,6 +739,13 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     public (string msg, string kind) SetSkillSlot(Player p, int slot, string? skill)
     {
         if (slot < 0 || slot >= SkillData.SkillSlotCount) throw new GameException("Ô kỹ năng không hợp lệ.");
+        if (slot == SkillData.BasicSlot)
+        {
+            // ô đòn thường đi theo công pháp đang kích hoạt: chọn đòn thường hệ khác = kích hoạt hệ đó
+            if (string.IsNullOrEmpty(skill)) throw new GameException("Đòn thường đi theo công pháp đang kích hoạt, không tháo được.");
+            if (!SkillData.ById.TryGetValue(skill, out var b) || b.Tree != "basic") throw new GameException("Ô đòn thường chỉ đặt đòn đánh thường.");
+            return ActivateManual(p, b.Element);
+        }
         var slots = p.Slots();
         if (string.IsNullOrEmpty(skill))
         {
@@ -757,14 +766,29 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         return ($"Trang bị {s.Name} vào ô {(slot == SkillData.BasicSlot ? "Đòn thường" : "Kỹ năng")}.", "good");
     }
 
-    /// <summary>Tổng hiệu quả bị động của các kỹ năng đã học (đơn vị %).</summary>
+    /// <summary>Kích hoạt công pháp một hệ: đổi đòn đánh thường sang hệ đó; bị động hệ khác chỉ còn InactiveRate. Đổi tự do.</summary>
+    public (string msg, string kind) ActivateManual(Player p, string element)
+    {
+        var manual = CultivationManuals.All.FirstOrDefault(m => m.Element == element) ?? throw new GameException("Công pháp không tồn tại.");
+        if (!CultivationManuals.IsUnlocked(p, element)) throw new GameException("Cần học bí kíp công pháp của hệ này trước.");
+        if (CultivationManuals.BasicOf(element) is not { } basic) throw new GameException("Hệ này chưa có đòn đánh thường.");
+        if (CultivationManuals.Active(p) == element) return ($"Đang kích hoạt {manual.Name}.", "");
+        var before = Power(p);
+        p.ActiveManual = element;
+        CultivationManuals.SyncActive(p);
+        var after = Power(p);
+        return Log(p, $"Kích hoạt {manual.Name}: đòn thường đổi thành {basic.Name}; bị động hệ khác còn {CultivationManuals.InactiveRate:P0}. Chiến lực {before:N0} → {after:N0}.", "good");
+    }
+
+    /// <summary>Tổng hiệu quả bị động của các kỹ năng đã học (đơn vị %); hệ không kích hoạt chỉ tính InactiveRate.</summary>
     private static (double atk, double def, double hp, double crit, double speed, double qi, double monAtk) SkillBonus(Player p)
     {
         double a = 0, d = 0, h = 0, c = 0, sp = 0, q = 0, m = 0;
+        var active = CultivationManuals.Active(p);
         foreach (var (id, l) in SkillLevels(p))
         {
             if (!SkillData.ById.TryGetValue(id, out var s) || s.Tree == "basic") continue;
-            var f = s.Factor(l);
+            var f = s.Factor(l) * CultivationManuals.Rate(active, s.Element);
             a += s.AtkPct * f; d += s.DefPct * f; h += s.HpPct * f; c += s.Crit * f; sp += s.Speed * f; q += s.QiPct * f; m += s.MonAtkDown * f;
         }
         return (a, d, h, c, sp, q, Math.Min(40, m));
@@ -774,8 +798,13 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
     private static (double skill, double pen, double burn) SkillExtra(Player p)
     {
         double k = 0, pe = 0, bu = 0;
+        var active = CultivationManuals.Active(p);
         foreach (var (id, l) in SkillLevels(p))
-            if (SkillData.ById.TryGetValue(id, out var s) && s.Tree != "basic") { k += s.SkillPct * s.Factor(l); pe += s.Pen * s.Factor(l); bu += s.BurnPct * s.Factor(l); }
+            if (SkillData.ById.TryGetValue(id, out var s) && s.Tree != "basic")
+            {
+                var f = s.Factor(l) * CultivationManuals.Rate(active, s.Element);
+                k += s.SkillPct * f; pe += s.Pen * f; bu += s.BurnPct * f;   // thiêu đốt chỉ cần > 0 để mở, không bị giảm tác dụng
+            }
         return (k, Math.Min(80, pe), bu);
     }
 
@@ -1442,7 +1471,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         var enraged = false; var enrageAt = -1;
 
         // Thiêu đốt: 5% máu tối đa, hai lượt kể cả lượt kích hoạt; không cộng dồn.
-        var canBurn = burnPct > 0 || burn > 0;
+        var passiveBurn = burnPct > 0 || burn > 0;                                       // bị động: 30% mỗi lượt từ lượt 2
+        var canBurn = passiveBurn || equipped.Any(e => SkillData.ActiveBurnChance(e.s, e.l) > 0);   // kỹ năng Hỏa: % theo cấp khi tung
         var burning = new CombatBurn();
         var burnDmg = canBurn ? Math.Max(1, (int)Math.Round(m.Hp * .05)) : 0;
         var burnDamage = new List<int>();
@@ -1452,7 +1482,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         var boltDmg = fx.Lightning > 0 ? Math.Max(1, (int)Math.Round(power * fx.LightningPct / 100)) : 0;
         var regen = (int)Math.Round(st.Hp * (fx.Regen + PetTalent(p,"regen")) / 100);
         var woodLevels = SkillLevels(p);
-        double WoodBonus(Func<SkillDef, double> value) => woodLevels.Sum(kv => SkillData.ById.TryGetValue(kv.Key, out var def) && def.Element == "moc" ? value(def) * def.Factor(kv.Value) : 0);
+        double WoodBonus(Func<SkillDef, double> value) => woodLevels.Sum(kv => SkillData.ById.TryGetValue(kv.Key, out var def) && def.Element == "moc" ? value(def) * def.Factor(kv.Value) * CultivationManuals.Rate(CultivationManuals.Active(p), "moc") : 0);
         var woodHeal = WoodBonus(s => s.HealOnCastPct);
         var woodEmergency = WoodBonus(s => s.EmergencyHealPct);
         var woodRecovered = false;
@@ -1499,8 +1529,11 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             var petPulse = petCombat?.BeginTurn(t, ref heroHp, monHp, m.Def, takeK);
             if (petPulse is not null) petCasts.Add(petPulse);
             var preMiracle=petCombat?.TryMiracle(t,ref heroHp,monHp,m.Def,takeK);
+            if (petCombat?.NewDebuff.Length > 0) burning.Reset();             // debuff mới nhất đè debuff cũ (chỉ 1 trên quái)
             if(preMiracle is not null)petCasts.Add(preMiracle);
-            var burnHit = burning.Tick(m.Hp, canBurn && tw > 0 && rng.Next(100) < SkillData.BurnChance);
+            var burnTrig = passiveBurn && tw > 0 && rng.Next(100) < SkillData.BurnChance;
+            if (burnTrig) petCombat?.ClearDebuffs();                             // thiêu đốt mới đè tê liệt / choáng / đóng băng
+            var burnHit = burning.Tick(m.Hp, burnTrig);
             var burned = burnHit > 0;
             petTargetBurning |= burned;
             burnDamage.Add(burnHit);
@@ -1525,6 +1558,14 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 var cd = HitDamage(st.Atk * pct * (1 + skillPct / 100) / 100, critical);
                 // Phần sát thương phụ được giảm theo Yêu thân một lần trước khi cộng các đòn.
                 casts.Add(new CastDto(t, s.Id, s.Name, s.Anim, cd, critical));
+                var igniteChance = SkillData.ActiveBurnChance(s, l);                 // chiêu Hỏa: cơ hội thiêu đốt theo cấp
+                if (igniteChance > 0 && rng.Next(100) < igniteChance)
+                {
+                    burnHit += burning.Ignite(m.Hp, burnHit > 0);
+                    petCombat?.ClearDebuffs();
+                    petTargetBurning = true;
+                    burnDamage[^1] = burnHit; burns[^1] = true;
+                }
             }
             if (takeK < 1) dmg = (int)Math.Round(dmg * takeK);
             dmg += burnHit + (petPulse?.Dmg ?? 0) + (preMiracle?.Dmg ?? 0); // sát thương linh thú đã tính giảm riêng
@@ -1548,6 +1589,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             if(petCombat is not null && petDef is not null && monHp > dmg && petCombat.SkillReady)
             {
                 var cast = petCombat.Cast(t, ref heroHp, monHp - dmg, m.Hp, m.Def, takeK);
+                if (petCombat.NewDebuff.Length > 0) burning.Reset();
                 dmg += cast.Dmg; guardLeft += cast.Guard;
                 petCasts.Add(cast);
             }
@@ -1576,6 +1618,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 { monHp -= counter.Dmg; monLeft[^1] = Math.Max(0, monHp); petCasts.Add(counter); }
             }
             var postMiracle=petCombat?.TryMiracle(t,ref heroHp,monHp,m.Def,takeK,false);
+            if (petCombat?.NewDebuff.Length > 0) burning.Reset();
             if(postMiracle is not null){petCasts.Add(postMiracle);monHp-=postMiracle.Dmg;monLeft[^1]=Math.Max(0,monHp);}
             var woodCast = fired && equipped.Any(e => e.s.Element == "moc" && SkillData.Damage(e.s, e.l) > 0);
             var woodRecovery = woodCast ? (int)Math.Round(st.Hp * woodHeal / 100) : 0;
