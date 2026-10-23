@@ -39,8 +39,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Sdk.Web chạy app trong thư mục project, nên phải truyền đường dẫn tuyệt đối tới gốc repo.
       - name: Export wiki from current game data
-        run: dotnet run --project tools/wiki_export -- .
+        run: dotnet run --project tools/wiki_export -- "$GITHUB_WORKSPACE"
 
       - name: Write release.json from the latest game release
         env:
