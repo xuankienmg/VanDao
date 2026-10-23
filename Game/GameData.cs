@@ -164,7 +164,7 @@ public static class GameData
         // vé Linh Thú: đổi bằng linh thạch ở Luyện chế → Vòng quay → Quay Linh Thú, mỗi vé quay vòng 5 ô nhận 1 Thú Đản (GameService.PetSpin)
         new ItemDef("ve_linh_thu", "Vé Linh Thú", "ticket", "#a77be0", "Thẻ ngọc tím khắc ngũ sắc Thú Đản, truyền linh lực vào là vòng quay Linh Thú tự chuyển.", Rarity: "epic", Kind: "Vé quay",
             Use: "Dùng ở Luyện chế → Vòng quay → Quay Linh Thú: mỗi vé quay 1 lần, nhận 1 Thú Đản Phàm → Thiên."),
-        // ---- rương trang phục: dùng để mở khóa vĩnh viễn một trang phục (SkinDef.UnlockItem), bán cho NPC theo giá phẩm như Rương Boss, không giao dịch ở Chợ ----
+        // ---- rương trang phục: dùng để mở khóa vĩnh viễn một trang phục (SkinDef.UnlockItem), bán cho NPC theo giá phẩm như Rương Boss, giao dịch được ở Chợ ----
         new ItemDef("ruong_skin_luyen_khi_nu", "Rương Trang Phục · Thanh Sam Nữ Đệ Tử", "skin", "#e8a3c8", "Mở khóa trang phục Thanh Sam Nữ Đệ Tử. Hiện chưa có nguồn nhận trong game.",
             Icon: "img/ruong_trang_phuc.png", Rarity: "legendary", Kind: "Rương trang phục",
             Use: "Mở để mở khóa vĩnh viễn trang phục Thanh Sam Nữ Đệ Tử, mặc được ngay ở mọi cảnh giới."),
