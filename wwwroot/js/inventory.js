@@ -32,7 +32,17 @@ const RAR_KEYS = Object.keys(RARITY);
 /** Tên phẩm tô đúng màu phẩm: nền tối (bảng, nhật ký) dùng rc-*, thẻ giấy da dùng qc-* (màu đậm hơn để đọc rõ). */
 const qWord = (r, card) => `<b class="${card ? 'qc' : 'qn'} ${card ? 'qc' : 'rc'}-${r}">${RARITY[r]?.n ?? r}</b>`;
 /** Tô màu tên phẩm trong câu chữ từ server (nhật ký): "[cấp 25 · Đỏ]", "trang bị Vàng". */
-const qColorize = t => t.replace(/(· |trang bị )(Huyền Tiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
+// tên phẩm tiếng Việt và bản dịch (khi dùng English, nhật ký được dịch trước khi tô màu)
+let qRe = null, qKey = null;
+const qColorize = t => {
+  if (!qRe){
+    qKey = {};
+    RAR_KEYS.forEach((k, i) => { qKey[Q_NAMES[i]] = k; qKey[window.tr(Q_NAMES[i])] = k; });
+    const names = Object.keys(qKey).sort((a, b) => b.length - a.length).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    qRe = new RegExp(`(· |trang bị )(${names.join('|')})(?=\\]| |\\.|,|$)`, 'g');
+  }
+  return t.replace(qRe, (m, pre, n) => pre + qWord(qKey[n]));
+};
 const SET_COLOR = {'Thanh Vân': '#4fb0d8', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này

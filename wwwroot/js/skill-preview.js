@@ -214,7 +214,7 @@ function initSkill(){
 
 function renderLog(){
   const t = iso => { const d = new Date(iso); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-  $('log').innerHTML = '<h3>Nhật ký tu hành</h3>' + S.logs.map(l => `<p class="${l.kind}"><time>${t(l.at)}</time>${qColorize(l.text)}</p>`).join('');
+  $('log').innerHTML = '<h3>Nhật ký tu hành</h3>' + S.logs.map(l => `<p class="${l.kind}"><time>${t(l.at)}</time>${qColorize(window.tr(l.text))}</p>`).join('');
 }
 function advState(){
   if (S.isPeak && !S.hasNext) return {ok:false, label:'Đỉnh phong hiện tại'};
