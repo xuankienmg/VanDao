@@ -5,9 +5,9 @@ namespace VanDao.Game;
 /// <summary>Chợ giao dịch: kiểm tra phía game, gọi Supabase (MarketService), rồi mới trừ / cộng hành trang.</summary>
 public partial class GameService
 {
-    /// <summary>Linh thạch, chìa khóa và vật liệu linh thú không giao dịch; hai loại vé quay chỉ admin trong Development được đăng bán.</summary>
+    /// <summary>Linh thạch, chìa khóa và vật liệu linh thú không giao dịch (rương trang phục giao dịch được); hai loại vé quay chỉ admin trong Development được đăng bán.</summary>
     public static bool Tradable(ItemDef d, bool canSellTickets = false) =>
-        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial" or "skin");
+        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial");
 
     public static bool IsSpinTicket(string id) => id is GameData.SpinTicket or GameData.PetSpinTicket;
 
