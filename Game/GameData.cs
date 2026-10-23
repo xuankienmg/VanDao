@@ -164,7 +164,7 @@ public static class GameData
         // vé Linh Thú: đổi bằng linh thạch ở Luyện chế → Vòng quay → Quay Linh Thú, mỗi vé quay vòng 5 ô nhận 1 Thú Đản (GameService.PetSpin)
         new ItemDef("ve_linh_thu", "Vé Linh Thú", "ticket", "#a77be0", "Thẻ ngọc tím khắc ngũ sắc Thú Đản, truyền linh lực vào là vòng quay Linh Thú tự chuyển.", Rarity: "epic", Kind: "Vé quay",
             Use: "Dùng ở Luyện chế → Vòng quay → Quay Linh Thú: mỗi vé quay 1 lần, nhận 1 Thú Đản Phàm → Thiên."),
-        // ---- rương trang phục: dùng để mở khóa vĩnh viễn một trang phục (SkinDef.UnlockItem), không mua bán được ----
+        // ---- rương trang phục: dùng để mở khóa vĩnh viễn một trang phục (SkinDef.UnlockItem), bán cho NPC theo giá phẩm như Rương Boss, không giao dịch ở Chợ ----
         new ItemDef("ruong_skin_luyen_khi_nu", "Rương Trang Phục · Thanh Sam Nữ Đệ Tử", "skin", "#e8a3c8", "Mở khóa trang phục Thanh Sam Nữ Đệ Tử. Hiện chưa có nguồn nhận trong game.",
             Icon: "img/ruong_trang_phuc.png", Rarity: "legendary", Kind: "Rương trang phục",
             Use: "Mở để mở khóa vĩnh viễn trang phục Thanh Sam Nữ Đệ Tử, mặc được ngay ở mọi cảnh giới."),
@@ -483,7 +483,7 @@ public static class GameData
     public static readonly int[] PillSellPrice = { 2, 6, 30, 120, 600, 2000, 5000 };
     public static int SellPrice(ItemDef it) =>
         it.Tier > 0 ? PillSellPrice[Math.Clamp(it.Tier - 1, 0, PillSellPrice.Length - 1)]
-        : it.Type is "stone" or "skin" ? 0
+        : it.Type is "stone" ? 0
         : it.Id == SpinTicket ? SpinTicketPrice / 2
         : it.Id == PetSpinTicket ? PetSpinTicketPrice / 2
         : (int)Math.Round(Math.Max(1, RarityPrice.GetValueOrDefault(it.Rarity, 3) * (1 + it.MinRealm)) *

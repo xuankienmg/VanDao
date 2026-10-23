@@ -461,6 +461,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         var list = p.Inventory.Where(i => i.Count > 0 && GameData.ItemById.TryGetValue(i.ItemId, out var d) && d.Sell > 0
                 && (!gearOnly || d.Slot is not null)
                 && (pick || d.Tier == 0)          // đan dược chỉ bán khi người chơi tự chọn, không bán theo phẩm hàng loạt
+                && (pick || d.Type != "skin")      // rương trang phục cũng vậy, tránh bán nhầm khi bán nhanh theo phẩm
                 && (scope is null || scope.ContainsKey(i.ItemId))
                 && Array.IndexOf(GameData.RarityOrder, d.Rarity) <= maxRarity).ToList();
         long count = 0, gain = 0;

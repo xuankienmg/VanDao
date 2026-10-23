@@ -412,7 +412,7 @@ function bulkPool(){
     const first = bagPage * BAG_PER_PAGE;
     for (const c of bagList().slice(first, first + BAG_PER_PAGE)) pool[c.k] = (pool[c.k] || 0) + c.n;
   } else for (const [k, c] of Object.entries(S.inventory)) if (c > 0) pool[k] = c;
-  for (const k of Object.keys(pool)){ const it = ITEM[k]; if (!it?.sell || it.tier || (bulkGear && !it.slot)) delete pool[k]; }
+  for (const k of Object.keys(pool)){ const it = ITEM[k]; if (!it?.sell || it.tier || it.type === 'skin' || (bulkGear && !it.slot)) delete pool[k]; }
   return pool;
 }
 function bulkSellRows(){
@@ -483,7 +483,7 @@ function itemCardHtml(k, src){
   }
   const del = `${KBD('Del')} bỏ`, act2 = `${MS_R}<i>/</i>${MS_L2}`;
   const hint = src === 'slot' ? `${act2} tháo · kéo vào hành trang · ${KBD('U')} tháo`
-    : it.slot ? `${act2} mặc · kéo vào ô trang bị · ${KBD('B')} bán · ${del}` : it.type === 'chest' ? `${act2} mở · ${KBD('Ctrl')}+${MS_R} mở hết · ${del}` : canUse(it) ? `${act2} dùng · ${del}`
+    : it.slot ? `${act2} mặc · kéo vào ô trang bị · ${KBD('B')} bán · ${del}` : it.type === 'chest' ? `${act2} mở · ${KBD('Ctrl')}+${MS_R} mở hết · ${del}` : it.type === 'skin' ? `${act2} mở · ${KBD('B')} bán · ${del}` : canUse(it) ? `${act2} dùng · ${del}`
     : rcCraft(it) ? `${MS_R} mở Luyện chế · Đan dược · ${del}` : del;
   return `<div class="iv-card">
     <p class="nm rc-${it.rarity}">${it.name}</p>
