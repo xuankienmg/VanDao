@@ -46,6 +46,37 @@ jobs:
           "TAG=$env:RELEASE_TAG" >> $env:GITHUB_ENV
           "VERSION=$version" >> $env:GITHUB_ENV
 
+      - name: Build release notes
+        shell: pwsh
+        env:
+          UPCOMING_NOTES: docs/releases/upcoming.md
+        run: |
+          # tag trước đó (bỏ qua tag hiện tại), không có thì lấy toàn bộ lịch sử
+          $prev = git describe --tags --abbrev=0 --match 'v[0-9]*' "$env:TAG^" 2>$null
+          # ưu tiên release note viết tay trong upcoming.md (tại commit của tag); trống thì sinh từ commit
+          $upcoming = if (Test-Path $env:UPCOMING_NOTES) { (Get-Content -Raw -Encoding utf8 $env:UPCOMING_NOTES).Trim() } else { '' }
+          if ($upcoming) {
+            $md = @($upcoming, '')
+            "NOTES_SOURCE=upcoming" >> $env:GITHUB_ENV
+          } else {
+            $range = if ($prev) { "$prev..$env:TAG" } else { $env:TAG }
+            $groups = [ordered]@{ 'Tính năng mới' = @(); 'Sửa lỗi' = @(); 'Cân bằng & cải thiện' = @(); 'Khác' = @() }
+            foreach ($l in (git log $range --no-merges --pretty=format:'%s')) {
+              if     ($l -match '^feat(\(.+?\))?!?:\s*(.+)')                     { $groups['Tính năng mới'] += $Matches[2] }
+              elseif ($l -match '^fix(\(.+?\))?!?:\s*(.+)')                      { $groups['Sửa lỗi'] += $Matches[2] }
+              elseif ($l -match '^(perf|refactor|balance)(\(.+?\))?!?:\s*(.+)')  { $groups['Cân bằng & cải thiện'] += $Matches[3] }
+              elseif ($l -notmatch '^(chore|ci|docs|test|build)(\(.+?\))?:')     { $groups['Khác'] += $l }
+            }
+            $md = @("## Có gì mới trong $env:TAG", '')
+            foreach ($k in $groups.Keys) {
+              if ($groups[$k].Count) { $md += "### $k"; $md += $groups[$k] | ForEach-Object { "- $_" }; $md += '' }
+            }
+            "NOTES_SOURCE=commits" >> $env:GITHUB_ENV
+          }
+          if ($prev) { $md += "So sánh: https://github.com/$env:GITHUB_REPOSITORY/compare/$prev...$env:TAG" }
+          $md | Set-Content -Encoding utf8 release-notes.md
+          Get-Content release-notes.md >> $env:GITHUB_STEP_SUMMARY
+
       - name: Build and package self-contained game and Launcher
         shell: pwsh
         run: |
@@ -84,7 +115,9 @@ jobs:
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body_path: release-notes.md
+          # release note viết tay đã đủ, chỉ nối danh sách PR tự sinh khi dùng note từ commit
+          generate_release_notes: ${{ env.NOTES_SOURCE != 'upcoming' }}
 
       - name: Verify uploaded ZIP and update Supabase
         shell: pwsh
