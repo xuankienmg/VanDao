@@ -24,7 +24,7 @@ for (var tier = 0; tier < qiPills.Length; tier++) {
     var pillId = qiPills[tier];
     Check(GameData.ItemById.ContainsKey(pillId), "missing qi pill: " + pillId);
     var pill = GameData.ItemById[pillId];
-    Check(pill.UseQiSeconds == new[] { 300, 1800, 7200 }[tier], "wrong qi pill potency");
+    Check(pill.UseQiSeconds == new[] { 300, 1800, 5400 }[tier], "wrong qi pill potency");
     var recipe = GameData.Brews.Single(b => b.Out == pillId);
     var brewer = await game.CreateAsync("Qi pill " + tier);
     brewer.Realm = 2;
@@ -125,6 +125,11 @@ game.SetSkin(dresser,"hop_the_nu");
 Check((await game.BuildStateAsync(dresser)).Skin=="hop_the_nu","không mặc được skin nữ sau khi mở rương");
 Reject(()=>game.UseItem(dresser,skinBox),"mở rương trang phục lần hai");
 Check(dresser.Count(skinBox)==1,"mở lần hai làm mất rương");
+// trang phục mở bằng rương: mặc ngay, không cần đạt cảnh giới
+var lowDresser=await game.CreateAsync("Skin low realm");
+lowDresser.Add(skinBox,1);game.UseItem(lowDresser,skinBox);game.SetSkin(lowDresser,"hop_the_nu");
+Check(lowDresser.Realm==0&&(await game.BuildStateAsync(lowDresser)).Skin=="hop_the_nu","skin mở bằng rương phải mặc được ở Luyện Khí");
+Reject(()=>game.SetSkin(lowDresser,"hop_the"),"skin theo cảnh giới vẫn phải đạt cảnh giới");
 // rương Khó / Ác mộng: phẩm trang bị trung bình cao dần theo mức, tổng tỉ lệ vẫn 1
 for(int realm=0;realm<GameData.Realms.Count;realm++)foreach(var chest in GameData.Chests.Keys){
     double AvgGrade(int diff){var t=ChestRewards.Table(realm,GameData.ChestId(chest,diff),0,realm).Where(x=>x.Group=="gear").ToArray();

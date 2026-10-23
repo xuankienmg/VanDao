@@ -563,3 +563,36 @@ body.panel #pane-pet .pet-ui{min-height:0}
 @keyframes ancient-card-glow-on{0%,100%{box-shadow:0 0 12px #fff1c299,inset 0 0 20px #b4a2ff33}50%{box-shadow:0 0 20px #ffd77acc,inset 0 0 26px #ffd77a33}}
 @keyframes ancient-stars{from{opacity:.35}to{opacity:.95}}
 @media(prefers-reduced-motion:reduce){#pane-pet .pet-card.pet-ancient,#pane-pet .pet-card.pet-ancient::before,#pane-pet .pet-card.pet-ancient::after{animation:none}}
+
+/* ===== Bồi dưỡng linh thú: tư chất · trang bị · thức tỉnh · cộng hưởng ===== */
+#pane-pet .pet-train-pets{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+#pane-pet .pet-train{display:flex;flex-direction:column;gap:10px}
+#pane-pet .pet-train .pet-star-head .pet-art{width:86px;height:86px;flex:none}
+#pane-pet .pet-train-stats{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px;font-size:12px;color:var(--pet-muted)}
+#pane-pet .pet-train-stats b{color:#eee3bf}
+#pane-pet .pet-train-stats .pet-symbol,#pane-pet .pet-train-apt .pet-symbol{width:14px;height:14px;vertical-align:-2px;margin-right:3px}
+#pane-pet .pet-train-box{border:1px solid #5d553f;background:#10221f;padding:9px 11px;border-radius:4px}
+#pane-pet .pet-train-box h4 small{color:var(--pet-muted);font-weight:400;margin-left:6px}
+#pane-pet .pet-train-box>small{display:block;margin-top:4px;color:#9a8f7a;font-size:11px;line-height:1.45}
+#pane-pet .pet-train-box .pet-btn{font-size:12px;min-height:28px;padding:4px 9px}
+#pane-pet .pet-train-apt{display:grid;grid-template-columns:70px minmax(60px,1fr) 52px auto;align-items:center;gap:6px;margin:5px 0}
+#pane-pet .pet-train-apt-btns{display:flex;gap:5px;flex-wrap:wrap}
+#pane-pet .pet-train-sub{font-size:12px;color:var(--pet-gold);margin:6px 0 4px}
+#pane-pet .pet-train-apt>span{font-size:12px;color:var(--pet-muted);white-space:nowrap}
+#pane-pet .pet-train-apt>b{font-size:14px;color:#eee3bf;text-align:right}#pane-pet .pet-train-apt>b small{font-size:10px;color:var(--pet-muted)}
+#pane-pet .pet-lock.on{background:#5a4a24;border-color:#f2c94c;color:#fff1ca}
+#pane-pet .pet-resonance p{font-size:12px}#pane-pet .pet-resonance.on{border-color:#8ac8a2;background:#0f2a22}#pane-pet .pet-resonance.on b{color:#9fe6a8}
+#pane-pet .pet-gear-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:4px 0 8px}
+#pane-pet .pet-gear-slot{display:flex;align-items:center;gap:6px;padding:5px;border:1px dashed #5d553f;background:#0d1d20;min-width:0}
+#pane-pet .pet-gear-slot.on{border-style:solid;border-color:#9a8556}
+#pane-pet .pet-gear-slot>span:nth-child(2){display:flex;flex-direction:column;min-width:0;flex:1;font-size:11px}
+#pane-pet .pet-gear-slot small,#pane-pet .pet-gear-item small{color:var(--pet-muted);font-size:10px}
+#pane-pet .pet-gear-ic{width:34px;height:34px;flex:none;display:grid;place-items:center;background:#132523;border:1px solid #3d4a3c}
+#pane-pet .pet-gear-ic i{font-style:normal;color:#6f7a68;font-size:18px}
+#pane-pet .pet-gear-ic .ic,#pane-pet .pet-gear-item .ic{width:30px;height:30px;object-fit:contain}
+#pane-pet .pet-gear-bag{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow:auto}
+#pane-pet .pet-gear-item{display:flex;align-items:center;gap:7px;padding:4px 6px;background:#132523;border:1px solid #3d4a3c}
+#pane-pet .pet-gear-item>span{display:flex;flex-direction:column;flex:1;min-width:0;font-size:11px}
+#pane-pet .pet-awaken-pips{margin-left:8px;letter-spacing:2px;font-size:12px}#pane-pet .pet-awaken-pips i{font-style:normal;color:#4b4a3c}#pane-pet .pet-awaken-pips i.on{color:#ff9e5e;text-shadow:0 0 6px #ff7a3a}
+#pane-pet .pet-awaken-tag{font-style:normal;font-size:11px;color:#ffb27a;border:1px solid #a05a32;border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:2px;white-space:nowrap}
+@container pet-pane (max-width:700px){#pane-pet .pet-train-apt{grid-template-columns:60px minmax(40px,1fr) 46px}#pane-pet .pet-train-apt-btns{grid-column:1/-1}#pane-pet .pet-train-apt-btns .pet-btn{flex:1}#pane-pet .pet-gear-slots{grid-template-columns:1fr}}

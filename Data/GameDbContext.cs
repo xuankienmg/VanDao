@@ -85,6 +85,7 @@ public static class SchemaUpgrade
             ("LearnedManuals", "TEXT NOT NULL DEFAULT ''"), ("ManualVersion", "INTEGER NOT NULL DEFAULT 0"), ("ActiveManual", "TEXT NOT NULL DEFAULT ''"),
             ("BreakCooldownUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"), ("DebuffUntil", "TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'"),
             ("PillBonus", "REAL NOT NULL DEFAULT 0"), ("Skin", "TEXT NOT NULL DEFAULT ''"), ("SkinsUnlocked", "TEXT NOT NULL DEFAULT ''"),
+            ("Gender", "TEXT NOT NULL DEFAULT 'male'"),
             ("Admin", "TEXT NOT NULL DEFAULT ''"), ("AdminPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("ElixirPoints", "INTEGER NOT NULL DEFAULT 0"),
             ("MapRealm", "INTEGER NOT NULL DEFAULT -1"), ("Redeemed", "TEXT NOT NULL DEFAULT ''"), ("SpinHistory", "TEXT NOT NULL DEFAULT ''"),
@@ -145,6 +146,14 @@ public static class SchemaUpgrade
         if (Convert.ToInt64(cmd.ExecuteScalar()) == 0)
         {
             cmd.CommandText = "ALTER TABLE \"Pets\" ADD COLUMN \"StarPts\" INTEGER NOT NULL DEFAULT 0";   // con đã có sao (luật cũ 1 con/sao): quy đổi trong PetData.Pts
+            cmd.ExecuteNonQuery();
+        }
+        // bồi dưỡng linh thú: thức tỉnh huyết mạch + 3 ô trang bị linh thú
+        foreach (var (col, def) in new[] { ("Awaken", "INTEGER NOT NULL DEFAULT 0"), ("GearCollar", "TEXT NOT NULL DEFAULT ''"), ("GearArmor", "TEXT NOT NULL DEFAULT ''"), ("GearCharm", "TEXT NOT NULL DEFAULT ''") })
+        {
+            cmd.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('Pets') WHERE name = '{col}'";
+            if (Convert.ToInt64(cmd.ExecuteScalar()) != 0) continue;
+            cmd.CommandText = $"ALTER TABLE \"Pets\" ADD COLUMN \"{col}\" {def}";
             cmd.ExecuteNonQuery();
         }
         // vật phẩm đã bị gỡ khỏi game (vd. trang bị Trúc Cơ / Kim Đan bản cũ): xóa khỏi túi và ô trang bị để save cũ không lỗi

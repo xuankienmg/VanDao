@@ -221,6 +221,10 @@ body.strip .strip-head button{cursor:pointer}
 .wd-hd b{font-family:var(--f-display);font-size:15px;color:var(--parch)} .wd-hd span{flex:1;font-size:10px;color:#8f9a94}
 .wd-x{background:none;border:0;color:#a9b4ae;font-size:18px;line-height:1;cursor:pointer;padding:0 2px} .wd-x:hover{color:var(--gold)}
 .wd-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-height:min(360px,60vh);overflow-y:auto;scrollbar-width:thin}
+.wd-genders{display:flex;gap:6px;margin:8px 0}
+.wd-genders button{flex:1;padding:6px;border:1px solid #596d6a;background:#102326;color:var(--parch);border-radius:4px;cursor:pointer}
+.wd-genders button[aria-pressed="true"]{border-color:#e4bd68;background:#35413a;color:#ffe2a0}
+.wd-genders button:disabled{opacity:.6;cursor:wait}
 .wd-card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 4px;background:var(--iron);border:1px solid #3e4247;color:inherit;font:inherit;cursor:pointer;text-align:center}
 .wd-card:hover:not(:disabled){border-color:var(--bronze2)}
 .wd-card.on{border-color:var(--jade);background:#1d302b;box-shadow:0 0 0 1px rgba(92,214,198,.35)}

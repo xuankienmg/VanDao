@@ -170,3 +170,5 @@ main>section{padding:clamp(56px,9vw,112px) var(--gutter);max-width:1240px;margin
   .taskbar .tb-app:nth-of-type(n+3){display:none}
   code{white-space:normal}
 }
+
+.wiki-link{display:inline-block;color:var(--paper-ink);font-size:14px;border-bottom:1px solid currentColor;padding:7px 0;margin-right:12px}

@@ -157,8 +157,9 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             SkillLevels(p), p.Slots(), SkillPoints(p), SkillData.PointsEarned(Level(p), p.Realm, p.BossKills) + p.ElixirPoints,
             new BreakStateDto(Realm(p).BreakChance, Math.Max(0, (long)(p.BreakCooldownUntil - DateTime.UtcNow).TotalMilliseconds),
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
-            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", ChestOdds(p), p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p), CultivationManuals.Active(p),
-            UnlockedSkins(p).ToArray());
+            logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", Player.AdminEnabled ? ChestOdds(p) : [],   // tỉ lệ rương chỉ hiện ở admin mode: bản phát hành khỏi tính + gửi ~11 KB mỗi lần đồng bộ
+            p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p), CultivationManuals.Active(p),
+            UnlockedSkins(p).ToArray(), CurrentGender(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -370,10 +371,28 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
 
     /// <summary>Trang phục đang hiệu lực: bỏ qua skin không còn tồn tại hoặc chưa đủ cảnh giới (vd. admin hạ cảnh giới).</summary>
     private static string CurrentSkin(Player p) =>
-        GameData.SkinById.TryGetValue(p.Skin ?? "", out var s) && p.Realm >= s.MinRealm && SkinOpen(p, s) ? s.Id : "";
+        GameData.SkinById.TryGetValue(p.Skin ?? "", out var s) && SkinWearable(p, s) ? s.Id : "";
+    private static string CurrentGender(Player p) =>
+        GameData.SkinById.TryGetValue(CurrentSkin(p), out var s) ? s.Gender : p.Gender == "female" ? "female" : "male";
+
+    public (string msg, string kind) SetGender(Player p, string? gender)
+    {
+        if (gender is not ("male" or "female")) throw new GameException("Giới tính không hợp lệ.");
+        var current = CurrentSkin(p);
+        if (GameData.SkinById.TryGetValue(current, out var s) && s.Gender != gender)
+        {
+            var counterpart = gender == "female" ? s.Id + "_nu" : s.Id.Replace("_nu", "");
+            p.Skin = GameData.SkinById.TryGetValue(counterpart, out var next) && SkinWearable(p, next) ? next.Id : "";
+        }
+        else if (current.Length == 0) p.Skin = "";
+        p.Gender = gender;
+        return (gender == "female" ? "Đã chuyển ngoại hình nữ." : "Đã chuyển ngoại hình nam.", "");
+    }
     private static IEnumerable<string> UnlockedSkins(Player p) => (p.SkinsUnlocked ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
     /// <summary>Trang phục không cần rương thì luôn mở; cần rương thì phải đã mở rương đó.</summary>
     private static bool SkinOpen(Player p, SkinDef s) => s.UnlockItem is null || UnlockedSkins(p).Contains(s.Id);
+    /// <summary>Mặc được: trang phục mở bằng rương thì không cần cảnh giới; trang phục theo cảnh giới thì phải đạt MinRealm.</summary>
+    private static bool SkinWearable(Player p, SkinDef s) => SkinOpen(p, s) && (s.UnlockItem is not null || p.Realm >= s.MinRealm);
 
     /// <summary>Mở rương trang phục: mở khóa vĩnh viễn trang phục tương ứng, tốn 1 rương.</summary>
     private (string msg, string kind) OpenSkinChest(Player p, string itemId)
@@ -383,18 +402,19 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         if (SkinOpen(p, s)) throw new GameException($"Đã mở khóa {s.Name}; rương được giữ nguyên.");
         p.SkinsUnlocked = string.Join(',', UnlockedSkins(p).Append(s.Id));
         p.Add(itemId, -1);
-        return Log(p, $"Mở {GameData.ItemById[itemId].Name}: mở khóa trang phục {s.Name}{(p.Realm < s.MinRealm ? $" (mặc được từ {GameData.Realms[s.MinRealm].Name})" : "")}.", "gold");
+        return Log(p, $"Mở {GameData.ItemById[itemId].Name}: mở khóa trang phục {s.Name}, mặc được ngay.", "gold");
     }
 
     /// <summary>Đổi trang phục (rỗng = tự đổi theo cảnh giới).</summary>
     public (string msg, string kind) SetSkin(Player p, string? skin)
     {
         skin ??= "";
-        if (skin.Length == 0) { p.Skin = ""; return ("Trang phục: tự đổi theo cảnh giới.", ""); }
+        if (skin.Length == 0) { p.Gender = CurrentGender(p); p.Skin = ""; return ("Trang phục: tự đổi theo cảnh giới.", ""); }
         if (!GameData.SkinById.TryGetValue(skin, out var s)) throw new GameException("Trang phục không tồn tại.");
         if (!SkinOpen(p, s)) throw new GameException($"Mở {GameData.ItemById[s.UnlockItem!].Name} để dùng trang phục {s.Name}.");
-        if (p.Realm < s.MinRealm) throw new GameException($"Cần đạt cảnh giới {GameData.Realms[s.MinRealm].Name} để mặc {s.Name}.");
-        p.Skin = s.Id;
+        if (!SkinWearable(p, s)) throw new GameException($"Cần đạt cảnh giới {GameData.Realms[s.MinRealm].Name} để mặc {s.Name}.");
+        p.Skin = s.UnlockItem is null && s.HeroStand == Realm(p).HeroStand ? "" : s.Id;
+        p.Gender = s.Gender;
         return ($"Đã thay trang phục {s.Name}.", "");
     }
 
@@ -512,6 +532,9 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         p.Pay(cost);
         var crit = roll < chance * GameData.BreakCritShare;
         {
+            // Standard realm outfits follow the new realm; chest costumes stay equipped.
+            if (GameData.SkinById.TryGetValue(p.Skin ?? "", out var outfit) && outfit.UnlockItem is null)
+                p.Skin = "";
             p.Realm++;
             p.Stage = 0;
             p.Qi = 0;
@@ -583,8 +606,8 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 return Log(p, $"[Admin] +{n:N0} {GameData.Label(it)}.", "good");
             case "petkit":
                 // mọi Thú Đản + đan dược / nguyên liệu linh thú, mỗi loại n cái
-                foreach (var pi in PetData.Items) p.Add(pi.Id, n);
-                return Log(p, $"[Admin] +{n:N0} mỗi loại Thú Đản và đan dược linh thú ({PetData.Items.Length} loại).", "good");
+                foreach (var pi in PetData.Items.Concat(PetTraining.Items)) p.Add(pi.Id, n);
+                return Log(p, $"[Admin] +{n:N0} mỗi loại Thú Đản, đan dược và trang bị linh thú ({PetData.Items.Length + PetTraining.Items.Length} loại).", "good");
             case "petstar":
                 return AdminPetStar(p, arg, n);
             case "petlevel":
@@ -1508,6 +1531,11 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         // Boss: kỹ năng ẩn — Yêu thân (giảm sát thương nhận) · Cuồng bạo (máu thấp thì công tăng)
         var isBoss = area >= GameData.BossArea;
         var trait = isBoss ? GameData.DiffTrait(Chap(p), p.Diff) : null;
+        if (trait is not null)                                                    // Boss: kháng bạo trừ thẳng tỉ lệ bạo kích
+        {
+            crit = Math.Max(0, crit - trait.CritRes / 100);
+            bcrit = Math.Max(0, bcrit - trait.CritRes / 100);
+        }
         double TakeK(MonsterDef x) => x.Tier == "elite" ? 1 - GameData.EliteDmgReduce / 100 : trait is null ? 1 : 1 - trait.DmgReduce / 100;   // tinh anh: giảm 5% sát thương nhận
         var takeK = TakeK(m);
         var monDmgEnr = trait is null ? monDmg : MonHit(m.Atk * (1 + trait.EnrageAtk / 100));
@@ -1532,7 +1560,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         var ability = DivineAbility.For(p);
         var divine = new DivineCombat(ability.Tier);
         var divineRng = new Random(unchecked((p.Id.GetHashCode()*71+area)*79+(int)(tripSec%1_000_000_007)));
-        var extraChance = divine.ExtraChance(Math.Min(30,fx.ExtraHit + PetTalent(p,"extra")));
+        var extraChance = Math.Max(0, divine.ExtraChance(Math.Min(30,fx.ExtraHit + PetTalent(p,"extra"))) - (trait?.ExtraRes ?? 0));   // Boss: kháng liên kích
         var divineTurns = new List<DivineTurnDto>();
         var hitBoosted = false;
         int monHp = m.Hp, heroHp = st.Hp, turns = 0, rage = (int)fx.Rage, tw = 0; var win = false;   // Tĩnh tâm: vào trận đã có nộ · tw: lượt trong đợt
