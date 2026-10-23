@@ -45,8 +45,9 @@ public record SlotDef(string Id, string Name);
 public record DropDef(string Item, int Min, int Max, double Chance);
 
 /// <summary>Kiểu dữ liệu API cũ; danh sách Synths luôn rỗng từ khi chuyển sang luyện chế.</summary>
-/// <summary>Trang phục (skin) nhân vật: bộ ảnh đứng / ngồi thiền / tung chiêu / sprite chiến đấu. Mở khi đạt cảnh giới MinRealm.</summary>
-public record SkinDef(string Id, string Name, string Desc, int MinRealm, string Hero, string HeroStand, string HeroMed, string HeroCast);
+/// <summary>Trang phục (skin) nhân vật: bộ ảnh đứng / ngồi thiền / tung chiêu / sprite chiến đấu. Mở khi đạt cảnh giới MinRealm;
+/// có UnlockItem thì còn phải mở rương trang phục đó một lần (Player.SkinsUnlocked).</summary>
+public record SkinDef(string Id, string Name, string Desc, int MinRealm, string Hero, string HeroStand, string HeroMed, string HeroCast, string? UnlockItem = null);
 public record SynthDef(string From, string To, int Count, int Stones, Dictionary<string, int>? Herbs = null);   // Herbs: linh thảo cần thêm mỗi lần luyện chế
 /// <summary>Linh thảo rơi sau mỗi chuyến thắng ở các chương Chapters, từ ải MinArea (tỉ lệ tăng 3% mỗi ải như vật phẩm khác).</summary>
 public record HerbDropDef(string Item, int[] Chapters, int MinArea, int Min, int Max, double Chance);
@@ -163,13 +164,17 @@ public static class GameData
         // vé Linh Thú: đổi bằng linh thạch ở Luyện chế → Vòng quay → Quay Linh Thú, mỗi vé quay vòng 5 ô nhận 1 Thú Đản (GameService.PetSpin)
         new ItemDef("ve_linh_thu", "Vé Linh Thú", "ticket", "#a77be0", "Thẻ ngọc tím khắc ngũ sắc Thú Đản, truyền linh lực vào là vòng quay Linh Thú tự chuyển.", Rarity: "epic", Kind: "Vé quay",
             Use: "Dùng ở Luyện chế → Vòng quay → Quay Linh Thú: mỗi vé quay 1 lần, nhận 1 Thú Đản Phàm → Thiên."),
+        // ---- rương trang phục: dùng để mở khóa vĩnh viễn một trang phục (SkinDef.UnlockItem), không mua bán được ----
+        new ItemDef(SkinChestHopTheNu, "Rương Trang Phục · Thiên Hợp Tiên Cơ", "skin", "#e8a3c8", "Rương ngọc trắng khắc phượng hoàng, bên trong cất bộ tiên y của Thiên Hợp Tiên Cơ.",
+            Icon: "img/ruong_boss.png", Tint: "hue-rotate(290deg) saturate(1.15)", Rarity: "legendary", Kind: "Rương trang phục",
+            Use: "Mở để mở khóa vĩnh viễn trang phục Thiên Hợp Tiên Cơ. Mặc được từ cảnh giới Hợp Thể."),
         // ---- rương: rơi khi diệt yêu, mở ra nhận 1 phần thưởng ngẫu nhiên theo cảnh giới (GameService.OpenChest) ----
         new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
             Use: "Nhận trang bị, linh thảo hoặc thức ăn linh thú. Không ra đan tiến giai; tỉ lệ đan cũ chia đều cho các vật phẩm còn lại. Xem bảng tỉ lệ theo cảnh giới trong Hành trang."),
         new ItemDef("ruong_hiem",   "Rương hiếm",   "chest", "#5aa2e6", "Rương lam khảm ngọc, phù văn còn sáng. Chỉ rơi ở ải 10–15 mỗi chương.", Rarity: "rare", Kind: "Rương",
             Use: "Nhận một nhóm thưởng: 57% trang bị (gồm pháp bảo), 26,5% linh thảo; còn lại là đan lên tầng. Từ Nguyên Anh: 4% Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo."),
         new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
-            Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, đan dược, linh thú hoặc công pháp. Có 1% nhận một bí kíp ngẫu nhiên trong 3 hệ Hỏa, Thủy, Mộc. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
+            Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, đan dược, linh thú hoặc công pháp. Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
         // ---- đan theo cảnh giới: dùng để lên tầng và đột phá, luyện từ linh thảo ----
         new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, có từ Boss, Rương hiếm hoặc Rương Boss.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. Luyện chế từ linh thảo và linh thạch tại mục Đan dược."),
@@ -440,7 +445,7 @@ public static class GameData
     public static readonly int[] PillSellPrice = { 2, 6, 30, 120, 600, 2000, 5000 };
     public static int SellPrice(ItemDef it) =>
         it.Tier > 0 ? PillSellPrice[Math.Clamp(it.Tier - 1, 0, PillSellPrice.Length - 1)]
-        : it.Type == "stone" ? 0
+        : it.Type is "stone" or "skin" ? 0
         : it.Id == SpinTicket ? SpinTicketPrice / 2
         : it.Id == PetSpinTicket ? PetSpinTicketPrice / 2
         : (int)Math.Round(Math.Max(1, RarityPrice.GetValueOrDefault(it.Rarity, 3) * (1 + it.MinRealm)) *
@@ -616,7 +621,24 @@ public static class GameData
         return null;
     }
 
-    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(PetData.Items).Concat(CultivationManuals.Items).Concat(GearVariants)
+    // ---- rương theo mức độ khó: rương rơi ở mức nào thì mở ra tính thưởng theo mức đó, không theo mức đang đánh lúc mở ----
+    /// <summary>Thường · Khó · Ác mộng (khai báo ở đây vì AllItems bên dưới cần khi tạo rương theo mức).</summary>
+    public static readonly string[] DiffNames = { "Thường", "Khó", "Ác mộng" };
+    /// <summary>Hậu tố id rương theo mức (Thường giữ id gốc) và viền sáng phân biệt rương dùng chung ảnh.</summary>
+    public static readonly string[] DiffChestSuffix = { "", "_kho", "_ac_mong" };
+    private static readonly string?[] DiffChestTint = { null, "drop-shadow(0 0 3px #f0913a)", "drop-shadow(0 0 3px #e0404a) saturate(1.25)" };
+    public static string ChestId(string baseId, int diff) => baseId + DiffChestSuffix[Math.Clamp(diff, 0, DiffChestSuffix.Length - 1)];
+    public static int ChestDiff(string id)
+    {
+        for (var d = DiffChestSuffix.Length - 1; d > 0; d--) if (id.EndsWith(DiffChestSuffix[d])) return d;
+        return 0;
+    }
+    public static string ChestBase(string id) => id[..^DiffChestSuffix[ChestDiff(id)].Length];
+    private static IEnumerable<ItemDef> DiffChests => Items.Where(it => it.Type == "chest").SelectMany(it => Enumerable.Range(1, DiffNames.Length - 1)
+        .Select(d => it with { Id = ChestId(it.Id, d), Name = $"{it.Name} · {DiffNames[d]}", Icon = $"img/{it.Id}.png", Tint = DiffChestTint[d],
+            Desc = $"{it.Desc} Rơi ở mức {DiffNames[d]}: phần thưởng tính theo mức {DiffNames[d]}." }));
+
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(DiffChests).Concat(PetData.Items).Concat(CultivationManuals.Items).Concat(GearVariants)
         .Select(it => PixelIcons.Contains(it.Id) ? it with { Icon = $"img/{it.Id}.png" } : it)
         .Select(it => it with { Sell = SellPrice(it) }).ToList();
 
@@ -778,8 +800,9 @@ public static class GameData
 
     // ---- mức độ khó của bản đồ ----
     /// <summary>Thường · Khó · Ác mộng: chỉ số quái xem DiffStatScale (DiffMult không còn dùng cho chỉ số); linh thạch, đan, tu vi ×DiffReward;
-    /// trang bị rơi nâng 1 bậc phẩm với tỉ lệ DiffQualityShift; rương hiếm ×DiffRareChest; Boss rơi DiffBossChests Rương Boss.</summary>
-    public static readonly string[] DiffNames = { "Thường", "Khó", "Ác mộng" };
+    /// trang bị rơi nâng 1 bậc phẩm với tỉ lệ DiffQualityShift; rương hiếm ×DiffRareChest; Boss rơi DiffBossChests Rương Boss.
+    /// Rương rơi ở Khó / Ác mộng là loại riêng (ChestId), mở ra tính thưởng theo mức của rương.</summary>
+    // DiffNames khai báo ở phần rương theo mức (trước AllItems)
     public static readonly double[] DiffMult = { 1, 2, 4 };
     public static readonly double[] DiffReward = { 1, 1.5, 2.5 };
     public static readonly double[] DiffQualityShift = { 0, 0.5, 1 };
@@ -825,6 +848,41 @@ public static class GameData
         return ((int)Math.Round(lo * k), (int)Math.Round(hi * k));
     }
     /// <summary>Trọng số phẩm trang bị rơi ở mức khó d: dời một phần (DiffQualityShift) lên 1 bậc, tối đa Vàng (Đỏ chỉ từ luyện khí / rương).</summary>
+    /// <summary>Rương Khó / Ác mộng: dời phần này của mỗi phẩm lên 1 bậc (nhẹ hơn trang bị rơi ở map, DiffQualityShift).</summary>
+    public static readonly double[] DiffChestQualityShift = { 0, 0.15, 0.30 };
+    /// <summary>Rương Khó / Ác mộng: phần nhỏ (trên phần trang bị) ra phẩm Thánh → Đạo bất kể cảnh giới, Rương Boss cao nhất. [rương][mức]</summary>
+    public static readonly IReadOnlyDictionary<string, double[]> DiffChestHighGrade = new Dictionary<string, double[]>
+    {
+        ["ruong_thuong"] = new[] { 0, .002, .005 },
+        ["ruong_hiem"]   = new[] { 0, .006, .015 },
+        ["ruong_boss"]   = new[] { 0, .015, .04 },
+    };
+    /// <summary>Chia phần phẩm cao của rương Khó / Ác mộng cho Thánh · Thần · Tiên · Đạo.</summary>
+    public static readonly double[] DiffChestHighSplit = { 70, 22, 6, 2 };
+    public const int DiffChestHighFrom = 5;   // Thánh
+    /// <summary>Trọng số phẩm trang bị khi mở rương ở mức d (mức ghi trên rương): bảng của rương theo cảnh giới, dời DiffChestQualityShift lên 1 bậc
+    /// nhưng không vượt phẩm cao nhất mà cảnh giới đó có ở bất kỳ rương nào (ChestTopQuality); thêm phần nhỏ Thánh → Đạo (DiffChestHighGrade).</summary>
+    public static double[] ChestQuality(string chest, int realm, int d)
+    {
+        var w = Chests[chest].QualityAt(realm); d = Math.Clamp(d, 0, DiffChestQualityShift.Length - 1);
+        var sh = DiffChestQualityShift[d];
+        if (sh <= 0) return w;
+        var top = ChestTopQuality(realm); var r = new double[w.Length];
+        for (var i = 0; i < w.Length; i++)
+        {
+            if (i >= top) { r[i] += w[i]; continue; }                     // đã ở phẩm trần của cảnh giới: giữ nguyên
+            r[i] += w[i] * (1 - sh); r[i + 1] += w[i] * sh;
+        }
+        var hi = DiffChestHighGrade.TryGetValue(chest, out var g) ? g[d] : 0;
+        if (hi <= 0) return r;
+        var sum = r.Sum(); var split = DiffChestHighSplit.Sum();
+        for (var i = 0; i < r.Length; i++) r[i] *= 1 - hi;
+        for (var k = 0; k < DiffChestHighSplit.Length && DiffChestHighFrom + k < r.Length; k++) r[DiffChestHighFrom + k] += sum * hi * DiffChestHighSplit[k] / split;
+        return r;
+    }
+    /// <summary>Phẩm cao nhất (chỉ số trong bảng Quality) có ở bất kỳ loại rương nào của cảnh giới.</summary>
+    public static int ChestTopQuality(int realm) =>
+        Chests.Values.Max(c => { var q = c.QualityAt(realm); return Array.FindLastIndex(q, x => x > 0); });
     public static double[] DiffQuality(double[] w, int d)
     {
         var sh = DiffQualityShift[Math.Clamp(d, 0, DiffQualityShift.Length - 1)];
@@ -972,8 +1030,8 @@ public static class GameData
             Id = "hop_the", Name = "Hợp Thể",
             Desc = "Nguyên thần cùng nhục thân hợp nhất, một quyền nát núi, thọ nguyên vạn năm. Mỗi kỳ cần linh thạch và Hợp Thể Đan. Không có chương mới: luyện ở mức Khó / Ác mộng.",
             Stages = new[] { "Sơ kỳ", "Trung kỳ", "Hậu kỳ" },
-            Aura = "#a7d5ff", Lotus = "#fff0c4", Sash = "#caa45a", Hero = "img/hero_hopthe.png",
-            HeroStand = "img/hero_hopthe_stand.png", HeroMed = "img/med_hopthe.png", HeroCast = "img/hoa_cau_ref_hopthe.png", Halo = "img/halo_06.png",
+            Aura = "#a7d5ff", Lotus = "#fff0c4", Sash = "#caa45a", Hero = "img/hero_luyenhu.png",   // dùng chung ảnh Luyện Hư; Thiên Hợp Tiên Y chọn ở Trang phục
+            HeroStand = "img/hero_luyenhu_stand.png", HeroMed = "img/med_luyenhu.png", HeroCast = "img/hoa_cau_ref_luyenhu.png", Halo = "img/halo_06.png",
             Cn = "", BagSlots = 500, EquipSlots = new[] { "weapon", "offhand", "head", "body", "hands", "legs", "feet", "necklace", "charm", "ring" },
             QiReq = s => Math.Round(52000000000 * Math.Pow(1.7, s)),  // cả cảnh giới ≈ 270 tỷ tu vi (×16 Luyện Hư, cùng nhịp các cảnh giới trước)
             Rate = s => 155000 + s * 45000,
@@ -1012,9 +1070,11 @@ public static class GameData
         new SkinDef("hop_the", "Thiên Hợp Tiên Y", "Tiên y trắng phủ hắc bào thêu kim vân, long giáp vàng đính lam ngọc, tóc bạc đội kim quan của đại năng Hợp Thể.", 6,
             "img/hero_hopthe.png", "img/hero_hopthe_stand.png", "img/med_hopthe.png", "img/hoa_cau_ref_hopthe.png"),
         new SkinDef("hop_the_nu", "Thiên Hợp Tiên Cơ", "Tiên cơ tóc bạc đội kim quan lam ngọc, tiên y trắng phối hắc kim, dải lụa thêu vân và pháp hoàn vàng của cảnh giới Hợp Thể.", 6,
-            "img/hero_hopthe_nu.png", "img/hero_hopthe_nu_stand.png", "img/med_hopthe_nu.png", "img/hoa_cau_ref_hopthe_nu.png"),
+            "img/hero_hopthe_nu.png", "img/hero_hopthe_nu_stand.png", "img/med_hopthe_nu.png", "img/hoa_cau_ref_hopthe_nu.png", UnlockItem: SkinChestHopTheNu),
     };
     public static readonly Dictionary<string, SkinDef> SkinById = Skins.ToDictionary(s => s.Id);
+    /// <summary>Rương trang phục mở khóa Thiên Hợp Tiên Cơ (tạm thời chỉ admin phát: lệnh give).</summary>
+    public const string SkinChestHopTheNu = "ruong_skin_hop_the_nu";
 
     // ================= Luyện đan theo đan phương (linh dược rơi khi diệt yêu) =================
     /// <summary>Nơi rơi linh thảo. Mỗi bậc: 1 loại để luyện chế đan đột phá (rơi mọi ải, chương kế tiếp rơi ít hơn)

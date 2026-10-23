@@ -78,11 +78,15 @@
     let best = null, score = Infinity;
     const offer = r => { const k = left(r); if (k < score){ best = r; score = k; } return k === 0; };
     let tried = 0;
+    // câu đứng trước ". " bị tách mất dấu chấm: thử cả mẫu có dấu chấm cuối rồi bỏ dấu chấm ở bản dịch
+    const dot = !/[.!?…:]$/.test(s);
     for (const p of PATS){
-      const m = p.re.exec(s);
+      let m = p.re.exec(s), cut = false;
+      if (!m && dot){ m = p.re.exec(s + '.'); cut = !!m; }
       if (!m) continue;
       const fill = (_, i) => { const g = m[p.order.indexOf(+i) + 1] ?? '', c = g.trim(); return c ? g.replace(c, () => line(c, depth + 1) ?? c) : g; };
-      if (offer(p.en.replace(/\{(\d+)\}/g, fill)) || ++tried >= 4) break;
+      const en = p.en.replace(/\{(\d+)\}/g, fill);
+      if (offer(cut ? en.replace(/\.$/, '') : en) || ++tried >= 4) break;
     }
     if (score) for (const sep of SEPS){
       if (!s.includes(sep)) continue;

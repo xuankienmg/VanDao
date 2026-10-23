@@ -52,7 +52,7 @@ function renderCraft(){
   const pane = $('pane-craft');
   if (!$('ddCanvas')){
     pane.innerHTML = `<div class="dd">
-      <header class="dd-top">${lcNav('craft')}<div class="dd-cult" id="ddCult"></div><div class="dd-stone" id="ddStone"></div></header>
+      <header class="dd-top">${lcNav('craft')}<div class="dd-cult" id="ddCult"></div></header>
       <section class="dd-main">
         <div class="dd-synth" id="ddSynth">
           <div class="dd-io" id="ddIn"></div>
@@ -67,7 +67,6 @@ function renderCraft(){
   }
   const k=ddCur(),it=ITEM[k],b=brewOf(k),max=brewMax(b);
   if(!it||!b)return;
-  $('ddStone').innerHTML = `${itemImg('linh_thach')}<span>Linh thạch</span><b>× ${fmt(stones())}</b>${hpStoneHtml('dd-hp')}`;
   const herbs=Object.entries(b.in).filter(([id])=>id!=='linh_thach');
   $('ddIn').innerHTML='<span class="dd-lab">Nguyên liệu</span><div class="dd-reagents">'+herbs.map(([id,c])=>{
     const have=S.inventory[id]||0;

@@ -25,6 +25,7 @@ public record SkillDef(string Id, string Element, string Name, string Category, 
     public double Factor(int lv) => lv <= 0 ? 0 : lv + Lead;
     /// <summary>Cây: basic (đòn thường, không dùng điểm) · active · passive.</summary>
     public string Tree => Category == "Đòn thường" ? "basic" : Category is "Căn cơ" or "Bị động" ? "passive" : "active";
+    public SkillSecondaryDef? SecondaryEffect => SkillSecondaryEffects.For(this);
 }
 
 /// <summary>
@@ -38,10 +39,10 @@ public static class SkillData
         new ElementDef("hoa",  "Hỏa",  "#e0521e", "#f8d25a", true,  "Hỏa Linh Căn",  "Lửa linh khí do tu sĩ khống chế: công mạnh, có thủ, có khống, có thân pháp."),
         new ElementDef("thuy", "Thủy", "#3f8fd8", "#6fe0e0", true,  "Thủy Linh Căn", "Nước nhu mà bền: phòng ngự, hồi phục, nhấn chìm kẻ địch."),
         new ElementDef("moc",  "Mộc",  "#4f9a5a", "#9fe6a8", true, "Mộc Linh Căn",  "Cỏ cây sinh trưởng: trói buộc, chữa thương, trường sinh."),
-        new ElementDef("tho",  "Thổ",  "#b08a4a", "#e6c46a", false, "Thổ Linh Căn",  "Đất đá vững chãi: tường đá, giáp đất, sơn nhạc."),
-        new ElementDef("loi",  "Lôi",  "#a46ae6", "#6fb8ff", false, "Lôi Linh Căn",  "Lôi điện nhanh như chớp: lôi bộ, xích điện, thiên lôi."),
-        new ElementDef("bang", "Băng", "#a8dcf0", "#ffffff", false, "Băng Linh Căn", "Hàn khí đóng băng: băng tiễn, băng thuẫn, tuyệt đối linh độ."),
-        new ElementDef("gio",  "Phong","#8fd0b0", "#e6fff4", false, "Phong Linh Căn","Gió vô hình: thân pháp, phong nhận, cuồng phong."),
+        new ElementDef("tho",  "Thổ",  "#b08a4a", "#e6c46a", true, "Thổ Linh Căn",  "Đất đá vững chãi: tường đá, giáp đất, sơn nhạc."),
+        new ElementDef("loi",  "Lôi",  "#a46ae6", "#6fb8ff", true, "Lôi Linh Căn",  "Lôi điện nhanh như chớp: lôi bộ, xích điện, thiên lôi."),
+        new ElementDef("bang", "Băng", "#a8dcf0", "#ffffff", true, "Băng Linh Căn", "Hàn khí đóng băng: băng tiễn, băng thuẫn, tuyệt đối linh độ."),
+        new ElementDef("gio",  "Phong","#8fd0b0", "#e6fff4", true, "Phong Linh Căn","Gió vô hình: thân pháp, phong nhận, cuồng phong."),
     };
 
     public static readonly IReadOnlyList<SkillDef> Skills = new SkillDef[]
@@ -185,27 +186,7 @@ public static class SkillData
             "Sát thương chiêu thức và máu +3% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_009", SkillPct: 3, HpPct: 3),
         new("moc_dao_hop_nhat", "moc", "Mộc Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_moc:3" },
             "Máu +4%, sát thương chiêu thức +3%, phòng thủ +2% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_010", HpPct: 4, SkillPct: 3, DefPct: 2),
-        new("tho_linh_can", "tho", "Thổ Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Thổ.", "root"),
-        new("thach_dan", "tho", "Thạch Đạn", "Công", 2, 1, 5, 0, 1, new[] { "tho_linh_can:1" }, "Đạn đá.", "bolt"),
-        new("tho_tuong", "tho", "Thổ Tường", "Thủ", 2, 3, 5, 0, 1, new[] { "tho_linh_can:1" }, "Tường đất.", "shield"),
-        new("tho_giap", "tho", "Thổ Giáp", "Thủ", 4, 2, 5, 1, 2, new[] { "thach_dan:3", "tho_tuong:3" }, "Giáp đất.", "aura"),
-        new("son_nhac", "tho", "Sơn Nhạc Quyết", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "tho_giap:3" }, "Sức nặng núi non.", "ultimate"),
-        new("loi_linh_can", "loi", "Lôi Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Lôi.", "root"),
-        new("loi_kich", "loi", "Lôi Kích", "Công", 2, 1, 5, 0, 1, new[] { "loi_linh_can:1" }, "Sét đánh.", "bolt"),
-        new("loi_bo", "loi", "Lôi Bộ", "Thân pháp", 2, 3, 5, 0, 1, new[] { "loi_linh_can:1" }, "Bước chân sấm sét.", "dash"),
-        new("lien_loi", "loi", "Liên Hoàn Lôi", "Công", 4, 2, 5, 1, 2, new[] { "loi_kich:3", "loi_bo:3" }, "Xích sét.", "field"),
-        new("thien_loi", "loi", "Thiên Lôi", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "lien_loi:3" }, "Sấm trời.", "ultimate"),
-        new("bang_linh_can", "bang", "Băng Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Băng.", "root"),
-        new("bang_tien", "bang", "Băng Tiễn", "Công", 2, 1, 5, 0, 1, new[] { "bang_linh_can:1" }, "Mũi băng.", "bolt"),
-        new("bang_thuan", "bang", "Băng Thuẫn", "Thủ", 2, 3, 5, 0, 1, new[] { "bang_linh_can:1" }, "Khiên băng.", "shield"),
-        new("dong_dia", "bang", "Đông Địa", "Khống", 4, 2, 5, 1, 2, new[] { "bang_tien:3", "bang_thuan:3" }, "Đất đóng băng.", "field"),
-        new("tuyet_doi", "bang", "Tuyệt Đối Linh Độ", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "dong_dia:3" }, "Hàn khí tuyệt đối.", "ultimate"),
-        new("phong_linh_can", "gio", "Phong Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Phong.", "root"),
-        new("phong_nhan", "gio", "Phong Nhận", "Công", 2, 1, 5, 0, 1, new[] { "phong_linh_can:1" }, "Lưỡi gió.", "bolt"),
-        new("phong_bo", "gio", "Phong Bộ", "Thân pháp", 2, 3, 5, 0, 1, new[] { "phong_linh_can:1" }, "Bước gió.", "dash"),
-        new("cuong_phong", "gio", "Cuồng Phong", "Khống", 4, 2, 5, 1, 2, new[] { "phong_nhan:3", "phong_bo:3" }, "Gió lốc.", "field"),
-        new("thien_phong", "gio", "Thiên Phong Quyết", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "cuong_phong:3" }, "Gió trời.", "ultimate"),
-    };
+    }.Concat(ElementSkillData.Skills).ToArray();
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);
 
@@ -225,7 +206,7 @@ public static class SkillData
     public const int BurnChance = 30;
     /// <summary>Kỹ năng chủ động hệ Hỏa (có sát thương): mỗi lần tung có ActiveBurnPerLv% × cấp cơ hội gây thiêu đốt (cùng hiệu ứng với bị động).</summary>
     public const int ActiveBurnPerLv = 10;
-    public static int ActiveBurnChance(SkillDef s, int lv) => s.Element == "hoa" && s.Tree == "active" && s.DmgBase > 0 ? ActiveBurnPerLv * Math.Max(0, lv) : 0;
+    public static int ActiveBurnChance(SkillDef s, int lv, string? activeManual = null) => s.SecondaryEffect?.Kind == "burn" ? SkillSecondaryEffects.Chance(s, lv, activeManual) : 0;
     public static bool FitsSlot(SkillDef s, int slot) =>
         slot == BasicSlot ? s.Category == "Đòn thường" : s.Category is "Công" or "Tuyệt kỹ" or "Khống" or "Thủ" or "Thân pháp";
 

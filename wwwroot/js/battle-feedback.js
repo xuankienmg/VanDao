@@ -1,3 +1,9 @@
+/** Server HP is after recovery; reveal recovery at end-turn, including held/killing turns. */
+function battleHeroHpAt(battle,phase,before,after,killing,held){
+  if(phase.s>=.95)return Math.max(0,after);
+  if(phase.s>=.85&&!killing&&!held)return Math.max(0,after-(battle.heal?.[phase.i]||0));
+  return Math.max(0,before);
+}
 /* Chỉ hiện chữ né khi server xác nhận; không gieo lại xác suất ở client. */
 function battleDodgeFeedback(battle,phase,seen,emit,x,y){
   if(phase.name!=='fight'||phase.s<.85||battle.dodged?.[phase.i]!==true||battle.monSkip?.[phase.i])return false;
@@ -54,6 +60,8 @@ function battleControlAt(battle,phase){
   if(!battle||!['fight','pet'].includes(phase.name)||!(battle.monHpLeft?.[phase.i]>0)&&phase.name!=='pet')return '';
   const kind=battle.monControl?.[phase.i]||'';
   if(kind){
+    const ownerCast=(battle.casts||[]).some(c=>c.turn===phase.i&&c.secondary===kind);
+    if(ownerCast)return phase.name==='pet'||phase.rep||phase.s>=.45?kind:'';
     const petCast=(battle.pet?.casts||[]).some(c=>c.turn===phase.i&&c.paralyzeTurns>0&&!(c.at>=.85));
     if(!petCast)return phase.name==='fight'?kind:'';          // khống từ lượt trước / kỹ năng: cả lượt
     if(phase.name==='pet')return phase.s>=.5?kind:'';
@@ -61,6 +69,30 @@ function battleControlAt(battle,phase){
   }
   if(battle.shatter?.[phase.i]&&phase.name==='fight'&&phase.s<.4)return 'freeze';   // băng còn bám tới khi đòn lượt này đánh vỡ
   return '';
+}
+const BATTLE_SECONDARY = {
+  weaken:{text:'Suy yếu −20% công',col:'#79c7ef',target:'monster'},
+  heal:{text:'Hồi phục',col:'#8bdea0',target:'hero'},
+  stun:{text:'Choáng',col:'#f3d27a',target:'monster'},
+  paralyze:{text:'Tê liệt',col:'#d4adff',target:'monster'},
+  freeze:{text:'Đóng băng',col:'#9fe3ff',target:'monster'},
+  wind:{text:'Phong hộ +20% né',col:'#a3e5cd',target:'hero'},
+};
+function battleSecondaryStatus(battle,phase,kind){
+  if(!['fight','pet'].includes(phase.name))return false;
+  const active=kind==='wind'?battle.windGuard?.[phase.i]:battle.weakened?.[phase.i];
+  if(!active)return false;
+  const started=(battle.casts||[]).some(c=>c.turn===phase.i&&c.secondary===kind);
+  return !started||phase.name==='pet'||phase.rep||phase.s>=.45;
+}
+function battleSecondaryFeedback(battle,phase,seen,emit,hx,hy,tx,ty){
+  if(phase.name!=='fight'||phase.rep||phase.s<.45)return;
+  for(const cast of battle.casts||[]){
+    if(cast.turn!==phase.i)continue;
+    const effect=BATTLE_SECONDARY[cast.secondary],key=`${phase.trip}:secondary:${phase.i}:${cast.skill}`;
+    if(!effect||seen[key])continue;
+    seen[key]=1;emit({type:'label',x:effect.target==='hero'?hx:tx,y:effect.target==='hero'?hy:ty,text:effect.text,col:cast.secondary==='heal'&&typeof HEAL_COL!=='undefined'?HEAL_COL:effect.col,life:0,max:1});
+  }
 }
 /** Chữ "Băng vỡ" khi đòn đánh trúng quái đang đóng băng (server đã cộng thêm sát thương). */
 function battleControlFeedback(battle,phase,seen,emit,x,y){
@@ -99,6 +131,11 @@ function drawBattleStatus(ctx,{kind,x,y,width,height,strength=1,time=0,reduced=f
         ctx.globalAlpha=reduced?.8:.55+.45*((i+beat)%2);
         ctx.beginPath();ctx.moveTo(cx-5,cy-7);ctx.lineTo(cx+1,cy-1);ctx.lineTo(cx-2,cy+1);ctx.lineTo(cx+5,cy+7);ctx.stroke();
       }
+      return;
+    }
+    if(kind==='weaken'){
+      ctx.strokeStyle='#79c7ef';ctx.globalAlpha=.85;
+      for(const sign of [-1,1]){const cx=x+sign*rx*.85;ctx.beginPath();ctx.moveTo(cx,y-ry*.45);ctx.lineTo(cx,y+ry*.25);ctx.moveTo(cx-4,y+ry*.1);ctx.lineTo(cx,y+ry*.3);ctx.lineTo(cx+4,y+ry*.1);ctx.stroke()}
       return;
     }
     if(kind==='stun'){

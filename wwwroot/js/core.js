@@ -24,7 +24,9 @@ async function api(method, url){
 }
 const realm = () => DATA.realms[S.realm];
 /** Trang phục đang mặc (S.skin, rỗng = theo cảnh giới) → bộ ảnh nhân vật: 'hero' (sprite chiến đấu) · 'heroStand' · 'heroMed' (ngồi thiền) · 'heroCast' (tung chiêu). */
-const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && S.realm >= x.minRealm)) || null;
+/** Trang phục cần rương trang phục (unlockItem) chỉ dùng được khi đã mở rương đó (S.skinsUnlocked). */
+const skinOpen = s => !s.unlockItem || (S?.skinsUnlocked || []).includes(s.id);
+const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && S.realm >= x.minRealm && skinOpen(x))) || null;
 const skinArt = k => curSkin()?.[k] || realm()[k];
 /** Chương có Boss rơi nguyên liệu đột phá item: " (chương N)" để ghi kèm tên Boss. */
 const bossChapterTag = item => { const c = (DATA.chapters || []).find(x => x.bossItem === item); return c ? ` · chương ${c.index + 1}` : ''; };
@@ -39,8 +41,11 @@ const fmt = n => Math.floor(n).toLocaleString('vi-VN');
 const $ = id => document.getElementById(id);
 
 let lastPull = 0;
-/** Các loại rương, quý → thường (thứ tự hiện trong thông báo nhận rương). */
-const CHEST_IDS = ['ruong_boss', 'ruong_hiem', 'ruong_thuong'];
+/** Hậu tố id rương theo mức độ khó của map (Thường · Khó · Ác mộng), khớp GameData.DiffChestSuffix. */
+const DIFF_CHEST = ['', '_kho', '_ac_mong'];
+const chestOf = (k, dif) => k + (DIFF_CHEST[dif || 0] || '');
+/** Các loại rương, quý → thường, mỗi loại mức cao trước (thứ tự hiện trong thông báo nhận rương). */
+const CHEST_IDS = ['ruong_boss', 'ruong_hiem', 'ruong_thuong'].flatMap(k => [2, 1, 0].map(d => chestOf(k, d)));
 let lastLogKey = '';
 function setState(st){
   const prevKey = lastLogKey, prev = S;

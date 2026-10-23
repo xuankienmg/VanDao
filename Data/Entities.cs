@@ -21,6 +21,8 @@ public class Player
 
     /// <summary>Trang phục đang mặc (GameData.Skins); rỗng = tự đổi theo cảnh giới.</summary>
     public string Skin { get; set; } = "";
+    /// <summary>Trang phục đã mở khóa bằng rương trang phục (SkinDef.UnlockItem), cách nhau dấu phẩy.</summary>
+    public string SkinsUnlocked { get; set; } = "";
 
     /// <summary>Luôn true: nhân vật luôn tự đi thám hiểm. Giữ cột để tương thích DB cũ.</summary>
     public bool AutoExplore { get; set; } = true;

@@ -110,10 +110,10 @@ public static class PetData
             talent,value,skill,(int)Math.Round(24*k),(int)Math.Round(12*k),(int)Math.Round(120*k),q==5?MiracleFor(id):null);
     }
     public static double StarScale(int stars) => 1 + Math.Clamp(stars,0,MaxStars) * StarBonus;
-    // ---- Tuyệt kỹ: Lực tuyệt kỹ = Công linh thú + Công chủ nhân × Đồng tâm (hỗ trợ: Máu linh thú + Máu chủ nhân × Đồng tâm) ----
-    /// <summary>Đồng tâm theo hình thái: phần chỉ số chủ nhân cộng vào Lực tuyệt kỹ.</summary>
+    // ---- Tuyệt kỹ: Linh Uy = Công linh thú + Công chủ nhân × Đồng tâm (Linh Hộ: Máu linh thú + Máu chủ nhân × Đồng tâm) ----
+    /// <summary>Đồng tâm theo hình thái: phần chỉ số chủ nhân cộng vào Linh Uy.</summary>
     public static readonly double[] SkillBond = { .3, .4, .5 };
-    /// <summary>Ngân sách sát thương mỗi lượt (% Lực tuyệt kỹ, hình thái cuối) theo phẩm Phàm → Thượng Cổ.</summary>
+    /// <summary>Ngân sách sát thương mỗi lượt (% Linh Uy, hình thái cuối) theo phẩm Phàm → Thượng Cổ.</summary>
     public static readonly double[] SkillBudget = { 20, 25, 30, 36, 42, 50 };
     /// <summary>Chiêu hồi máu / khiên dùng 15% ngân sách sát thương của phẩm.</summary>
     public const double SupportShare = .15;
@@ -136,7 +136,7 @@ public static class PetData
         "fox" => .15, "leech" => .2, "cat" => .25, "tiger" => .1, "dragon" => form==2 ? .1 : 0,
         "frost" => .25, "turtle" => .2, "crane" => .3, "xuanwu" => .3, _ => 0 }) + .4 * ControlOf(skill).Chance;
     public static bool SkillIsSupport(string skill) => skill is "frost" or "deer" or "turtle" or "crane" or "butterfly" or "xuanwu";
-    /// <summary>Hệ số chiêu (% Lực tuyệt kỹ mỗi lần thi triển) = ngân sách × lượt hồi chiêu × hệ số hình thái × (1 − chi phí hiệu ứng).</summary>
+    /// <summary>Hệ số chiêu (% Linh Uy mỗi lần thi triển) = ngân sách × lượt hồi chiêu × hệ số hình thái × (1 − chi phí hiệu ứng).</summary>
     public static double SkillCoef(string skill,int form,int quality=-1)
     {
         var f=Math.Clamp(form,0,2);var q=quality is >= 0 and < 6 ? quality : SkillQuality.GetValueOrDefault(skill,1);
@@ -150,33 +150,52 @@ public static class PetData
     }
     public static string Percent(double value) => value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture).Replace('.',',');
     /// <param name="quality">Phẩm riêng của con; −1 = phẩm gốc của loài.</param>
-    public static string SkillDescription(string skill,int form,int stars,int quality=-1)
+    /// <summary>Chỉ số thật để mô tả kỹ năng bằng số cụ thể: Linh Uy, Linh Hộ (như PetCombat) và máu tối đa của chủ nhân.</summary>
+    public record SkillNumbers(double Power, double Life, int OwnerHp);
+    /// <summary>Linh Uy / Linh Hộ của một con: chỉ số riêng + chỉ số chủ nhân × Đồng tâm theo hình thái (khớp PetCombat).</summary>
+    public static SkillNumbers NumbersOf(CombatStats pet, CombatStats owner, int form) =>
+        new(pet.Atk + owner.Atk * SkillBond[Math.Clamp(form,0,2)], pet.Hp + owner.Hp * SkillBond[Math.Clamp(form,0,2)], owner.Hp);
+    private static string Num(double v) => Math.Round(v).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    /// <param name="n">Có chỉ số thật (linh thú đang có): ghi số máu / khiên / sát thương cụ thể; null = ghi theo % Linh Uy / Linh Hộ.</param>
+    public static string SkillDescription(string skill,int form,int stars,int quality=-1,SkillNumbers? n=null)
     {
         var f=Math.Clamp(form,0,2);var scale=StarScale(stars);
-        string V(double a,double b,double c)=>Percent((f==0?a:f==1?b:c)*scale);
+        double Vn(double a,double b,double c)=>(f==0?a:f==1?b:c)*scale;
+        string V(double a,double b,double c)=>Percent(Vn(a,b,c));
         var c=SkillCoef(skill,f,quality);string C(double share=1)=>Percent(Math.Round(c*share,1));
-        var bond=Percent(SkillBond[f]*100);
-        var power=$" (Lực tuyệt kỹ = Công linh thú + {bond}% Công chủ nhân; thủ địch trừ một lần cho cả chiêu)";
-        var life=$" (Lực hỗ trợ = Máu linh thú + {bond}% Máu chủ nhân)";
+        // sát thương / lượng hồi, khiên: có chỉ số thật thì ghi số, không thì ghi % Linh Uy / Linh Hộ
+        // cụm hành động: có chỉ số thật thì ghi số (trận đánh cắt phần lẻ hồi máu / khiên), không thì ghi theo % Linh Uy / Linh Hộ
+        string Dmg(double share=1)=>n is null?$"gây sát thương bằng {C(share)}% Linh Uy":$"gây {Num(n.Power*c*share/100)} sát thương";
+        string Heal(double share=1)=>n is null?$"hồi máu bằng {C(share)}% Linh Hộ":$"hồi {Num(Math.Floor(n.Life*c*share/100))} máu";
+        string Guard(double share=1)=>n is null?$"tạo khiên bằng {C(share)}% Linh Hộ":$"tạo khiên {Num(Math.Floor(n.Life*c*share/100))}";
+        string Reflect()=>n is null?$"gây sát thương bằng {Percent(Math.Round(ReflectCoef(f,quality),1))}% Linh Uy":$"gây {Num(n.Power*ReflectCoef(f,quality)/100)} sát thương";
+        string OwnerHp(double pct)=>n is null?$"{Percent(pct)}% máu tối đa của chủ nhân":$"{Num(n.OwnerHp*pct/100)} máu";
+        static string U(string x)=>char.ToUpper(x[0])+x[1..];
+        var shieldCap=n is null?"Khiên từ linh thú tối đa 30% máu tối đa của chủ nhân.":$"Khiên từ linh thú tối đa {Num(n.OwnerHp*.3)} (30% máu chủ nhân).";
         var (ck,cc)=ControlOf(skill);
         var control=ck.Length==0||skill=="ancient_thunder"?"":$" {Percent(cc*100)}% cơ hội khiến quái {ControlName(ck)} 1 lượt"+(ck=="freeze"?$", lượt sau quái nhận thêm {Percent(FreezeDamageBonus*100)}% sát thương.":".");
-        return (skill switch {
-            "fox" => $"Gây {C()}% Lực tuyệt kỹ. Đánh dấu 2 lượt kế tiếp: đòn bạo kích chủ nhân tăng {V(5,8,12)}% sát thương."+power,
-            "frost" => $"Tạo khiên {C()}% Lực hỗ trợ, giảm {V(5,8,12)}% công địch trong 2 lượt."+life,
-            "deer" => $"Hồi {C(.7)}% Lực hỗ trợ; hồi thêm {C(.15)}% mỗi lượt trong 2 lượt kế tiếp."+life,
-            "turtle" => $"Tạo khiên {C()}% Lực hỗ trợ. Khi khiên còn: giảm thêm {V(3,5,7)}% sát thương nhận vào."+life,
-            "eagle" => $"Đánh 3 lần, tổng {C()}% Lực tuyệt kỹ chia đều mỗi lần."+power,
-            "leech" => $"Gây {C()}% Lực tuyệt kỹ. Hồi {V(20,25,30)}% sát thương thực gây ra, tối đa {V(4,6,8)}% máu tối đa."+power,
-            "crane" => $"Hồi {C()}% Lực hỗ trợ, tăng {V(5,8,12)}% né tránh trong 2 lượt."+life,
-            "cat" => $"Gây {C()}% Lực tuyệt kỹ, bỏ qua {V(15,25,35)}% phòng thủ địch."+power,
-            "phoenix" => $"Gây {C(.6)}% Lực tuyệt kỹ; thiêu đốt thêm {C(.2)}% mỗi lượt trong 2 lượt kế tiếp."+power,
-            "xuanwu" => $"Tạo khiên {C()}% Lực hỗ trợ. Trong 2 lượt, khi bị đánh phản {Percent(Math.Round(ReflectCoef(f,quality),1))}% Lực tuyệt kỹ."+life,
-            "dragon" => $"Gọi 3 tia sét, tổng {C()}% Lực tuyệt kỹ chia đều mỗi tia."+(f==2?" Cả chiêu bỏ qua 20% phòng thủ địch.":"")+power,
-            "tiger" => $"Gây {C()}% Lực tuyệt kỹ; mục tiêu dưới 30% máu chịu thêm 25% sát thương chiêu."+power,
-            "butterfly" => $"Hồi {C(.45)}% Lực hỗ trợ và tạo khiên {C(.55)}% Lực hỗ trợ. Tổng khiên linh thú tối đa 30% máu tối đa."+life,
-            "ancient_thunder" => $"Gọi sét tím từ trời xuống gây {C()}% Lực tuyệt kỹ; 50% cơ hội khiến đối thủ tê liệt trong 1 lượt. Mỗi 3 lượt chủ nhân kích hoạt."+power,
+        var text=skill switch {
+            "fox" => $"{U(Dmg())}. Trong 2 lượt kế tiếp, đòn bạo kích của chủ nhân tăng {V(5,8,12)}% sát thương.",
+            "frost" => $"{U(Guard())} cho chủ nhân, giảm {V(5,8,12)}% công địch trong 2 lượt.",
+            "deer" => $"{U(Heal(.7))} cho chủ nhân, sau đó mỗi lượt {Heal(.15)} trong 2 lượt kế tiếp.",
+            "turtle" => $"{U(Guard())} cho chủ nhân. Khi khiên còn, chủ nhân nhận ít hơn {V(3,5,7)}% sát thương.",
+            "eagle" => $"Đánh 3 lần, tổng cộng {Dmg()} chia đều mỗi lần.",
+            "leech" => $"{U(Dmg())}. Chủ nhân hồi máu bằng {V(20,25,30)}% sát thương thực gây ra, tối đa {OwnerHp(Vn(4,6,8))}.",
+            "crane" => $"{U(Heal())} cho chủ nhân, tăng {V(5,8,12)}% né tránh trong 2 lượt.",
+            "cat" => $"{U(Dmg())}, bỏ qua {V(15,25,35)}% phòng thủ địch.",
+            "phoenix" => $"{U(Dmg(.6))}, rồi thiêu đốt {Dmg(.2)} mỗi lượt trong 2 lượt kế tiếp.",
+            "xuanwu" => $"{U(Guard())} cho chủ nhân. Trong 2 lượt, mỗi lần chủ nhân bị đánh thì phản đòn {Reflect()}.",
+            "dragon" => $"Gọi 3 tia sét, tổng cộng {Dmg()} chia đều mỗi tia."+(f==2?" Cả chiêu bỏ qua 20% phòng thủ địch.":""),
+            "tiger" => $"{U(Dmg())}; mục tiêu dưới 30% máu chịu thêm 25% sát thương chiêu.",
+            "butterfly" => $"{U(Heal(.45))} và {Guard(.55)} cho chủ nhân.",
+            "ancient_thunder" => $"Gọi sét tím từ trời xuống {Dmg()}; 50% cơ hội khiến đối thủ tê liệt trong 1 lượt. Mỗi 3 lượt chủ nhân kích hoạt.",
             _ => throw new ArgumentOutOfRangeException(nameof(skill))
-        })+control;
+        };
+        // khiên: ghi giới hạn khiên; có số sát thương thật thì nhắc số đó chưa trừ thủ địch (PetCombat trừ một lần cho cả chiêu)
+        var shield=skill is "frost" or "turtle" or "xuanwu" or "butterfly";
+        var hits=skill is not ("frost" or "turtle" or "deer" or "crane" or "butterfly");
+        var note=(shield?" "+shieldCap:"")+(n is not null&&hits?" Số sát thương chưa trừ phòng thủ địch.":"");
+        return text+note+control;
     }
     public static string TalentDescription(PetDef def,int stars)
     {

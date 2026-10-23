@@ -108,7 +108,8 @@ public record StateDto(
     string SpinHistory = "",
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
-    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null, string? ActiveManual = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null, string? ActiveManual = null,
+    string[]? SkinsUnlocked = null);   // trang phục đã mở bằng rương trang phục   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
 
 public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 
@@ -149,7 +150,8 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     bool[]? Dodged = null, double DodgeChance = 0,
     int[]? HeroHpBefore = null, int[]? GuardBefore = null, int[]? BurnDamage = null, DivineBattleDto? Divine = null, PetBattleDto? Pet = null,
     string[]? MonControl = null,           // loại khống chặn lượt phản công: "paralyze" · "stun" · "freeze" · "" (mảng theo lượt)
-    bool[]? Shatter = null);               // lượt quái đóng băng từ lượt trước nhận thêm sát thương
+    bool[]? Shatter = null,                // lượt quái đóng băng từ lượt trước nhận thêm sát thương
+    bool[]? Weakened = null, bool[]? WindGuard = null, int[]? CounterDamage = null); // trạng thái và sức phản công theo lượt
 
 public record DivineTurnDto(bool Nullified, bool Saved, bool Boosted, bool Charged);
 public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineTurnDto[] Turns);
@@ -159,7 +161,7 @@ public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineT
 public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start, int Stones = 0);
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
-public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg, bool Critical = false);
+public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg, bool Critical = false, string Secondary = "");
 
 /// <summary>Kết quả một lần luyện chế/hợp thành: thành phẩm và nguyên liệu đã tiêu hao (dùng chung cho mọi công thức).</summary>
 public record ItemQtyDto(string Item, int Qty);

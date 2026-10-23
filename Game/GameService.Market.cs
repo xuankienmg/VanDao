@@ -7,7 +7,7 @@ public partial class GameService
 {
     /// <summary>Linh thạch, chìa khóa và vật liệu linh thú không giao dịch; hai loại vé quay chỉ admin trong Development được đăng bán.</summary>
     public static bool Tradable(ItemDef d, bool canSellTickets = false) =>
-        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial");
+        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial" or "skin");
 
     public static bool IsSpinTicket(string id) => id is GameData.SpinTicket or GameData.PetSpinTicket;
 

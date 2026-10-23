@@ -60,12 +60,12 @@ foreach(var m in CultivationManuals.Available){
     Check(GameService.SkillLevels(p).GetValueOrDefault(root.Id)>0,"root unavailable after manual: "+m.Element);
 }
 game.UpgradeSkill(p,"liet_diem");p.Add("tay_tuy_dan",1);game.UseItem(p,"tay_tuy_dan");
-Check(CultivationManuals.Unlocked(p).Length==3,"respec forgot manuals");
+Check(CultivationManuals.Unlocked(p).Length==CultivationManuals.Available.Length,"respec forgot manuals");
 var id=p.Id;await db.SaveChangesAsync();db.ChangeTracker.Clear();
 p=await db.Players.Include(x=>x.Inventory).SingleAsync(x=>x.Id==id);
-Check(CultivationManuals.Unlocked(p).Length==3&&p.ManualVersion==1,"unlocks lost after save/reload");
+Check(CultivationManuals.Unlocked(p).Length==CultivationManuals.Available.Length&&p.ManualVersion==1,"unlocks lost after save/reload");
 var state=await game.BuildStateAsync(p);
-Check(state.UnlockedElements?.Length==3,"unlocks absent from state");
+Check(state.UnlockedElements?.Length==CultivationManuals.Available.Length,"unlocks absent from state");
 foreach(var manual in CultivationManuals.All.Except(CultivationManuals.Available)){
     p.Add(manual.Item,1);
     Reject(()=>game.UseItem(p,manual.Item),"unavailable manual learned");
@@ -93,11 +93,70 @@ for(int realm=0;realm<GameData.Realms.Count;realm++)for(int diff=0;diff<3;diff++
     Check(Math.Abs(manuals.Sum(x=>x.Probability)-(chest==GameData.BossChest?.01:0))<1e-10,"wrong manual chance");
     Check(manuals.All(x=>x.Qty==1&&GameData.ItemById[x.Item].Type=="manual"),"invalid manual reward");
     if(chest==GameData.BossChest){
-        Check(manuals.Length==3&&manuals.All(x=>Math.Abs(x.Probability-.01/3)<1e-10),"manuals not equally likely");
+        Check(manuals.Length==CultivationManuals.Available.Length&&manuals.All(x=>Math.Abs(x.Probability-.01/CultivationManuals.Available.Length)<1e-10),"manuals not equally likely");
         var cumulative=0.0;
         foreach(var reward in table){
             if(reward.Group=="manual")Check(ChestRewards.Roll(realm,chest,new FixedRandom(cumulative+reward.Probability/2),diff,chapter).Item==reward.Item,"manual cannot be rolled");
             cumulative+=reward.Probability;
+        }
+    }
+}
+// rương theo mức độ khó: id riêng, mở ra theo mức của rương dù truyền mức khác
+foreach(var chest in GameData.Chests.Keys)for(int diff=0;diff<GameData.DiffNames.Length;diff++){
+    var chestId=GameData.ChestId(chest,diff);
+    Check(GameData.ItemById.TryGetValue(chestId,out var def)&&def.Type=="chest","missing difficulty chest: "+chestId);
+    Check(GameData.ChestDiff(chestId)==diff&&GameData.ChestBase(chestId)==chest,"chest id round trip: "+chestId);
+    Check(ReferenceEquals(ChestRewards.Table(1,chestId,0,3),ChestRewards.Table(1,chest,diff,3)),"difficulty chest ignores its own difficulty: "+chestId);
+    Check(PetLoot.StageGroups(GameData.Chapters[0],diff,GameData.Areas).SelectMany(g=>g.Choices).Where(c=>GameData.ItemById.TryGetValue(c.Item,out var it)&&it.Type=="chest")
+        .All(c=>GameData.ChestDiff(c.Item)==diff),"stage drops wrong difficulty chest");
+}
+// trang phục Thiên Hợp Tiên Cơ: khóa tới khi mở rương trang phục; Hợp Thể dùng chung ảnh Luyện Hư
+Check(GameData.Realms[6].HeroStand==GameData.Realms[5].HeroStand,"Hợp Thể không dùng ảnh Luyện Hư");
+Check(GameData.SkinById["hop_the"].MinRealm==6&&GameData.SkinById["hop_the"].UnlockItem is null,"Thiên Hợp Tiên Y phải mặc được từ Hợp Thể");
+var skinBox=GameData.SkinById["hop_the_nu"].UnlockItem!;
+Check(GameData.ItemById[skinBox].Type=="skin"&&GameData.ItemById[skinBox].Sell==0&&!GameService.Tradable(GameData.ItemById[skinBox]),"rương trang phục bán / giao dịch được");
+var dresser=await game.CreateAsync("Skin lock");dresser.Realm=6;
+Reject(()=>game.SetSkin(dresser,"hop_the_nu"),"mặc được skin nữ khi chưa mở rương");
+dresser.Skin="hop_the_nu";
+Check((await game.BuildStateAsync(dresser)).Skin=="","skin nữ còn hiệu lực khi chưa mở rương");
+dresser.Add(skinBox,2);await db.SaveChangesAsync();game.UseItem(dresser,skinBox);await db.SaveChangesAsync();
+Check(dresser.Count(skinBox)==1&&dresser.SkinsUnlocked=="hop_the_nu","mở rương trang phục không mở khóa / không trừ rương");
+game.SetSkin(dresser,"hop_the_nu");
+Check((await game.BuildStateAsync(dresser)).Skin=="hop_the_nu","không mặc được skin nữ sau khi mở rương");
+Reject(()=>game.UseItem(dresser,skinBox),"mở rương trang phục lần hai");
+Check(dresser.Count(skinBox)==1,"mở lần hai làm mất rương");
+// rương Khó / Ác mộng: phẩm trang bị trung bình cao dần theo mức, tổng tỉ lệ vẫn 1
+for(int realm=0;realm<GameData.Realms.Count;realm++)foreach(var chest in GameData.Chests.Keys){
+    double AvgGrade(int diff){var t=ChestRewards.Table(realm,GameData.ChestId(chest,diff),0,realm).Where(x=>x.Group=="gear").ToArray();
+        return t.Sum(x=>x.Probability*Array.IndexOf(GameData.RarityOrder,GameData.ItemById[x.Item].Rarity))/t.Sum(x=>x.Probability);}
+    var g=new[]{AvgGrade(0),AvgGrade(1),AvgGrade(2)};
+    var top=GameData.ChestTopQuality(realm);
+    // vượt phẩm trần của cảnh giới chỉ được là phần Thánh → Đạo
+    for(int diff=1;diff<3;diff++)Check(GameData.ChestQuality(chest,realm,diff).Select((w,i)=>(w,i)).All(x=>x.w<=0||x.i<=top||x.i>=GameData.DiffChestHighFrom&&x.i<GameData.DiffChestHighFrom+GameData.DiffChestHighSplit.Length),
+        $"rương {chest} mức {diff} cảnh giới {realm} ra phẩm ngoài trần cảnh giới / Thánh → Đạo");
+    Check(g[1]>g[0]&&g[2]>g[1],$"rương {chest} cảnh giới {realm}: phẩm không tăng theo mức ({string.Join(" / ",g.Select(x=>x.ToString("0.000")))})");
+}
+// phần Thánh → Đạo: Boss > Hiếm > Thường, Ác mộng > Khó, Thường không có
+for(int realm=0;realm<GameData.Realms.Count;realm++){
+    double High(string chest,int diff){var q=GameData.ChestQuality(chest,realm,diff);return q.Skip(GameData.DiffChestHighFrom).Take(4).Sum()/q.Sum();}
+    foreach(var chest in GameData.Chests.Keys)Check(High(chest,2)>High(chest,1)&&High(chest,1)>High(chest,0),$"rương {chest} cảnh giới {realm}: tỉ lệ Thánh → Đạo không tăng theo mức");
+    for(int diff=1;diff<3;diff++)Check(High("ruong_boss",diff)>High("ruong_hiem",diff)&&High("ruong_hiem",diff)>High("ruong_thuong",diff),
+        $"cảnh giới {realm} mức {diff}: tỉ lệ Thánh → Đạo không cao nhất ở Rương Boss");
+}
+// mô tả kỹ năng linh thú ghi số thật: khớp đúng khiên / sát thương PetCombat tạo ra (thủ địch 0)
+{
+    var vn=System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    var owner=new CombatStats(5000,40000,800);var petSt=new CombatStats(1200,900,300,0,0);
+    foreach(var skill in new[]{"turtle","butterfly","fox","cat"}){
+        var def=PetData.Definitions.First(x=>x.Skill==skill);
+        for(int form=0;form<3;form++){
+            var nums=PetData.NumbersOf(petSt,owner,form);
+            var text=PetData.SkillDescription(skill,form,0,-1,nums);
+            Check(!text.Contains("Linh Uy")&&!text.Contains("Linh Hộ"),$"mô tả {skill} còn chữ Linh Uy / Linh Hộ khi có số thật");
+            var pc=new PetCombat(def,form,owner,0,new Random(1),false,petSt);
+            var hp=1;var cast=pc.Cast(1,ref hp,1_000_000_000,1_000_000_000,0,1);
+            var shown=cast.Guard>0?cast.Guard:cast.Dmg;
+            Check(text.Contains(shown.ToString("N0",vn)),$"mô tả {skill} hình thái {form} không khớp trận đánh ({shown}): {text}");
         }
     }
 }

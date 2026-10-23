@@ -47,7 +47,7 @@ function skFrame(now){
   if (!c._sized){ const w = c.parentElement.getBoundingClientRect().width; if (w){ const sc = Math.max(1, Math.floor(w / 120)); c.style.width = 120 * sc + 'px'; c.style.height = 60 * sc + 'px'; c._sized = true; } }
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
   const s = skById(skSel), el = elOf(s.element), open = el.open;
-  const res = open && (s.element === 'hoa' || s.element === 'moc' || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;
+  const res = open && (['hoa','moc','tho','loi','bang','gio'].includes(s.element) || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;
   if (c.width !== 120 * res){ c.width = 120 * res; c.height = 60 * res; }
   g.setTransform(res, 0, 0, res, 0, 0); g.imageSmoothingEnabled = false;
   const fps = 8, cycle = 12, t = now / 1000, f = Math.floor(t * fps) % cycle;    // 8 khung + 4 khung nghỉ

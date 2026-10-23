@@ -60,7 +60,6 @@ function renderSpin(){
     pane.dataset.mode = spinMode; spinKey = '';
     pane.innerHTML = `<div class="dd sp ${spinMode === 'pet' ? 'sp-pet' : ''}">
       <header class="dd-top">${lcNav('spin')}${spinModeButtons()}<div class="dd-cult" id="spCult"></div>
-        <div class="dd-stone">${itemImg('linh_thach')}<span>Linh thạch</span><b id="spStone"></b></div>
         <div class="dd-stone sp-tk" data-tip="${ITEM[cfg.ticket]?.name || 'Vé'}&#10;Mỗi vé quay 1 lần">${itemImg(cfg.ticket)}<span>Vé</span><b id="spTk"></b></div>
         <button class="sp-hbtn" id="spHist" aria-label="Lịch sử quay" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg><em id="spHistN"></em></button></header>
       <section class="dd-main sp-main" aria-label="Vòng quay">
@@ -84,7 +83,6 @@ function renderSpin(){
   $('spCult').innerHTML = spinMode === 'pet'
     ? `<span>Mỗi <b>${fmt(price)}</b> linh thạch đổi <b>1 Vé Linh Thú</b> · mỗi vé quay 1 lần nhận <b>1 Thú Đản</b> Phàm → Thiên · đưa vào ổ ấp ở tab Linh thú</span>`
     : `<span>Mỗi <b>${fmt(price)}</b> linh thạch đổi <b>1 vé</b> · mỗi vé quay 1 lần nhận 1 trang bị theo cảnh giới <b>${S.realmName}</b>${set ? ` (bộ <b>${set}</b>)` : ''} · càng lên cao càng hiếm</span>`;
-  $('spStone').textContent = `× ${fmt(st)}`;
   $('spTk').textContent = `× ${fmt(tk)}`;
   const off = spinBusy || busy, remaining = spinRemaining(), dailyLimit = spinDailyLimit();
   $('spHub').disabled = off || tk < 1 || remaining < 1;
