@@ -9,7 +9,7 @@
 -- ---------- Luật chợ (sửa ở đây rồi chạy lại file) ----------
 create or replace function public.market_rules()
 returns table(min_realm int, tax_pct numeric, max_open int, max_daily int, listing_days int)
-language sql immutable as $$ select 1, 5::numeric, 10, 30, 3 $$;
+language sql immutable as $$ select 1, 5::numeric, 5, 10, 3 $$;
 
 create table if not exists public.market_players (
   player_id   uuid primary key,

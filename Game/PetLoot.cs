@@ -1,0 +1,80 @@
+namespace VanDao.Game;
+
+public record StageLootChoice(string Item, int Min, int Max, double Weight = 1);
+public record StageLootGroup(double Chance, StageLootChoice[] Choices);
+
+/// <summary>Shared stage distributions for actual loot and the map's displayed odds.</summary>
+public static class PetLoot
+{
+    public const double FoodShare = .30;
+    public const int MaxFoodDrop = 5;
+    public static int DropQuantity(string item, int quantity, int diff)
+    {
+        var amount = (int)Math.Round(quantity * QuantityMultiplier(item, diff));
+        return item == "linh_thu_dan" ? Math.Min(MaxFoodDrop, amount) : amount;
+    }
+    public static double QuantityMultiplier(string item,int diff) =>
+        GameData.GearBaseById.ContainsKey(item)||item=="linh_thach"||
+        (GameData.ItemById.TryGetValue(item,out var definition)&&definition.Type is "key" or "chest")?1:GameData.DiffReward[diff];
+    public static bool BloodUnlocked(int chapter, int diff) => chapter >= 4 || diff > 0;
+    public static (int Min,int Max) FoodAmount(int chapter,int area) {
+        var min=1+Math.Max(0,chapter)/2+(Math.Clamp(area,1,GameData.Areas)-1)/5;
+        return (min,min+1);
+    }
+    public static StageLootGroup[] StageGroups(ChapterDef chapter,int diff,int area)
+    {
+        var food=FoodAmount(chapter.Index,area);
+        var removed=0d;
+        var rows=GameData.DiffDrops(chapter,diff).Concat(GameData.HerbDropsAt(GameData.DiffHerbChapter(chapter,diff),area)).Select(d=>{
+            var chance=GameData.DropChance(d);
+            chance=Math.Min(1,chance*(chance>=1?1:1+(area-1)*.03));
+            var pill=GameData.ItemById.TryGetValue(d.Item,out var item)&&item.Type=="pill";
+            if(pill){removed+=chance*(1-FoodShare);return new DropDef("linh_thu_dan",food.Min,food.Max,chance*FoodShare);}
+            return d with {Chance=chance};
+        }).ToList();
+        rows.Add(new(chapter.KeyItem,1,1,GameData.KeyChance(area)));
+        rows.Add(new("ruong_thuong",1,1,GameData.ChestChance));
+        var rare=(area>=GameData.EliteMinArea?GameData.EliteRareChestChance:area>=GameData.RareChestMinArea?GameData.RareChestChance:0)*GameData.DiffRareChest[diff];
+        if(rare>0)rows.Add(new("ruong_hiem",1,1,Math.Min(1,rare)));
+        var merged=rows.GroupBy(x=>x.Item).Select(g=>new DropDef(g.Key,g.Min(x=>x.Min),g.Sum(x=>x.Max),1-g.Aggregate(1d,(n,x)=>n*(1-x.Chance)))).ToArray();
+        // Equal increments per item; rare chest odds are protected and no chance exceeds 100%.
+        while(removed>1e-12){
+            var eligible=Enumerable.Range(0,merged.Length).Where(i=>merged[i].Item!="ruong_hiem"&&merged[i].Chance<1-1e-12).ToArray();
+            if(eligible.Length==0)throw new InvalidOperationException("Không đủ vật phẩm để chia tỉ lệ đan tiến giai.");
+            var share=removed/eligible.Length;var spent=0d;
+            foreach(var i in eligible){var add=Math.Min(share,1-merged[i].Chance);merged[i]=merged[i] with {Chance=merged[i].Chance+add};spent+=add;}
+            removed-=spent;
+        }
+        return merged.Select(d=>new StageLootGroup(d.Chance,[new(d.Item,d.Min,d.Max)])).ToArray();
+    }
+    public static StageLootChoice Choose(StageLootGroup group,Random rng)
+    {
+        var roll=rng.NextDouble();
+        foreach(var choice in group.Choices)if((roll-=choice.Weight)<0)return choice;
+        return group.Choices[^1];
+    }
+    public static List<DropInfoDto> StageOdds(ChapterDef chapter,int diff,int area)
+    {
+        return StageGroups(chapter,diff,area).SelectMany(g=>g.Choices.Select(c=>new {
+            c.Item,c.Min,c.Max,Chance=g.Chance*c.Weight,Gear=GameData.GearBaseById.ContainsKey(c.Item)
+        })).GroupBy(c=>c.Item).Select(rows=>{
+            var first=rows.First();
+            return new DropInfoDto(first.Item,DropQuantity(first.Item,rows.Min(x=>x.Min),diff),
+                DropQuantity(first.Item,rows.Sum(x=>x.Max),diff),1-rows.Aggregate(1d,(n,x)=>n*(1-x.Chance)),first.Gear);
+        }).ToList();
+    }
+    public static DropDef[] BossMaterials(int chapter,int diff,int realm=-1)
+    {
+        var quantity=1+Math.Max(0,chapter)/3+diff;
+        var drops=new List<DropDef>{new("hoa_hinh_dan",quantity,quantity+1,.25+.05*diff)};
+        if(BloodUnlocked(chapter,diff)){
+            var blood=1+Math.Max(0,chapter-4)/3+diff;
+            drops.Add(new("than_thu_huyet",blood,blood+1,Math.Min(.30,.12+.02*Math.Max(0,chapter-4)+.04*diff)));
+        }
+        if(realm>=0){
+            var pill=GameData.Realms[realm].StageCost(0).Keys.First(k=>k!="linh_thach");
+            drops.Add(new(pill,quantity,quantity+2,.25));
+        }
+        return drops.ToArray();
+    }
+}

@@ -56,7 +56,7 @@ public static class EquipmentEffects
         ["dia_mach"] = ("Phản đòn", "%", 15), ["thien_loi"] = ("Thiên lôi", "% cơ hội", 50),
         ["thien_uy"] = ("Giảm công quái", "%", 40), ["thien_menh"] = ("Tỉ lệ bạo kích", "%", 60),
         ["set_pct"] = ("Công, thủ, máu từ bộ", "%", null), ["crit"] = ("Bạo kích từ bộ", " điểm %", 100),
-        ["speed"] = ("Thân pháp: tốc độ thám hiểm từ bộ", " điểm %", 60)
+        ["speed"] = ("Thân pháp từ bộ", " điểm %", 60)
     };
     public static ItemDef[] ValidItems(Player p) => p.Equipment.GroupBy(e => e.Slot).Where(g => g.Count() == 1)
         .Select(g => g.Single()).Where(e => GameData.Realms[p.Realm].EquipSlots.Contains(e.Slot))

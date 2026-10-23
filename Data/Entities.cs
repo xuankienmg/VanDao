@@ -51,6 +51,10 @@ public class Player
 
     // ---- Công pháp: cấp từng kỹ năng ("id:cấp;id:cấp") và số lần hạ Boss (cho điểm kỹ năng) ----
     public string Skills { get; set; } = "";
+    public string LearnedManuals { get; set; } = "";
+    public int ManualVersion { get; set; }
+    /// <summary>Công pháp đang kích hoạt (hệ): quyết định đòn đánh thường; bị động hệ khác chỉ phát huy CultivationManuals.InactiveRate. Rỗng = tự chọn hệ cấp cao nhất.</summary>
+    public string ActiveManual { get; set; } = "";
     public int BossKills { get; set; }
     /// <summary>Điểm công pháp vĩnh viễn nhận từ Ngộ Đạo Đan.</summary>
     public int ElixirPoints { get; set; }
@@ -67,12 +71,20 @@ public class Player
 
     /// <summary>Lịch sử quay Tài Xỉu, mới nhất trước: "unixGiây|id,id,…;…" (giữ GameData.SpinHistoryKeep lượt bấm quay).</summary>
     public string SpinHistory { get; set; } = "";
+    /// <summary>Ngày quay theo UTC+7 và tổng lượt trang bị + linh thú đã dùng trong ngày.</summary>
+    public string SpinDay { get; set; } = "";
+    public int SpinDailyUsed { get; set; }
+    public string PetSpinDay { get; set; } = "";
+    public int PetSpinDailyUsed { get; set; }
 
     // ---- Bảng xếp hạng online ----
     /// <summary>Khóa bí mật ngẫu nhiên của nhân vật trên bảng xếp hạng (server chỉ giữ SHA-256). Giữ nguyên khi tu lại từ đầu.</summary>
     public string LbSecret { get; set; } = "";
     /// <summary>Đã từng dùng admin mode → không được lên bảng xếp hạng cho tới khi tu lại từ đầu (không bật cờ admin).</summary>
     public bool Tainted { get; set; }
+    /// <summary>File dữ liệu từng bị bản game cũ (không có SaveGuard) ghi vào: vẫn lên bảng xếp hạng nhưng gắn dấu * đỏ,
+    /// không vào top 10, không giao dịch ở Chợ. Không tự gỡ (gỡ tay trong DB hoặc tu lại từ đầu).</summary>
+    public bool Flagged { get; set; }
     /// <summary>Admin mode chỉ có ở môi trường dev (Program đặt theo ASPNETCORE_ENVIRONMENT). Bản phát hành: cờ đã lưu bị bỏ qua, không xóa.</summary>
     public static bool AdminEnabled { get; set; } = true;
     public bool Cheat(string flag) => AdminEnabled && Admin.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(flag);
@@ -112,6 +124,8 @@ public class Player
     public int BodyHp { get; set; }
     public int BodyDef { get; set; }
 
+    public string Hatch { get; set; } = "";
+    public List<Pet> Pets { get; set; } = new();
     public List<InventoryItem> Inventory { get; set; } = new();
     public List<LogEntry> Logs { get; set; } = new();
     public List<EquippedItem> Equipment { get; set; } = new();
@@ -161,4 +175,26 @@ public class EquippedItem
     public Guid PlayerId { get; set; }
     public string Slot { get; set; } = "";
     public string ItemId { get; set; } = "";
+}
+public class Pet
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PlayerId { get; set; }
+    public string DefId { get; set; } = "";
+    public int Level { get; set; } = 1;
+    public int Exp { get; set; }
+    public int Form { get; set; }
+    public int AppearanceForm { get; set; } = -1;
+    /// <summary>Phẩm của riêng con này (0 Phàm … 4 Thiên); -1 = theo phẩm của loài. Thú Đản Phàm nở ra loài Linh nhưng mang phẩm Phàm.</summary>
+    public int Quality { get; set; } = -1;
+    /// <summary>Số sao (0–5) từ ghép linh thú cùng loài; mỗi sao cộng PetData.StarBonus chỉ số.</summary>
+    public int Stars { get; set; }
+    /// <summary>Điểm ghép tích lũy (mỗi con hiến = 1 + điểm của nó); số sao suy ra từ PetData.StarCost.</summary>
+    public int StarPts { get; set; }
+    public int AptAtk { get; set; } = 100;
+    public int AptDef { get; set; } = 100;
+    public int AptHp { get; set; } = 100;
+    public int Slot { get; set; }
+    public int FoodSpent { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

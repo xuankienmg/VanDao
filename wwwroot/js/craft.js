@@ -69,10 +69,10 @@ function renderCraft(){
   if(!it||!b)return;
   $('ddStone').innerHTML = `${itemImg('linh_thach')}<span>Linh thạch</span><b>× ${fmt(stones())}</b>${hpStoneHtml('dd-hp')}`;
   const herbs=Object.entries(b.in).filter(([id])=>id!=='linh_thach');
-  $('ddIn').innerHTML='<span class="dd-lab">Nguyên liệu</span>'+herbs.map(([id,c])=>{
+  $('ddIn').innerHTML='<span class="dd-lab">Nguyên liệu</span><div class="dd-reagents">'+herbs.map(([id,c])=>{
     const have=S.inventory[id]||0;
     return '<div class="dd-reagent" data-tip="'+itemTip(id)+'"><span class="dd-fr r-'+ITEM[id].rarity+'">'+itemImg(id)+'</span><span class="dd-nm">'+ITEM[id].name+'</span><b class="dd-cnt '+(have>=c?'ok':'miss')+'">'+fmt(Math.min(have,c))+' / '+fmt(c)+'</b></div>';
-  }).join('');
+  }).join('')+'</div>';
   $('ddOut').innerHTML='<span class="dd-lab">Thành phẩm</span><span class="dd-fr big r-'+it.rarity+'">'+itemImg(k)+'</span><span class="dd-nm">'+it.name+'</span><b class="dd-cnt out">1</b><small class="dd-have">Đang có '+fmt(S.inventory[k]||0)+'</small>';
   const missing=Object.entries(b.in).filter(([id,c])=>(S.inventory[id]||0)<c).map(([id,c])=>ITEM[id].name+' '+fmt(c-(S.inventory[id]||0)));
   const locked=S.realm<(it.minRealm||0),why=locked?'Cần đạt '+DATA.realms[it.minRealm].name:missing.length?'Thiếu '+missing.join(' · '):'';

@@ -230,3 +230,16 @@ body.strip .strip-head button{cursor:pointer}
 .wd-nm{font-size:11px;color:var(--parch);line-height:1.2} .wd-card small{font-size:9.5px;color:#8f9a94;display:inline-flex;align-items:center;gap:2px}
 .wd-card small .lk{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2}
 .wd-card.on small{color:#9fe6a8}
+
+/* Shared premium ticket background with an inset gold rim. */
+.ticket-premium,
+:is(.iv-cell,.mk-cell,.mk-it):is([data-k="ve_tai_xiu"],[data-k="ve_linh_thu"]){
+  --ticket-edge:#edce79;--ticket-light:#70502b;--ticket-dark:#211810;--ticket-glow:#e5b64f50;
+  box-sizing:border-box;border:1px solid var(--ticket-edge);border-radius:4px;
+  background:linear-gradient(135deg,transparent 35%,#ffffff18 48%,transparent 60%),radial-gradient(ellipse at 50% 30%,var(--ticket-light),var(--ticket-dark) 85%);
+  box-shadow:inset 0 0 0 2px var(--ticket-dark),inset 0 0 0 3px #d8b76a88,inset 0 0 12px var(--ticket-glow),0 0 5px var(--ticket-glow);
+}
+/* Keep the border on the item frame rather than drawing a second frame around its image. */
+:is(.iv-cell,.mk-cell,.mk-it):is([data-k="ve_tai_xiu"],[data-k="ve_linh_thu"]) .ticket-premium{
+  border:0;border-radius:0;background:none;box-shadow:none;
+}

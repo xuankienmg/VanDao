@@ -87,7 +87,6 @@ window.playBreak = playBreak;
 
 // Các hàm cửa sổ desktop (C#) gọi vào
 // =====================================================================
-// ADMIN MODE: Ctrl+Shift+A bật/tắt (nhớ trong máy). Hiện tab Admin với lệnh gian lận để thử game.
 // Cờ god / break / fast lưu ở server theo nhân vật (S.admin), các lệnh khác thực hiện một lần.
 // =====================================================================
 let adminOn = false, devMode = false;   // devMode: server chạy môi trường Development (GET /api/env) — chỉ khi đó mới có admin mode
@@ -99,10 +98,13 @@ function setAdmin(on){
   const t = $('tab-admin'); if (t) t.hidden = !on;
   if (S && DATA) renderMap();                   // mô tả ô ải chỉ hiện khi bật admin
   if (on){ renderAdmin(true); openTab('admin'); } else if ($('tab-admin')?.getAttribute('aria-selected') === 'true') openTab('req');
-  localLog(on ? 'Admin mode: BẬT (Ctrl+Shift+A để tắt)' : 'Admin mode: TẮT', on ? 'good' : '');
+  localLog(on ? 'Admin mode: BẬT' : 'Admin mode: TẮT', on ? 'good' : '');
 }
 addEventListener('keydown', e => {
-  if (devMode && e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){ e.preventDefault(); setAdmin(!adminOn); }
+  if (devMode && e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){
+    e.preventDefault(); if (e.repeat) return;
+    if (Date.now() - adminArmAt < 1000){ adminArmAt = 0; setAdmin(!adminOn); } else adminArmAt = Date.now();
+  }
   // phím ẩn Alt+Shift+R: reset nhân vật về từ đầu (bấm 2 lần trong 3 giây để xác nhận, giống nút trong Admin)
   if (e.altKey && e.shiftKey && !e.ctrlKey && e.code === 'KeyR'){
     e.preventDefault();
@@ -110,7 +112,7 @@ addEventListener('keydown', e => {
     else { resetArmAt = Date.now(); localLog('Nhấn Alt+Shift+R lần nữa trong 3 giây để reset nhân vật về từ đầu (mất toàn bộ tiến trình).', 'bad'); }
   }
 });
-let resetArmAt = 0;
+let resetArmAt = 0, adminArmAt = 0;
 const adminAct = (action, arg, n) => act(`admin/${action}?${new URLSearchParams({...(arg != null ? {arg} : {}), ...(n ? {n} : {})})}`);
 let admKey = '';
 /** Admin: cờ "boss" — khiêu chiến Boss không cần chìa khóa. */
@@ -122,11 +124,14 @@ function renderAdmin(force){
   if (!adminOn){ pane.innerHTML = ''; admKey = ''; return; }
   const flags = (S.admin || '').split(',').filter(Boolean);
   // trạng thái game cập nhật liên tục: chỉ vẽ lại khi có thay đổi liên quan, để không mất ô đang nhập
-  const key = [S.admin, S.skillPoints, S.realm, S.stage].join('|');
+  const ownedPets = S.pet?.owned || [];
+  const key = [S.admin, S.skillPoints, S.realm, S.stage, ownedPets.map(x => `${x.id}:${x.stars}:${x.level}`).join()].join('|');
   if (!force && key === admKey && pane.innerHTML) return;
   admKey = key;
   const keepItem = $('admItem')?.value, keepN = $('admN')?.value, keepRealm = $('admRealm')?.value;
-  const keepGear = $('admGear')?.value, keepQ = $('admQ')?.value, keepGN = $('admGN')?.value;
+  const keepGear = $('admGear')?.value, keepQ = $('admQ')?.value, keepGN = $('admGN')?.value, keepPetN = $('admPetN')?.value, keepPet = $('admPet')?.value, keepPetStar = $('admPetStar')?.value;
+  // Linh thú: mọi Thú Đản + đan dược / nguyên liệu linh thú (theo thứ tự khai báo ở server)
+  const petItems = DATA.items.filter(i => ['egg', 'petfood', 'petmaterial'].includes(i.type));
   // trang bị: chọn theo món gốc (nhóm theo bộ, kèm cấp + cảnh giới yêu cầu), phẩm chọn riêng
   const bases = DATA.items.filter(i => i.base && i.id.endsWith('q0'));
   const sets = [...new Set(bases.map(b => b.set || 'Khác'))];
@@ -147,8 +152,8 @@ function renderAdmin(force){
   const realms = DATA.realms.flatMap((r, i) => r.stages.map((st, j) => `<option value="${i}:${j}" ${i === S.realm && j === S.stage ? 'selected' : ''}>${r.name} · ${st}</option>`)).join('');
   const F = (id, n, d) => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) ? 'on' : ''}" title="${d}">${n}: ${flags.includes(id) ? 'BẬT' : 'tắt'}</button>`;
   pane.innerHTML = `<div class="adm-p">
-    <section><h4>Chế độ</h4><div class="adm-row">${F('god', 'Bất tử', 'Quái không gây sát thương, không thua trận')}${F('break', 'Đột phá chắc chắn', 'Tỉ lệ 100%, bỏ điều tức')}<span class="adm-grp">Thám hiểm nhanh: ${['fast2', 'fast3', 'fast5'].map(id => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) || (id === 'fast3' && flags.includes('fast')) ? 'on' : ''}" title="Mỗi chuyến nhanh gấp ${id.slice(4)} lần · bấm lần nữa để tắt">×${id.slice(4)}</button>`).join('')}</span>${F('boss', 'Boss không cần chìa khóa', 'Khiêu chiến Boss không cần và không tiêu hao chìa khóa, đánh liên tục tới khi rời ải Boss')}${F('map', 'Mở full bản đồ', 'Mở mọi chương, mọi ải và cả mức Khó / Ác mộng · không đánh dấu đã hạ Boss nên vẫn nhận thưởng hạ Boss lần đầu · tắt là về tiến độ thật')}</div>
-      <small>Ctrl+Shift+A để ẩn / hiện admin mode. Cờ chế độ lưu theo nhân vật cho tới khi tắt.</small></section>
+    <section><h4>Chế độ</h4><div class="adm-row">${F('god', 'Bất tử', 'Quái không gây sát thương, không thua trận')}${F('break', 'Đột phá chắc chắn', 'Tỉ lệ 100%, bỏ điều tức')}<span class="adm-grp">Tốc độ thám hiểm: ${[['fast05', '0.5'], ['fast2', '2'], ['fast3', '3'], ['fast5', '5']].map(([id, k]) => `<button data-adm="flag" data-arg="${id}" class="${flags.includes(id) || (id === 'fast3' && flags.includes('fast')) ? 'on' : ''}" title="${k === '0.5' ? 'Mỗi chuyến chậm gấp đôi' : `Mỗi chuyến nhanh gấp ${k} lần`} · bấm lần nữa để tắt">×${k}</button>`).join('')}</span>${F('boss', 'Boss không cần chìa khóa', 'Khiêu chiến Boss không cần và không tiêu hao chìa khóa, đánh liên tục tới khi rời ải Boss')}${F('map', 'Mở full bản đồ', 'Mở mọi chương, mọi ải và cả mức Khó / Ác mộng · không đánh dấu đã hạ Boss nên vẫn nhận thưởng hạ Boss lần đầu · tắt là về tiến độ thật')}</div>
+      <small>Cờ chế độ lưu theo nhân vật cho tới khi tắt.</small></section>
     <section><h4>Tài nguyên & vật phẩm</h4>
       <div class="adm-row"><button data-adm="stones" data-n="1000">+1.000 linh thạch</button><button data-adm="stones" data-n="100000">+100.000</button><button data-adm="stones" data-n="10000000">+10 triệu</button></div>
       <div class="adm-row"><select id="admItem">${itemOpts}</select>
@@ -164,6 +169,14 @@ function renderAdmin(force){
     <section><h4>Kỹ năng</h4>
       <div class="adm-row"><button data-adm="points" data-n="5">+5 điểm</button><button data-adm="points" data-n="50">+50 điểm</button><button data-adm="maxfire">Học max cây Hỏa</button><button data-adm="resetskills">Reset cây kỹ năng</button></div>
       <small>Điểm kỹ năng: ${S.skillPoints}</small></section>
+    <section><h4>Linh Thú</h4>
+      <div class="adm-row">${F('petevo', 'Tiến hóa không cần điều kiện', 'Tiến hóa linh thú bỏ qua cấp, cảnh giới và không tốn nguyên liệu')}</div>
+      <div class="adm-row"><select id="admPet">${petItems.map(it => `<option value="${it.id}" ${it.id === keepPet ? 'selected' : ''}>${it.name}</option>`).join('')}</select>
+        <input id="admPetN" type="number" min="1" value="${keepPetN || 1}"><button data-adm="petgive">Nhận</button><button data-adm="petkit">Nhận tất cả</button></div>
+      <div class="adm-row"><select id="admPetStar">${ownedPets.length ? ownedPets.map(x => `<option value="${x.id}" ${x.id === keepPetStar ? 'selected' : ''}>${x.name} · Lv.${x.level} · ${x.stars || 0}★</option>`).join('') : '<option value="">Chưa có linh thú</option>'}</select>
+        <button data-adm="petstar" data-n="1">+1★</button><button data-adm="petstar" data-n="5">Tối đa 5★</button>
+        <button data-adm="petlevel" data-n="10">+10 cấp</button><button data-adm="petlevel" data-n="1000">Max cấp (${S.pet?.levelCap ?? 100})</button></div>
+      <small>Chọn Thú Đản / đan dược linh thú để nhận theo số lượng · "Nhận tất cả" cho mọi loại · Tăng sao / cấp cho linh thú đã chọn, không cần con hiến hay Linh Thú Đan.</small></section>
     <section><h4>Thám hiểm & trận đánh</h4>
       <div class="adm-row"><button data-adm="explore">Kết thúc chuyến ngay</button><button data-adm="unlock">Mở toàn bộ ải + chìa khóa Boss</button></div></section>
     <section><h4>Nhân vật</h4>
@@ -176,7 +189,10 @@ function renderAdmin(force){
 document.addEventListener('click', e => {
   const b = e.target.closest('#pane-admin [data-adm]'); if (!b) return;
   const a = b.dataset.adm;
-  if (a === 'give') adminAct('give', $('admItem').value, Math.max(1, +$('admN').value || 1));
+  if (a === 'petgive') adminAct('give', $('admPet').value, Math.max(1, +$('admPetN').value || 1));
+  else if (a === 'petstar' || a === 'petlevel') adminAct(a, $('admPetStar').value, +b.dataset.n);
+  else if (a === 'petkit') adminAct('petkit', null, Math.max(1, +$('admPetN').value || 1));
+  else if (a === 'give') adminAct('give', $('admItem').value, Math.max(1, +$('admN').value || 1));
   else if (a === 'givegear'){ const base = $('admGear').value, v = DATA.items.find(i => i.base === base && i.id.endsWith('q' + $('admQ').value)); if (v) adminAct('give', v.id, Math.max(1, +$('admGN').value || 1)); }
   else if (a === 'giveset'){ const o = $('admGear').selectedOptions[0]; if (o?.dataset.set) adminAct('giveset', `${o.dataset.set}|${$('admQ').value}`, Math.max(1, +$('admGN').value || 1)); }
   else if (a === 'realm') adminAct('realm', $('admRealm').value);

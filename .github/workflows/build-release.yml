@@ -2,138 +2,109 @@ name: Build & Release Game
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - 'v*'
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag to release (e.g. v0.7.3)'
-        required: false
-        default: ''
-      force:
-        description: 'Force rebuild even if release exists'
-        type: boolean
-        default: false
+        description: 'Existing version tag to release (e.g. v0.7.5)'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: vandao-release
+  cancel-in-progress: false
+
 jobs:
   build-and-release:
     runs-on: windows-latest
-
+    environment: Supbase
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.version || github.ref }}
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Determine Version & Check Release Status
+      - name: Validate release tag and configuration
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.version || github.ref_name }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v(\d+\.\d+\.\d+)$') { throw 'Version must be an existing vX.Y.Z tag.' }
+          $version = $Matches[1]
+          git rev-parse --verify "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag does not exist.' }
+          if (!$env:SUPABASE_URL -or !$env:SUPABASE_KEY) { throw 'Missing Supabase release secrets.' }
+          "TAG=$env:RELEASE_TAG" >> $env:GITHUB_ENV
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Build and package self-contained game and Launcher
         shell: pwsh
         run: |
-          $inputVer = "${{ github.event.inputs.version }}".Trim()
-          $refName = "${{ github.ref_name }}"
-          
-          # Read <Version> from VanDao.csproj
-          $xml = [xml](Get-Content VanDao.csproj)
-          $csprojVer = $xml.Project.PropertyGroup.Version.Trim()
-
-          if ($inputVer -ne "") {
-            $tag = if ($inputVer.StartsWith("v") -or $inputVer.StartsWith("V")) { $inputVer } else { "v$inputVer" }
-          } elseif ($refName -like "v*") {
-            $tag = $refName
-          } else {
-            $tag = if ($csprojVer.StartsWith("v") -or $csprojVer.StartsWith("V")) { $csprojVer } else { "v$csprojVer" }
+          $credentialPattern = '(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
+          $sourceFiles = Get-ChildItem NguoiLuoiTuTienLauncher -Recurse -File -Include *.cs,*.js,*.html,*.json | Where-Object { $_.FullName -notmatch '[\\/](bin|obj|publish)[\\/]' -and $_.Name -ne 'launcher_settings.json' }
+          foreach ($sourceFile in $sourceFiles) {
+            if ([IO.File]::ReadAllText($sourceFile.FullName) -match $credentialPattern) { throw "GitHub credential found in Launcher source: $($sourceFile.Name)" }
           }
-          
-          $cleanVer = $tag.TrimStart('v', 'V')
-          Write-Host "Target Tag: $tag (Clean Version: $cleanVer)"
-          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "VERSION=$cleanVer" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          # Check if this release already exists on GitHub (to avoid rebuilding unchanged versions)
-          $force = "${{ github.event.inputs.force }}"
-          if ($force -ne "true" -and $refName -eq "master") {
-            $token = "${{ secrets.GITHUB_TOKEN }}"
-            $repo = "${{ github.repository }}"
-            $headers = @{
-              "Authorization" = "Bearer $token"
-              "User-Agent" = "GitHubActions"
-              "Accept" = "application/vnd.github+json"
-            }
-            try {
-              $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers -ErrorAction Stop
-              if ($existing -and $existing.id) {
-                Write-Host ">> Release $tag already exists on GitHub (Version in VanDao.csproj unchanged). Skipping auto-build." -ForegroundColor Yellow
-                "SKIP_BUILD=true" | Out-File -FilePath $env:GITHUB_ENV -Append
-              }
-            } catch {
-              Write-Host ">> Release $tag does not exist yet. New version detected from VanDao.csproj! Starting auto-build..." -ForegroundColor Green
-              "SKIP_BUILD=false" | Out-File -FilePath $env:GITHUB_ENV -Append
-            }
-          } else {
-            "SKIP_BUILD=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $stageRoot = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString('N'))
+          $gameDir = Join-Path $stageRoot 'game'
+          $launcherDir = Join-Path $stageRoot 'launcher'
+          dotnet publish VanDao.csproj -c Release -r win-x64 -o $gameDir --self-contained true -p:VersionFromTag=false -p:Version=$env:VERSION -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          if ($LASTEXITCODE -ne 0) { throw 'Game publish failed.' }
+          dotnet publish NguoiLuoiTuTienLauncher/NguoiLuoiTuTienLauncher.csproj -c Release -r win-x64 -o $launcherDir --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          if ($LASTEXITCODE -ne 0) { throw 'Launcher publish failed.' }
+          # Package only runtime output; stage outside the source tree to avoid nested publish files.
+          foreach ($dir in @($gameDir, $launcherDir)) {
+            Get-ChildItem -LiteralPath $dir -File | Where-Object Extension -in '.pdb', '.xml' | Remove-Item -Force
           }
-
-      - name: Build & Package Game + Launcher
-        if: env.SKIP_BUILD != 'true'
-        shell: pwsh
-        run: |
-          $publishDir = "publish_game"
-          if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-
-          # 1. Build Single-file Game
-          Write-Host "=== 1. Building Game (Single-File) ===" -ForegroundColor Cyan
-          dotnet publish VanDao.csproj -c Release -r win-x64 -o $publishDir -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --self-contained false
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Build game failed!" -ForegroundColor Red
-            exit 1
-          }
-
-          # Clean unnecessary files
-          Get-ChildItem -Path $publishDir -Filter "*.pdb" | Remove-Item -Force
-          Get-ChildItem -Path $publishDir -Filter "*.xml" | Remove-Item -Force
-          if (Test-Path "$publishDir\web.config") { Remove-Item "$publishDir\web.config" -Force }
-          if (Test-Path "$publishDir\docs") { Remove-Item "$publishDir\docs" -Recurse -Force }
-          if (Test-Path "$publishDir\VanDaoLauncher") { Remove-Item "$publishDir\VanDaoLauncher" -Recurse -Force }
-          if (Test-Path "$publishDir\launcher_settings.json") { Remove-Item "$publishDir\launcher_settings.json" -Force }
-
-          # 2. Build Single-file Launcher and include in zip package
-          Write-Host "=== 2. Building Launcher ===" -ForegroundColor Cyan
-          $launcherPubDir = "publish_launcher"
-          dotnet publish VanDaoLauncher/VanDaoLauncher.csproj -c Release -r win-x64 -o $launcherPubDir -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --self-contained false
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Build launcher failed!" -ForegroundColor Red
-            exit 1
-          }
-
-          Copy-Item "$launcherPubDir\VanDaoLauncher.exe" "$publishDir\VanDaoLauncher.exe" -Force
-          New-Item -ItemType Directory -Force -Path "$publishDir\VanDaoLauncher"
-          Copy-Item "VanDaoLauncher\wwwroot" "$publishDir\VanDaoLauncher\wwwroot" -Recurse -Force
-
-          # 3. Create release zip
-          $zipName = "VanDao_${env:TAG}.zip"
-          Write-Host "=== 3. Creating release package: $zipName ===" -ForegroundColor Cyan
-          Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName -Force
-          $sizeMb = "{0:N2} MB" -f ((Get-Item $zipName).Length / 1MB)
-          Write-Host "Archive created successfully: $zipName ($sizeMb)" -ForegroundColor Green
+          Copy-Item (Join-Path $launcherDir 'NguoiLuoiTuTienLauncher.exe') $gameDir -Force
+          $launcherUi = Join-Path $gameDir 'NguoiLuoiTuTienLauncher'
+          New-Item -ItemType Directory -Path $launcherUi -Force | Out-Null
+          Copy-Item NguoiLuoiTuTienLauncher/wwwroot $launcherUi -Recurse -Force
+          if (Get-ChildItem $gameDir -Recurse -File -Filter launcher_settings.json) { throw 'Local Launcher settings must not be packaged.' }
+          $zipPath = Join-Path $env:RUNNER_TEMP "VanDao_$env:TAG.zip"
+          Compress-Archive -Path "$gameDir/*" -DestinationPath $zipPath -Force
+          "ZIP_PATH=$zipPath" >> $env:GITHUB_ENV
 
       - name: Publish GitHub Release
-        if: env.SKIP_BUILD != 'true'
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
           name: Release ${{ env.TAG }}
-          files: VanDao_${{ env.TAG }}.zip
+          files: ${{ env.ZIP_PATH }}
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
           generate_release_notes: true
+
+      - name: Verify uploaded ZIP and update Supabase
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify GitHub release.' }
+          $release = $releaseJson | ConvertFrom-Json
+          $asset = @($release.assets | Where-Object { $_.name -eq "VanDao_$env:TAG.zip" -and $_.state -eq 'uploaded' })
+          if ($asset.Count -ne 1 -or $asset[0].size -le 0 -or $release.draft) { throw 'Release ZIP is not ready.' }
+          $headers = @{ apikey = $env:SUPABASE_KEY; Authorization = "Bearer $env:SUPABASE_KEY"; Prefer = 'return=representation' }
+          $endpoint = "$($env:SUPABASE_URL.TrimEnd('/'))/rest/v1/app_config?id=eq.1"
+          $current = @(Invoke-RestMethod -Uri $endpoint -Headers $headers)
+          if ($current.Count -ne 1) { throw 'Expected app_config row id=1.' }
+          if ([version]$current[0].latest_version.TrimStart('v', 'V') -gt [version]$env:VERSION) { throw 'Refusing to announce an older version over a newer release.' }
+          $message = git tag -l --format='%(contents:subject)' $env:TAG
+          $body = @{ latest_version = $env:VERSION; download_url = $asset[0].browser_download_url; message = "$message" } | ConvertTo-Json -Compress
+          $updated = @(Invoke-RestMethod -Method Patch -Uri $endpoint -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)))
+          if ($updated.Count -ne 1 -or $updated[0].latest_version -ne $env:VERSION -or $updated[0].download_url -ne $asset[0].browser_download_url) { throw 'Supabase release update was not confirmed.' }
+          "### Published $env:TAG and synchronized app_config (min_version unchanged)" >> $env:GITHUB_STEP_SUMMARY

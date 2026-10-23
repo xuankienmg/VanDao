@@ -5,8 +5,9 @@
 .sk-realms .sk-path-heading h3{background:none;border:0;padding:0;margin:0;font-size:16px;letter-spacing:0;text-transform:none;color:#eed8a6;white-space:nowrap}
 .sk-path-heading>span{font-size:9px;color:#a5a18e;text-align:right}
 img[style*="--sk-icon-filter"]{filter:var(--sk-icon-filter,none)}
-.sk-path-scroll{height:480px;min-height:0;flex:1}
-.sk-realm-board{position:relative;height:100%;min-height:390px;background:#0f1518}
+.sk-path-scroll{height:480px;min-height:0;flex:1;overflow-y:auto;scrollbar-width:thin}
+/* mỗi hàng cảnh giới ≥ 70px (nút kỹ năng cao 60px: icon + tên) để nút không đè sang hàng dưới; 92% chiều cao dành cho các hàng */
+.sk-realm-board{position:relative;height:100%;min-height:max(390px,calc(var(--sk-rows,7) * 70px / .92));background:#0f1518}
 .sk-lane-head{position:absolute;top:0;left:0;right:0;z-index:2;height:6%;display:grid;grid-template-columns:18% 28% 54%;align-items:center;background:#1b2527;border-bottom:1px solid #43504d;color:#d1bc89;text-align:center;font-size:11px}
 .sk-realm-band{position:absolute;left:0;right:0;border-bottom:1px solid #39403b;background:linear-gradient(90deg,#1b2423 0 17%,transparent 17% 48%,#17201f55 48%)}
 .sk-realm-band.current{box-shadow:inset 3px 0 #d3ad65;background-color:#bc945008}
@@ -46,7 +47,7 @@ body.panel aside.book:has(>#pane-skill:not([hidden]))>.concept-tools{flex-shrink
 body.panel #pane-skill{flex:1;min-height:0;overflow:auto;isolation:isolate;padding:6px}
 body.panel #pane-skill .sk-realms{flex:1;min-height:0}
 body.panel #pane-skill .sk-path-scroll{height:auto}
-@container sk (max-width:540px){.sk-realms .sk-path-scroll{overflow-x:auto;overflow-y:hidden}.sk-realm-board{min-width:620px}.sk-path-heading>span{max-width:180px}}
+@container sk (max-width:540px){.sk-realms .sk-path-scroll{overflow-x:auto;overflow-y:auto}.sk-realm-board{min-width:620px}.sk-path-heading>span{max-width:180px}}
 /* Các thành phần dùng chung: icon, trạng thái, đường nối và tooltip. */
 #pane-skill{container:sk / inline-size}
 /* bố cục theo bề rộng khung chứa: hẹp (thanh bên) xếp dọc · vừa (cửa sổ Tu luyện) 2 cột · rộng 4 cột như thiết kế */
@@ -55,6 +56,8 @@ body.panel #pane-skill .sk-path-scroll{height:auto}
 @container sk (min-width:600px){.sk2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"els els" "bar bar" "act pas"}}
 .sk2-bar{grid-area:bar;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 6px}
 .sk2-bar .sk2-pts{gap:6px;padding:2px 8px} .sk2-bar .sk2-pts b{font-size:20px}
+/* kỹ năng đang dùng (đánh thường + ô kỹ năng) dồn sang phải, điểm kỹ năng giữ bên trái */
+.sk2-bar .sk2-pts + .sk2-grp{margin-left:auto}
 .sk2-grp{display:flex;align-items:center;gap:3px} .sk2-grp > span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#d8a060;margin-right:2px}
 .sk2-ico{display:grid;place-items:center;width:38px;height:38px;padding:0;background:#0d0808;border:2px solid #3a2a20;cursor:pointer}
 .sk2-ico img{width:32px;height:32px} .sk2-ico .emp{color:#6a5a48;font-size:16px}
@@ -142,6 +145,13 @@ body.panel #pane-skill .sk-path-scroll{height:auto}
 .sk-els button.on{border-color:var(--c);background:#24170f;color:#fff;box-shadow:inset 0 -2px 0 var(--c)}
 .sk-els button.on.lock img{filter:grayscale(.6) brightness(.7)}
 .sk-els button:hover{border-color:#b8925a}
+.sk-els button.run::after{content:'';position:absolute;top:2px;right:2px;width:6px;height:6px;background:var(--c);box-shadow:0 0 5px var(--c)}
+.sk-els small.run{color:#ffd25a} .sk-els button.run span{margin-bottom:8px}
+.sk2-activate{height:30px;padding:0 10px;background:#1a110b;border:2px solid var(--c,#e0702a);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer}
+.sk2-activate:hover{background:#2a1a10;box-shadow:0 0 6px var(--c,#e0702a)}
+.sk2-runname{font-size:11px;letter-spacing:.06em;margin-left:3px}
+.tip b.sk-burn,.sk-act b.sk-burn{color:#b8360c;font-weight:700}
+.sk-half{font-style:normal;font-size:9px;color:#d88a5a;letter-spacing:0;text-transform:none}
 .sk-els button:focus-visible,.sk-n:focus-visible,.sk-up:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 
 

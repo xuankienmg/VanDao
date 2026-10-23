@@ -10,8 +10,15 @@ public sealed class PanelWindow : Form
 {
     private static readonly Dictionary<string, string> TabNames = new()
     {
-        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Tài Xỉu", ["market"] = "Chợ", ["rank"] = "Bảng xếp hạng",
+        ["req"] = "Đột phá", ["inv"] = "Hành trang", ["craft"] = "Luyện chế · Đan dược", ["map"] = "Bản đồ", ["skill"] = "Công pháp", ["pet"] = "Linh thú", ["fuse"] = "Luyện chế · Luyện khí", ["sell"] = "Luyện chế · Bán", ["spin"] = "Luyện chế · Vòng quay", ["market"] = "Chợ", ["rank"] = "Bảng xếp hạng",
     };
+
+    private static readonly Dictionary<string, string> TabNamesEn = new()
+    {
+        ["req"] = "Breakthrough", ["inv"] = "Inventory", ["craft"] = "Crafting · Alchemy", ["map"] = "Map", ["skill"] = "Techniques", ["pet"] = "Spirit Beasts", ["fuse"] = "Crafting · Forging", ["sell"] = "Crafting · Sell", ["spin"] = "Crafting · Wheel", ["market"] = "Market", ["rank"] = "Leaderboard",
+    };
+
+    private string Title(string tab) => _s.L($"Tu luyện · {TabNames[tab]}", $"Cultivation · {TabNamesEn[tab]}");
 
     private readonly GameWindow _strip;
     private readonly WindowSettings _s;
@@ -29,7 +36,8 @@ public sealed class PanelWindow : Form
         _ranking = ranking;
         if (ranking) _tab = "rank";
 
-        Owner = strip; // luôn nổi trên dải game, ẩn/hiện cùng dải
+        // Không đặt Owner: cửa sổ được sở hữu luôn nằm trên chủ của nó,
+        // khiến click vào dải game không thể đưa dải lên trước Tu luyện.
         Icon = strip.Icon;
         FormBorderStyle = FormBorderStyle.SizableToolWindow;
         ShowInTaskbar = false;
@@ -45,7 +53,7 @@ public sealed class PanelWindow : Form
             await WebHost.InitAsync(_web, OnMessage);
             _web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false; // không hiện menu chuột phải của trình duyệt
             _web.CoreWebView2.NavigationCompleted += (_, _) => _ready = true;
-            _web.Source = new Uri($"{_url}?mode=panel&tab={_tab}");
+            _web.Source = new Uri($"{_url}?mode=panel&tab={_tab}&lang={_s.Language}");
         };
         ResizeEnd += (_, _) =>
         {
@@ -64,7 +72,7 @@ public sealed class PanelWindow : Form
     public async void ShowTab(string tab)
     {
         _tab = TabNames.ContainsKey(tab) ? tab : "req";
-        Text = _ranking ? "Thiên bảng · Bảng xếp hạng" : $"Tu luyện · {TabNames[_tab]}";
+        Text = _ranking ? _s.L("Thiên bảng · Bảng xếp hạng", "Heaven Ranking · Leaderboard") : Title(_tab);
         TopMost = _s.Pinned;
         Size = SizeFor(_tab);
         if (!Visible)
@@ -93,6 +101,13 @@ public sealed class PanelWindow : Form
             : LogicalToDeviceUnits(new Size(740, 680));
     }
 
+    /// <summary>Ngôn ngữ vừa đổi: đổi tiêu đề và tải lại trang (js gọi window.setLang).</summary>
+    public void SetLanguage(string js)
+    {
+        Text = _ranking ? _s.L("Thiên bảng · Bảng xếp hạng", "Heaven Ranking · Leaderboard") : Title(_tab);
+        if (_web.CoreWebView2 is not null) _ = _web.ExecuteScriptAsync(js);
+    }
+
     public Task SyncAsync() => Visible ? WebHost.SyncAsync(_web) : Task.CompletedTask;
 
     /// <summary>Đặt bảng ngay phía trên dải (hoặc phía dưới nếu dải nằm ở mép trên màn hình).</summary>
@@ -119,7 +134,7 @@ public sealed class PanelWindow : Form
                 var tab = t.GetString()!;
                 if (tab == _tab) break;
                 _tab = tab;
-                Text = $"Tu luyện · {TabNames[_tab]}";
+                Text = Title(_tab);
                 var size = SizeFor(_tab);
                 if (size != Size) { Size = size; PlaceNearStrip(); }
                 break;

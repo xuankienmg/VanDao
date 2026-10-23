@@ -15,12 +15,14 @@ const RARITY = {
   dao:       {n:'Đạo',         c:'#FFD700', v:204800},
   supreme:   {n:'Huyền Tiên', c:'#E0FFFF', v:819200},
 };
+// Pet-only quality: non-enumerable so the ten gear/spin quality slots stay unchanged.
+Object.defineProperty(RARITY,'ancient',{value:{n:'Thượng Cổ',c:'#d7d4ff',v:0},enumerable:false});
 const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ'],['accessory','Trang sức'],['consumable','Đan dược'],['material','Nguyên liệu'],['quest','Nhiệm vụ']];
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
-const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'egg' || it.type === 'elixir');
-const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' ? 'consumable' : 'material';
+const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'egg' || it.type === 'elixir' || it.type === 'manual');
+const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' || it.type === 'manual' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
 const reqLevel = it => levelOf(it.minRealm || 0);
@@ -30,7 +32,17 @@ const RAR_KEYS = Object.keys(RARITY);
 /** Tên phẩm tô đúng màu phẩm: nền tối (bảng, nhật ký) dùng rc-*, thẻ giấy da dùng qc-* (màu đậm hơn để đọc rõ). */
 const qWord = (r, card) => `<b class="${card ? 'qc' : 'qn'} ${card ? 'qc' : 'rc'}-${r}">${RARITY[r]?.n ?? r}</b>`;
 /** Tô màu tên phẩm trong câu chữ từ server (nhật ký): "[cấp 25 · Đỏ]", "trang bị Vàng". */
-const qColorize = t => t.replace(/(· |trang bị )(Huyền Tiên|Phàm|Linh|Huyền|Địa|Thiên|Thánh|Thần|Tiên|Đạo)(?=\]| |\.|,|$)/g, (m, pre, n) => pre + qWord(RAR_KEYS[Q_NAMES.indexOf(n)]));
+// tên phẩm tiếng Việt và bản dịch (khi dùng English, nhật ký được dịch trước khi tô màu)
+let qRe = null, qKey = null;
+const qColorize = t => {
+  if (!qRe){
+    qKey = {};
+    RAR_KEYS.forEach((k, i) => { qKey[Q_NAMES[i]] = k; qKey[window.tr(Q_NAMES[i])] = k; });
+    const names = Object.keys(qKey).sort((a, b) => b.length - a.length).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    qRe = new RegExp(`(· |trang bị )(${names.join('|')})(?=\\]| |\\.|,|$)`, 'g');
+  }
+  return t.replace(qRe, (m, pre, n) => pre + qWord(qKey[n]));
+};
 const SET_COLOR = {'Thanh Vân': '#4fb0d8', 'Huyền Băng': '#3a7fc8', 'Xích Kim': '#c0631e', 'Huyền Long': '#fc246c'};          // màu riêng từng bộ trang bị (dòng ◆ Bộ … trong thẻ)
 let sellOpen = false, sellArm = 0, bulkArm = null;
 // bán hàng loạt: phạm vi (cả hành trang / trang đang xem) và chỉ trang bị — nhớ trên máy này
@@ -99,6 +111,7 @@ function chestOddsLines(k){
     `Trang bị (gồm pháp bảo) ${pctS(pt + pg)} · ${ITEM[o.pillItem]?.name || 'Đan'} ${pctS(o.pill)} (${o.pillMin}–${o.pillMax} viên)`,
     `Linh thảo ${pctS(o.herb || 0)} (${o.herbMin || 1}–${o.herbMax || 1} món) · Ngộ Đạo Đan ${pctS(o.enlightenment || 0)} (1 viên, từ Nguyên Anh)`,
     ...(o.pets || []).map(x=>`${ITEM[x.item]?.name || x.item}: ${pctS(x.pct)}`),
+    ...(o.manuals || []).map(x=>`${ITEM[x.item]?.name || x.item}: ${pctS(x.pct)}`),
     `Ra đồ Địa trở lên: ${pctS((pt + pg) * topPct(o.quality) / 100)}`];
 }
 function chestOddsHtml(k){
@@ -111,11 +124,15 @@ function chestOddsHtml(k){
     <p><b>${ITEM[o.pillItem]?.name || 'Đan dược'} ${pctS(o.pill)}</b>: ${o.pillMin}–${o.pillMax} viên</p>
     <p><b>Linh thảo ${pctS(o.herb || 0)}</b>: ${o.herbMin || 1}–${o.herbMax || 1} món · ${(o.herbs || []).map(x=>`${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}`).join(' · ')}</p>
     <p><b>Ngộ Đạo Đan ${pctS(o.enlightenment || 0)}</b>: 1 viên · chỉ từ Nguyên Anh</p>
-    ${(o.pets || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b></p>`).join('')}</div>`;
+    ${(o.pets || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b></p>`).join('')}
+    ${(o.manuals || []).map(x=>`<p><b>${ITEM[x.item]?.name || x.item} ${pctS(x.pct)}</b> · Công pháp</p>`).join('')}</div>`;
 }
-function itemImg(k, cls = ''){
+function itemImg(k, cls = '', detail = false){
   const it = ITEM[k];
-  return it.icon ? `<img class="px ${cls}" src="${it.icon}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">` : icon(k);
+  const ticketClass = k === 've_tai_xiu' ? ' ticket-premium ticket-gear' : k === 've_linh_thu' ? ' ticket-premium ticket-pet' : '';
+  const imageSrc = detail && k === 'thu_dan_thuong_co' ? 'img/pet/egg_thuong_co_hd.png' : it.icon;
+  const eggClass = k === 'thu_dan_thuong_co' ? ' ancient-egg-art' : '';
+  return it.icon ? `<img class="px ${cls}${ticketClass}${eggClass}" src="${imageSrc}" alt="" style="${it.tint ? `filter:${it.tint}` : ''}">` : icon(k);
 }
 const LOCK_SVG = '<svg viewBox="0 0 24 24" class="lk"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
@@ -428,7 +445,7 @@ function gearFxHtml(){
   const limits = (S.combatLimits || []).map(e => `<p>${e.name}: <b>${e.effective}${e.unit}</b> <small>(tổng ${e.raw}, trần ${e.cap})</small></p>`).join('');
   const divine=snapshot.divine;
   const divineHtml=divine ? `<details class="iv-fx iv-divine" ${divine.tier ? 'open' : ''}><summary>◇ Thần thông bộ · ${divine.tier ? divine.name : 'Chưa kích hoạt'}</summary><p>${divine.setName ? `Bộ ${divine.setName} · ` : ''}Cần 10 món cùng bộ; chỉ kích hoạt mốc phẩm cao nhất.</p>${(divine.progress||[]).map(p=>`<p style="opacity:${p.active?1:.65}">${p.active?'◆':'◇'} <b>${p.quality} · ${p.name} (${p.count}/10)</b><br>${p.description}</p>`).join('')}</details>` : '';
-  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div>${divineHtml}<details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp vừa tăng tốc độ thám hiểm vừa tăng né tránh; cộng Vân bộ và công pháp, tổng né tối đa 50%.</small></details>`;
+  return `<div class="iv-fx" data-tip="Hiệu ứng trang bị và bộ do server tính; trần tổng với công pháp/kỹ năng áp dụng khi chiến đấu.">${sets.concat(effects).join(' · ')}</div>${divineHtml}<details class="iv-fx"><summary>Nguồn chỉ số và giới hạn</summary>${sources}${limits}<small>Giá trị nguồn trước trần và suy yếu; chỉ số cuối ở bảng nhân vật. Thân pháp tăng né tránh; cộng Vân bộ và công pháp, tổng né tối đa 50%. Thân pháp giảm thời gian di chuyển giữa các ải (tối đa 60%), không tăng tốc độ đánh.</small></details>`;
 }
 function itemSetHtml(it){
   const def = (DATA.equipmentSets || []).find(s => s.id === it.setId);

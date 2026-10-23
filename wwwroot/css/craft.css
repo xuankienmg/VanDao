@@ -20,10 +20,13 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 .dd-sec{margin:0 0 4px;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#a08c66}
 .dd-main{grid-area:main;display:flex;flex-direction:column;gap:8px}
 /* hợp thành: đan vào → lò → đan ra */
-.dd-synth{display:grid;grid-template-columns:96px minmax(0,1fr) 96px;align-items:center;gap:4px;padding:6px 4px 8px;background:var(--ink3);border:1px solid #3b3127}
+.dd-synth{display:grid;grid-template-columns:minmax(0,184px) minmax(0,1fr) 96px;align-items:center;gap:4px;padding:6px 4px 8px;background:var(--ink3);border:1px solid #3b3127}
 .dd-fur{display:flex;justify-content:center;align-items:flex-end;min-height:150px}
 .dd-fur canvas{image-rendering:pixelated;display:block}
 .dd-io{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+.dd-reagents{display:grid;grid-template-rows:repeat(2,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;width:100%}
+.dd-reagents .dd-reagent{min-width:0}
+.dd-reagents .dd-nm{overflow-wrap:anywhere}
 .dd-lab{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#a08c66}
 .dd-fr{position:relative;display:grid;place-items:center;width:40px;height:40px;background:var(--iron);border:2px solid #4a4f55;box-shadow:inset 0 0 0 1px #0b0806}
 .dd-fr img{width:32px;height:32px}
@@ -199,7 +202,7 @@ img.ic{image-rendering:pixelated;object-fit:contain}
   body.panel #pane-craft .dd-main,body.panel #pane-craft .dd-side{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#4a3a26 transparent}
   body.panel #pane-craft .dd-main{gap:6px}
   /* lò hợp thành */
-  body.panel #pane-craft .dd-synth{grid-template-columns:84px minmax(0,1fr) 84px;padding:4px 4px 6px;gap:2px 4px}
+  body.panel #pane-craft .dd-synth{grid-template-columns:minmax(0,176px) minmax(0,1fr) 84px;padding:4px 4px 6px;gap:2px 4px}
   body.panel #pane-craft .dd-fur{min-height:0}
   body.panel #pane-craft .dd-fr.big{width:52px;height:52px} body.panel #pane-craft .dd-fr.big img{width:42px;height:42px}
   body.panel #pane-craft .dd-cnt{font-size:14px}
@@ -245,7 +248,7 @@ img.ic{image-rendering:pixelated;object-fit:contain}
 
 /* Bán: theo chiều rộng thực của pane (kể cả bảng desktop và zoom hệ thống). */
 #pane-sell{container:sell-pane / inline-size;min-width:0}
-/* khung, thanh tab và cột phải dùng chung kích thước .dd của Luyện khí / Đan dược / Tài Xỉu (trước đây Bán có cột 236–296px và thanh tab giãn hết chiều ngang) */
+/* khung, thanh tab và cột phải dùng chung kích thước .dd của Luyện khí / Đan dược / Vòng quay (trước đây Bán có cột 236–296px và thanh tab giãn hết chiều ngang) */
 .dd.sl{width:100%;min-width:0;align-content:start}
 .sl .dd-cult{min-width:0}
 .sl .dd-cult > span{line-height:1.5;text-wrap:pretty}
@@ -273,3 +276,13 @@ img.ic{image-rendering:pixelated;object-fit:contain}
   .sl .dd-hp{margin-left:0;padding-left:4px}
   .sl .sl-quick > div{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* Quick sale sits at the right end of the inventory summary. */
+.sl .fz-bar{flex-wrap:wrap;gap:6px 12px}
+.sl .fz-bar > span{flex:1 1 auto}
+.sl .fz-bar .sl-quick{display:flex;align-items:center;gap:6px;width:auto;max-width:100%;margin-left:auto;min-width:0}
+.sl-quick label{white-space:nowrap;color:#a9b4ae;font-size:11px}
+.sl-quick select{min-width:0;max-width:240px;width:clamp(110px,18vw,240px);height:28px;padding:3px 6px;background:#171b20;color:var(--parch);border:1px solid #545044;border-radius:3px;font:inherit;font-size:11px}
+.sl .fz-bar .sl-quick-go{height:28px;white-space:nowrap}
+.sl .fz-bar .sl-quick-go.armed{background:#762719;border-color:#edac72;color:#fff0d3}
+.sl-quick select:focus-visible,.sl-quick-go:focus-visible{outline:2px solid var(--gold);outline-offset:2px}

@@ -45,12 +45,25 @@ function drawBattleHp(ctx,options){
   try{
     ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.font=`600 ${compact?10:12}px "Be Vietnam Pro",system-ui,sans-serif`;
     const shieldLabel=shield>0?'+'+battleHpText(shield):'';
-    const shieldSpace=shield>0?ctx.measureText(shieldLabel).width+16:0;
+    const control=options.control&&typeof BATTLE_CONTROL!=='undefined'?BATTLE_CONTROL[options.control]:null;
+    ctx.font=`700 ${compact?9:10}px "Be Vietnam Pro",system-ui,sans-serif`;
+    const controlW=control?ctx.measureText(control.name).width+12:0;
+    ctx.font=`600 ${compact?10:12}px "Be Vietnam Pro",system-ui,sans-serif`;
+    const shieldSpace=shield>0?ctx.measureText(shieldLabel).width+16:control?controlW+4:0;
     let title=name;
     while(title.length>1&&ctx.measureText(title).width>barW-shieldSpace-2)title=title.slice(0,-1);
     if(title!==name)title=title.slice(0,-1)+'…';
     ctx.lineWidth=3;ctx.strokeStyle='#10191d';ctx.strokeText(title,left,top-4);
     ctx.fillStyle=kind==='boss'?'#edcc87':kind==='elite'?'#dcb1eb':'#e1e9db';ctx.fillText(title,left,top-4);
+    if(control){
+      // Nhãn khống (Tê liệt · Choáng · Đóng băng) bên phải tên quái
+      const pillH=compact?12:14,pillX=left+barW-controlW,pillY=top-4-pillH+3;
+      ctx.fillStyle='#10191dd9';ctx.fillRect(pillX,pillY,controlW,pillH);
+      ctx.strokeStyle=control.col;ctx.lineWidth=1;ctx.strokeRect(pillX+.5,pillY+.5,controlW-1,pillH-1);
+      ctx.font=`700 ${compact?9:10}px "Be Vietnam Pro",system-ui,sans-serif`;ctx.textAlign='center';ctx.fillStyle=control.col;
+      ctx.fillText(control.name,pillX+controlW/2,pillY+pillH-3.5);
+      ctx.font=`600 ${compact?10:12}px "Be Vietnam Pro",system-ui,sans-serif`;ctx.textAlign='left';
+    }
     if(shield>0){
       ctx.textAlign='right';ctx.fillStyle='#a7deef';ctx.strokeText(shieldLabel,left+barW,top-4);ctx.fillText(shieldLabel,left+barW,top-4);
       const iconX=left+barW-ctx.measureText(shieldLabel).width-11,iconY=top-12;

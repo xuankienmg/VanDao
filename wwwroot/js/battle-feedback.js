@@ -43,6 +43,32 @@ function drawBattleDivine(ctx,battle,phase,width,height,big){
     ctx.fillText(text,24,y,Math.max(20,width-32));
   }finally{ctx.restore()}
 }
+/** Khống chế quái (server gửi MonControl / Shatter theo lượt): tên, màu nhãn. */
+const BATTLE_CONTROL = {
+  paralyze: {name:'Tê liệt', col:'#d4adff'},
+  stun: {name:'Choáng', col:'#f3d27a'},
+  freeze: {name:'Đóng băng', col:'#9fe3ff'},
+};
+/** Loại khống đang hiện trên quái ở pha này: từ lúc linh thú thi triển tới hết lượt; lượt sau đóng băng giữ băng tới khi đòn đánh vỡ. */
+function battleControlAt(battle,phase){
+  if(!battle||!['fight','pet'].includes(phase.name)||!(battle.monHpLeft?.[phase.i]>0)&&phase.name!=='pet')return '';
+  const kind=battle.monControl?.[phase.i]||'';
+  if(kind){
+    const petCast=(battle.pet?.casts||[]).some(c=>c.turn===phase.i&&c.paralyzeTurns>0&&!(c.at>=.85));
+    if(!petCast)return phase.name==='fight'?kind:'';          // khống từ lượt trước / kỹ năng: cả lượt
+    if(phase.name==='pet')return phase.s>=.5?kind:'';
+    return phase.s>=.7&&!phase.rep?kind:'';
+  }
+  if(battle.shatter?.[phase.i]&&phase.name==='fight'&&phase.s<.4)return 'freeze';   // băng còn bám tới khi đòn lượt này đánh vỡ
+  return '';
+}
+/** Chữ "Băng vỡ" khi đòn đánh trúng quái đang đóng băng (server đã cộng thêm sát thương). */
+function battleControlFeedback(battle,phase,seen,emit,x,y){
+  if(phase.name!=='fight'||phase.s<.4||!battle.shatter?.[phase.i])return;
+  const key=`${phase.trip}:shatter:${phase.i}`;
+  if(seen[key])return;
+  seen[key]=1;emit({type:'dodge',x,y,text:'Băng vỡ +10%',col:BATTLE_CONTROL.freeze.col,life:0,max:1});
+}
 /** Dấu trạng thái nét cao: hình dạng riêng, tâm nhân vật luôn thoáng. */
 function drawBattleStatus(ctx,{kind,x,y,width,height,strength=1,time=0,reduced=false}){
   if(width<=0||height<=0)return;
@@ -62,6 +88,37 @@ function drawBattleStatus(ctx,{kind,x,y,width,height,strength=1,time=0,reduced=f
       ctx.beginPath();ctx.moveTo(x,y-ry);ctx.lineTo(x+rx*.85,y-ry*.65);ctx.lineTo(x+rx*.8,y+ry*.25);ctx.quadraticCurveTo(x+rx*.4,y+ry*.8,x,y+ry);ctx.quadraticCurveTo(x-rx*.4,y+ry*.8,x-rx*.8,y+ry*.25);ctx.lineTo(x-rx*.85,y-ry*.65);ctx.closePath();ctx.fill();ctx.stroke();
       // Hai cạnh trong gợi vỏ khiên, không phủ lên mặt nhân vật.
       for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(x+sign*rx*.69,y-ry*.5);ctx.lineTo(x+sign*rx*.65,y+ry*.15);ctx.stroke()}
+      return;
+    }
+    if(kind==='paralyze'){
+      // Tia điện tím chớp quanh thân, đổi vị trí theo nhịp
+      ctx.strokeStyle='#d4adff';ctx.shadowColor='#b883ff';ctx.shadowBlur=reduced?0:6;
+      const beat=reduced?0:Math.floor(time*8)%3;
+      for(let i=0;i<3;i++){
+        const a=(i/3)*Math.PI*2+beat*.7,cx=x+Math.cos(a)*rx*.92,cy=y+Math.sin(a)*ry*.8;
+        ctx.globalAlpha=reduced?.8:.55+.45*((i+beat)%2);
+        ctx.beginPath();ctx.moveTo(cx-5,cy-7);ctx.lineTo(cx+1,cy-1);ctx.lineTo(cx-2,cy+1);ctx.lineTo(cx+5,cy+7);ctx.stroke();
+      }
+      return;
+    }
+    if(kind==='stun'){
+      // Ba ngôi sao vàng xoay trên đầu
+      ctx.fillStyle='#f3d27a';ctx.strokeStyle='#7a5a1c';ctx.lineWidth=1;
+      const spin=reduced?0:time*3,top=y-ry*.62;                  // ngay trên đầu, dưới thanh máu
+      const star=(cx,cy,r)=>{ctx.beginPath();for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5,rr=k%2?r*.45:r;ctx.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}ctx.closePath();ctx.fill();ctx.stroke()};
+      for(let i=0;i<3;i++){
+        const a=spin+i*Math.PI*2/3,depth=(Math.sin(a)+1)/2;
+        ctx.globalAlpha=.55+.45*depth;star(x+Math.cos(a)*rx*.55,top+Math.sin(a)*ry*.16,Math.max(5.5,width*.12)*(.65+.35*depth));
+      }
+      return;
+    }
+    if(kind==='freeze'){
+      // Lớp băng xanh mờ + tinh thể ở góc, mặt quái vẫn thấy rõ
+      ctx.globalAlpha=.22*pulse;ctx.fillStyle='#bfefff';
+      ctx.beginPath();ctx.ellipse(x,y,rx*.95,ry*.95,0,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=.9;ctx.strokeStyle='#9fe3ff';ctx.fillStyle='#e8fbff';
+      const crystal=(cx,cy,r)=>{ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx+r*.45,cy);ctx.lineTo(cx,cy+r);ctx.lineTo(cx-r*.45,cy);ctx.closePath();ctx.fill();ctx.stroke()};
+      crystal(x-rx*.85,y+ry*.55,ry*.32);crystal(x-rx*.62,y+ry*.72,ry*.2);crystal(x+rx*.82,y+ry*.5,ry*.28);crystal(x+rx*.55,y-ry*.7,ry*.18);
       return;
     }
     if(kind==='control'){

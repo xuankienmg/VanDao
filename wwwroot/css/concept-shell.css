@@ -1,0 +1,58 @@
+/* Người Lười Tu Tiên: concept shell; battle HUD and strip measurements retain their existing layout. */
+.game-brand{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #9c7b453f;background:#0a191be8;color:#e7c98d}
+.game-brand svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.5}
+.game-brand b{font:600 25px var(--f-display);line-height:1}.game-brand small{font-size:10px;color:#9aab9f;margin-left:auto}
+body.strip .game-brand{display:none}
+body:is(.full,.panel) .book>.tabs{display:flex;align-items:stretch;gap:0;overflow-x:auto;scrollbar-width:thin;background:#0c1d20ed}
+body:is(.full,.panel) .book>.tabs>.tab{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 9px;white-space:nowrap;border:0;border-bottom:2px solid transparent;min-width:0;flex:1;color:#b6b5a5;font-size:13px}
+.nav-icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linejoin:round;stroke-linecap:round;flex:none}
+body:is(.full,.panel) .book>.tabs>.tab[aria-selected=true]{color:#f0d698;border-bottom-color:#d4b477;background:linear-gradient(0deg,#aa80351e,transparent)}
+body:is(.full,.panel) .book>.tabs>.tab[hidden]{display:none}
+body:is(.full,.panel) .book>.tabs>.tab:hover{color:#f1d394}
+body:is(.full,.panel) .book{border:1px solid #967a454d}
+body:is(.full,.panel) .pane{background:#08181a33}
+#btnPet{position:relative;color:#d7bd82}#btnPet.ready:after{content:'';position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#eb896d;border:1px solid #1a2527}
+.pet-spin-modes{display:flex;gap:6px;grid-column:1/-1}.pet-spin-modes button{font:inherit;font-size:12px;padding:6px 12px;border:1px solid #6e6448;background:#132523;color:#bac7b7}.pet-spin-modes button[aria-pressed=true]{background:#514329;color:#f1d597;border-color:#b5975c}.pet-spin-eggs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:20px;grid-column:1/-1}.pet-spin-eggs article{display:flex;align-items:center;flex-direction:column;gap:10px;border:1px solid #655b43;padding:14px 5px;background:#0d1d20}.pet-spin-eggs .ic{width:min(84px,100%);height:auto}.pet-spin-eggs b{font-size:12px;text-align:center}.pet-spin-eggs span{color:#e7ce8f}.pet-spin-controls{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;padding:14px}.pet-spin-controls p{width:100%;text-align:center}@media(max-width:500px){.pet-spin-eggs{grid-template-columns:repeat(3,minmax(0,1fr));padding:10px}}
+body.panel .game-brand{padding:7px 14px}.game-brand~.tabs{position:relative}
+@media(max-width:760px){body:is(.full,.panel) .book>.tabs>.tab{gap:4px;font-size:11.5px;padding:9px 6px}.nav-icon{width:20px;height:20px}.game-brand b{font-size:23px}.game-brand small{display:none}}
+@media(max-width:460px){body:is(.full,.panel) .book>.tabs>.tab{flex-direction:column;gap:3px;min-width:54px;font-size:10px}.game-brand{padding:8px 12px}}
+
+/* Header art cut from the reference; labels stay font-rendered. Balances sit below. */
+body:is(.full,.panel) aside.book{container:concept-book / inline-size}
+.concept-header{display:grid;grid-template-columns:190px minmax(0,1fr);align-items:stretch;flex:none;position:sticky;top:0;z-index:5;min-width:0;min-height:48px;background:#071719 url('../img/header/header-tile.png') repeat-x left top;background-size:auto 100%;border-bottom:1px solid #a6894e;box-shadow:0 2px 12px #0006}
+.concept-header{--f-display:"Be Vietnam Pro","Segoe UI",sans-serif}
+.concept-header .game-brand{min-width:0;gap:7px;padding:8px 12px;border:0;background:none}
+.concept-header .game-brand svg{width:26px;height:26px;flex:none}
+.concept-header .game-brand b{font-size:17px;line-height:1.1;color:#e4bd7b;white-space:nowrap;letter-spacing:-.02em}
+.concept-header .game-brand small{display:none}
+body:is(.full,.panel) .concept-header>.tabs{position:static;display:flex;align-items:stretch;min-width:0;gap:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;border:0;background:none}
+body:is(.full,.panel) .concept-header>.tabs>.tab{display:flex;flex:1 0 auto;align-items:center;justify-content:center;gap:8px;min-width:88px;min-height:48px;padding:8px 12px;white-space:nowrap;border:0;border-bottom:2px solid transparent;color:#c5c1b2;font:600 15px/1.2 var(--f-display);background:none}
+.concept-header .nav-icon{width:26px;height:28px;object-fit:contain;flex:none;color:#9b9481}
+.nav-cut{object-fit:contain}
+body:is(.full,.panel) .concept-header>.tabs>.tab[aria-selected=true]{color:#ffe5a2;border-bottom-color:#efcb78;background:linear-gradient(0deg,#b78d3433,transparent 85%);text-shadow:0 0 10px #d8ad5c55}
+.concept-header .tab[aria-selected=true] .nav-cut{filter:brightness(1.3) sepia(.25)}
+body:is(.full,.panel) .concept-header>.tabs>.tab[hidden]{display:none}
+body:is(.full,.panel) .concept-header>.tabs>.tab:hover{color:#ffe7b0;background-color:#c5a25d10}
+.concept-tools{display:flex;align-items:center;justify-content:flex-end;flex:none;gap:10px;padding:6px 12px;min-width:0;border-bottom:1px solid #a6894e45;background:linear-gradient(90deg,#08191dc9,#071419ed),url('../img/header/header-scenery.webp') center/cover}
+.concept-wallet{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;min-height:30px;padding:3px 9px;border:1px solid #62736980;border-radius:4px;background:#041214ba;color:#e1dece}
+.concept-wallet>img{width:22px;height:22px;object-fit:contain;flex:none}
+.concept-wallet>span:not(.concept-balance){font-size:11px;color:#b0beb6;white-space:nowrap}
+.concept-balance{min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.25;font-variant-numeric:tabular-nums;color:#f0dfac}
+.concept-wallet button{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;background:none;color:#c6bc96;font-size:23px;line-height:1}
+.concept-header button:focus-visible,.concept-tools button:focus-visible{outline:2px solid #e5c47b;outline-offset:-3px}
+body.strip .concept-header,body.strip .concept-tools{display:none}
+body.rank-panel .concept-header>.tabs{display:none}
+@container concept-book (max-width:1000px){
+ .concept-header{grid-template-columns:minmax(0,1fr)}
+ .concept-header .game-brand{padding:7px 12px}
+ body:is(.full,.panel) .concept-header>.tabs{border-top:1px solid #b79a5426}
+ body:is(.full,.panel) .concept-header>.tabs>.tab{min-height:42px;font-size:14px;padding:6px 10px}
+}
+@container concept-book (max-width:560px){
+ .concept-tools{flex-wrap:wrap;justify-content:flex-start;gap:6px;padding:6px 10px}
+ body:is(.full,.panel) .concept-header>.tabs>.tab{flex-direction:row;min-width:98px;gap:6px}
+ .concept-header .nav-icon{width:24px;height:26px}
+ .concept-wallet{flex:0 1 auto}
+ .concept-wallet>span:not(.concept-balance){font-size:10px}
+}
+
