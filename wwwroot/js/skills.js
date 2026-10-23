@@ -342,7 +342,7 @@ function skTipHtml(s){
       ${s.id === 'hoa_cau' ? `<p class="sk-note">Biến thể theo cảnh giới: <b>${HC_TIER_NAME[Math.min(2, S.realm)]}</b></p>` : ''}
       ${pass.length ? `<p class="sk-sec">Hiệu quả bị động${skRate(s.element) < 1 ? ` <i class="sk-half">(×${SK_INACTIVE * 100}% · hệ không kích hoạt)</i>` : ''}</p><ul class="sk-pass">${pass.map(([n, v, nx]) => `<li>${n} <b>+${pct1(v)}</b>${!st.max ? `<i>→ +${pct1(nx)}</i>` : ''}</li>`).join('')}</ul>` : ''}
       ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: mỗi lần thi triển ${dmg(lv)}% tấn công${!st.max && dmg(next) !== dmg(lv) ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
-      ${skBurnChance(s, Math.max(1, lv)) ? `<p class="sk-act">Thiêu đốt: <b>${skBurnChance(s, Math.max(1, lv))}%</b> mỗi lần tung${lv && !st.max ? ` (Lv. ${next}: ${skBurnChance(s, next)}%)` : ''} · 5% máu tối đa của quái mỗi lượt trong 2 lượt, bỏ qua phòng thủ, không cộng dồn. Thuộc nhóm khống chế cùng tê liệt, choáng, đóng băng: quái chỉ mang 1 hiệu ứng, cái mới nhất đè cái cũ.</p>` : ''}
+      ${skBurnChance(s, Math.max(1, lv)) ? `<p class="sk-act">Thiêu đốt: <b class="sk-burn">${skBurnChance(s, Math.max(1, lv))}%</b></p>` : ''}
       ${!isBasic && !st.max ? `<p class="sk-sec">${lv ? `Nâng cấp Lv. ${lv} → ${next}` : 'Yêu cầu lĩnh ngộ'}</p>
         <ul class="sk-reqs">${st.reqs.map(r => `<li class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓' : '✗'} ${r.t}</li>`).join('')}</ul>` : ''}
       ${isBasic ? `<p class="sk-note">${skBasicId() === s.id ? 'Đang dùng làm đòn đánh thường.' : `Kích hoạt công pháp hệ ${el.name} để dùng làm đòn đánh thường.`}</p>` : ''}
