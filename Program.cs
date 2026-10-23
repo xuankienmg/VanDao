@@ -68,7 +68,6 @@ public static class Program
             var db = scope.ServiceProvider.GetRequiredService<GameDbContext>();
             db.Database.EnsureCreated();
             SchemaUpgrade.Apply(db);
-            SaveGuard.Check(db, app.Environment.IsDevelopment());   // chống quay về bản cũ: file dữ liệu nhớ bản cao nhất đã mở nó
         }
 
         // bản game thấp hơn min_version (app_config trên Supabase): từ chối mọi thao tác với nhân vật, giao diện hiện màn hình cập nhật
@@ -76,11 +75,11 @@ public static class Program
         {
             if (ctx.Request.Path.StartsWithSegments("/api/players"))
             {
-                var v = SaveGuard.Apply(await ctx.RequestServices.GetRequiredService<VersionService>().PeekAsync());
+                var v = await ctx.RequestServices.GetRequiredService<VersionService>().PeekAsync();
                 if (v.Blocked)
                 {
                     ctx.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
-                    await ctx.Response.WriteAsJsonAsync(new { error = SaveGuard.NewerSave is null ? $"Phiên bản {v.Current} đã cũ, hãy tải bản {v.Latest} để tiếp tục." : v.Message, update = v });
+                    await ctx.Response.WriteAsJsonAsync(new { error = $"Phiên bản {v.Current} đã cũ, hãy tải bản {v.Latest} để tiếp tục.", update = v });
                     return;
                 }
             }
@@ -107,7 +106,7 @@ public static class Program
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
             GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
-            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets, PetData.Definitions, PetData.PetSpinWeights, GameData.PetSpinTicketPrice));
+            GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
         {
@@ -117,12 +116,9 @@ public static class Program
 
         api.MapGet("/players/current", async (GameService game) =>
         {
-            await MutationGate.WaitAsync();
-            try {
             var p = await game.CurrentAsync();
             await game.SaveAsync(p);
             return Results.Ok(new ActionResponse(await game.BuildStateAsync(p)));
-            } finally { MutationGate.Release(); }
         });
 
         api.MapGet("/players/{id:guid}", (Guid id, GameService game) =>
@@ -131,8 +127,6 @@ public static class Program
         api.MapPost("/players/{id:guid}/channel", (Guid id, GameService game) =>
             Run(id, game, p => (game.Channel(p), null)));
 
-        api.MapPost("/players/{id:guid}/equip-best", (Guid id, GameService game) =>
-            Run(id, game, p => game.EquipBest(p)));
         api.MapPost("/players/{id:guid}/equip/{itemId}", (Guid id, string itemId, string? slot, GameService game) =>
             Run(id, game, p => game.Equip(p, itemId, slot)));
 
@@ -173,23 +167,10 @@ public static class Program
             Run(id, game, p => game.RedeemCode(p, code)));
 
         // Tài Xỉu: đổi linh thạch lấy vé (n = số vé, 0 = tối đa) · quay vòng trang bị 10 phẩm (n = số lượt, tối đa 10)
-        api.MapPost("/players/{id:guid}/spin/buy", (Guid id, int? n, string? mode, GameService game) =>
-            Run(id, game, p => game.BuySpinTicket(p, n ?? 1, mode == "pet")));
-        api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, string? mode, GameService game) =>
-            RunCraft(id, game, p => mode == "pet" ? game.PetSpin(p, n ?? 1) : game.Spin(p, n ?? 1)));
-
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/feed", (Guid id, Guid petId, int? n, GameService game) => Run(id, game, p => game.Feed(p, petId, n ?? 1)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/evolve", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Evolve(p, petId)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/appearance/{form:int}", (Guid id, Guid petId, int form, GameService game) => Run(id, game, p => game.SetPetAppearance(p, petId, form)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/slot/{slot:int}", (Guid id, Guid petId, int slot, GameService game) => Run(id, game, p => game.SetPetSlot(p, petId, slot)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/release", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Release(p, petId)));
-        api.MapPost("/players/{id:guid}/pet/release-many", (Guid id, string? ids, GameService game) => Run(id, game, p => game.ReleaseMany(p, ids)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge-all", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.MergeAll(p, petId)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge", (Guid id, Guid petId, string? foods, GameService game) => Run(id, game, p => game.MergePets(p, petId, foods)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge/{foodId:guid}", (Guid id, Guid petId, Guid foodId, GameService game) => Run(id, game, p => game.MergePet(p, petId, foodId)));
-        api.MapPost("/players/{id:guid}/hatch/now", (Guid id, int? slot, GameService game) => Run(id, game, p => game.HatchNow(p, slot ?? 0)));
-        api.MapPost("/players/{id:guid}/hatch/collect", (Guid id, int? slot, GameService game) => Run(id, game, p => game.CollectHatch(p, slot ?? 0)));
-        api.MapPost("/players/{id:guid}/hatch/{eggId}", (Guid id, string eggId, int? slot, GameService game) => Run(id, game, p => game.Hatch(p, eggId, slot ?? 0)));
+        api.MapPost("/players/{id:guid}/spin/buy", (Guid id, int? n, GameService game) =>
+            Run(id, game, p => game.BuySpinTicket(p, n ?? 1)));
+        api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, GameService game) =>
+            RunCraft(id, game, p => game.Spin(p, n ?? 1)));
 
         // đan dược: hợp thành 9 → 1 (n = số lần, 0 = tối đa)
         api.MapPost("/players/{id:guid}/synth/{itemId}", (Guid id, string itemId, int? n, GameService game) =>
@@ -204,13 +185,6 @@ public static class Program
             Run(id, game, p => game.SelectArea(p, area)));
 
         // bản đồ: chọn chương đã mở (0-based)
-        api.MapGet("/players/{id:guid}/map/{chapter:int}", async (Guid id, int chapter, GameService game) => {
-            try { return Results.Ok(await game.PreviewMapAsync(id, chapter)); }
-            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
-            catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
-        });
-        api.MapPost("/players/{id:guid}/map/{chapter:int}/area/{area:int}", (Guid id, int chapter, int area, GameService game) =>
-            Run(id, game, p => game.SelectMapArea(p, chapter, area)));
         api.MapPost("/players/{id:guid}/map/{chapter:int}", (Guid id, int chapter, GameService game) =>
             Run(id, game, p => game.SelectMap(p, chapter)));
 
@@ -220,9 +194,7 @@ public static class Program
 
         // admin mode: lệnh gian lận để thử game (giao diện bật/tắt bằng Ctrl+Shift+A)
         api.MapPost("/players/{id:guid}/admin/{action}", (Guid id, string action, string? arg, int? n, GameService game) =>
-            Player.AdminEnabled ? (action == "clearflag"
-                ? RunAsync(id, game, p => game.AdminClearDataFlagAsync(p, arg))
-                : Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1)))
+            Player.AdminEnabled ? Run(id, game, p => game.AdminAction(p, action, arg, n ?? 1))
                 : Task.FromResult<IResult>(Results.Json(new { error = "Admin mode chỉ có ở môi trường phát triển." }, statusCode: StatusCodes.Status403Forbidden)));
 
         // môi trường: giao diện chỉ bật admin mode khi dev
@@ -236,7 +208,7 @@ public static class Program
         });
 
         // phiên bản: ok · update · required · unknown (giao diện gọi khi mở game và định kỳ)
-        api.MapGet("/version", async (VersionService v, bool? force) => SaveGuard.Apply(await v.GetAsync(force ?? false)));
+        api.MapGet("/version", (VersionService v, bool? force) => v.GetAsync(force ?? false));
 
         // Chợ giao dịch giữa người chơi (Supabase)
         api.MapGet("/players/{id:guid}/market", async (Guid id, GameService game) =>
@@ -268,7 +240,6 @@ public static class Program
 
         api.MapPost("/players/{id:guid}/reset", async (Guid id, GameService game) =>
         {
-            await MutationGate.WaitAsync();
             try
             {
                 var p = await game.LoadAsync(id);
@@ -276,14 +247,12 @@ public static class Program
                 return Results.Ok(new ActionResponse(await game.BuildStateAsync(fresh)));
             }
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
-            finally { MutationGate.Release(); }
         });
     }
 
     // Như Run nhưng hành động bất đồng bộ (gọi Supabase); lỗi thì không lưu gì
     private static async Task<IResult> RunAsync(Guid id, GameService game, Func<Player, Task<(string? msg, string? kind)>> action)
     {
-        await MutationGate.WaitAsync();
         try
         {
             var p = await game.LoadAsync(id);
@@ -293,19 +262,15 @@ public static class Program
         }
         catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
         catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
-        finally { MutationGate.Release(); }
     }
 
     // Nạp người chơi → thực hiện hành động → lưu DB → trả trạng thái mới
     private static Task<IResult> Run(Guid id, GameService game, Func<Player, (string? msg, string? kind)> action) =>
         RunCraft(id, game, p => { var (m, k) = action(p); return (m, k, null); });
 
-    private static readonly SemaphoreSlim MutationGate = new(1, 1);
-
     // Như Run, kèm kết quả luyện chế (thành phẩm + nguyên liệu) để giao diện hiện thông báo
     private static async Task<IResult> RunCraft(Guid id, GameService game, Func<Player, (string? msg, string? kind, CraftResultDto? craft)> action)
     {
-        await MutationGate.WaitAsync();
         try
         {
             var p = await game.LoadAsync(id);
@@ -321,6 +286,5 @@ public static class Program
         {
             return Results.BadRequest(new { error = ex.Message });
         }
-        finally { MutationGate.Release(); }
     }
 }

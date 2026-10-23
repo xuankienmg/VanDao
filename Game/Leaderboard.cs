@@ -13,11 +13,11 @@ public sealed class LeaderboardOptions
     public bool Enabled => Url.Length > 0 && AnonKey.Length > 0;
 }
 
-public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default, bool Flagged = false, long Progress = 0, long PetPower = 0);
+public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default);
 /// <summary>Hồ sơ một người trên bảng: trang bị đang mặc (ô → mã vật phẩm) và chỉ số chiến đấu lúc gửi điểm gần nhất.</summary>
 public record LbProfileDto(string Name, int Realm, int Stage, string RealmName, string StageName, long Power,
     Dictionary<string, string> Equipment, Dictionary<string, double> Stats, DateTime UpdatedAt, bool Me);
-public record LeaderboardDto(bool Enabled, string By, List<LbRowDto> Rows, LbRowDto? Me, bool Tainted, string Name, string? Error = null, bool Flagged = false);
+public record LeaderboardDto(bool Enabled, string By, List<LbRowDto> Rows, LbRowDto? Me, bool Tainted, string Name, string? Error = null);
 
 /// <summary>
 /// Bảng xếp hạng online (Supabase, xem docs/leaderboard/supabase.sql).
@@ -41,30 +41,6 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
     private readonly ConcurrentDictionary<string, (DateTime at, List<Row> rows)> _cache = new();
 
     public bool Enabled => opt.Enabled;
-
-    public Task ClearDataFlagAsync(Player p) => ClearDataFlagAsync(p.Id, false);
-
-    public async Task ClearDataFlagAsync(Guid playerId, bool requireExisting = true)
-    {
-        if (!Dev) throw new GameException("Chỉ admin trong môi trường phát triển được gỡ cờ dữ liệu.");
-        if (!Enabled) { if (requireExisting) throw new GameException("Chưa bật bảng xếp hạng online."); return; }
-        var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_ROLE_KEY");
-        if (string.IsNullOrWhiteSpace(key))
-            throw new GameException("Cần cấu hình SUPABASE_SERVICE_ROLE_KEY trong môi trường server dev để gỡ cờ trên Supabase.");
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-        using var request = new HttpRequestMessage(HttpMethod.Patch,
-            opt.Url.TrimEnd('/') + "/rest/v1/leaderboard?select=player_id&player_id=eq." + playerId);
-        request.Headers.Add("Prefer", "return=representation");
-        request.Headers.Add("apikey", key);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", key);
-        request.Content = JsonContent.Create(new { flagged = false });
-        using var response = await client.SendAsync(request);
-        if (!response.IsSuccessStatusCode) throw new GameException("Không gỡ được cờ trên Supabase. Kiểm tra quyền admin server và thử lại.");
-        var changed = await response.Content.ReadFromJsonAsync<List<Dictionary<string, System.Text.Json.JsonElement>>>();
-        if (requireExisting && changed?.Count != 1) throw new GameException("Không tìm thấy người chơi trên bảng xếp hạng.");
-        _sent.TryRemove(playerId, out _);
-        _cache.Clear();
-    }
 
     private static HttpClient CreateClient(LeaderboardOptions o)
     {
@@ -91,11 +67,9 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         }
         var r = GameService.Realm(p);
         var power = GameService.Power(p);
-        var progress = GameService.LeaderboardProgress(p);
-        var petPower = GameService.LeaderboardPetPower(p);
         var equipment = p.Equipment.Where(e => e.ItemId.Length > 0).OrderBy(e => e.Slot).ToDictionary(e => e.Slot, e => e.ItemId);
         var st = GameService.Stats(p);
-        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{progress}|{petPower}|{string.Join(',', equipment.Values)}";   // đổi trang bị cũng gửi sớm
+        var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{string.Join(',', equipment.Values)}";   // đổi trang bị cũng gửi sớm
         var now = DateTime.UtcNow;
         if (!force && _sent.TryGetValue(p.Id, out var last) && now - last.at < (last.key == key ? Refresh : MinGap)) return;
         _sent[p.Id] = (now, key);
@@ -103,87 +77,52 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         {
             p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = p.Realm, p_stage = p.Stage,
             p_level = GameService.Level(p), p_qi = Math.Round(p.Qi, 1), p_realm_name = r.Name, p_stage_name = r.Stages[p.Stage],
-            p_power = power, p_version = Version, p_equipment = equipment, p_flagged = SaveGuard.DataFlagged(p, Dev),
-            p_stats = new Dictionary<string, double> { ["progress"] = progress, ["pet_power"] = petPower, ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) },
+            p_power = power, p_version = Version, p_equipment = equipment,
+            p_stats = new Dictionary<string, double> { ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) },
         };
         _ = Task.Run(async () =>
         {
-            if (!await Post("rpc/submit_score", body, quietNotFound: true) && _oldSchema)
-                await Post("rpc/submit_score", new { body.p_id, body.p_secret, body.p_name, body.p_realm, body.p_stage, body.p_level, body.p_qi, body.p_realm_name, body.p_stage_name, body.p_power, body.p_version, body.p_equipment, body.p_stats });
+            await Post("rpc/submit_score", body);
             _cache.Clear();                     // để người chơi thấy ngay hạng mới của mình
         });
     }
 
-    /// <summary>Supabase chưa chạy docs/leaderboard/supabase.sql bản có cột flagged: đọc / gửi theo kiểu cũ (không có dấu *).</summary>
-    private volatile bool _oldSchema;
-
-    private async Task<bool> Post(string path, object body, bool quietNotFound = false)
+    private async Task Post(string path, object body)
     {
         try
         {
             using var res = await _http.PostAsync(path, new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json"));
-            if (res.IsSuccessStatusCode) return true;
-            var text = await res.Content.ReadAsStringAsync();
-            if (quietNotFound && text.Contains("p_flagged")) { _oldSchema = true; return false; }
-            log.LogWarning("Leaderboard {Path}: {Status} {Body}", path, (int)res.StatusCode, text);
+            if (!res.IsSuccessStatusCode) log.LogWarning("Leaderboard {Path}: {Status} {Body}", path, (int)res.StatusCode, await res.Content.ReadAsStringAsync());
         }
         catch (Exception ex) { log.LogWarning("Leaderboard {Path}: {Error}", path, ex.Message); }
-        return false;
     }
 
-    private sealed record Row(Guid PlayerId, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, long RealmRank, long PowerRank, bool Flagged = false, long Progress = 0, long PetPower = 0, long ProgressRank = 0, long PetRank = 0);
+    private sealed record Row(Guid PlayerId, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, long RealmRank, long PowerRank);
 
-    private const string Cols = "player_id,name,realm,stage,realm_name,stage_name,power,realm_rank,power_rank,flagged";
-    private const string ExtendedCols = Cols + ",progress,pet_power,progress_rank,pet_rank";
-    private volatile bool _rankSchemaMissing;
-    private const string OldCols = "player_id,name,realm,stage,realm_name,stage_name,power,realm_rank,power_rank";
-
-    /// <summary>Đọc view leaderboard_public; view chưa có cột flagged (chưa chạy SQL mới) thì đọc kiểu cũ.</summary>
-    private async Task<List<Row>> ReadRows(string query)
-    {
-        if (!_rankSchemaMissing)
-        {
-            using var extended = await _http.GetAsync($"leaderboard_public?select={ExtendedCols}&{query}");
-            if (extended.IsSuccessStatusCode) return await extended.Content.ReadFromJsonAsync<List<Row>>(Json) ?? [];
-            var error = await extended.Content.ReadAsStringAsync();
-            if (!error.Contains("progress") && !error.Contains("pet_power") && !error.Contains("pet_rank")) extended.EnsureSuccessStatusCode();
-            _rankSchemaMissing = true;
-        }
-        if (query.Contains("progress_rank") || query.Contains("pet_rank"))
-            throw new GameException("Cần chạy docs/leaderboard/supabase.sql trên Supabase để mở bảng Vượt ải và Linh thú.");
-        if (!_oldSchema)
-        {
-            using var res = await _http.GetAsync($"leaderboard_public?select={Cols}&{query}");
-            if (res.IsSuccessStatusCode) return await res.Content.ReadFromJsonAsync<List<Row>>(Json) ?? [];
-            if (!(await res.Content.ReadAsStringAsync()).Contains("flagged")) res.EnsureSuccessStatusCode();
-            _oldSchema = true;
-        }
-        return await _http.GetFromJsonAsync<List<Row>>($"leaderboard_public?select={OldCols}&{query}", Json) ?? [];
-    }
+    private const string Cols = "player_id,name,realm,stage,realm_name,stage_name,power,realm_rank,power_rank";
 
     /// <param name="by">"realm" (cảnh giới) hoặc "power" (lực chiến).</param>
     public async Task<LeaderboardDto> GetAsync(Player p, string? by)
     {
-        by = by is "power" or "progress" or "pet" ? by : "realm";
+        by = by == "power" ? "power" : "realm";
         if (!Enabled) return new LeaderboardDto(false, by, [], null, Excluded(p), p.Name);
         try
         {
             if (!_cache.TryGetValue(by, out var c) || DateTime.UtcNow - c.at > CacheFor)
             {
-                var order = by switch { "power" => "power_rank.asc,realm_rank.asc", "progress" => "progress_rank.asc,power_rank.asc", "pet" => "pet_rank.asc,power_rank.asc", _ => "realm_rank.asc,power_rank.asc" };
-                c = (DateTime.UtcNow, await ReadRows($"order={order}&limit={Top}"));
+                var order = by == "power" ? "power_rank.asc,realm_rank.asc" : "realm_rank.asc,power_rank.asc";
+                c = (DateTime.UtcNow, await _http.GetFromJsonAsync<List<Row>>($"leaderboard_public?select={Cols}&order={order}&limit={Top}", Json) ?? []);
                 _cache[by] = c;
             }
             var mine = c.rows.FirstOrDefault(x => x.PlayerId == p.Id)
-                       ?? (await ReadRows($"player_id=eq.{p.Id}")).FirstOrDefault();
-            LbRowDto Dto(Row x) => new(by switch { "power" => x.PowerRank, "progress" => x.ProgressRank, "pet" => x.PetRank, _ => x.RealmRank }, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id, x.PlayerId,
-                x.Flagged && (x.PlayerId != p.Id || !SaveGuard.AdminDataExempt(p, Dev)), x.Progress, x.PetPower);
-            return new LeaderboardDto(true, by, c.rows.Select(Dto).ToList(), Excluded(p) || mine is null ? null : Dto(mine), Excluded(p), p.Name, Flagged: SaveGuard.DataFlagged(p, Dev));
+                       ?? (await _http.GetFromJsonAsync<List<Row>>($"leaderboard_public?select={Cols}&player_id=eq.{p.Id}", Json))?.FirstOrDefault();
+            LbRowDto Dto(Row x) => new(by == "power" ? x.PowerRank : x.RealmRank, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id, x.PlayerId);
+            return new LeaderboardDto(true, by, c.rows.Select(Dto).ToList(), Excluded(p) || mine is null ? null : Dto(mine), Excluded(p), p.Name);
         }
         catch (Exception ex)
         {
             log.LogWarning("Leaderboard get: {Error}", ex.Message);
-            return new LeaderboardDto(true, by, [], null, Excluded(p), p.Name, ex is GameException ? ex.Message : "Không kết nối được bảng xếp hạng. Kiểm tra mạng rồi thử lại.");
+            return new LeaderboardDto(true, by, [], null, Excluded(p), p.Name, "Không kết nối được bảng xếp hạng. Kiểm tra mạng rồi thử lại.");
         }
     }
 
