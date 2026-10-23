@@ -30,7 +30,7 @@ function segments(str, html){
       let k = 0; const map = {};
       s = s.replace(/\u0001(\d+)\u0002/g, (_, i) => `{${map[i] ??= k++}}`);
       const lit = s.replace(/\{\d+\}/g, '');
-      if (!VI.test(lit)) continue;
+      if (!VI.test(lit) || /\(\?[=!:<]/.test(lit)) continue;   // bỏ chuỗi là mẫu regex
       out.push(s);
     }
   };

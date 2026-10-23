@@ -130,6 +130,7 @@ public sealed class PanelWindow : Form
         {
             case "changed": _ = _strip.SyncAsync(); break;
             case "close-panel": Hide(); break;
+            case "open-launcher": _strip.OpenLauncher(msg.TryGetProperty("url", out var u) ? u.GetString() : null); break;
             case "tab" when msg.TryGetProperty("tab", out var t) && TabNames.ContainsKey(t.GetString() ?? ""):
                 var tab = t.GetString()!;
                 if (tab == _tab) break;
