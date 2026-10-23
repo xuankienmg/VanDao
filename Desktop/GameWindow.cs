@@ -317,6 +317,30 @@ public sealed class GameWindow : Form
         _ = _web.ExecuteScriptAsync($"window.redeemCode && window.redeemCode({JsonSerializer.Serialize(code)})");
     }
 
+    /// <summary>Cập nhật game: mở Launcher cạnh game (bản cài cũ: VanDaoLauncher.exe) rồi thoát để Launcher ghi đè file được.
+    /// Không có Launcher (bản dev) thì mở link tải bằng trình duyệt.</summary>
+    public void OpenLauncher(string? fallbackUrl)
+    {
+        var launcher = new[] { "NguoiLuoiTuTienLauncher.exe", "VanDaoLauncher.exe" }
+            .Select(n => Path.Combine(AppContext.BaseDirectory, n))
+            .FirstOrDefault(File.Exists);
+        try
+        {
+            if (launcher is not null)
+            {
+                Process.Start(new ProcessStartInfo(launcher) { UseShellExecute = true, WorkingDirectory = AppContext.BaseDirectory });
+                Close();
+                return;
+            }
+            if (!string.IsNullOrEmpty(fallbackUrl) && Uri.TryCreate(fallbackUrl, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps)
+                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, _s.L("Không mở được Launcher", "Couldn't open the Launcher"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
     private void ToggleVisible()
     {
         if (Visible) { _panel?.Hide(); _rankPanel?.Hide(); Hide(); }
@@ -376,6 +400,7 @@ public sealed class GameWindow : Form
             case "open-panel": OpenPanel(msg.TryGetProperty("tab", out var t) ? t.GetString() ?? "req" : "req"); break;
             case "changed": _ = _panel?.SyncAsync(); _ = _rankPanel?.SyncAsync(); break;
             case "shape": Reveal(); break;          // trang đã vẽ xong khung đầu → hiện dải
+            case "open-launcher": OpenLauncher(msg.TryGetProperty("url", out var u) ? u.GetString() : null); break;
         }
     }
 

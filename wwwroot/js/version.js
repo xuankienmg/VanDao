@@ -1,6 +1,8 @@
 /* Vấn Đạo · js/version.js: bắt cập nhật — bản quá cũ thì chặn chơi, có bản mới thì nhắc. Dữ liệu: GET /api/version (app_config trên Supabase). */
 const verEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
-const verOpen = url => { if (url) window.open(url, '_blank'); };   // cửa sổ desktop: mở bằng trình duyệt mặc định
+// Cửa sổ desktop: mở Launcher để cập nhật (game tự thoát); trình duyệt thường: mở link tải
+const VER_DESKTOP = !!window.chrome?.webview;
+const verOpen = url => { if (VER_DESKTOP) notifyHost('open-launcher', {url}); else if (url) window.open(url, '_blank'); };
 
 async function checkVersion(force){
   try { const r = await fetch(`/api/version${force ? '?force=true' : ''}`); return r.ok ? await r.json() : null; } catch(e){ return null; }
@@ -15,9 +17,9 @@ function showUpdateGate(v){
     <h2>Cần cập nhật phiên bản mới</h2>
     <p>Bản đang chạy <b>${verEsc(v.current)}</b> đã ngừng hỗ trợ. Bản mới nhất: <b>${verEsc(v.latest || v.min)}</b>.</p>
     ${v.message ? `<p class="upd-msg">${verEsc(v.message)}</p>` : ''}
-    ${v.url ? '<button class="upd-dl" id="updDl">Tải bản mới</button>' : '<p class="upd-msg">Liên hệ người phát hành để lấy bản mới.</p>'}
+    ${VER_DESKTOP ? '<button class="upd-dl" id="updDl">Mở Launcher để cập nhật</button>' : v.url ? '<button class="upd-dl" id="updDl">Tải bản mới</button>' : '<p class="upd-msg">Liên hệ người phát hành để lấy bản mới.</p>'}
     <button class="upd-re" id="updRe">Kiểm tra lại</button>
-    <small>Tiến trình tu luyện lưu trong máy nên vẫn giữ nguyên khi chạy bản mới. Tắt bản cũ trước khi mở bản mới.</small>
+    <small>${VER_DESKTOP ? 'Game sẽ tự đóng để Launcher tải và cài bản mới. Tiến trình tu luyện lưu trong máy nên vẫn giữ nguyên.' : 'Tiến trình tu luyện lưu trong máy nên vẫn giữ nguyên khi chạy bản mới. Tắt bản cũ trước khi mở bản mới.'}</small>
   </div>`;
   document.body.appendChild(el);
   $('updDl')?.addEventListener('click', () => verOpen(v.url));
@@ -34,7 +36,7 @@ function showUpdateBanner(v){
   const el = document.createElement('div');
   el.id = 'updBar'; el.className = 'upd-bar'; el.setAttribute('role', 'status');
   el.innerHTML = `<span>Đã có bản <b>${verEsc(v.latest)}</b>${v.message ? ' · ' + verEsc(v.message) : ''}</span>
-    ${v.url ? '<button id="updBarDl">Tải</button>' : ''}<button id="updBarX" aria-label="Đóng">✕</button>`;
+    ${VER_DESKTOP ? '<button id="updBarDl">Cập nhật</button>' : v.url ? '<button id="updBarDl">Tải</button>' : ''}<button id="updBarX" aria-label="Đóng">✕</button>`;
   document.body.appendChild(el);
   $('updBarDl')?.addEventListener('click', () => verOpen(v.url));
   $('updBarX').addEventListener('click', () => { el.remove(); try { localStorage.setItem('van-dao-upd-skip', v.latest); } catch(e){} });
