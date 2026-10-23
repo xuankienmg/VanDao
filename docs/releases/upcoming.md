@@ -27,7 +27,7 @@
 - Thêm lựa chọn **ngoại hình nam / nữ** trong tủ trang phục. Khi đổi giới tính, game tự đổi sang bộ tương ứng nếu đã mở.
 - Thêm 6 bộ trang phục nữ theo cảnh giới (Thanh Sam Nữ Đệ Tử, Bích Vân Tiên Tử, Bạch Kim Tiên Nương, Tử Hà Tiên Cơ, Nguyệt Hoa Thần Y, Thương Long Tiên Cơ). Mở bằng rương trang phục; hiện chưa có nguồn nhận trong game.
 - Trang phục mở bằng rương mặc được ngay ở mọi cảnh giới. Thiên Hợp Tiên Cơ chuyển vào rương trang phục. Hợp Thể mặc định dùng ngoại hình Luyện Hư.
-- Rương trang phục bán được cho NPC (800 linh thạch, ngang Rương Boss) bằng nút Bán trong Hành trang hoặc quầy Luyện chế · Bán. Bán nhanh theo phẩm bỏ qua rương trang phục để tránh bán nhầm; rương vẫn không giao dịch ở Chợ.
+- Rương trang phục bán được cho NPC (800 linh thạch, ngang Rương Boss) bằng nút Bán trong Hành trang hoặc quầy Luyện chế · Bán. Bán nhanh theo phẩm bỏ qua rương trang phục để tránh bán nhầm. Rương trang phục cũng đăng bán được ở Chợ.
 
 ### Cân bằng
 - Đan tăng tu vi bậc 3: từ 2 giờ xuống **1 giờ 30 phút** tu luyện.

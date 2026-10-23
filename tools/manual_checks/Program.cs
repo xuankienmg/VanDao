@@ -114,7 +114,7 @@ foreach(var chest in GameData.Chests.Keys)for(int diff=0;diff<GameData.DiffNames
 Check(GameData.Realms[6].HeroStand==GameData.Realms[5].HeroStand,"Hợp Thể không dùng ảnh Luyện Hư");
 Check(GameData.SkinById["hop_the"].MinRealm==6&&GameData.SkinById["hop_the"].UnlockItem is null,"Thiên Hợp Tiên Y phải mặc được từ Hợp Thể");
 var skinBox=GameData.SkinById["hop_the_nu"].UnlockItem!;
-Check(GameData.ItemById[skinBox].Type=="skin"&&GameData.ItemById[skinBox].Sell==GameData.RarityPrice["legendary"]&&!GameService.Tradable(GameData.ItemById[skinBox]),"rương trang phục phải bán NPC được, không giao dịch ở Chợ");
+Check(GameData.ItemById[skinBox].Type=="skin"&&GameData.ItemById[skinBox].Sell==GameData.RarityPrice["legendary"]&&GameService.Tradable(GameData.ItemById[skinBox]),"rương trang phục phải bán NPC và giao dịch ở Chợ được");
 var dresser=await game.CreateAsync("Skin lock");dresser.Realm=6;
 Reject(()=>game.SetSkin(dresser,"hop_the_nu"),"mặc được skin nữ khi chưa mở rương");
 dresser.Skin="hop_the_nu";
