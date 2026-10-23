@@ -21,7 +21,7 @@ const CATS = [['all','Tất cả'],['weapon','Vũ khí'],['armor','Phòng cụ']
 const SLOT_LEFT = ['head','body','hands','legs','feet'], SLOT_RIGHT = ['necklace','charm','ring','weapon','offhand'];
 const STAT_KEYS = [['atk','Tấn công',''],['def','Phòng thủ',''],['hp','Máu',''],['critPct','Bạo kích','%'],['speedPct','Thân pháp','%'],['qiPct','Tu vi','%']];
 /** Vật phẩm dùng được từ túi: đan hồi linh khí, luyện thể, mở rương. */
-const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'egg' || it.type === 'elixir' || it.type === 'manual');
+const canUse = it => !!it && !!(it.useQiSeconds || it.temperHp || it.type === 'chest' || it.type === 'egg' || it.type === 'elixir' || it.type === 'manual' || it.type === 'skin');
 const catOf = it => ['quest','key','boss'].includes(it.type) ? 'quest' : it.slot ? (['weapon','offhand'].includes(it.slot) ? 'weapon' : ['necklace','ring','charm'].includes(it.slot) ? 'accessory' : 'armor') : it.type === 'pill' || it.type === 'elixir' || it.type === 'manual' ? 'consumable' : 'material';
 const rar = it => RARITY[it.rarity] || RARITY.common;
 function levelOf(realmIdx){ let n = 1; for (let i = 0; i < realmIdx; i++) n += DATA.realms[i].stages.length; return n; }
@@ -145,8 +145,9 @@ function wardrobeHtml(){
   const card = (id, name, img, note, locked) => `<button class="wd-card ${cur === id ? 'on' : ''} ${locked ? 'lock' : ''}" data-skin="${id}" ${locked ? 'disabled' : ''} aria-pressed="${cur === id}">
       <span class="wd-fig">${img ? `<img src="${img}" alt="">` : '<b>⟳</b>'}</span><b class="wd-nm">${name}</b><small>${note}</small></button>`;
   const list = [card('', 'Theo cảnh giới', realm().heroStand, 'Tự đổi khi đột phá', false)]
-    .concat(skins.map(s => { const locked = S.realm < s.minRealm;
-      return card(s.id, s.name, s.heroStand, locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : DATA.realms[s.minRealm].name, locked); }));
+    .concat(skins.map(s => { const shut = !skinOpen(s), locked = shut || S.realm < s.minRealm;
+      // trang phục cần rương: chưa mở rương thì khóa, ghi tên rương cần mở
+      return card(s.id, s.name, s.heroStand, shut ? `${LOCK_SVG} Mở ${ITEM[s.unlockItem]?.name || 'rương trang phục'}` : locked ? `${LOCK_SVG} Đạt ${DATA.realms[s.minRealm].name}` : cur === s.id ? 'Đang mặc' : DATA.realms[s.minRealm].name, locked); }));
   return `<button class="iv-ward-btn ${wardOpen ? 'on' : ''}" id="wardBtn" aria-label="Trang phục" aria-expanded="${wardOpen}" ${wardOpen ? '' : 'data-tip="Trang phục&#10;Đổi ngoại hình nhân vật ở Hành trang, Đột phá và màn hình chính"'}>${WARD_ICON}</button>
     <div class="iv-ward" ${wardOpen ? '' : 'hidden'} role="dialog" aria-label="Trang phục">
       <p class="wd-hd"><b>Trang phục</b><span>Chỉ đổi ngoại hình, không đổi chỉ số</span><button class="wd-x" data-wardclose aria-label="Đóng">×</button></p>

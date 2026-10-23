@@ -1,6 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync('wwwroot/js/pet-battle.js','utf8');
 const scope=vm.createContext({});
+vm.runInContext(fs.readFileSync('wwwroot/js/battle.js','utf8').match(/^const HEAL_COL = [^;]+;/m)[0],scope);
 vm.runInContext(source.slice(source.indexOf('function petCastHitSchedule(')),scope);
 const cast={turn:2,skill:'Linh thuật',dmg:60,hits:[10,20,30],heal:12,guard:15};
 const schedule=scope.petCastHitSchedule(cast);

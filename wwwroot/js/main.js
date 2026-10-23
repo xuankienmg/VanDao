@@ -129,7 +129,7 @@ function renderAdmin(force){
   if (!force && key === admKey && pane.innerHTML) return;
   admKey = key;
   const keepItem = $('admItem')?.value, keepN = $('admN')?.value, keepRealm = $('admRealm')?.value;
-  const keepGear = $('admGear')?.value, keepQ = $('admQ')?.value, keepGN = $('admGN')?.value, keepPetN = $('admPetN')?.value, keepPet = $('admPet')?.value, keepPetStar = $('admPetStar')?.value;
+  const keepGear = $('admGear')?.value, keepQ = $('admQ')?.value, keepGN = $('admGN')?.value, keepPetN = $('admPetN')?.value, keepPet = $('admPet')?.value, keepPetStar = $('admPetStar')?.value, keepEl = $('admEl')?.value;
   // Linh thú: mọi Thú Đản + đan dược / nguyên liệu linh thú (theo thứ tự khai báo ở server)
   const petItems = DATA.items.filter(i => ['egg', 'petfood', 'petmaterial'].includes(i.type));
   // trang bị: chọn theo món gốc (nhóm theo bộ, kèm cấp + cảnh giới yêu cầu), phẩm chọn riêng
@@ -141,8 +141,9 @@ function renderAdmin(force){
     ['stone', 'Tài nguyên'], ['pill', 'Đan đột phá'], ['elixir', 'Đan đặc biệt'],
     ['herb', 'Linh thảo'], ['boss', 'Nguyên liệu Boss'], ['key', 'Chìa khóa'],
     ['chest', 'Rương'], ['ticket', 'Vé'], ['equip', 'Trang bị'],
+    ['manual', 'Công pháp'], ['pet', 'Linh thú', ['egg', 'petfood', 'petmaterial']],   // Linh thú: Thú Đản + đan dược / nguyên liệu linh thú
   ];
-  const itemGroup = it => itemTypes.some(([type]) => type === it.type) ? it.type : 'other';
+  const itemGroup = it => itemTypes.find(([type, , types]) => (types || [type]).includes(it.type))?.[0] || 'other';
   const items = DATA.items.filter(i => !i.base).sort((a, b) =>
     RAR_KEYS.indexOf(a.rarity) - RAR_KEYS.indexOf(b.rarity) || a.name.localeCompare(b.name, 'vi'));
   const itemOpts = [...itemTypes, ['other', 'Khác']].map(([type, label]) => {
@@ -167,7 +168,7 @@ function renderAdmin(force){
       <div class="adm-row"><button data-adm="qi">Đầy tu vi</button><button data-adm="clearcd">Xóa điều tức / suy yếu</button></div>
       <div class="adm-row"><select id="admRealm">${realms}</select><button data-adm="realm">Chuyển tới</button></div></section>
     <section><h4>Kỹ năng</h4>
-      <div class="adm-row"><button data-adm="points" data-n="5">+5 điểm</button><button data-adm="points" data-n="50">+50 điểm</button><button data-adm="maxfire">Học max cây Hỏa</button><button data-adm="resetskills">Reset cây kỹ năng</button></div>
+      <div class="adm-row"><button data-adm="points" data-n="5">+5 điểm</button><button data-adm="points" data-n="50">+50 điểm</button><select id="admEl">${DATA.elements.filter(e => e.open).map(e => `<option value="${e.id}" ${e.id === (keepEl || 'hoa') ? 'selected' : ''}>${e.name} hệ</option>`).join('')}<option value="all" ${keepEl === 'all' ? 'selected' : ''}>Tất cả hệ</option></select><button data-adm="maxskill">Học max</button><button data-adm="resetskills">Reset cây kỹ năng</button></div>
       <small>Điểm kỹ năng: ${S.skillPoints}</small></section>
     <section><h4>Linh Thú</h4>
       <div class="adm-row">${F('petevo', 'Tiến hóa không cần điều kiện', 'Tiến hóa linh thú bỏ qua cấp, cảnh giới và không tốn nguyên liệu')}</div>
@@ -196,6 +197,7 @@ document.addEventListener('click', e => {
   else if (a === 'givegear'){ const base = $('admGear').value, v = DATA.items.find(i => i.base === base && i.id.endsWith('q' + $('admQ').value)); if (v) adminAct('give', v.id, Math.max(1, +$('admGN').value || 1)); }
   else if (a === 'giveset'){ const o = $('admGear').selectedOptions[0]; if (o?.dataset.set) adminAct('giveset', `${o.dataset.set}|${$('admQ').value}`, Math.max(1, +$('admGN').value || 1)); }
   else if (a === 'realm') adminAct('realm', $('admRealm').value);
+  else if (a === 'maxskill') adminAct('maxskill', $('admEl').value);
   else if (a === 'resetskills' && !b.dataset.armed){ b.dataset.armed = 1; b.textContent = 'Bấm lần nữa để reset'; setTimeout(() => renderAdmin(true), 3000); }
   else if (a === 'resetall' && !b.dataset.armed){ b.dataset.armed = 1; b.textContent = 'Bấm lần nữa để xóa sạch nhân vật'; setTimeout(() => renderAdmin(true), 3000); }
   else adminAct(a, b.dataset.arg ?? null, b.dataset.n ? +b.dataset.n : 0);

@@ -39,7 +39,7 @@ public partial class GameService
     }
     public (string,string) Feed(Player p,Guid id,int n=1)
     {
-        var pet=FindPet(p,id);if(n!=0&&n!=1&&n!=10)throw new GameException("Chọn 1, 10 hoặc tối đa.");
+        var pet=FindPet(p,id);if(n is not (0 or 1 or 10 or 100))throw new GameException("Chọn 1, 10, 100 hoặc tối đa.");
         var cap=PetLevelCap(p);if(pet.Level>=cap)throw new GameException("Đã đạt giới hạn cấp cảnh giới.");
         var have=p.Count("linh_thu_dan");if(have<1)throw new GameException("Không có Linh Thú Đan.");
         var limit=n==0?have:Math.Min(n,have);var used=0;
@@ -150,10 +150,10 @@ public partial class GameService
         double a=0,d=0,h=0;foreach(var pet in p.Pets.Where(x=>PetData.ById.ContainsKey(x.DefId))){var st=PetStats(p,pet);var k=PetData.ById[pet.DefId].Forms[Math.Clamp(pet.Form,0,2)].ShareMult*PetWeight(p,pet);a+=Math.Floor(st.Atk*k);d+=Math.Floor(st.Def*k);h+=Math.Floor(st.Hp*k);}
         return new((int)a,(int)h,(int)d,PetTalent(p,"speed"),PetTalent(p,"crit"));
     }
-    public static PetState PetStateFor(Player p) => new(p.Pets.Where(x=>PetData.ById.ContainsKey(x.DefId)).Select(pet=>{
-        var d=PetData.ById[pet.DefId];var st=PetStats(p,pet);var form=d.Forms[Math.Clamp(pet.Form,0,2)];var k=form.ShareMult*PetWeight(p,pet);var cost=PetData.EvolveCost(pet.Form);
-        return new PetDto(pet.Id,d.Id,d.Name,d.Element,PetData.Qualities[PetData.QualityOf(pet,d)],pet.Level,pet.Exp,PetData.ExpNeed(pet.Level),pet.Form,form.Name,pet.Slot,st.Atk,st.Def,st.Hp,pet.AptAtk,pet.AptDef,pet.AptHp,(int)(st.Atk*k),(int)(st.Def*k),(int)(st.Hp*k),PetData.TalentDescription(d,PetData.StarsOf(pet)),PetData.SkillDescription(d.Skill,pet.Form,PetData.StarsOf(pet),PetData.QualityOf(pet,d)),d.SkillEvery,cost.Select(x=>new CostDto(x.Key,x.Value,p.Count(x.Key))).ToArray(),EvolveGate(p,pet)&&CanPayEvolve(p,cost),d.Forms[PetAppearance(pet)].Image,PetAppearance(pet),EvolveHint(p,pet),PetData.StarsFrom(PetData.Pts(pet)),PetData.ReleaseValue(pet,d),PetData.Pts(pet),PetData.StarsOf(pet)<PetData.MaxStars?PetData.SkillDescription(d.Skill,pet.Form,PetData.StarsOf(pet)+1,PetData.QualityOf(pet,d)):"",PetData.StarsOf(pet)<PetData.MaxStars?PetData.TalentDescription(d,PetData.StarsOf(pet)+1):"",PetData.QualityOf(pet,d)==5?d.Miracle:null);
-    }).ToList(),Hatches(p).Select(h=>new HatchDto(h.Slot,h.Egg,h.Ready,Math.Max(0,(int)Math.Ceiling((h.Ready-DateTime.UtcNow).TotalSeconds)),h.Ready<=DateTime.UtcNow,InstantCost(h.Ready))).ToList(),PetData.Capacity(p.Realm),PetLevelCap(p),PetData.GuardSlots(p.Realm),PetData.HatchSlots(p.Realm),PetData.StarCost,PetData.StarRecipes);
+    public static PetState PetStateFor(Player p){ var owner=Stats(p); return new(p.Pets.Where(x=>PetData.ById.ContainsKey(x.DefId)).Select(pet=>{
+        var d=PetData.ById[pet.DefId];var st=PetStats(p,pet);var nums=PetData.NumbersOf(st,owner,pet.Form);/* mô tả kỹ năng ghi số thật */var form=d.Forms[Math.Clamp(pet.Form,0,2)];var k=form.ShareMult*PetWeight(p,pet);var cost=PetData.EvolveCost(pet.Form);
+        return new PetDto(pet.Id,d.Id,d.Name,d.Element,PetData.Qualities[PetData.QualityOf(pet,d)],pet.Level,pet.Exp,PetData.ExpNeed(pet.Level),pet.Form,form.Name,pet.Slot,st.Atk,st.Def,st.Hp,pet.AptAtk,pet.AptDef,pet.AptHp,(int)(st.Atk*k),(int)(st.Def*k),(int)(st.Hp*k),PetData.TalentDescription(d,PetData.StarsOf(pet)),PetData.SkillDescription(d.Skill,pet.Form,PetData.StarsOf(pet),PetData.QualityOf(pet,d),nums),d.SkillEvery,cost.Select(x=>new CostDto(x.Key,x.Value,p.Count(x.Key))).ToArray(),EvolveGate(p,pet)&&CanPayEvolve(p,cost),d.Forms[PetAppearance(pet)].Image,PetAppearance(pet),EvolveHint(p,pet),PetData.StarsFrom(PetData.Pts(pet)),PetData.ReleaseValue(pet,d),PetData.Pts(pet),PetData.StarsOf(pet)<PetData.MaxStars?PetData.SkillDescription(d.Skill,pet.Form,PetData.StarsOf(pet)+1,PetData.QualityOf(pet,d),nums):"",PetData.StarsOf(pet)<PetData.MaxStars?PetData.TalentDescription(d,PetData.StarsOf(pet)+1):"",PetData.QualityOf(pet,d)==5?d.Miracle:null);
+    }).ToList(),Hatches(p).Select(h=>new HatchDto(h.Slot,h.Egg,h.Ready,Math.Max(0,(int)Math.Ceiling((h.Ready-DateTime.UtcNow).TotalSeconds)),h.Ready<=DateTime.UtcNow,InstantCost(h.Ready))).ToList(),PetData.Capacity(p.Realm),PetLevelCap(p),PetData.GuardSlots(p.Realm),PetData.HatchSlots(p.Realm),PetData.StarCost,PetData.StarRecipes);}
     public (string msg,string kind,CraftResultDto craft) PetSpin(Player p,int n,DateTimeOffset? now=null)
     {
         n=Math.Clamp(n,1,10);var quota=CheckSpinDaily(p,n,now,pet:true);if(p.Count(GameData.PetSpinTicket)<n)throw new GameException("Không đủ Vé Linh Thú.");

@@ -50,7 +50,8 @@ public static class Program
         if (!webOnly) builder.WebHost.UseUrls("http://127.0.0.1:0");
 
         // DB nằm trong %LocalAppData%\VanDao để không mất khi build lại hay xóa bin/
-        var dbPath = Path.Combine(AppPaths.DataDir, "vandao.db");
+        // chạy Development dùng file riêng vandao_dev.db, không đụng save của bản phát hành
+        var dbPath = Path.Combine(AppPaths.DataDir, builder.Environment.IsDevelopment() ? "vandao_dev.db" : "vandao.db");
         builder.Services.AddDbContext<GameDbContext>(o =>
             o.UseSqlite(builder.Configuration.GetConnectionString("Game") ?? $"Data Source={dbPath}"));
         builder.Services.AddScoped<GameService>();

@@ -46,7 +46,7 @@ internal static class ButterflyChecks
             var combat=new PetCombat(def,form,new CombatStats(100,10000,10),stars,null,true,new CombatStats(50,2000,10));
             var scale=PetData.StarScale(stars);int hp=2000;
             var cast=combat.Cast(4,ref hp,10000,10000,0,1);
-            // Lực hỗ trợ = Máu linh thú + Máu chủ nhân × Đồng tâm; 45% hồi máu, 55% khiên
+            // Linh Hộ = Máu linh thú + Máu chủ nhân × Đồng tâm; 45% hồi máu, 55% khiên
             var life=2000+10000*PetData.SkillBond[form];var coef=PetData.SkillCoef("butterfly",form);
             Check(Math.Abs(coef-50*.15*3*PetData.SkillFormK[form])<1e-9,"Butterfly support budget");
             var rawHeal=(int)(life*coef*.45/100);

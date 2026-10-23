@@ -33,13 +33,15 @@ public static class PetLoot
             return d with {Chance=chance};
         }).ToList();
         rows.Add(new(chapter.KeyItem,1,1,GameData.KeyChance(area)));
-        rows.Add(new("ruong_thuong",1,1,GameData.ChestChance));
+        // rương mang mức của map (Khó / Ác mộng là loại riêng), mở ra tính thưởng theo mức đó
+        var rareChest=GameData.ChestId("ruong_hiem",diff);
+        rows.Add(new(GameData.ChestId("ruong_thuong",diff),1,1,GameData.ChestChance));
         var rare=(area>=GameData.EliteMinArea?GameData.EliteRareChestChance:area>=GameData.RareChestMinArea?GameData.RareChestChance:0)*GameData.DiffRareChest[diff];
-        if(rare>0)rows.Add(new("ruong_hiem",1,1,Math.Min(1,rare)));
+        if(rare>0)rows.Add(new(rareChest,1,1,Math.Min(1,rare)));
         var merged=rows.GroupBy(x=>x.Item).Select(g=>new DropDef(g.Key,g.Min(x=>x.Min),g.Sum(x=>x.Max),1-g.Aggregate(1d,(n,x)=>n*(1-x.Chance)))).ToArray();
         // Equal increments per item; rare chest odds are protected and no chance exceeds 100%.
         while(removed>1e-12){
-            var eligible=Enumerable.Range(0,merged.Length).Where(i=>merged[i].Item!="ruong_hiem"&&merged[i].Chance<1-1e-12).ToArray();
+            var eligible=Enumerable.Range(0,merged.Length).Where(i=>merged[i].Item!=rareChest&&merged[i].Chance<1-1e-12).ToArray();
             if(eligible.Length==0)throw new InvalidOperationException("Không đủ vật phẩm để chia tỉ lệ đan tiến giai.");
             var share=removed/eligible.Length;var spent=0d;
             foreach(var i in eligible){var add=Math.Min(share,1-merged[i].Chance);merged[i]=merged[i] with {Chance=merged[i].Chance+add};spent+=add;}

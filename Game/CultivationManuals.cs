@@ -34,7 +34,7 @@ public static class CultivationManuals
             _ => "none"
         }, Rarity: "legendary", Kind: "Công pháp",
         Use: Available.Contains(m)
-            ? "Dùng: mở cây kỹ năng tương ứng. Nâng kỹ năng vẫn cần điểm và cảnh giới. Rương Boss: 1% nhận bí kíp Hỏa, Thủy hoặc Mộc."
+            ? "Dùng: mở cây kỹ năng tương ứng. Nâng kỹ năng vẫn cần điểm và cảnh giới. Rương Boss: tổng 1% nhận một bí kíp trong 7 hệ, xác suất mỗi hệ bằng nhau."
             : "Hệ này chưa mở. Bí kíp được giữ lại, hiện không thể học và không rơi từ rương." )).ToArray();
 
     public static string[] Unlocked(Player p) => p.LearnedManuals.Split(',', StringSplitOptions.RemoveEmptyEntries)
