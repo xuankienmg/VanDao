@@ -21,6 +21,11 @@
 
   document.documentElement.lang = 'en';
   const D = Object.assign(Object.create(null), window.I18N_EN);
+  // khóa là mảnh nối sau dấu phân cách ("· bỏ lại {0} món"): thêm bản bỏ dấu đầu để khớp sau khi tách câu theo " · " / ", "
+  for (const [k, v] of Object.entries(D)){
+    const m = /^([·,;] )(.+)$/.exec(k);
+    if (m && !(m[2] in D) && v.startsWith(m[1])) D[m[2]] = v.slice(m[1].length);
+  }
   const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
   const norm = s => s.replace(/\s+/g, ' ').trim();
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
