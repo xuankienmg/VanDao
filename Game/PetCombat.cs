@@ -1,12 +1,12 @@
 namespace VanDao.Game;
 
 /// <summary>Trạng thái kỹ năng linh thú trong một trận; hiệu ứng cùng loại chỉ làm mới thời gian.</summary>
-/// <param name="pet">Chỉ số riêng của linh thú (cộng vào Lực tuyệt kỹ); null = 0.</param>
+/// <param name="pet">Chỉ số riêng của linh thú (cộng vào Linh Uy); null = 0.</param>
 /// <param name="quality">Phẩm riêng của con (Phàm → Thượng Cổ); −1 = phẩm gốc của loài.</param>
 public sealed class PetCombat(PetDef definition, int form, CombatStats owner, int stars = 0, Random? random = null, bool allowMiracle = true, CombatStats? pet = null, int quality = -1)
 {
     private readonly int _form = Math.Clamp(form, 0, 2);
-    // Lực tuyệt kỹ: Công linh thú + Công chủ nhân × Đồng tâm · Lực hỗ trợ: Máu linh thú + Máu chủ nhân × Đồng tâm
+    // Linh Uy: Công linh thú + Công chủ nhân × Đồng tâm · Linh Hộ: Máu linh thú + Máu chủ nhân × Đồng tâm
     private readonly double _power = (pet?.Atk ?? 0) + owner.Atk * PetData.SkillBond[Math.Clamp(form, 0, 2)];
     private readonly double _life = (pet?.Hp ?? 0) + owner.Hp * PetData.SkillBond[Math.Clamp(form, 0, 2)];
     private readonly double _coef = PetData.SkillCoef(definition.Skill, form, quality);
@@ -121,7 +121,7 @@ public sealed class PetCombat(PetDef definition, int form, CombatStats owner, in
                 hits.Add(hit); damage += hit;
             }
         }
-        double Life(double share) => _life * _coef * share / 100;   // lượng hồi / khiên theo Lực hỗ trợ
+        double Life(double share) => _life * _coef * share / 100;   // lượng hồi / khiên theo Linh Hộ
         switch (definition.Skill)
         {
             case "fox": Strike(_coef); _markUntil = turn + 2; break;

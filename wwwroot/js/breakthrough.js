@@ -17,6 +17,7 @@ const BT_PAL = {
   hoa_than:  {ring:'#7a8aa0', rune:'#e8f0ff', glow:'#c8d8f0', mote:'#ffffff'},     // bạch kim
   luyen_hu:  {ring:'#3f6fd0', rune:'#8fc8ff', glow:'#4f8fff', mote:'#dcefff'},     // lam hư không
   hop_the:   {ring:'#b05a2a', rune:'#ffc890', glow:'#ff9a5a', mote:'#fff0e0'},     // đỏ cam, khí huyết hợp nhất
+  dai_thua:  {ring:'#b08a2a', rune:'#ffe6a0', glow:'#ffd86a', mote:'#fffbe8'},     // kim quang, đạo vận viên mãn
 };
 /** 10 cảnh giới ở cột trái: tên Việt + tên Anh (bản thiết kế). Cảnh giới chưa có trong DATA hiện khóa. */
 const BT_REALMS = [['Luyện Khí','Qi Refining'],['Trúc Cơ','Foundation Establishment'],['Kim Đan','Golden Core'],['Nguyên Anh','Nascent Soul'],['Hóa Thần','Spirit Severing'],
@@ -41,7 +42,7 @@ function btReqs(){
   for (const c of S.targetCost){
     const it = ITEM[c.item], ok = c.have >= c.need;
     rows.push({ok, ic: c.item, name: it.name, val: `${fmt(c.have)} / ${fmt(c.need)}`, boss: it.type === 'boss',
-      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${DATA.chapters?.find(x => x.bossItem === realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Luyện chế đan</a>' : ''});
+      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${bossChapterFor(realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Luyện chế đan</a>' : ''});
   }
   if (S.isPeak) rows.push({ok: true, key: 'peak', name: 'Tu luyện viên mãn', val: S.stageName});
   const debuff = btLeft(S.break.debuffMs), cd = btLeft(S.break.cooldownMs);
@@ -309,6 +310,7 @@ function btRuneCircle(px){
 
 function btFrame(now){
   requestAnimationFrame(btFrame);
+  if (paneOff('req')) return;
   const c = $('btCanvas');
   if (!c || !S || !c.offsetParent) return;
   const dpr = Math.min(2, devicePixelRatio || 1);

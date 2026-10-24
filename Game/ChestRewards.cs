@@ -8,7 +8,12 @@ public record ChestReward(string Item, int Qty, double Probability, string Group
 public static class ChestRewards
 {
     private static readonly ConcurrentDictionary<(int Realm,string Chest,int Diff,int Chapter),IReadOnlyList<ChestReward>> Cache=new();
-    public static IReadOnlyList<ChestReward> Table(int realm,string chest,int diff=0,int chapter=-1) => Cache.GetOrAdd((realm,chest,diff,chapter),key=>Build(key.Realm,key.Chest,key.Diff,key.Chapter));
+    /// <summary>Rương theo mức (ruong_thuong_kho…) luôn tính theo mức ghi trên rương, bỏ qua diff truyền vào.</summary>
+    public static IReadOnlyList<ChestReward> Table(int realm,string chest,int diff=0,int chapter=-1)
+    {
+        var own=GameData.ChestDiff(chest);if(own>0){diff=own;chest=GameData.ChestBase(chest);}
+        return Cache.GetOrAdd((realm,chest,diff,chapter),key=>Build(key.Realm,key.Chest,key.Diff,key.Chapter));
+    }
     public static ChestReward Roll(int realm,string chest,Random rng,int diff=0,int chapter=-1)
     {
         var table=Table(realm,chest,diff,chapter);var roll=rng.NextDouble();
@@ -24,7 +29,7 @@ public static class ChestRewards
         var equipmentChance=cd.EquipmentChance;
         var enlightenment=realm>=GameData.ItemById["ngo_dao_dan"].MinRealm?cd.Enlightenment:0;
         var pillChance=1-equipmentChance-cd.Herb-enlightenment;
-        var quality=cd.QualityAt(realm);var qs=quality.Sum();
+        var quality=GameData.ChestQuality(chest,realm,diff);var qs=quality.Sum();   // rương Khó / Ác mộng: phẩm nhỉnh hơn
         if(qs<=0||quality.Any(q=>q<0)||pillChance<0)throw new InvalidOperationException("Bảng thưởng rương không hợp lệ.");
         void Add(string item,int qty,double probability,string group,string? baseItem=null){if(probability>0)list.Add(new(item,qty,probability,group,baseItem));}
         for(var q=0;q<quality.Length;q++)if(quality[q]>0){
@@ -55,7 +60,8 @@ public static class ChestRewards
             Add("hoa_hinh_dan",1+chapterIndex/3+diff,blood?.03:.045,"pet");
             Add("than_thu_huyet",1+Math.Max(0,chapterIndex-4)/3+diff,blood?.015:0,"pet");
         }else Add("linh_thu_dan",Math.Min(PetLoot.MaxFoodDrop,(1+chapterIndex/2)*(chest=="ruong_hiem"?3:1)+diff),petChance,"pet");
-        if(chest=="ruong_thuong"){
+        // Không rương nào ra đan tiến giai: tỉ lệ đan cũ chia đều cho các vật phẩm còn lại.
+        {
             var removed=list.Where(x=>x.Group=="pill").Sum(x=>x.Probability);
             list.RemoveAll(x=>x.Group=="pill");
             var itemOdds=list.GroupBy(x=>x.Item).ToDictionary(g=>g.Key,g=>g.Sum(x=>x.Probability));

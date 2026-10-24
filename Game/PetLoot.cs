@@ -33,13 +33,15 @@ public static class PetLoot
             return d with {Chance=chance};
         }).ToList();
         rows.Add(new(chapter.KeyItem,1,1,GameData.KeyChance(area)));
-        rows.Add(new("ruong_thuong",1,1,GameData.ChestChance));
+        // rương mang mức của map (Khó / Ác mộng là loại riêng), mở ra tính thưởng theo mức đó
+        var rareChest=GameData.ChestId("ruong_hiem",diff);
+        rows.Add(new(GameData.ChestId("ruong_thuong",diff),1,1,GameData.ChestChance));
         var rare=(area>=GameData.EliteMinArea?GameData.EliteRareChestChance:area>=GameData.RareChestMinArea?GameData.RareChestChance:0)*GameData.DiffRareChest[diff];
-        if(rare>0)rows.Add(new("ruong_hiem",1,1,Math.Min(1,rare)));
+        if(rare>0)rows.Add(new(rareChest,1,1,Math.Min(1,rare)));
         var merged=rows.GroupBy(x=>x.Item).Select(g=>new DropDef(g.Key,g.Min(x=>x.Min),g.Sum(x=>x.Max),1-g.Aggregate(1d,(n,x)=>n*(1-x.Chance)))).ToArray();
         // Equal increments per item; rare chest odds are protected and no chance exceeds 100%.
         while(removed>1e-12){
-            var eligible=Enumerable.Range(0,merged.Length).Where(i=>merged[i].Item!="ruong_hiem"&&merged[i].Chance<1-1e-12).ToArray();
+            var eligible=Enumerable.Range(0,merged.Length).Where(i=>merged[i].Item!=rareChest&&merged[i].Chance<1-1e-12).ToArray();
             if(eligible.Length==0)throw new InvalidOperationException("Không đủ vật phẩm để chia tỉ lệ đan tiến giai.");
             var share=removed/eligible.Length;var spent=0d;
             foreach(var i in eligible){var add=Math.Min(share,1-merged[i].Chance);merged[i]=merged[i] with {Chance=merged[i].Chance+add};spent+=add;}
@@ -63,18 +65,32 @@ public static class PetLoot
                 DropQuantity(first.Item,rows.Sum(x=>x.Max),diff),1-rows.Aggregate(1d,(n,x)=>n*(1-x.Chance)),first.Gear);
         }).ToList();
     }
-    public static DropDef[] BossMaterials(int chapter,int diff,int realm=-1)
+    /// <summary>Cách nhận một vật phẩm Boss (theo BossMaterials, mọi chương): "Rơi khi hạ Boss (mọi chương): Thường 15% · 1 viên; …".</summary>
+    public static string BossSource(string item)
+    {
+        var parts=new List<string>();
+        for(var d=0;d<GameData.DiffNames.Length;d++){
+            var x=BossMaterials(0,d).FirstOrDefault(m=>m.Item==item);
+            if(x is null)continue;
+            parts.Add($"{GameData.DiffNames[d]} {Math.Round(x.Chance*100):0}% · {(x.Min==x.Max?$"{x.Min}":$"{x.Min}–{x.Max}")} viên");
+        }
+        return parts.Count==0?"":$"Rơi khi hạ Boss (mọi chương): {string.Join("; ",parts)}.";
+    }
+    /// <summary>Vật phẩm rơi khi hạ Boss. Không gồm đan đột phá (đan tiến giai theo cảnh giới).</summary>
+    public static DropDef[] BossMaterials(int chapter,int diff)
     {
         var quantity=1+Math.Max(0,chapter)/3+diff;
         var drops=new List<DropDef>{new("hoa_hinh_dan",quantity,quantity+1,.25+.05*diff)};
+        if(GameData.BreakthroughBossItem(chapter,diff) is { } core)
+            drops.Add(new(core,1,1,1));
         if(BloodUnlocked(chapter,diff)){
             var blood=1+Math.Max(0,chapter-4)/3+diff;
             drops.Add(new("than_thu_huyet",blood,blood+1,Math.Min(.30,.12+.02*Math.Max(0,chapter-4)+.04*diff)));
         }
-        if(realm>=0){
-            var pill=GameData.Realms[realm].StageCost(0).Keys.First(k=>k!="linh_thach");
-            drops.Add(new(pill,quantity,quantity+2,.25));
-        }
+        // bồi dưỡng linh thú: đan tư chất + trang bị linh thú (mỗi ô 1/3 tỉ lệ, phẩm theo chương và mức khó)
+        drops.Add(new(PetTraining.RerollItem,1,1+diff,Math.Min(.35,.15+.05*diff)));
+        var tier=PetTraining.DropTier(chapter,diff);
+        foreach(var slot in PetTraining.Slots)drops.Add(new(PetTraining.GearId(slot.Id,tier),1,1,(.12+.03*diff)/PetTraining.Slots.Length));
         return drops.ToArray();
     }
 }

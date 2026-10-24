@@ -9,7 +9,7 @@ const spinCfg = () => spinMode === 'pet'
 const spinRarities = () => spinMode==='pet' ? ['common','uncommon','rare','epic','legendary','ancient'] : FUSE_R;
 const spinSeg = () => 360 / spinCfg().n;
 let spinBusy = false, spinRot = 0, spinLast = null, spinKey = '';
-let spinMode='gear';
+let spinMode='gear', spinModePicked=false;   // chưa tự chọn vòng: mở theo vòng của sự kiện đang chạy
 function spinModeButtons(){return `<div class="pet-spin-modes"><button type="button" data-sp-mode="gear" aria-pressed="${spinMode==='gear'}">Quay trang bị</button><button type="button" data-sp-mode="pet" aria-pressed="${spinMode==='pet'}">Quay Linh Thú</button></div>`;}
 const spinTickets = () => S.inventory[spinCfg().ticket] || 0;
 const spinQuota = () => (spinMode === 'pet' ? S.petSpinDaily : S.spinDaily);
@@ -55,12 +55,12 @@ function spinDisc(){
 
 function renderSpin(){
   const pane = $('pane-spin'); if (!pane || !S) return;
+  if (!spinModePicked && S.event?.active) spinMode = S.event.track === 'pet' ? 'pet' : 'gear';
   const cfg = spinCfg();
   if (!$('spWheel') || pane.dataset.mode !== spinMode){
     pane.dataset.mode = spinMode; spinKey = '';
     pane.innerHTML = `<div class="dd sp ${spinMode === 'pet' ? 'sp-pet' : ''}">
       <header class="dd-top">${lcNav('spin')}${spinModeButtons()}<div class="dd-cult" id="spCult"></div>
-        <div class="dd-stone">${itemImg('linh_thach')}<span>Linh thạch</span><b id="spStone"></b></div>
         <div class="dd-stone sp-tk" data-tip="${ITEM[cfg.ticket]?.name || 'Vé'}&#10;Mỗi vé quay 1 lần">${itemImg(cfg.ticket)}<span>Vé</span><b id="spTk"></b></div>
         <button class="sp-hbtn" id="spHist" aria-label="Lịch sử quay" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg><em id="spHistN"></em></button></header>
       <section class="dd-main sp-main" aria-label="Vòng quay">
@@ -72,6 +72,7 @@ function renderSpin(){
         <div class="dd-act sp-act" id="spAct"></div>
       </section>
       <aside class="dd-side sp-side">
+        <div class="sp-event" id="spEvent"></div>
         <div class="sp-buy" id="spBuy"></div>
         <div class="sp-odds"><p class="dd-sec">Tỉ lệ ${cfg.n} ô</p><ol id="spOdds"></ol></div>
       </aside>
@@ -84,7 +85,6 @@ function renderSpin(){
   $('spCult').innerHTML = spinMode === 'pet'
     ? `<span>Mỗi <b>${fmt(price)}</b> linh thạch đổi <b>1 Vé Linh Thú</b> · mỗi vé quay 1 lần nhận <b>1 Thú Đản</b> Phàm → Thiên · đưa vào ổ ấp ở tab Linh thú</span>`
     : `<span>Mỗi <b>${fmt(price)}</b> linh thạch đổi <b>1 vé</b> · mỗi vé quay 1 lần nhận 1 trang bị theo cảnh giới <b>${S.realmName}</b>${set ? ` (bộ <b>${set}</b>)` : ''} · càng lên cao càng hiếm</span>`;
-  $('spStone').textContent = `× ${fmt(st)}`;
   $('spTk').textContent = `× ${fmt(tk)}`;
   const off = spinBusy || busy, remaining = spinRemaining(), dailyLimit = spinDailyLimit();
   $('spHub').disabled = off || tk < 1 || remaining < 1;
@@ -102,8 +102,72 @@ function renderSpin(){
   const hn = spinHistory().length; $('spHistN').textContent = hn || '';
   { const hp = $('spHistPop');                                   // chỉ vẽ lại khi có lượt mới, giữ vị trí cuộn
     if (hp && !hp.hidden){ const h = spinHistHtml(); if (hp.dataset.h !== h){ const top = hp.scrollTop; hp.innerHTML = h; hp.dataset.h = h; hp.scrollTop = top; } } }
+  { const ev = $('spEvent'), h = spinEventHtml(); if (ev.dataset.h !== h){ ev.innerHTML = h; ev.dataset.h = h; } }   // chỉ vẽ lại khi đổi, không làm mất cú bấm
+  { // đang có sự kiện cho vòng này: thu bảng tỉ lệ thành tooltip để nhường chỗ cho khung sự kiện
+    const box = $('spOdds').parentElement, h = box.querySelector('.dd-sec'), evOn = !!S.event?.active && S.event.track === (spinMode === 'pet' ? 'pet' : 'gear');
+    box.classList.toggle('sp-odds-tip', evOn);
+    if (evOn){
+      h.dataset.tip = [`Tỉ lệ ${cfg.n} ô`, ...spinRarities().slice(0, cfg.n).map((r, i) => `${RARITY[r]?.n || (r === 'ancient' ? 'Thượng Cổ' : r)}: ${spinPct(w[i])}`)].join('\n');
+      h.tabIndex = 0; h.innerHTML = `Tỉ lệ ${cfg.n} ô <i class="sp-odds-i" aria-hidden="true">ⓘ</i>`;
+    } else if (h.dataset.tip){ delete h.dataset.tip; h.removeAttribute('tabindex'); h.textContent = `Tỉ lệ ${cfg.n} ô`; }
+  }
   $('spOdds').innerHTML = spinRarities().slice(0, cfg.n).map((r, i) => `<li class="${spinLast?.q === i ? 'on' : ''}">${qWord(r)}<b>${spinPct(w[i])}</b></li>`).join('');
 }
+
+/** Sự kiện quay tích lũy Thiên Cơ (server tính điểm theo giờ máy chủ): tuần Trang bị / tuần Linh Thú luân phiên. */
+function spinEventLeft(ms){
+  const s = Math.max(0, Math.floor((ms - Date.now()) / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? `${d} ngày ${h} giờ` : h ? `${h} giờ ${m} phút` : `${m} phút`;
+}
+function spinEventHtml(){
+  const ev = S.event, trackName = t => t === 'pet' ? 'Quay Linh Thú' : 'Quay trang bị';
+  if (!ev) return '';
+  if (!ev.active) return ev.nextStartsAt ? `<p class="dd-sec">Sự kiện Thiên Cơ</p><p class="sp-note">Mở sau ${spinEventLeft(ev.nextStartsAt)} · ${trackName(ev.nextTrack)}</p>` : '';
+  const mine = ev.track === (spinMode === 'pet' ? 'pet' : 'gear');
+  const head = `<p class="dd-sec">${ev.name}</p><p class="sp-note">Còn <b>${spinEventLeft(ev.endsAt)}</b> · tuần sau: ${trackName(ev.nextTrack)}</p>`;
+  if (!mine) return `${head}<p class="sp-note">Tuần này chỉ tính lượt <b>${trackName(ev.track)}</b>. <button type="button" class="sp-ev-go" data-sp-mode="${ev.track === 'pet' ? 'pet' : 'gear'}">Chuyển sang</button></p>`;
+  const ms = ev.milestones || [], next = ms.find(m => ev.points < m.points), last = ms[ms.length - 1]?.points || 1;
+  const ready = ms.filter(m => m.ready).length, off = busy || spinBusy || !ev.online || !!ev.blocked;
+  const warn = !ev.online ? '<p class="sp-ev-warn">Mất kết nối máy chủ: lượt quay lúc này không được tính điểm, nhận quà cần online.</p>'
+    : ev.blocked ? `<p class="sp-ev-warn">${ev.blocked}</p>` : '';
+  const rows = ms.map((m, i) => `<li class="${m.claimed ? 'done' : m.ready ? 'ready' : ''}"><b>${fmt(m.points)}</b><span class="sp-ev-rw">${m.rewards.map(r => `<span data-tip="${ITEM[r.item]?.name || r.item}${ITEM[r.item]?.desc ? '&#10;' + ITEM[r.item].desc : ''}">${itemImg(r.item)}${r.qty > 1 ? `<em>×${fmt(r.qty)}</em>` : ''}</span>`).join('')}</span>${m.claimed ? '<i>Đã nhận</i>' : m.ready ? `<button type="button" data-ev-claim="${i}" ${off ? 'disabled' : ''}>Nhận</button>` : '<i>—</i>'}</li>`).join('');
+  return `${head}${warn}
+    <div class="sp-ev-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${last}" aria-valuenow="${ev.points}"><i style="width:${Math.min(100, ev.points / last * 100)}%"></i><span>${fmt(ev.points)} điểm${next ? ` · mốc kế ${fmt(next.points)}` : ' · đã đạt mọi mốc'}</span></div>
+    <p class="sp-note">Mỗi lượt ${trackName(ev.track)} = 1 điểm.</p>
+    <ol class="sp-ev-list">${rows}</ol>
+    ${ready > 1 ? `<button type="button" class="dd-all" data-ev-claim="-1" ${off ? 'disabled' : ''}>Nhận tất cả (${ready})</button>` : ''}`;
+}
+
+/** Thông báo nổi sau khi nhận quà sự kiện: gộp món trùng, món quý nhất lên đầu. */
+function spinEventToast(pick){
+  const el = $('craftToast'); if (!el || !pick.length) return;
+  const sum = {}; pick.forEach(m => m.rewards.forEach(r => { sum[r.item] = (sum[r.item] || 0) + r.qty; }));
+  const R = k => FUSE_R.indexOf(ITEM[k]?.rarity);
+  const items = Object.keys(sum).filter(k => ITEM[k]).sort((a, b) => R(b) - R(a));
+  if (!items.length) return;
+  const list = items.map(k => `<span>${itemImg(k)}<b class="rc-${ITEM[k].rarity}">${ITEM[k].name}</b> × ${fmt(sum[k])}</span>`).join('');
+  el.classList.remove('brief', 'fast');
+  el.innerHTML = `<span class="ct-ic">${itemImg(items[0])}</span><span class="ct-t">Nhận quà Thiên Cơ</span>
+    <span class="ct-o">${pick.length > 1 ? `${pick.length} mốc` : `Mốc ${fmt(pick[0].points)}`} · đã vào Hành trang</span><span class="ct-u sp-ev-got">${list}</span>`;
+  el.hidden = true; void el.offsetWidth; el.hidden = false;
+  clearTimeout(craftTimer); craftTimer = setTimeout(() => { el.hidden = true; }, 3200 + 300 * Math.min(items.length, 8));
+}
+/** Biểu tượng sự kiện ở màn hình chính: hiện khi có đợt đang chạy, chấm đỏ khi có mốc quà nhận được; bấm mở tab Vòng quay. */
+function spinEventButton(){
+  const b = $('btnEvent'); if (!b) return;
+  const ev = S?.event, on = !!ev?.active;
+  const ready = on ? (ev.milestones || []).filter(m => m.ready).length : 0;
+  const next = on ? (ev.milestones || []).find(m => ev.points < m.points) : null;
+  const tip = on ? [ev.name, `${fmt(ev.points)}${next ? '/' + fmt(next.points) : ''} điểm · còn ${spinEventLeft(ev.endsAt)}`,
+    ready ? `Có ${ready} mốc quà chờ nhận` : next ? `Mốc kế: ${fmt(next.points)} lượt ${ev.track === 'pet' ? 'Quay Linh Thú' : 'quay trang bị'}` : 'Đã nhận mọi mốc',
+    ev.online ? '' : 'Mất kết nối: lượt quay chưa được tính điểm'].filter(Boolean).join('&#10;') : '';
+  const key = `${on}|${ready}|${tip}`;
+  if (b.dataset.k === key) return;
+  b.dataset.k = key; b.hidden = !on; b.classList.toggle('ready', ready > 0); b.classList.toggle('pet', ev?.track === 'pet');
+  b.dataset.tip = tip.replace(/&#10;/g, '\n');
+}
+if ($('btnEvent')) $('btnEvent').onclick = () => { if (!S?.event?.active) return; MODE === 'strip' ? notifyHost('open-panel', {tab: 'spin'}) : openTab('spin'); };
+setInterval(() => { if (S) spinEventButton(); }, 1000);
 
 /** Danh sách món của một lượt quay, phẩm cao → thấp, gộp món trùng. */
 function spinItemsHtml(ids, cls){
@@ -212,9 +276,15 @@ async function spinGo(n){
 
 $('pane-spin').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || b.disabled || spinBusy) return;
-  if(b.dataset.spMode){if(busy)return;spinMode=b.dataset.spMode;spinKey='';spinLast=null;renderSpin();return;}
+  if(b.dataset.spMode){if(busy)return;spinMode=b.dataset.spMode;spinModePicked=true;spinKey='';spinLast=null;renderSpin();return;}
   if (b.id === 'spHist'){ const p = $('spHistPop'); spinHistShow(!p || p.hidden); return; }
   if (b.dataset.spGo){ spinGo(+b.dataset.spGo); return; }
+  if (b.dataset.evClaim !== undefined){
+    const i = +b.dataset.evClaim, ms = S.event?.milestones || [];
+    const pick = ms.filter((m, j) => m.ready && (i < 0 || j === i));        // quà sắp nhận (server kiểm lại khi nhận)
+    if (await act(`event/claim?i=${i}`)) spinEventToast(pick);
+    renderSpin(); return;
+  }
   if (b.dataset.spBuy !== undefined){ await act(`spin/buy?n=${b.dataset.spBuy}${spinCfg().mode}`); renderSpin(); }
 });
 

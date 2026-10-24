@@ -5,9 +5,9 @@ namespace VanDao.Game;
 /// <summary>Chợ giao dịch: kiểm tra phía game, gọi Supabase (MarketService), rồi mới trừ / cộng hành trang.</summary>
 public partial class GameService
 {
-    /// <summary>Linh thạch, chìa khóa và vật liệu linh thú không giao dịch; hai loại vé quay chỉ admin trong Development được đăng bán.</summary>
+    /// <summary>Linh thạch, chìa khóa và vật liệu linh thú không giao dịch (rương trang phục giao dịch được); hai loại vé quay chỉ admin trong Development được đăng bán.</summary>
     public static bool Tradable(ItemDef d, bool canSellTickets = false) =>
-        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial");
+        IsSpinTicket(d.Id) ? canSellTickets : d.Type is not ("stone" or "key" or "ticket" or "petfood" or "petmaterial" or "eventchest");
 
     public static bool IsSpinTicket(string id) => id is GameData.SpinTicket or GameData.PetSpinTicket;
 
@@ -50,10 +50,12 @@ public partial class GameService
         try
         {
             var m = Market(p, trading: false);
+            var unlimited = CanSellSpinTickets(p) && await m.Rpc<bool>("market_listing_unlimited", Who(p));
             var open = await m.OpenAsync();
             var mine = await m.Rpc<List<MarketService.MineRow>>("market_mine", Who(p));
             return empty with
             {
+                UnlimitedListings = unlimited,
                 Listings = open.Where(x => GameData.ItemById.ContainsKey(x.ItemId))
                     .Select(x => new MarketListingDto(x.Id, x.SellerName, x.ItemId, x.Qty, x.Price, x.ExpiresAt, x.SellerId == p.Id)).ToList(),
                 Mine = mine.Select(x => new MarketMineDto(x.Id, x.Role, x.ItemId, x.Qty, x.Price, x.Payout, x.Status, x.OtherName, x.CreatedAt, x.ExpiresAt, x.ClosedAt)).ToList(),
@@ -70,7 +72,7 @@ public partial class GameService
         if (!GameData.ItemById.TryGetValue(itemId, out var d) || !Tradable(d, CanSellSpinTickets(p))) throw new GameException("Vật phẩm này không bán được ở Chợ.");
         if (qty < 1 || p.Count(itemId) < qty) throw new GameException("Không đủ vật phẩm trong hành trang.");
         if (price < 1 || price > MarketService.MaxPrice) throw new GameException("Giá không hợp lệ.");
-        await m.Rpc<long>("market_list", new { p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = MarketRealm(p), p_item = itemId, p_qty = qty, p_price = price });
+        await m.Rpc<long>("market_list", new { p_id = p.Id, p_secret = p.LbSecret, p_name = p.Name, p_realm = MarketRealm(p), p_item = itemId, p_qty = qty, p_price = price, p_unlimited = CanSellSpinTickets(p) });
         p.Add(itemId, -qty);     // Supabase đã nhận ký gửi → món rời túi
         return Log(p, $"Chợ: treo bán {(qty > 1 ? qty + " " : "")}{d.Name} giá {price:N0} linh thạch.", "");
     }

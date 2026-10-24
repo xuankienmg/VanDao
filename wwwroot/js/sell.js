@@ -53,6 +53,33 @@ function quickRow(){
   return `<div class="sl-quick" role="group" aria-label="Bán nhanh theo phẩm"><label for="slQuickRarity">Bán nhanh</label><select id="slQuickRarity" ${busy ? 'disabled' : ''}><option value="">Chọn phẩm</option>${options}</select><button class="sl-quick-go ${armed ? 'armed' : ''}" data-sq="${quickRarity}" ${selected?.n && !busy ? '' : 'disabled'} title="Bán toàn bộ trang bị thuộc phẩm đã chọn trong túi. Từ phẩm Thánh cần bấm hai lần để xác nhận.">${armed ? 'Xác nhận' : 'Bán'}</button></div>`;
 }
 
+/** Vẽ lại quầy mà không gỡ ô chọn "Bán nhanh" khỏi trang (nhặt được đồ, đồng bộ… vẽ lại liên tục):
+    gỡ <select> ra là danh sách đang mở bị đóng và mất lựa chọn. Thay mọi phần tử xung quanh bằng bản mới,
+    còn ô chọn chỉ cập nhật chữ / trạng thái từng lựa chọn và nút Bán. */
+function sellPaint(pane, html){
+  const old = pane.querySelector('.sl-quick'), tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const fresh = tmp.querySelector('.sl-quick');
+  if (!old || !fresh){ pane.innerHTML = html; return; }
+  const os = old.querySelector('select'), ns = fresh.querySelector('select');
+  if (os.options.length !== ns.options.length){ pane.innerHTML = html; return; }
+  [...ns.options].forEach((o, i) => { const p = os.options[i]; if (p.text !== o.text) p.text = o.text; p.disabled = o.disabled; });
+  if (os.value !== quickRarity) os.value = quickRarity;
+  if (os.disabled !== ns.disabled) os.disabled = ns.disabled;
+  old.replaceChild(fresh.querySelector('.sl-quick-go'), old.querySelector('.sl-quick-go'));
+  // đi ngược lên tới pane: ở mỗi tầng thay anh em của nhánh chứa ô chọn, giữ nguyên nhánh đó
+  for (let o = old, f = fresh; o !== pane; o = o.parentNode, f = f.parentNode){
+    const op = o.parentNode, fp = f.parentNode, kids = [...fp.childNodes], i = kids.indexOf(f);
+    [...op.childNodes].forEach(c => { if (c !== o) c.remove(); });
+    kids.slice(0, i).forEach(c => op.insertBefore(c, o));
+    kids.slice(i + 1).forEach(c => op.appendChild(c));
+    if (op !== pane){
+      [...op.attributes].forEach(a => { if (!fp.hasAttribute(a.name)) op.removeAttribute(a.name); });
+      [...fp.attributes].forEach(a => { if (op.getAttribute(a.name) !== a.value) op.setAttribute(a.name, a.value); });
+    }
+  }
+}
+
 function renderSell(){
   const pane = $('pane-sell'); if (!pane || !S) return;
   sellClean();
@@ -74,9 +101,8 @@ function renderSell(){
   const slots = Array.from({length: SELL_N}, (_, i) => { const e = sellSel[i]; if (!e) return '<div class="iv-cell empty"></div>';
     const it = ITEM[e.k], stack = sellStack(e.k);
     return `<button class="iv-cell ${stack ? '' : 'eq '}r-${it.rarity}" data-ss="${i}" aria-label="${it.name}${stack ? ' ×' + e.n : ''}" data-tip="${itemTip(e.k, stack ? `${fmt(e.n)} món · +${fmt(it.sell * e.n)} linh thạch&#10;Nhấp để lấy ra` : 'Nhấp để lấy ra')}">${itemImg(e.k)}${stack ? `<span class="qty">${short(e.n)}</span>` : `<span class="lv">${itemLv(it)}</span>`}</button>`; }).join('');
-  pane.innerHTML = `<div class="dd fz sl">
-      <header class="dd-top">${lcNav('sell')}<div class="dd-cult"><span>Bỏ tối đa <b>${SELL_N} ô</b> vào quầy rồi bán một lần · vật phẩm bán theo chồng · đồ đang mặc không tính</span></div>
-        <div class="dd-stone" data-tip="Linh thạch hiện có">${itemImg('linh_thach')}<span>Linh thạch</span><b>${fmt(S.inventory.linh_thach || 0)}</b>${hpStoneHtml('dd-hp')}</div></header>
+  sellPaint(pane, `<div class="dd fz sl">
+      <header class="dd-top">${lcNav('sell')}<div class="dd-cult"><span>Bỏ tối đa <b>${SELL_N} ô</b> vào quầy rồi bán một lần · vật phẩm bán theo chồng · đồ đang mặc không tính</span></div></header>
       <section class="dd-main fz-bag" aria-label="Hành trang"><p class="dd-sec">Hành trang · trang bị phẩm thấp → cao, rồi đan dược, vật phẩm khác</p>
         <div class="fz-bar"><span>Bán được ${sellable} ô · đã chọn ${sellSel.length}/${SELL_N}</span>${quickRow()}</div>
         <div class="iv-grid fz-grid">${cells || '<p class="fz-empty">Hành trang trống.</p>'}</div>
@@ -92,7 +118,7 @@ function renderSell(){
           <button class="dd-synth-btn fz-go ${armed ? 'sl-arm' : ''}" data-sz="go" ${sellSel.length && !busy ? '' : 'disabled'}>${SELL_GO}${armed ? 'Bấm lần nữa' : 'Bán'}</button>
         </div>
       </aside>
-    </div>`;
+    </div>`);
 }
 function sellSetQty(k, n){
   const e = sellSel.find(x => x.k === k); if (!e) return;

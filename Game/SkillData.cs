@@ -25,6 +25,7 @@ public record SkillDef(string Id, string Element, string Name, string Category, 
     public double Factor(int lv) => lv <= 0 ? 0 : lv + Lead;
     /// <summary>Cây: basic (đòn thường, không dùng điểm) · active · passive.</summary>
     public string Tree => Category == "Đòn thường" ? "basic" : Category is "Căn cơ" or "Bị động" ? "passive" : "active";
+    public SkillSecondaryDef? SecondaryEffect => SkillSecondaryEffects.For(this);
 }
 
 /// <summary>
@@ -38,10 +39,10 @@ public static class SkillData
         new ElementDef("hoa",  "Hỏa",  "#e0521e", "#f8d25a", true,  "Hỏa Linh Căn",  "Lửa linh khí do tu sĩ khống chế: công mạnh, có thủ, có khống, có thân pháp."),
         new ElementDef("thuy", "Thủy", "#3f8fd8", "#6fe0e0", true,  "Thủy Linh Căn", "Nước nhu mà bền: phòng ngự, hồi phục, nhấn chìm kẻ địch."),
         new ElementDef("moc",  "Mộc",  "#4f9a5a", "#9fe6a8", true, "Mộc Linh Căn",  "Cỏ cây sinh trưởng: trói buộc, chữa thương, trường sinh."),
-        new ElementDef("tho",  "Thổ",  "#b08a4a", "#e6c46a", false, "Thổ Linh Căn",  "Đất đá vững chãi: tường đá, giáp đất, sơn nhạc."),
-        new ElementDef("loi",  "Lôi",  "#a46ae6", "#6fb8ff", false, "Lôi Linh Căn",  "Lôi điện nhanh như chớp: lôi bộ, xích điện, thiên lôi."),
-        new ElementDef("bang", "Băng", "#a8dcf0", "#ffffff", false, "Băng Linh Căn", "Hàn khí đóng băng: băng tiễn, băng thuẫn, tuyệt đối linh độ."),
-        new ElementDef("gio",  "Phong","#8fd0b0", "#e6fff4", false, "Phong Linh Căn","Gió vô hình: thân pháp, phong nhận, cuồng phong."),
+        new ElementDef("tho",  "Thổ",  "#b08a4a", "#e6c46a", true, "Thổ Linh Căn",  "Đất đá vững chãi: tường đá, giáp đất, sơn nhạc."),
+        new ElementDef("loi",  "Lôi",  "#a46ae6", "#6fb8ff", true, "Lôi Linh Căn",  "Lôi điện nhanh như chớp: lôi bộ, xích điện, thiên lôi."),
+        new ElementDef("bang", "Băng", "#a8dcf0", "#ffffff", true, "Băng Linh Căn", "Hàn khí đóng băng: băng tiễn, băng thuẫn, tuyệt đối linh độ."),
+        new ElementDef("gio",  "Phong","#8fd0b0", "#e6fff4", true, "Phong Linh Căn","Gió vô hình: thân pháp, phong nhận, cuồng phong."),
     };
 
     public static readonly IReadOnlyList<SkillDef> Skills = new SkillDef[]
@@ -95,6 +96,11 @@ public static class SkillData
             "Hợp nhất nguyên thần và linh hỏa, bùng nổ kim diễm: 640% công ở cấp 1, thêm 40% mỗi cấp.", "ultimate", DmgBase: 640, DmgPerLv: 40, Code: "FIRE_ULTIMATE_003", AnimId: "FIRE_ULTIMATE_003"),
         new("hoa_dao_hop_nhat", "hoa", "Hỏa Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_hoa:3" },
             "Thân thần hợp nhất trong linh hỏa: công +4%, sát thương chiêu thức +3% và xuyên thấu +1% mỗi cấp.", "passive", AtkPct: 4, SkillPct: 3, Pen: 1, Code: "FIRE_PASSIVE_012"),
+        // ---- Đại Thừa ----
+        new("thai_so_hoa", "hoa", "Thái Sơ Diệt Thế Diễm", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_hoa:3" },
+            "Đạo hỏa thái sơ thiêu rụi một phương thiên địa: 780% công ở cấp 1, thêm 46% mỗi cấp.", "ultimate", DmgBase: 780, DmgPerLv: 46, Code: "FIRE_ULTIMATE_004", AnimId: "FIRE_ULTIMATE_003"),
+        new("hoa_dao_dai_thua", "hoa", "Đại Thừa Hỏa Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "hoa_dao_hop_nhat:3" },
+            "Hỏa đạo viên mãn: công +5%, sát thương chiêu thức +4% và xuyên thấu +1% mỗi cấp.", "passive", AtkPct: 5, SkillPct: 4, Pen: 1, Code: "FIRE_PASSIVE_013"),
 
         // ===== các hệ chưa mở: khung cây để hiển thị (cùng lưới) =====
         // ===== THỦY: Chủ động (4, lưới 3×3) + Bị động (6, lưới 5×3). Đánh thường riêng: Thủy Cầu =====
@@ -146,6 +152,11 @@ public static class SkillData
             "Nguyên thần hợp chân thủy, huyền hải hóa lao bùng nổ: 605% công ở cấp 1, thêm 38% mỗi cấp.", "water_prison", DmgBase: 605, DmgPerLv: 38, Code: "WATER_ULTIMATE_003", AnimId: "WATER_PRISON_001"),
         new("thuy_dao_hop_nhat", "thuy", "Thủy Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_thuy:3" },
             "Thân thần hòa huyền hải: máu +4%, phòng thủ +3% và sát thương chiêu thức +3% mỗi cấp.", "passive", HpPct: 4, DefPct: 3, SkillPct: 3, Code: "WATER_PASSIVE_010"),
+        // ---- Đại Thừa ----
+        new("thai_so_thuy", "thuy", "Thái Sơ Thương Minh", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_thuy:3" },
+            "Biển thái sơ nhấn chìm vạn vật vào thủy lao: 735% công ở cấp 1, thêm 44% mỗi cấp.", "water_prison", DmgBase: 735, DmgPerLv: 44, Code: "WATER_ULTIMATE_004", AnimId: "WATER_PRISON_001"),
+        new("thuy_dao_dai_thua", "thuy", "Đại Thừa Thủy Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "thuy_dao_hop_nhat:3" },
+            "Thủy đạo viên mãn: máu +5%, phòng thủ +4% và sát thương chiêu thức +4% mỗi cấp.", "passive", HpPct: 5, DefPct: 4, SkillPct: 4, Code: "WATER_PASSIVE_011"),
         // ===== MỘC: Thanh Diệp Nhận + 7 chủ động + 11 bị động =====
         new("thanh_diep_nhan", "moc", "Thanh Diệp Nhận", "Đòn thường", 0, 0, 0, 0, 0, Array.Empty<string>(),
             "Lá ngọc hóa nhận bay thẳng vào mục tiêu, gây 115% công.", "wood_leaf", DmgBase: 115, Code: "WOOD_BASIC_001", AnimId: "WOOD_LEAF_001"),
@@ -163,6 +174,8 @@ public static class SkillData
             "Rễ Kiến Mộc xuyên qua khe hư không. Sát thương 465% công, thêm 31% mỗi cấp.", "wood_hu_khong_kien_moc", DmgBase: 465, DmgPerLv: 31, Code: "WOOD_ACTIVE_006", AnimId: "WOOD_HU_KHONG_KIEN_MOC"),
         new("hon_nguyen_moc", "moc", "Hỗn Nguyên Vạn Mộc", "Tuyệt kỹ", 7, 1, 5, 6, 8, new[] { "hu_khong_kien_moc:3" },
             "Vạn mộc hợp thành thần thụ, linh quang bùng phát. Sát thương 575% công, thêm 36% mỗi cấp.", "wood_hon_nguyen_moc", DmgBase: 575, DmgPerLv: 36, Code: "WOOD_ACTIVE_007", AnimId: "WOOD_HON_NGUYEN_MOC"),
+        new("thai_so_moc", "moc", "Thái Sơ Kiến Mộc", "Tuyệt kỹ", 8, 1, 5, 7, 10, new[] { "hon_nguyen_moc:3" },
+            "Kiến Mộc thái sơ chống trời, rễ xuyên cửu u. Sát thương 700% công, thêm 43% mỗi cấp.", "wood_hon_nguyen_moc", DmgBase: 700, DmgPerLv: 43, Code: "WOOD_ACTIVE_008", AnimId: "WOOD_HON_NGUYEN_MOC"),
         new("moc_linh_can", "moc", "Mộc Linh Căn", "Căn cơ", 0, 1, 5, 0, 1, Array.Empty<string>(),
             "Máu và tốc độ tu luyện +2% mỗi cấp.", "root", Code: "WOOD_PASSIVE_000", HpPct: 2, QiPct: 2),
         new("sinh_tuc", "moc", "Sinh Tức", "Bị động", 1, 1, 5, 0, 1, new[] { "moc_linh_can:1" },
@@ -185,27 +198,9 @@ public static class SkillData
             "Sát thương chiêu thức và máu +3% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_009", SkillPct: 3, HpPct: 3),
         new("moc_dao_hop_nhat", "moc", "Mộc Đạo Hợp Nhất", "Bị động", 7, 1, 5, 6, 6, new[] { "thai_hu_moc:3" },
             "Máu +4%, sát thương chiêu thức +3%, phòng thủ +2% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_010", HpPct: 4, SkillPct: 3, DefPct: 2),
-        new("tho_linh_can", "tho", "Thổ Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Thổ.", "root"),
-        new("thach_dan", "tho", "Thạch Đạn", "Công", 2, 1, 5, 0, 1, new[] { "tho_linh_can:1" }, "Đạn đá.", "bolt"),
-        new("tho_tuong", "tho", "Thổ Tường", "Thủ", 2, 3, 5, 0, 1, new[] { "tho_linh_can:1" }, "Tường đất.", "shield"),
-        new("tho_giap", "tho", "Thổ Giáp", "Thủ", 4, 2, 5, 1, 2, new[] { "thach_dan:3", "tho_tuong:3" }, "Giáp đất.", "aura"),
-        new("son_nhac", "tho", "Sơn Nhạc Quyết", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "tho_giap:3" }, "Sức nặng núi non.", "ultimate"),
-        new("loi_linh_can", "loi", "Lôi Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Lôi.", "root"),
-        new("loi_kich", "loi", "Lôi Kích", "Công", 2, 1, 5, 0, 1, new[] { "loi_linh_can:1" }, "Sét đánh.", "bolt"),
-        new("loi_bo", "loi", "Lôi Bộ", "Thân pháp", 2, 3, 5, 0, 1, new[] { "loi_linh_can:1" }, "Bước chân sấm sét.", "dash"),
-        new("lien_loi", "loi", "Liên Hoàn Lôi", "Công", 4, 2, 5, 1, 2, new[] { "loi_kich:3", "loi_bo:3" }, "Xích sét.", "field"),
-        new("thien_loi", "loi", "Thiên Lôi", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "lien_loi:3" }, "Sấm trời.", "ultimate"),
-        new("bang_linh_can", "bang", "Băng Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Băng.", "root"),
-        new("bang_tien", "bang", "Băng Tiễn", "Công", 2, 1, 5, 0, 1, new[] { "bang_linh_can:1" }, "Mũi băng.", "bolt"),
-        new("bang_thuan", "bang", "Băng Thuẫn", "Thủ", 2, 3, 5, 0, 1, new[] { "bang_linh_can:1" }, "Khiên băng.", "shield"),
-        new("dong_dia", "bang", "Đông Địa", "Khống", 4, 2, 5, 1, 2, new[] { "bang_tien:3", "bang_thuan:3" }, "Đất đóng băng.", "field"),
-        new("tuyet_doi", "bang", "Tuyệt Đối Linh Độ", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "dong_dia:3" }, "Hàn khí tuyệt đối.", "ultimate"),
-        new("phong_linh_can", "gio", "Phong Linh Căn", "Căn cơ", 0, 2, 5, 0, 1, Array.Empty<string>(), "Linh căn hệ Phong.", "root"),
-        new("phong_nhan", "gio", "Phong Nhận", "Công", 2, 1, 5, 0, 1, new[] { "phong_linh_can:1" }, "Lưỡi gió.", "bolt"),
-        new("phong_bo", "gio", "Phong Bộ", "Thân pháp", 2, 3, 5, 0, 1, new[] { "phong_linh_can:1" }, "Bước gió.", "dash"),
-        new("cuong_phong", "gio", "Cuồng Phong", "Khống", 4, 2, 5, 1, 2, new[] { "phong_nhan:3", "phong_bo:3" }, "Gió lốc.", "field"),
-        new("thien_phong", "gio", "Thiên Phong Quyết", "Tuyệt kỹ", 6, 2, 3, 2, 5, new[] { "cuong_phong:3" }, "Gió trời.", "ultimate"),
-    };
+        new("moc_dao_dai_thua", "moc", "Đại Thừa Mộc Đạo", "Bị động", 8, 1, 5, 7, 7, new[] { "moc_dao_hop_nhat:3" },
+            "Mộc đạo viên mãn: máu +5%, sát thương chiêu thức +4%, phòng thủ +3% mỗi cấp.", "passive", Code: "WOOD_PASSIVE_011", HpPct: 5, SkillPct: 4, DefPct: 3),
+    }.Concat(ElementSkillData.Skills).ToArray();
 
     public static readonly IReadOnlyDictionary<string, SkillDef> ById = Skills.ToDictionary(s => s.Id);
 
@@ -225,7 +220,7 @@ public static class SkillData
     public const int BurnChance = 30;
     /// <summary>Kỹ năng chủ động hệ Hỏa (có sát thương): mỗi lần tung có ActiveBurnPerLv% × cấp cơ hội gây thiêu đốt (cùng hiệu ứng với bị động).</summary>
     public const int ActiveBurnPerLv = 10;
-    public static int ActiveBurnChance(SkillDef s, int lv) => s.Element == "hoa" && s.Tree == "active" && s.DmgBase > 0 ? ActiveBurnPerLv * Math.Max(0, lv) : 0;
+    public static int ActiveBurnChance(SkillDef s, int lv, string? activeManual = null) => s.SecondaryEffect?.Kind == "burn" ? SkillSecondaryEffects.Chance(s, lv, activeManual) : 0;
     public static bool FitsSlot(SkillDef s, int slot) =>
         slot == BasicSlot ? s.Category == "Đòn thường" : s.Category is "Công" or "Tuyệt kỹ" or "Khống" or "Thủ" or "Thân pháp";
 

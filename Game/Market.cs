@@ -7,7 +7,7 @@ public record MarketListingDto(long Id, string SellerName, string ItemId, int Qt
 public record MarketMineDto(long Id, string Role, string ItemId, int Qty, long Price, long Payout, string Status, string? OtherName,
     DateTime CreatedAt, DateTime ExpiresAt, DateTime? ClosedAt);
 public record MarketDto(bool Enabled, int MinRealm, double TaxPct, int MaxOpen, int MaxDaily, int ListingDays,
-    List<MarketListingDto> Listings, List<MarketMineDto> Mine, string? Blocked, string? Error = null, bool CanSellTickets = false);
+    List<MarketListingDto> Listings, List<MarketMineDto> Mine, string? Blocked, string? Error = null, bool CanSellTickets = false, bool UnlimitedListings = false);
 
 /// <summary>
 /// Chợ giao dịch giữa người chơi trên Supabase (docs/market/supabase.sql), dùng chung cấu hình "Leaderboard".

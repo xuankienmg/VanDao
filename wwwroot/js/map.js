@@ -94,7 +94,7 @@ function renderMapInfo(){
   const cell = (k, chance, qty, name) => ITEM[k] ? `<div class="mpx-rw" data-tip="${itemTip(k)}"><span class="dd-fr r-${ITEM[k].rarity || 'common'}">${itemImg(k)}${qty ? `<b>${qty}</b>` : ''}</span><small>${name || ITEM[k].name}</small><em>${pct(chance)}</em></div>` : '';
   let rewards;
   const bw = boss && a.waves?.[0];
-  if (boss) rewards = (bw?.stoneMax ? cell('linh_thach', 1, bw.stoneMin === bw.stoneMax ? bw.stoneMin : `${bw.stoneMin}-${bw.stoneMax}`) : '') + (m.bossItem ? cell(m.bossItem, 1) : '') + cell(m.bossChest || 'ruong_boss', 1, [1, 2, 3][dif2] > 1 ? [1, 2, 3][dif2] : '') + `<div class="mpx-rw"><span class="dd-fr qi">☯</span><small>Tu vi ×5</small><em>100%</em></div>`;
+  if (boss) rewards = (bw?.stoneMax ? cell('linh_thach', 1, bw.stoneMin === bw.stoneMax ? bw.stoneMin : `${bw.stoneMin}-${bw.stoneMax}`) : '') + (m.bossItem ? cell(m.bossItem, 1) : '') + cell(m.bossChest || chestOf('ruong_boss', dif2), 1, [1, 2, 3][dif2] > 1 ? [1, 2, 3][dif2] : '') + `<div class="mpx-rw"><span class="dd-fr qi">☯</span><small>Tu vi ×5</small><em>100%</em></div>`;
   else {
     const k = a.index, drops = a.drops || m.drops || [], gear = drops.filter(x => x.gear);
     rewards = drops.filter(x => !x.gear && k >= (x.minArea || 1)).map(x => {
@@ -107,8 +107,8 @@ function renderMapInfo(){
     }
     if(!a.drops){
       rewards += cell(m.keyItem, m.keyChanceMin);
-      if (m.chestChance) rewards += cell('ruong_thuong', m.chestChance);
-      if (m.rareChestChance && k >= m.rareChestMinArea) rewards += cell('ruong_hiem', Math.min(1, (a.elite ? .2 : m.rareChestChance) * [1, 1.5, 2][dif2]));
+      if (m.chestChance) rewards += cell(chestOf('ruong_thuong', dif2), m.chestChance);
+      if (m.rareChestChance && k >= m.rareChestMinArea) rewards += cell(chestOf('ruong_hiem', dif2), Math.min(1, (a.elite ? .2 : m.rareChestChance) * [1, 1.5, 2][dif2]));
     }
   }
   if(boss)rewards+=(a.drops||[]).map(x=>cell(x.item,x.chance,x.min===x.max?x.min:`${x.min}-${x.max}`)).join('');

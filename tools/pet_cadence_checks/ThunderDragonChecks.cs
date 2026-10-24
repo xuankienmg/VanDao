@@ -26,7 +26,7 @@ internal static class ThunderDragonChecks
             foreach(var roll in new[]{0,.499999,.5,.999999}){
                 var c=new PetCombat(def,form,new CombatStats(1000,10000,20),stars,new FixedRandom(roll),true,new CombatStats(500,5000,10));int hp=8000;
                 var cast=c.Cast(2,ref hp,100000,100000,0,1);
-                // Lực tuyệt kỹ = Công linh thú + Công chủ nhân × Đồng tâm; hệ số = 50% × 3 lượt × hình thái × (1 − 20% tê liệt); sao không nhân hệ số
+                // Linh Uy = Công linh thú + Công chủ nhân × Đồng tâm; hệ số = 50% × 3 lượt × hình thái × (1 − 20% tê liệt); sao không nhân hệ số
                 var power=500+1000*PetData.SkillBond[form];var coef=50*3*PetData.SkillFormK[form]*.8;
                 Check(Math.Abs(PetData.SkillCoef(def.Skill,form)-coef)<1e-9,"Thunder coefficient from budget");
                 Check(cast.Dmg==(int)Math.Round(power*coef/100),"Thunder damage from skill power, stars only via pet stats");

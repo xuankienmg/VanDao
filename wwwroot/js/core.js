@@ -6,6 +6,8 @@
 const KEY = 'van-dao-player-id';
 const Q = new URLSearchParams(location.search);
 const MODE = Q.get('mode') || 'full';          // full | strip | panel
+/** Tab đang ẩn (hoặc dải taskbar, không có bảng): khỏi vẽ, đỡ giật. Không đọc layout nên rẻ, gọi mỗi khung được. */
+const paneOff = id => MODE === 'strip' || !!document.getElementById('pane-' + id)?.hidden;
 document.documentElement.classList.add(MODE);
 document.body.classList.add(MODE);
 if (Q.get('opaque') === '1') document.body.classList.add('opaque');
@@ -24,13 +26,21 @@ async function api(method, url){
 }
 const realm = () => DATA.realms[S.realm];
 /** Trang phục đang mặc (S.skin, rỗng = theo cảnh giới) → bộ ảnh nhân vật: 'hero' (sprite chiến đấu) · 'heroStand' · 'heroMed' (ngồi thiền) · 'heroCast' (tung chiêu). */
-const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && S.realm >= x.minRealm)) || null;
+/** Trang phục cần rương trang phục (unlockItem) chỉ dùng được khi đã mở rương đó (S.skinsUnlocked). */
+const skinOpen = s => !s.unlockItem || (S?.skinsUnlocked || []).includes(s.id);
+// trang phục mở bằng rương: mặc ngay, không cần cảnh giới (khớp GameService.SkinWearable)
+const skinWearable = s => skinOpen(s) && (!!s.unlockItem || S.realm >= s.minRealm);
+const skinGender = () => S?.gender || (DATA.skins?.find(x => x.id === S?.skin)?.gender) || 'male';
+const autoSkin = () => skinGender() === 'female' ? (DATA.skins || []).filter(s => s.gender === 'female' && s.minRealm <= S.realm && skinWearable(s)).sort((a,b) => b.minRealm - a.minRealm)[0] || null : null;
+const curSkin = () => (S && S.skin && DATA.skins?.find(x => x.id === S.skin && skinWearable(x))) || (S ? autoSkin() : null);
 const skinArt = k => curSkin()?.[k] || realm()[k];
 /** Chương có Boss rơi nguyên liệu đột phá item: " (chương N)" để ghi kèm tên Boss. */
-const bossChapterTag = item => { const c = (DATA.chapters || []).find(x => x.bossItem === item); return c ? ` · chương ${c.index + 1}` : ''; };
+const bossChapterFor = item => (DATA.chapters || []).find(x => x.bossItem === item || x.hardBossItem === item || x.nightmareBossItem === item);
+const bossDifficultyFor = item => { const c = bossChapterFor(item); return c?.nightmareBossItem === item ? 2 : c?.hardBossItem === item ? 1 : 0; };
+const bossChapterTag = item => { const c = bossChapterFor(item), d = bossDifficultyFor(item); return c ? ` · chương ${c.index + 1}${d ? d === 2 ? ' · Ác Mộng' : ' · Khó' : ''}` : ''; };
 /** Dòng gợi ý sau khi lên đại cảnh giới ri: Boss giữ nguyên liệu cho lần đột phá kế. */
-const bossChapterHint = ri => { const r = DATA.realms[ri], c = r && (DATA.chapters || []).find(x => x.bossItem === r.bossItem);
-  return c ? `Đột phá kế cần ${ITEM[r.bossItem].name}: Boss ${c.boss} · chương ${c.index + 1}` : ''; };
+const bossChapterHint = ri => { const r = DATA.realms[ri], c = r && bossChapterFor(r.bossItem);
+  return c ? `Đột phá kế cần ${ITEM[r.bossItem].name}: Boss ${c.boss}${bossChapterTag(r.bossItem)}` : ''; };
 // Tu vi dự đoán phía client giữa hai lần đồng bộ; server mới là nguồn chính xác
 const qiNow = () => Math.min(S.qiReq, S.qi + S.rate * (performance.now() - recvAt) / 1000);
 const exploreLeft = () => Math.max(0, S.exploreReadyInMs - (performance.now() - recvAt));
@@ -39,8 +49,11 @@ const fmt = n => Math.floor(n).toLocaleString('vi-VN');
 const $ = id => document.getElementById(id);
 
 let lastPull = 0;
-/** Các loại rương, quý → thường (thứ tự hiện trong thông báo nhận rương). */
-const CHEST_IDS = ['ruong_boss', 'ruong_hiem', 'ruong_thuong'];
+/** Hậu tố id rương theo mức độ khó của map (Thường · Khó · Ác mộng), khớp GameData.DiffChestSuffix. */
+const DIFF_CHEST = ['', '_kho', '_ac_mong'];
+const chestOf = (k, dif) => k + (DIFF_CHEST[dif || 0] || '');
+/** Các loại rương, quý → thường, mỗi loại mức cao trước (thứ tự hiện trong thông báo nhận rương). */
+const CHEST_IDS = ['ruong_boss', 'ruong_hiem', 'ruong_thuong'].flatMap(k => [2, 1, 0].map(d => chestOf(k, d)));
 let lastLogKey = '';
 function setState(st){
   const prevKey = lastLogKey, prev = S;

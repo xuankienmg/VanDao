@@ -43,6 +43,19 @@ public sealed class VersionService(LeaderboardOptions opt, ILogger<VersionServic
         return h;
     }
 
+    // giờ máy chủ Supabase (header Date của lần kiểm tra gần nhất) + thời gian máy đã chạy từ đó: không phụ thuộc đồng hồ máy người chơi
+    private DateTimeOffset _serverDate; private long _serverTick = -1;
+    /// <summary>Giờ máy chủ hiện tại; null khi chưa kết nối được hoặc lần kết nối gần nhất đã quá 20 phút (coi như offline).</summary>
+    public DateTimeOffset? ServerNow
+    {
+        get
+        {
+            if (_serverTick < 0) return null;
+            var elapsed = Environment.TickCount64 - _serverTick;
+            return elapsed is < 0 or > 20 * 60 * 1000 ? null : _serverDate + TimeSpan.FromMilliseconds(elapsed);
+        }
+    }
+
     private bool Fresh => _last is not null && DateTime.UtcNow - _at < (_last.Status == "unknown" ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(15));
 
     /// <summary>Kết quả gần nhất, không chờ mạng (hết hạn thì làm mới chạy nền). Chưa kiểm tra lần nào thì chờ lần đầu.</summary>
@@ -73,7 +86,10 @@ public sealed class VersionService(LeaderboardOptions opt, ILogger<VersionServic
         if (!opt.Enabled) return new VersionDto(cur, null, null, "", "", "unknown", false);
         try
         {
-            var r = (await _http.GetFromJsonAsync<List<Row>>("app_config?select=min_version,latest_version,download_url,message&id=eq.1", Json))?.FirstOrDefault();
+            using var res = await _http.GetAsync("app_config?select=min_version,latest_version,download_url,message&id=eq.1");
+            res.EnsureSuccessStatusCode();
+            if (res.Headers.Date is { } date) { _serverDate = date; _serverTick = Environment.TickCount64; }
+            var r = (await res.Content.ReadFromJsonAsync<List<Row>>(Json))?.FirstOrDefault();
             if (r is null) return new VersionDto(cur, null, null, "", "", "unknown", false);
             var v = AppVersion.Parse(cur);
             var status = v < AppVersion.Parse(r.MinVersion) ? "required" : v < AppVersion.Parse(r.LatestVersion) ? "update" : "ok";

@@ -33,6 +33,7 @@ function hcFlash(img){                                          // bóng sáng c
   hcFlashCache.set(img, c); return c;
 }
 let skEl = 'hoa', skSel = 'liet_diem', skFade = 0, skPick = null, skAnimT0 = 0;
+let skScrollEl = '';   // hệ của lần vẽ cây trước: cùng hệ thì giữ vị trí cuộn
 // Chiến đấu: ô 0 = ĐÒN THƯỜNG (Hỏa Cầu / Thủy Cầu, luôn sẵn có, không dùng điểm) · ô 1 = KỸ NĂNG chủ động (tung khi đầy nộ)
 // Nộ: mỗi đòn đánh thường +RAGE_HIT, đủ RAGE_MAX thì tung kỹ năng ở ô 1 (khớp SkillData.RagePerHit / RageMax ở server)
 const RAGE_HIT = 25, RAGE_MAX = 100, RAGE_HITS = Math.ceil(RAGE_MAX / RAGE_HIT);
@@ -46,7 +47,11 @@ const skActive = () => S?.activeManual || skById(skBasicId())?.element || 'hoa';
 const skRate = el => el === skActive() ? 1 : SK_INACTIVE;
 // Chiêu chủ động hệ Hỏa: mỗi lần tung có 10% × cấp cơ hội thiêu đốt (khớp SkillData.ActiveBurnPerLv)
 const SK_BURN_PER_LV = 10;
-const skBurnChance = (s, lv) => s.element === 'hoa' && skTree(s) === 'active' && s.dmgBase > 0 ? SK_BURN_PER_LV * Math.max(0, lv) : 0;
+const skBurnChance = (s, lv) => s.element === skActive() && s.element === 'hoa' && skTree(s) === 'active' && s.dmgBase > 0 ? SK_BURN_PER_LV * Math.max(0, lv) : 0;
+function skSecondaryChance(skill, level, activeManual = skActive()){
+  if (skill.secondaryEffect?.target === 'monster' && skill.element !== activeManual) return 0;
+  return skill.secondaryEffect ? skill.secondaryEffect.chancePerLv * Math.max(0,Math.min(skill.maxLv,level)) : 0;
+}
 /** Ô chiến đấu (dùng chung cho Công pháp và Hành trang). */
 function skSlotsHtml(cls = ''){
   return SLOT_IDX.map(i => {
@@ -65,7 +70,11 @@ const skLv = id => S.skills[id] || 0;
 const skCost = (s, lv) => lv === 0 ? s.cost : 1 + Math.floor(lv / 2);
 const elOf = id => { const e=DATA.elements.find(e=>e.id===id); return e ? {...e,open:!!S?.unlockedElements?.includes(id)} : undefined; };
 // Tranh cùng hệ được phân biệt bằng bảng màu riêng ở mọi ô và phần xem trước.
-const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', hon_nguyen_hoa:'hoa_long', hoa_dao_hop_nhat:'hoa_linh_can', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y', hon_nguyen_thuy:'thuy_lao', thuy_dao_hop_nhat:'thuy_linh_can'};
+const SK_ART = {than_hoa:'phan_thien', hoa_than_phap:'phuong_hoang', hu_khong_hoa:'xich_diem_thien', thai_hu_hoa:'hoa_linh_chan_y', hon_nguyen_hoa:'hoa_long', hoa_dao_hop_nhat:'hoa_linh_can', thien_ha:'thuong_hai', thuy_than_phap:'huyen_minh', hu_hai:'thuy_lao', thai_hu_thuy:'thuy_linh_chan_y', hon_nguyen_thuy:'thuy_lao', thuy_dao_hop_nhat:'thuy_linh_can',
+  // Đại Thừa: tạm dùng icon chiêu bậc dưới, đổi màu ở SK_ICON_FILTER
+  thai_so_hoa:'xich_diem_thien', hoa_dao_dai_thua:'hoa_linh_chan_y', thai_so_thuy:'thuong_hai', thuy_dao_dai_thua:'thuy_linh_chan_y', thai_so_moc:'hon_nguyen_moc', moc_dao_dai_thua:'moc_dao_hop_nhat',
+  thai_so_tho:'hon_nguyen_tho', tho_dao_dai_thua:'tho_dao_hop_nhat', thai_so_loi:'hon_nguyen_loi', loi_dao_dai_thua:'loi_dao_hop_nhat',
+  thai_so_bang:'hon_nguyen_bang', bang_dao_dai_thua:'bang_dao_hop_nhat', thai_so_phong:'hon_nguyen_phong', phong_dao_dai_thua:'phong_dao_hop_nhat'};
 const SK_ICON_FILTER = {
   than_hoa:'hue-rotate(-30deg) saturate(1.5)',
   hoa_than_phap:'hue-rotate(35deg) saturate(1.3)',
@@ -74,10 +83,15 @@ const SK_ICON_FILTER = {
   hon_nguyen_hoa:'hue-rotate(25deg) saturate(.75) brightness(1.25)',
   hoa_dao_hop_nhat:'hue-rotate(40deg) saturate(.7) brightness(1.3)',
   hon_nguyen_thuy:'hue-rotate(35deg) saturate(1.3) brightness(1.15)',
-  thuy_dao_hop_nhat:'hue-rotate(25deg) brightness(1.2)'
+  thuy_dao_hop_nhat:'hue-rotate(25deg) brightness(1.2)',
+  thai_so_hoa:'hue-rotate(20deg) saturate(1.4) brightness(1.2)', hoa_dao_dai_thua:'hue-rotate(30deg) saturate(.8) brightness(1.3)',
+  thai_so_thuy:'hue-rotate(-30deg) saturate(1.4) brightness(1.15)', thuy_dao_dai_thua:'hue-rotate(-20deg) brightness(1.25)',
+  thai_so_moc:'hue-rotate(30deg) saturate(1.3) brightness(1.15)', moc_dao_dai_thua:'hue-rotate(35deg) brightness(1.2)',
+  thai_so_tho:'hue-rotate(-15deg) saturate(1.4) brightness(1.15)', tho_dao_dai_thua:'hue-rotate(-15deg) brightness(1.2)', thai_so_loi:'hue-rotate(25deg) saturate(1.3) brightness(1.2)', loi_dao_dai_thua:'hue-rotate(25deg) brightness(1.2)',
+  thai_so_bang:'hue-rotate(-20deg) saturate(1.3) brightness(1.15)', bang_dao_dai_thua:'hue-rotate(-20deg) brightness(1.2)', thai_so_phong:'hue-rotate(25deg) saturate(1.3) brightness(1.15)', phong_dao_dai_thua:'hue-rotate(25deg) brightness(1.2)'
 };
 const skIconStyle = s => SK_ICON_FILTER[s.id] || 'none';
-const skIcon = s => ['tho','loi','bang','gio'].includes(s.element) ? `img/el_${s.element}.png` : `img/sk_${SK_ART[s.id] || s.id}.png`;
+const skIcon = s => `img/sk_${SK_ART[s.id] || s.id}.png`;
 const skFactor = (s, lv) => lv > 0 ? lv + (s.lead || 0) : 0;
 const realmName = i => DATA.realms[i]?.name || DATA.lockedRealms?.[i - DATA.realms.length] || '?';
 
@@ -236,7 +250,7 @@ function skPassive(s, lv){
   const fire = s.element === 'hoa';
   const P = [['atkPct','Tấn công'],['defPct', fire ? 'Phòng thủ (kháng Hỏa)' : 'Phòng thủ'],['hpPct','Máu'],['crit', fire ? 'Chí mạng Hỏa' : 'Chí mạng'],['speed','Thân pháp'],['qiPct','Tốc độ tu luyện'],['monAtkDown','Công của địch −'],['skillPct', fire ? 'Sát thương Hỏa' : 'Sát thương chiêu thức'],['pen', fire ? 'Xuyên thấu Hỏa' : 'Xuyên thấu']];
   const r = skRate(s.element);                                    // hệ không kích hoạt: bị động chỉ còn 50%
-  return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv) * r, s[k] * skFactor(s, Math.min(s.maxLv, lv + 1)) * r]);
+  return P.filter(([k]) => s[k]).map(([k, n]) => [n, s[k] * skFactor(s, lv) * (k === 'monAtkDown' && s.element !== skActive() ? 0 : r), s[k] * skFactor(s, Math.min(s.maxLv, lv + 1)) * (k === 'monAtkDown' && s.element !== skActive() ? 0 : r)]);
 }
 
 function renderSkill(){
@@ -247,6 +261,10 @@ function renderSkill(){
     if (S.skillSlots?.[1]) fireFxAvailable(S.skillSlots[1],S.realm);
   }
   const el = elOf(skEl) || elOf(DATA.elements[0].id), list = skOfEl(el.id);
+  // giữ vị trí cuộn của cây khi vẽ lại (đồng bộ, nâng cấp…); đổi sang hệ khác thì về đầu cây
+  const SCROLLERS = '.sk-path-scroll', host = pane.closest('aside.book'), hostTop = host?.scrollTop;
+  const keep = skScrollEl === el.id ? [pane.scrollTop, [...pane.querySelectorAll(SCROLLERS)].map(x => [x.scrollTop, x.scrollLeft])] : null;
+  skScrollEl = el.id;
   if (!skById(skSel) || skById(skSel).element !== el.id) skSel = (list.find(s => skTree(s) === 'active') || list[0]).id;
   // đòn thường dùng chung mọi hệ (Hỏa Cầu): hệ chưa có đòn thường riêng thì hiện đòn thường chung
   const act = S.skillSlots?.[1] && skById(S.skillSlots[1]);
@@ -269,6 +287,8 @@ function renderSkill(){
   root.classList.add('sk-realms');
   const learnable = list.filter(s => skTree(s) !== 'basic' && skState(s).st === 'avail').length;
   root.insertAdjacentHTML('beforeend', `<section class="sk-path-section"><header class="sk-path-heading"><h3>Đạo lộ ${el.name}</h3><span>${el.open ? `${isRun ? 'Đang kích hoạt' : `Hệ phụ · bị động còn ${SK_INACTIVE * 100}%`} · ${learnable} có thể nâng · Rê chuột xem chi tiết · Nhấp đúp để trang bị` : 'Dùng bí kíp trong hành trang để mở cây kỹ năng'}</span></header><div class="sk-path-scroll" aria-label="Cây công pháp theo cảnh giới">${skRealmTree(el)}</div></section>`);
+  if (host) host.scrollTop = hostTop;
+  if (keep){ pane.scrollTop = keep[0]; pane.querySelectorAll(SCROLLERS).forEach((x, i) => { const k = keep[1][i]; if (k){ x.scrollTop = k[0]; x.scrollLeft = k[1]; } }); }
   skFade = 0;
   liveSkill();
 }
@@ -339,10 +359,11 @@ function skTipHtml(s){
         ${isBasic && s.crit ? `<dt>Chí mạng</dt><dd>+${s.crit}%</dd>` : ''}
       </dl>
       <p class="sk-eff">“${s.effect}”</p>
+      ${s.element !== skActive() && (s.burnPct > 0 || s.monAtkDown > 0) ? '<p class="sk-act">Hiệu ứng xấu bị động đã vô hiệu: cần kích hoạt công pháp cùng hệ.</p>' : ''}
       ${s.id === 'hoa_cau' ? `<p class="sk-note">Biến thể theo cảnh giới: <b>${HC_TIER_NAME[Math.min(2, S.realm)]}</b></p>` : ''}
       ${pass.length ? `<p class="sk-sec">Hiệu quả bị động${skRate(s.element) < 1 ? ` <i class="sk-half">(×${SK_INACTIVE * 100}% · hệ không kích hoạt)</i>` : ''}</p><ul class="sk-pass">${pass.map(([n, v, nx]) => `<li>${n} <b>+${pct1(v)}</b>${!st.max ? `<i>→ +${pct1(nx)}</i>` : ''}</li>`).join('')}</ul>` : ''}
       ${!isBasic && lv > 0 && tree === 'active' ? `<p class="sk-act">Trong trận: mỗi lần thi triển ${dmg(lv)}% tấn công${!st.max && dmg(next) !== dmg(lv) ? ` (Lv. ${next}: ${dmg(next)}%)` : ''}.</p>` : ''}
-      ${skBurnChance(s, Math.max(1, lv)) ? `<p class="sk-act">Thiêu đốt: <b class="sk-burn">${skBurnChance(s, Math.max(1, lv))}%</b></p>` : ''}
+      ${s.secondaryEffect ? `<p class="sk-act">Hiệu ứng phụ: <b style="color:${el.color}">${skSecondaryChance(s,Math.max(1,lv))}% ${s.secondaryEffect.name}</b>${!st.max && lv>0 ? ` → ${skSecondaryChance(s,next)}% ở Lv. ${next}` : ''}. ${s.secondaryEffect.description}${s.secondaryEffect.target === 'monster' && s.element !== skActive() ? ' <b>Đã vô hiệu: cần kích hoạt công pháp cùng hệ.</b>' : ''}</p>` : ''}
       ${!isBasic && !st.max ? `<p class="sk-sec">${lv ? `Nâng cấp Lv. ${lv} → ${next}` : 'Yêu cầu lĩnh ngộ'}</p>
         <ul class="sk-reqs">${st.reqs.map(r => `<li class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓' : '✗'} ${r.t}</li>`).join('')}</ul>` : ''}
       ${isBasic ? `<p class="sk-note">${skBasicId() === s.id ? 'Đang dùng làm đòn đánh thường.' : `Kích hoạt công pháp hệ ${el.name} để dùng làm đòn đánh thường.`}</p>` : ''}

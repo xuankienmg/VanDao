@@ -21,6 +21,9 @@ public class Player
 
     /// <summary>Trang phục đang mặc (GameData.Skins); rỗng = tự đổi theo cảnh giới.</summary>
     public string Skin { get; set; } = "";
+    public string Gender { get; set; } = "male";
+    /// <summary>Trang phục đã mở khóa bằng rương trang phục (SkinDef.UnlockItem), cách nhau dấu phẩy.</summary>
+    public string SkinsUnlocked { get; set; } = "";
 
     /// <summary>Luôn true: nhân vật luôn tự đi thám hiểm. Giữ cột để tương thích DB cũ.</summary>
     public bool AutoExplore { get; set; } = true;
@@ -79,6 +82,10 @@ public class Player
 
     // ---- Bảng xếp hạng online ----
     /// <summary>Khóa bí mật ngẫu nhiên của nhân vật trên bảng xếp hạng (server chỉ giữ SHA-256). Giữ nguyên khi tu lại từ đầu.</summary>
+    /// <summary>Sự kiện quay tích lũy: khóa đợt (yyyy-MM-dd:gear|pet), điểm, các mốc đã nhận (chỉ số, phẩy).</summary>
+    public string EventKey { get; set; } = "";
+    public int EventPoints { get; set; }
+    public string EventClaimed { get; set; } = "";
     public string LbSecret { get; set; } = "";
     /// <summary>Đã từng dùng admin mode → không được lên bảng xếp hạng cho tới khi tu lại từ đầu (không bật cờ admin).</summary>
     public bool Tainted { get; set; }
@@ -196,5 +203,11 @@ public class Pet
     public int AptHp { get; set; } = 100;
     public int Slot { get; set; }
     public int FoodSpent { get; set; }
+    /// <summary>Thức tỉnh huyết mạch (0–3) sau 5★: mỗi cấp +10% chỉ số.</summary>
+    public int Awaken { get; set; }
+    /// <summary>Trang bị linh thú đang mặc (id vật phẩm, rỗng = trống): Hạng Khuyên · Linh Giáp · Hộ Mệnh Phù.</summary>
+    public string GearCollar { get; set; } = "";
+    public string GearArmor { get; set; } = "";
+    public string GearCharm { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

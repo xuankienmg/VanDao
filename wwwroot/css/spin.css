@@ -91,3 +91,34 @@ body.panel .sp-stage{width:min(100%,280px)}
 .sp-pet .sp-hub{border-color:#8a5fc8}
 .sp-pet .sp-hub:hover:not(:disabled){border-color:#c9a2ff}
 .sp-pet .sp-ic img{width:32px;height:32px}
+
+/* Sự kiện quay tích lũy Thiên Cơ */
+.sp-event{border:1px solid #8a6a2c;background:linear-gradient(#1d160c,#120d08);padding:7px 8px;border-radius:4px}
+.sp-event:empty{display:none}
+.sp-event .sp-note{margin:2px 0}
+.sp-ev-warn{margin:4px 0;font-size:11px;color:#efac93}
+.sp-ev-go{font:inherit;font-size:11px;padding:1px 6px;margin-left:4px;border:1px solid var(--bz2);background:#221a12;color:var(--parch);border-radius:3px;cursor:pointer}
+.sp-ev-bar{position:relative;height:16px;margin:6px 0 2px;background:#0b0806;border:1px solid #5c4720;border-radius:3px;overflow:hidden}
+.sp-ev-bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#8a5a1c,#f2c94c)}
+.sp-ev-bar span{position:relative;display:block;text-align:center;font-size:10.5px;line-height:14px;color:#fff6dc;text-shadow:0 1px 2px #000}
+.sp-ev-list{list-style:none;margin:4px 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:230px;overflow:auto}
+.sp-ev-list li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:5px;padding:2px 4px;border:1px solid #2e251b;font-size:11px}
+.sp-ev-list li>b{color:var(--parch);font-variant-numeric:tabular-nums;text-align:right}
+.sp-ev-list li.ready{border-color:#f2c94c;background:#2a2112}
+.sp-ev-list li.done{opacity:.55}
+.sp-ev-list li>i{font-style:normal;color:#8d8170;font-size:10.5px}
+.sp-ev-list li button{font:inherit;font-size:11px;padding:2px 8px;border:1px solid #c9a04e;background:#6b4c1c;color:#fff1ca;border-radius:3px;cursor:pointer}
+.sp-ev-list li button:disabled{opacity:.45;cursor:default}
+.sp-ev-rw{display:flex;flex-wrap:wrap;gap:3px}
+.sp-ev-rw>span{position:relative;display:inline-flex}
+.sp-ev-rw img,.sp-ev-rw .ic{width:22px;height:22px}
+.sp-ev-rw em{position:absolute;right:-2px;bottom:-3px;font-style:normal;font-size:9px;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}
+
+/* có sự kiện: bảng tỉ lệ thu thành tooltip (rê chuột vào tiêu đề) */
+.sp-odds-tip ol{display:none}
+.sp-odds-tip .dd-sec{cursor:help;display:inline-flex;align-items:center;gap:4px}
+.sp-odds-i{font-style:normal;color:var(--gold);font-size:12px}
+
+/* thông báo nhận quà sự kiện */
+.craft-toast .sp-ev-got{gap:3px 10px;max-width:420px;font-size:12px}
+.craft-toast .sp-ev-got span{display:inline-flex;align-items:center;gap:3px}

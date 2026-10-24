@@ -39,7 +39,8 @@ public record MapDto(int Area, int AreaMax, string KeyItem, string BossItem, str
 // Realm = chương đang đánh (0-based, tên giữ cho tương thích client: nhãn ải "C-x")
 
 /// <summary>Thông tin tĩnh một chương cho thanh chọn chương.</summary>
-public record ChapterInfoDto(int Index, string Name, string Realm, bool Enabled, string Boss, string BossImage, string BossLair, string KeyItem, string? BossItem);
+public record ChapterInfoDto(int Index, string Name, string Realm, bool Enabled, string Boss, string BossImage, string BossLair, string KeyItem, string? BossItem,
+    string? HardBossItem = null, string? NightmareBossItem = null);
 
 /// <summary>Bảng rơi của bản đồ (tỉ lệ gốc ở ải 1; client tự nhân theo ải giống server).</summary>
 public record DropInfoDto(string Item, int Min, int Max, double Chance, bool Gear, int MinArea = 1);
@@ -108,7 +109,12 @@ public record StateDto(
     string SpinHistory = "",
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
-    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null, string? ActiveManual = null);   // Bonus và nguồn chỉ số được tính lại từ server, không lưu vào save.
+    EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null, string? ActiveManual = null,
+    string[]? SkinsUnlocked = null, string Gender = "male", SpinEventDto? Event = null);
+/// <summary>Sự kiện quay tích lũy Thiên Cơ (track: gear · pet). Online = có giờ máy chủ, mới cộng điểm và nhận quà được.</summary>
+public record SpinEventDto(bool Active, bool Online, string Key, string Track, string Name, long StartsAt, long EndsAt, int Points,
+    List<SpinEventMilestoneDto> Milestones, string? Blocked, string NextTrack, long NextStartsAt);
+public record SpinEventMilestoneDto(int Points, List<ItemQtyDto> Rewards, bool Claimed, bool Ready);   // Trang phục và giới tính chỉ đổi ngoại hình.
 
 public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 
@@ -149,7 +155,8 @@ public record BattleDto(string Monster, string Image, int MonsterHp, int Monster
     bool[]? Dodged = null, double DodgeChance = 0,
     int[]? HeroHpBefore = null, int[]? GuardBefore = null, int[]? BurnDamage = null, DivineBattleDto? Divine = null, PetBattleDto? Pet = null,
     string[]? MonControl = null,           // loại khống chặn lượt phản công: "paralyze" · "stun" · "freeze" · "" (mảng theo lượt)
-    bool[]? Shatter = null);               // lượt quái đóng băng từ lượt trước nhận thêm sát thương
+    bool[]? Shatter = null,                // lượt quái đóng băng từ lượt trước nhận thêm sát thương
+    bool[]? Weakened = null, bool[]? WindGuard = null, int[]? CounterDamage = null); // trạng thái và sức phản công theo lượt
 
 public record DivineTurnDto(bool Nullified, bool Saved, bool Boosted, bool Charged);
 public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineTurnDto[] Turns);
@@ -159,7 +166,7 @@ public record DivineBattleDto(int Tier, string Name, double ExtraChance, DivineT
 public record WaveDto(string Name, string Image, string Tier, int Hp, int Atk, int Def, int HeroDmg, int MonsterDmg, int Start, int Stones = 0);
 
 /// <summary>Kỹ năng tự thi triển ở lượt Turn (0-based) của hoạt ảnh trận.</summary>
-public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg, bool Critical = false);
+public record CastDto(int Turn, string Skill, string Name, string Anim, int Dmg, bool Critical = false, string Secondary = "");
 
 /// <summary>Kết quả một lần luyện chế/hợp thành: thành phẩm và nguyên liệu đã tiêu hao (dùng chung cho mọi công thức).</summary>
 public record ItemQtyDto(string Item, int Qty);
@@ -171,11 +178,19 @@ public record CreatePlayerRequest(string? Name);
 
 public class GameException(string message) : Exception(message);
 
-public record PetState(List<PetDto> Owned, List<HatchDto> Hatch, int Capacity, int LevelCap, int GuardSlots, int HatchSlots, int[]? StarCost = null, PetStarRecipe[]? StarRecipes = null);
+public record PetState(List<PetDto> Owned, List<HatchDto> Hatch, int Capacity, int LevelCap, int GuardSlots, int HatchSlots, int[]? StarCost = null, PetStarRecipe[]? StarRecipes = null, PetTrainingRules? Training = null);
 public record PetDto(Guid Id, string DefId, string Name, string Element, string Rarity, int Level, int Exp, int ExpNeed,
     int Form, string FormName, int Slot, int Atk, int Def, int Hp, int AptAtk, int AptDef, int AptHp,
     int ShareAtk, int ShareDef, int ShareHp, string TalentText, string SkillText, int SkillEvery,
-    CostDto[] EvolveCost, bool CanEvolve, string Image, int AppearanceForm = -1, string EvolveHint = "", int Stars = 0, int ReleaseValue = 0, int StarPts = 0, string NextStarSkillText = "", string NextStarTalentText = "", PetMiracleDef? Miracle = null);
+    CostDto[] EvolveCost, bool CanEvolve, string Image, int AppearanceForm = -1, string EvolveHint = "", int Stars = 0, int ReleaseValue = 0, int StarPts = 0, string NextStarSkillText = "", string NextStarTalentText = "", PetMiracleDef? Miracle = null, PetTrainingDto? Training = null);
+/// <summary>Bồi dưỡng của một con: khoảng tư chất, thức tỉnh, trang bị đang mặc, cộng hưởng ngũ hành.</summary>
+public record PetTrainingDto(int AptMin, int AptMax, int RerollStones, int Awaken, string AwakenName, CostDto[] AwakenCost, int AwakenDonorStars, bool AwakenGate, string AwakenHint,
+    Dictionary<string, string> Gear, Dictionary<string, double> GearPct, double Resonance, string ResonanceKind, string ManualElement);
+public record PetGearSlotDto(string Id, string Name, string Stat, string StatName);
+public record PetGearInfoDto(string Id, string Slot, int Tier, double Pct);
+/// <summary>Luật bồi dưỡng linh thú (hằng số), gửi kèm trạng thái để giao diện không tự đoán.</summary>
+public record PetTrainingRules(PetGearSlotDto[] Slots, string[] TierNames, PetGearInfoDto[] Gear, int FuseCount, int[] FuseStones, int MaxLocks,
+    int MaxAwaken, double AwakenBonus, double ResonanceSame, double ResonanceSupport, Dictionary<string, string>? Sources = null);   // Sources: cách nhận đan bồi dưỡng (tooltip)
 public record HatchDto(int Slot, string Egg, DateTime ReadyAt, int ReadyInSeconds, bool Ready, int InstantCost);
 /// <param name="ParalyzeTurns">Số lượt quái bị khống bởi lần thi triển này (mọi loại khống); ControlKind = "paralyze" · "stun" · "freeze".</param>
 public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill, int[]? Hits = null, string Kind = "", int ParalyzeTurns = 0, bool IsMiracle = false, double At = .45, string ControlKind = "");

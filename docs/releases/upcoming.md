@@ -1,19 +1,27 @@
-# Nội dung cập nhật
+## Nội dung cập nhật
 
-- Tách giới hạn quay mỗi ngày: 1.000 lượt trang bị và 300 lượt trứng linh thú. Bộ đếm độc lập, đặt lại 00:00 giờ Việt Nam, giữ hạn mức khi trùng tu.
-- Launcher hiển thị tên, ngày và ghi chú GitHub Release ngay cả khi đã cài bản mới nhất; bỏ nội dung mẫu cũ và bổ sung trạng thái khi mất mạng/chưa có ghi chú.
-- Thêm trang phục nữ Hợp Thể Thiên Hợp Tiên Cơ cùng ảnh đứng, thiền, chiến đấu và bay. Mở khi đạt Hợp Thể.
-- Đổi icon Trang phục; giữ riêng trạng thái đóng/mở các bảng chi tiết trong Hành trang khi cập nhật giao diện.
-- Admin dev được miễn cảnh báo dữ liệu và có thể gỡ cờ cho bản thân hoặc người khác trên Thiên bảng. Không xóa lịch sử từng sử dụng admin.
-- Thêm Thiên bảng Vượt ải (độ khó → chương → ải đã hoàn thành) và Linh thú (lực chiến linh thú mạnh nhất).
+### Sự kiện Thiên Cơ
+- Thêm **sự kiện quay tích lũy Thiên Cơ** mỗi tuần (thứ Hai 00:00 → Chủ nhật 23:59 giờ Việt Nam), xen kẽ **Tuần Trang Bị** (tính lượt Quay trang bị) và **Tuần Linh Thú** (tính lượt Quay Linh Thú). Mỗi lượt quay đúng loại của tuần được 1 điểm.
+- Tuần Trang Bị có 9 mốc quà từ 10 → 600 điểm: vé vòng quay, Linh Thú Đan, Hóa Hình Đan, Hoán Cốt Đan, Thần Thú Huyết, Thú Đản Huyền / Địa / Thiên. Mốc cuối tặng **Rương Thiên Cơ**, mở ra 1 trang bị bộ cảnh giới hiện tại: 70% phẩm Đạo, 30% phẩm Huyền Tiên.
+- Tuần Linh Thú có 9 mốc quà từ 5 → 300 điểm: Linh Thú Đan, Vé Linh Thú, Hóa Hình Đan, Hoán Cốt Đan, Thần Thú Huyết, Thú Đản Huyền / Địa / Thiên. Mốc cuối tặng **Thượng Cổ Thú Đản**.
+- Khung sự kiện hiện ngay trong cửa sổ Vòng quay, có thanh tiến độ, thời gian còn lại và nút **Nhận tất cả**. Hết tuần, quà đã đạt mà chưa nhận được tự gửi vào Hành trang.
+- Chỉ tính điểm và nhận quà khi đang kết nối máy chủ, vì sự kiện dùng giờ máy chủ thay cho đồng hồ máy. Nhân vật từng dùng admin mode hoặc mở bằng bản game cũ không nhận được quà sự kiện.
+- Rương Thiên Cơ không giao dịch được ở Chợ.
 
-## Khi triển khai
+### Rương
+- Mọi loại rương (thường, hiếm, Boss, kể cả Khó / Ác mộng) **không còn ra đan tiến giai**. Tỉ lệ đan cũ được chia đều cho các vật phẩm còn lại trong rương.
+- Hạ Boss **không còn rơi đan đột phá** (đan tiến giai theo cảnh giới, ở mọi chương và mọi mức khó). Đan đột phá vẫn rơi ở ải thường và luyện được tại mục Đan dược.
+- Rương trang phục bán được cho NPC (800 linh thạch, ngang Rương Boss) bằng nút Bán trong Hành trang hoặc quầy Luyện chế · Bán. Bán nhanh theo phẩm bỏ qua rương trang phục để tránh bán nhầm.
+- Rương trang phục đăng bán được ở Chợ.
 
-1. Chạy lại `docs/leaderboard/supabase.sql` trên Supabase SQL Editor, sau đó mở lại game để dùng hai bảng mới. Hai bảng Cảnh giới/Lực chiến vẫn tương thích schema cũ.
-2. Chức năng gỡ cờ online chỉ dùng trong dev và cần biến môi trường server `SUPABASE_SERVICE_ROLE_KEY`; không đặt khóa này trong game phát hành hoặc Launcher.
-3. Gỡ cờ người khác trên Supabase không tự sửa DB trên máy họ; nếu máy còn cờ cũ, lần đồng bộ sau có thể gắn cờ lại.
-4. Người chơi cần mở bản mới để gửi điểm Vượt ải/Linh thú. Người chưa gửi hiển thị điểm 0.
+### Bồi dưỡng linh thú
+- Bỏ **Bồi nguyên** và **Bồi Linh Đan**. Bồi Linh Đan còn trong Hành trang tự đổi thành **2.000 linh thạch** mỗi viên.
+- Trang bị linh thú có ảnh riêng. Ô Linh Giáp (Thủ) đổi tên thành **Móng Vuốt**.
+- Rê chuột vào Hoán Cốt Đan ở mục Tẩy luyện để xem tỉ lệ rơi khi hạ Boss theo từng mức khó.
 
-## Kiểm tra
+### Trang bị
+- Bộ trang bị **Đại Thừa** có ảnh riêng (trắng ngà, vàng kim, lam ngọc), không còn dùng tạm ảnh bộ Thiên Hợp.
 
-Build Debug thành công (còn cảnh báo WindowsBase/WebView2). Đạt 14 kiểm tra lượt quay, 11 kiểm tra admin, 24 kiểm tra tính điểm/kết nối giả lập/tương thích bảng xếp hạng; 168 trường hợp khung hoạt ảnh và kiểm tra idle của sáu trang phục. Chưa chạy migration hoặc gỡ cờ trên Supabase thực tế.
+### Wiki
+- Trang vật phẩm có thêm mục **Nguồn nhận · Hạ Boss**, ghi tỉ lệ và số lượng theo từng mức khó và chương.
+- Sửa lỗi xuất dữ liệu Wiki khi triển khai trang.

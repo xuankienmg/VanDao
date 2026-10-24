@@ -13,6 +13,9 @@ const SKIN_ACTOR_SHEETS = {
   'img/hero_hopthe_nu.png': {id:'hopthe_nu', bodyHeight:290, flight:'air', airSource:'flight', inventorySrc:'img/skin/hopthe_nu_idle.png'}
 };
 function skinActorFlight(){ return SKIN_ACTOR_SHEETS[skinArt('hero')]?.flight || null; }
+// Static poses for the six female realm costumes; skill effects keep their existing timing.
+for (const id of ['luyenkhi','trucco','kimdan','nguyenanh','hoathan','luyenhu'])
+  SKIN_ACTOR_SHEETS[`img/hero_${id}_nu.png`] = {id:`${id}_nu`, static:true, flight:['hoathan','luyenhu'].includes(id) ? 'air' : null};
 function skinActorLoop(action, t){
   const count = SKIN_ACTOR_SHEETS[skinArt('hero')] ? 4 : action === 'run' ? 7 : 8;
   const rate = action === 'run' ? (skinActorFlight() ? 4 : 10) : 2.5;
@@ -20,6 +23,16 @@ function skinActorLoop(action, t){
 }
 function drawSkinActor(g, action, progress, x, ground, height, alpha = 1){
   const hero = skinArt('hero'), profile = SKIN_ACTOR_SHEETS[hero];
+  if (profile?.static){
+    const casting = (action === 'cast' || action === 'slash') && progress > .15;
+    const source = casting ? `img/skin/${profile.id}_cast.png` : skinArt('heroStand');
+    const im = skImg(source);
+    if (!im) return false;
+    const width = height * im.naturalWidth / im.naturalHeight;
+    g.save(); g.globalAlpha *= alpha; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(im,x-width/2,ground-height,width,height); g.restore();
+    return true;
+  }
   if (!profile && hero !== 'img/hero_luyenkhi.png') return false;
   const rows = {idle:0, walk:0, run:1, groundRun:1, slash:2, cast:3};
   const counts = {idle:8, walk:8, run:7, slash:5, cast:3};
@@ -43,11 +56,12 @@ function skImg(src){ if (!skImgs[src]){ const im = new Image(); im.src = src; sk
 const FIRE = ['#5a1410','#b02a1a','#e0521e','#f08a2a','#f8d25a','#fff4d0'];
 function skFrame(now){
   requestAnimationFrame(skFrame);
+  if (paneOff('skill')) return;
   const c = $('skCanvas'); if (!c || !c.offsetParent || !S) return;
   if (!c._sized){ const w = c.parentElement.getBoundingClientRect().width; if (w){ const sc = Math.max(1, Math.floor(w / 120)); c.style.width = 120 * sc + 'px'; c.style.height = 60 * sc + 'px'; c._sized = true; } }
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
   const s = skById(skSel), el = elOf(s.element), open = el.open;
-  const res = open && (s.element === 'hoa' || s.element === 'moc' || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;
+  const res = open && (['hoa','moc','tho','loi','bang','gio'].includes(s.element) || s.anim === 'water_dragon' || s.anim === 'water_prison' || s.anim === 'water_arrows' || s.anim === 'water_moon' || s.anim === 'water_ball') ? HC_RES : 1;
   if (c.width !== 120 * res){ c.width = 120 * res; c.height = 60 * res; }
   g.setTransform(res, 0, 0, res, 0, 0); g.imageSmoothingEnabled = false;
   const fps = 8, cycle = 12, t = now / 1000, f = Math.floor(t * fps) % cycle;    // 8 khung + 4 khung nghỉ
@@ -258,6 +272,12 @@ function live(){
   liveDan(); liveBreak(); liveSkill();
   if (tipEl && !tipEl.hidden) showTip(tipEl._for);
 }
+// Tab ẩn không vẽ lại mỗi lần đồng bộ (trước đây vẽ hết mọi tab: 50–85 ms mỗi 4 giây khi túi đầy → khựng hình).
+// Tab ẩn được đánh dấu "bẩn" và vẽ lại ngay khi mở (openTab gọi renderPane).
+const PANE_RENDER = {req: () => renderReq(), inv: () => renderInv(), craft: () => renderCraft(), fuse: () => renderFuse(), sell: () => renderSell(),
+  spin: () => renderSpin(), map: () => renderMap(), skill: () => renderSkill(), admin: () => renderAdmin(), pet: () => renderPet()};
+const paneDirty = new Set();
+function renderPane(id){ if (S && paneDirty.delete(id)) PANE_RENDER[id]?.(); }
 function renderAll(){
   if (typeof renderConceptNavigation === 'function') renderConceptNavigation();
   $('hudRealm').textContent = S.realmName;
@@ -266,6 +286,7 @@ function renderAll(){
   $('hudStage').textContent = S.stageName;
   $('hudRate').textContent = `${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')} tu vi/giây`;
   const tipKey = tipEl && !tipEl.hidden && tipEl._for ? (tipEl._for.id || tipEl._for.dataset.equip || tipEl._for.dataset.unequip || '') : '';
-  renderReq(); renderInv(); renderCraft(); renderFuse(); renderSell(); renderSpin(); renderMap(); renderSkill(); renderAdmin(); renderPet(); renderLog(); live();
+  for (const [id, fn] of Object.entries(PANE_RENDER)){ if (paneOff(id)) paneDirty.add(id); else { paneDirty.delete(id); fn(); } }
+  renderLog(); live();
   if (tipKey){ const el = document.getElementById(tipKey) || document.querySelector(`[data-equip="${tipKey}"],[data-unequip="${tipKey}"]`); if (el && el.matches(':hover')) showTip(el); }
 }

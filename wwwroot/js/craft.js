@@ -34,7 +34,7 @@ function ddBreak(){
       bossBox = `<div class="dd-boss ${ok ? 'ok' : ''}" data-tip="${itemTip(c.item)}">
         <span class="dd-fr boss">${itemImg(c.item)}</span>
         <div><p class="nm">${it.name}</p><p class="st">${fmt(c.have)} / ${c.need} · nguyên liệu Boss</p>
-        <p class="hint">${ok ? 'Đã có, sẵn sàng đột phá.' : `Đánh bại Boss ${r.boss}${bossChapterTag(r.bossItem)} để nhận nguyên liệu.`}</p></div></div>`;
+        <p class="hint">${ok ? 'Đã có, sẵn sàng đột phá.' : `Đánh bại Boss ${bossChapterFor(r.bossItem)?.boss || r.boss}${bossChapterTag(r.bossItem)} để nhận nguyên liệu.`}</p></div></div>`;
       rows += row(ok, '', it.name, `${fmt(c.have)} / ${c.need}`, 'bossrow');
     } else rows += row(ok, itemImg(c.item), it.name, `${fmt(c.have)} / ${fmt(c.need)}`);
   }
@@ -42,7 +42,7 @@ function ddBreak(){
   const needBoss = S.isPeak && S.targetCost.some(c => ITEM[c.item].type === 'boss' && c.have < c.need);
   const btn = ready ? `<button class="dd-go gold" data-dd="advance">Đột phá</button>`
     : needBoss ? `<button class="dd-go" data-dd="boss">Đến khu vực Boss</button>` : '';
-  const upcoming = !S.isPeak && ITEM[r.bossItem] ? `<p class="dd-note">Đại cảnh giới ${DATA.realms[S.realm + 1] ? DATA.realms[S.realm + 1].name : DATA.lockedRealms[0]} cần thêm ${itemImg(r.bossItem)} <b>${ITEM[r.bossItem].name}</b> (Boss ${r.boss}${bossChapterTag(r.bossItem)}).</p>` : '';
+  const upcoming = !S.isPeak && ITEM[r.bossItem] ? `<p class="dd-note">Đại cảnh giới ${DATA.realms[S.realm + 1] ? DATA.realms[S.realm + 1].name : DATA.lockedRealms[0]} cần thêm ${itemImg(r.bossItem)} <b>${ITEM[r.bossItem].name}</b> (Boss ${bossChapterFor(r.bossItem)?.boss || r.boss}${bossChapterTag(r.bossItem)}).</p>` : '';
   return `<p class="dd-sec">${S.isPeak ? 'Đột phá kế tiếp' : 'Đột phá tầng kế tiếp'}</p>
     <div class="dd-path"><span>${cur}</span><i>→</i><b>${next}</b></div>
     <ul class="dd-req">${rows}</ul>${bossBox}${btn}${upcoming}`;
@@ -52,7 +52,7 @@ function renderCraft(){
   const pane = $('pane-craft');
   if (!$('ddCanvas')){
     pane.innerHTML = `<div class="dd">
-      <header class="dd-top">${lcNav('craft')}<div class="dd-cult" id="ddCult"></div><div class="dd-stone" id="ddStone"></div></header>
+      <header class="dd-top">${lcNav('craft')}<div class="dd-cult" id="ddCult"></div></header>
       <section class="dd-main">
         <div class="dd-synth" id="ddSynth">
           <div class="dd-io" id="ddIn"></div>
@@ -67,7 +67,6 @@ function renderCraft(){
   }
   const k=ddCur(),it=ITEM[k],b=brewOf(k),max=brewMax(b);
   if(!it||!b)return;
-  $('ddStone').innerHTML = `${itemImg('linh_thach')}<span>Linh thạch</span><b>× ${fmt(stones())}</b>${hpStoneHtml('dd-hp')}`;
   const herbs=Object.entries(b.in).filter(([id])=>id!=='linh_thach');
   $('ddIn').innerHTML='<span class="dd-lab">Nguyên liệu</span><div class="dd-reagents">'+herbs.map(([id,c])=>{
     const have=S.inventory[id]||0;
@@ -109,6 +108,7 @@ function ddSizeCanvas(c){
 }
 function ddFrame(now){
   requestAnimationFrame(ddFrame);
+  if (paneOff('craft')) return;
   const c = $('ddCanvas');
   if (!c || !S || !c.offsetParent) return;
   if (!c._sized) c._sized = ddSizeCanvas(c);

@@ -1,14 +1,25 @@
-/* Hỏa hệ: một timeline cho preview và trận đánh, ảnh chỉ chứa hiệu ứng. */
+/* Shared manual VFX timeline for preview and combat; sheets contain effects only. */
 const fireFxCache = new Map();
+const FX_ALIAS = {
+  hon_nguyen_hoa: ['hu_khong_hoa', 'hue-rotate(35deg) saturate(.75) brightness(1.2)'],
+  thai_so_hoa:    ['hu_khong_hoa', 'hue-rotate(-20deg) saturate(1.6) brightness(1.15)'],   // Đại Thừa: tạm dùng hiệu ứng Hư Không Diễm
+  thai_so_thuy:   ['hon_nguyen_thuy', 'hue-rotate(-25deg) saturate(1.4) brightness(1.15)'],
+  thai_so_moc:    ['hon_nguyen_moc', 'hue-rotate(30deg) saturate(1.3) brightness(1.15)'],
+  thai_so_tho:    ['hon_nguyen_tho', 'hue-rotate(-15deg) saturate(1.4) brightness(1.15)'],
+  thai_so_loi:    ['hon_nguyen_loi', 'hue-rotate(25deg) saturate(1.3) brightness(1.2)'],
+  thai_so_bang:   ['hon_nguyen_bang', 'hue-rotate(-20deg) saturate(1.3) brightness(1.15)'],
+  thai_so_phong:  ['hon_nguyen_phong', 'hue-rotate(25deg) saturate(1.3) brightness(1.15)'],
+};
 function fireFxSpec(skillId, realmIndex = 0){
   const variant = skillId === 'hoa_cau' ? (realmIndex <= 0 ? 'small' : realmIndex === 1 ? 'medium' : 'large') : 'default';
   const fire = typeof FIRE_FX_DATA === 'undefined' || !Array.isArray(FIRE_FX_DATA) ? [] : FIRE_FX_DATA;
   const extra = typeof WATER_WOOD_FX_DATA === 'undefined' || !Array.isArray(WATER_WOOD_FX_DATA) ? [] : WATER_WOOD_FX_DATA;
-  const data = [...fire, ...extra];
-  // Hợp Thể kế thừa timeline Luyện Hư, đổi kim diễm cho tuyệt kỹ mới.
-  const sourceId = skillId === 'hon_nguyen_hoa' ? 'hu_khong_hoa' : skillId;
+  const elements = typeof FOUR_ELEMENTS_FX_DATA === 'undefined' || !Array.isArray(FOUR_ELEMENTS_FX_DATA) ? [] : FOUR_ELEMENTS_FX_DATA;
+  const data = [...fire, ...extra, ...elements];
+  // Hợp Thể / Đại Thừa kế thừa timeline chiêu bậc dưới, chỉ đổi màu (FX_ALIAS: chiêu → [chiêu nguồn, bộ lọc]).
+  const [sourceId, filter] = FX_ALIAS[skillId] || [skillId, 'none'];
   const spec = data.find(s => s.skillId === sourceId && (s.variant || 'default') === variant);
-  return spec ? {...spec, filter: skillId === 'hon_nguyen_hoa' ? 'hue-rotate(35deg) saturate(.75) brightness(1.2)' : 'none'} : null;
+  return spec ? {...spec, filter} : null;
 }
 function fireFxPlan(skillId, s01, realmIndex = 0){
   const spec = fireFxSpec(skillId, realmIndex);
@@ -37,6 +48,36 @@ function fireFxAvailable(skillId, realmIndex = 0){
   return !!spec && fireFxImage(spec.src).state === 'ready';
 }
 function fireFxCacheInfo(){ return {size:fireFxCache.size, sources:[...fireFxCache.keys()]}; }
+/** Geometry for authored cast directions. Legacy manifests keep their original path. */
+function fireFxPlacement(plan, layout, width, height){
+  if (!plan || !['left','above','below','center'].includes(plan.castDirection)) return null;
+  const {handX,handY,targetX,targetY,groundY,heroHeight}=layout;
+  if (![handX,handY,targetX,targetY,groundY,heroHeight,width,height].every(Number.isFinite) || heroHeight<=0 || width<=4 || height<=4) return null;
+  const bounds=plan.visibleBounds || [0,0,plan.frameWidth,plan.frameHeight];
+  const [left,top,right,bottom]=bounds, ax=(left+right)/2/plan.frameWidth, ay=(top+bottom)/2/plan.frameHeight;
+  const bw=(right-left)/plan.frameWidth, bh=(bottom-top)/plan.frameHeight;
+  if (bw<=0 || bh<=0) return null;
+  const direction=plan.castDirection, t=Math.max(0,Math.min(1,(plan.s01-.25)/.20)), travel=t*t*(3-2*t);
+  const rotation=plan.phase===1 && plan.rotateWithTravel && !layout.reducedMotion ? (direction==='above'?Math.PI/2:direction==='below'?-Math.PI/2:0) : 0;
+  const c=Math.cos(rotation),s=Math.sin(rotation);
+  const rx=Math.abs(c)*bw/2+Math.abs(s)*bh/2, ry=Math.abs(s)*bw/2+Math.abs(c)*bh/2;
+  const tx=Math.max(2.01,Math.min(width-2.01,targetX)),ty=Math.max(2.01,Math.min(height-2.01,targetY));
+  const targetSize=Math.max(layout.targetWidth || heroHeight,layout.targetHeight || heroHeight);
+  const impactSize=targetSize*(plan.targetScale || 1)/Math.max(bw,bh),chargeSize=heroHeight*.55/Math.max(bw,bh);
+  const growth=direction==='center'?Math.min(1,Math.max(0,plan.s01/.45)):(plan.phase===0?0:plan.phase===1?travel:1);
+  // Fit around the impact point first. Travel then clamps its origin without shrinking to nothing at an edge.
+  const size=Math.min(chargeSize+(impactSize-chargeSize)*growth,(width-4)/(2*rx),(height-4)/(2*ry),
+    (tx-2)/rx,(width-2-tx)/rx,(ty-2)/ry,(height-2-ty)/ry);
+  if (!Number.isFinite(size) || size<=0) return null;
+  let fromX=tx,fromY=ty;
+  if (direction==='left'){fromX=handX;fromY=handY;}
+  if (direction==='above')fromY=ty-heroHeight*1.45;
+  if (direction==='below')fromY=groundY+heroHeight*.35;
+  const k=layout.reducedMotion || plan.phase>=2 || direction==='center'?1:plan.phase===0?0:travel;
+  const x=Math.max(2+rx*size,Math.min(width-2-rx*size,fromX+(tx-fromX)*k));
+  const y=Math.max(2+ry*size,Math.min(height-2-ry*size,fromY+(ty-fromY)*k));
+  return {x,y,size,ax,ay,rotation};
+}
 function drawFireFx(ctx, plan, layout){
   if (!plan) return false;
   const entry = fireFxImage(plan.src); if (entry.state !== 'ready') return false;
@@ -52,10 +93,13 @@ function drawFireFx(ctx, plan, layout){
   const transform = ctx.getTransform?.(), scaleX = Math.abs(transform?.a || 1), scaleY = Math.abs(transform?.d || 1);
   const w = ctx.canvas.width/scaleX, h = ctx.canvas.height/scaleY;
   if (w <= 2 || h <= 2) return false;
-  const ax = plan.anchorX / plan.frameWidth, ay = plan.anchorY / plan.frameHeight;
+  let ax = plan.anchorX / plan.frameWidth, ay = plan.anchorY / plan.frameHeight, rotation = 0;
   x = Math.max(1,Math.min(w-1,x)); y = Math.max(1,Math.min(h-1,y));
   let size;
-  if (plan.visibleBounds && plan.targetScale){
+  if (plan.castDirection){
+    const placement=fireFxPlacement(plan,layout,w,h); if (!placement) return false;
+    ({x,y,size,ax,ay,rotation}=placement);
+  } else if (plan.visibleBounds && plan.targetScale){
     const [left,top,right,bottom]=plan.visibleBounds;
     const bw=(right-left)/plan.frameWidth, bh=(bottom-top)/plan.frameHeight;
     const targetSize=Math.max(layout.targetWidth || heroHeight,layout.targetHeight || heroHeight);
@@ -78,8 +122,9 @@ function drawFireFx(ctx, plan, layout){
   try {
     ctx.filter = plan.filter || 'none';
     ctx.globalAlpha *= plan.alpha * (layout.reducedMotion ? .8 : 1);
-    ctx.imageSmoothingEnabled = plan.element === 'thuy' || plan.element === 'moc';
-    ctx.drawImage(entry.image, frame%plan.columns*plan.frameWidth, Math.floor(frame/plan.columns)*plan.frameHeight, plan.frameWidth,plan.frameHeight,x-ax*size,y-ay*size,size,size);
+    ctx.imageSmoothingEnabled = ['thuy','moc','tho','loi','bang','gio'].includes(plan.element);
+    if (rotation){ctx.translate(x,y);ctx.rotate(rotation);}
+    ctx.drawImage(entry.image, frame%plan.columns*plan.frameWidth, Math.floor(frame/plan.columns)*plan.frameHeight, plan.frameWidth,plan.frameHeight,(rotation?0:x)-ax*size,(rotation?0:y)-ay*size,size,size);
   } finally { ctx.restore(); }
   return true;
 }

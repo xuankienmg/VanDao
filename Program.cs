@@ -50,7 +50,8 @@ public static class Program
         if (!webOnly) builder.WebHost.UseUrls("http://127.0.0.1:0");
 
         // DB nằm trong %LocalAppData%\VanDao để không mất khi build lại hay xóa bin/
-        var dbPath = Path.Combine(AppPaths.DataDir, "vandao.db");
+        // chạy Development dùng file riêng vandao_dev.db, không đụng save của bản phát hành
+        var dbPath = Path.Combine(AppPaths.DataDir, builder.Environment.IsDevelopment() ? "vandao_dev.db" : "vandao.db");
         builder.Services.AddDbContext<GameDbContext>(o =>
             o.UseSqlite(builder.Configuration.GetConnectionString("Game") ?? $"Data Source={dbPath}"));
         builder.Services.AddScoped<GameService>();
@@ -59,6 +60,7 @@ public static class Program
         builder.Services.AddSingleton<LeaderboardService>();
         builder.Services.AddSingleton<VersionService>();  // bắt cập nhật: đọc app_config trên Supabase
         builder.Services.AddSingleton<MarketService>();   // Chợ giao dịch: dùng chung project Supabase
+        builder.Services.AddSingleton<ArenaService>();    // Lôi đài PK: dùng chung project Supabase
 
         var app = builder.Build();
         Player.AdminEnabled = app.Environment.IsDevelopment();   // admin mode chỉ có khi chạy dev
@@ -106,7 +108,8 @@ public static class Program
                 r.HeroStand, r.HeroMed, r.HeroCast, r.Halo)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
-            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
+            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem,
+                GameData.BreakthroughBossItem(c.Index, 1), GameData.BreakthroughBossItem(c.Index, 2))),
             GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets, PetData.Definitions, PetData.PetSpinWeights, GameData.PetSpinTicketPrice));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
@@ -148,6 +151,8 @@ public static class Program
         // trang phục: skin = id trong GameData.Skins, rỗng = theo cảnh giới
         api.MapPost("/players/{id:guid}/skin", (Guid id, string? skin, GameService game) =>
             Run(id, game, p => game.SetSkin(p, skin)));
+        api.MapPost("/players/{id:guid}/gender", (Guid id, string? gender, GameService game) =>
+            Run(id, game, p => game.SetGender(p, gender)));
 
         // kích hoạt công pháp một hệ: đòn thường theo hệ đó, bị động hệ khác còn 50%
         api.MapPost("/players/{id:guid}/manual/{element}", (Guid id, string element, GameService game) =>
@@ -182,6 +187,8 @@ public static class Program
         api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, string? mode, GameService game) =>
             RunCraft(id, game, p => mode == "pet" ? game.PetSpin(p, n ?? 1) : game.Spin(p, n ?? 1)));
 
+        // sự kiện quay tích lũy Thiên Cơ: i = chỉ số mốc, bỏ trống / -1 = nhận mọi mốc đã đạt
+        api.MapPost("/players/{id:guid}/event/claim", (Guid id, int? i, GameService game) => Run(id, game, p => game.ClaimEvent(p, i ?? -1)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/feed", (Guid id, Guid petId, int? n, GameService game) => Run(id, game, p => game.Feed(p, petId, n ?? 1)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/evolve", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Evolve(p, petId)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/appearance/{form:int}", (Guid id, Guid petId, int form, GameService game) => Run(id, game, p => game.SetPetAppearance(p, petId, form)));
@@ -191,6 +198,12 @@ public static class Program
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge-all", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.MergeAll(p, petId)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge", (Guid id, Guid petId, string? foods, GameService game) => Run(id, game, p => game.MergePets(p, petId, foods)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge/{foodId:guid}", (Guid id, Guid petId, Guid foodId, GameService game) => Run(id, game, p => game.MergePet(p, petId, foodId)));
+        // bồi dưỡng linh thú: tẩy luyện / bồi nguyên tư chất · trang bị linh thú · thức tỉnh huyết mạch
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/reroll", (Guid id, Guid petId, string? locks, GameService game) => Run(id, game, p => game.RerollAptitude(p, petId, locks)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/gear/{itemId}", (Guid id, Guid petId, string itemId, GameService game) => Run(id, game, p => game.EquipPetGear(p, petId, itemId)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/ungear/{slot}", (Guid id, Guid petId, string slot, GameService game) => Run(id, game, p => game.UnequipPetGear(p, petId, slot)));
+        api.MapPost("/players/{id:guid}/pet/{petId:guid}/awaken/{donorId:guid}", (Guid id, Guid petId, Guid donorId, GameService game) => Run(id, game, p => game.AwakenPet(p, petId, donorId)));
+        api.MapPost("/players/{id:guid}/petgear/fuse/{itemId}", (Guid id, string itemId, int? n, GameService game) => RunCraft(id, game, p => game.FusePetGear(p, itemId, n ?? 1)));
         api.MapPost("/players/{id:guid}/hatch/now", (Guid id, int? slot, GameService game) => Run(id, game, p => game.HatchNow(p, slot ?? 0)));
         api.MapPost("/players/{id:guid}/hatch/collect", (Guid id, int? slot, GameService game) => Run(id, game, p => game.CollectHatch(p, slot ?? 0)));
         api.MapPost("/players/{id:guid}/hatch/{eggId}", (Guid id, string eggId, int? slot, GameService game) => Run(id, game, p => game.Hatch(p, eggId, slot ?? 0)));
@@ -257,6 +270,27 @@ public static class Program
         // nhận linh thạch đã bán / đồ trả về: giao diện gọi định kỳ
         api.MapPost("/players/{id:guid}/market/claim", (Guid id, GameService game) =>
             RunAsync(id, game, p => game.MarketClaimAsync(p)));
+
+        // Lôi đài (PK bất đồng bộ trên Supabase): bậc thang hạng, thắng thì đổi vị trí với đối thủ
+        api.MapGet("/players/{id:guid}/arena", async (Guid id, GameService game) =>
+        {
+            try { return Results.Ok(await game.ArenaAsync(await game.LoadAsync(id))); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+        });
+        api.MapPost("/players/{id:guid}/arena/fight/{target:guid}", async (Guid id, Guid target, GameService game) =>
+        {
+            await MutationGate.WaitAsync();
+            try
+            {
+                var p = await game.LoadAsync(id);
+                var (msg, kind, fight) = await game.ArenaFightAsync(p, target);
+                await game.SaveAsync(p);
+                return Results.Ok(new ArenaFightResponse(await game.BuildStateAsync(p), msg, kind, fight));
+            }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+            catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
+            finally { MutationGate.Release(); }
+        });
 
         // bấm vào một người trên bảng xếp hạng: trang bị đang mặc + chỉ số
         api.MapGet("/players/{id:guid}/leaderboard/{other:guid}", async (Guid id, Guid other, GameService game, LeaderboardService lb) =>

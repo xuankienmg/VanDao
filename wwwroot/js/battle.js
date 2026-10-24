@@ -78,7 +78,7 @@ function drawPixelBattle(t, dt, ph, r){
     const pendingPetDamage=(b.pet?.casts||[]).filter(c=>c.turn===i&&((c.at>=.85)?s<c.at||ph.rep:s<.7||ph.rep)).reduce((sum,c)=>sum+(c.dmg||0),0);
     const afterStrikeHp = Math.min(mLeft(i), mLeft(i+1) + pendingPetDamage);
     mHp = (s < .45 && !ph.rep ? mLeft(i) : exDmg && !(ph.rep && s >= .45) ? Math.min(mLeft(i), afterStrikeHp + exDmg) : afterStrikeHp) / b.monsterHp;
-    hHp = Math.max(0, (s >= .85 && !killing && !held ? hLeft(i+1) : b.heroHpBefore?.[i] ?? hLeft(i)) / heroMax);
+    hHp = battleHeroHpAt(b,ph,b.heroHpBefore?.[i]??hLeft(i),hLeft(i+1),killing,held)/heroMax;
     if(s>=.85&&afterCounter.some(c=>c.kind==='butterfly_rebirth'&&s<c.at))hHp=0;
     rg = rageAt(i + (s >= .45 || ph.rep ? 1 : 0)) / RAGE_MAX;
     const skTurn = castsNow.some(c => c.dmg > 0 && c.skill !== 'hoa_cau');           // lượt tung kỹ năng: không có đòn thường
@@ -126,6 +126,7 @@ function drawPixelBattle(t, dt, ph, r){
       const dk = ck + 'd';                                                              // Hỏa Cầu: số gộp vào đòn đánh (cùng một quả cầu)
       if (c.dmg > 0 && s >= .45 && !battleDone[dk] && !(refHero && c.skill === 'hoa_cau')){ battleDone[dk] = 1; pfx.push({type:'num', x: wolfX + U(4), y: g - msz - (MODE === 'strip' ? 16 : 40), text: '-' + c.dmg, critical: c.critical, col: '#f08a2a', life: 0, max: 1}); }
     });
+    battleSecondaryFeedback(b,ph,battleDone,e=>pfx.push(e),heroX,g-sz-(big?48:20),wolfX,g-msz-(big?58:24));
     if (killing && s >= .62 && wv?.stones > 0){                                         // quái gục: linh thạch văng ra (số đúng như server cộng), rồi bay về tu sĩ
       const sk = ph.trip + ':stone' + wvI;
       if (!battleDone[sk]){ battleDone[sk] = 1;
@@ -192,7 +193,7 @@ function drawPixelBattle(t, dt, ph, r){
         if (refHero && !reduce && s < .93){ const p = Math.sin((s - .85) / .08 * Math.PI); hsx = 1 + .05 * p; hsy = 1 - .06 * p; hrot = -.07 * p; }   // trúng đòn: co người giật lùi
         const fk = ph.trip + ':m' + i;
         if (!battleDone[fk]){ battleDone[fk] = 1;
-          pfx.push({type:'num', x: heroX - U(4), y: g - sz - (MODE === 'strip' ? 8 : 26), text: '-' + (b.enrageTurn >= 0 && i >= b.enrageTurn ? b.monsterDmgEnraged : b.monsterDmg), col: st.numCol || PX.hurt, life: 0, max: .8});
+          pfx.push({type:'num', x: heroX - U(4), y: g - sz - (MODE === 'strip' ? 8 : 26), text: '-' + (b.counterDamage?.[i] ?? (b.enrageTurn >= 0 && i >= b.enrageTurn ? b.monsterDmgEnraged : b.monsterDmg)), col: st.numCol || PX.hurt, life: 0, max: .8});
           const cols = st.sparks || [PX.red];
           for (let n = 0; n < (st.nSparks || 8); n++) pfx.push({type:'spark', x: heroX + U(6), y: g - U(26), vx: (Math.random()-.5)*(st.spread || 40)*u, vy: -Math.random()*40*u, life: 0, max: .3 + Math.random()*.15, col: cols[n % cols.length]});
           if (st.label && MODE !== 'strip') pfx.push({type:'label', x: heroX, y: g - sz - 40, text: st.label, col: st.numCol || PX.hurt, life: 0, max: .9});
@@ -366,9 +367,11 @@ function drawPixelBattle(t, dt, ph, r){
     const ward=ph.name==='fight'&&ph.s<.7&&castsNow.some(c=>!c.dmg&&['shield','aura'].includes(c.anim));
     if(guard>0||ward)status('shield',hx,(g-sz*.5)+hy,sz*.92,sz*1.04,guard>0?guard/Math.max(1,b.guard):1);
     if(ph.name==='fight'&&ph.s<.7&&castsNow.some(c=>!c.dmg&&c.anim==='dash'))status('dash',hx,g-sz*.4,sz,sz);
+    if(battleSecondaryStatus(b,ph,'wind'))status('dash',hx,g-sz*.45,sz,sz);
   }
   if(wx!==null&&wAlpha>.5){
     status('target',wx,g+1,msz*.72,msz);
+    if(battleSecondaryStatus(b,ph,'weaken'))status('weaken',wx,g-msz*.45,msz,msz);
     if(ph.name==='fight'){
       if(b.enrageTurn>=0&&ph.i>=b.enrageTurn)status('enrage',wx,g-msz*.45,msz*1.08,msz);
       if(b.monSkip?.[ph.i]&&b.monHpLeft?.[ph.i]>0&&!b.monControl?.[ph.i])status('control',wx,g-msz*.45,msz*1.05,msz);

@@ -2,6 +2,18 @@
 
 Game tu tiên 2D. Server C# xử lý toàn bộ luật chơi và lưu tiến độ vào SQLite; trình duyệt chỉ hiển thị canvas và gửi hành động.
 
+## Giới thiệu — Tu tiên ngay trên desktop
+
+**Người Lười Tu Tiên** dành cho những ai muốn nuôi dưỡng một tu sĩ trong lúc làm việc hoặc học tập. Game xuất hiện dưới dạng một cửa sổ nhỏ cạnh thanh taskbar: nhân vật tự thám hiểm, chiến đấu và tích lũy tu vi, còn bạn lựa chọn trang bị, công pháp và thời điểm đột phá.
+
+Hành trình bắt đầu từ Luyện Khí và mở rộng qua các cảnh giới đến Đại Thừa. Mỗi bước tiến gắn với việc thu thập tài nguyên, luyện đan, xây dựng bộ trang bị và vượt qua những thử thách mới. Bạn có thể quay lại các ải đã mở để tích lũy vật phẩm, chuẩn bị cho trận Boss và lần đột phá tiếp theo.
+
+Ngoài tu luyện, game còn có hệ thống linh thú: ấp trứng, nuôi dưỡng, tiến hóa và trang bị cho bạn đồng hành. Công pháp và các ô kỹ năng giúp bạn điều chỉnh sức mạnh của tu sĩ; hành trang, luyện chế và các hoạt động vòng quay bổ sung những hướng phát triển khác trong quá trình chơi.
+
+Tiến độ được lưu cục bộ bằng SQLite. Bạn có thể chơi bằng cửa sổ desktop hoặc mở giao diện trong trình duyệt theo hướng dẫn bên dưới.
+
+> **Trạng thái: đang phát triển và cập nhật.** Nội dung, hình ảnh và cân bằng có thể thay đổi giữa các phiên bản. Một số thông số trong phần hướng dẫn bên dưới mô tả cơ chế cũ; hãy đối chiếu với giao diện game và [wiki](site/README.md) được xuất từ dữ liệu hiện tại.
+
 ## Chạy
 
 Cần .NET 8 SDK và Windows.
@@ -46,6 +58,14 @@ Mọi cài đặt được nhớ cho lần mở sau.
 - Save cũ tự quy đổi: 3 loại linh thạch → Linh thạch (×1 / ×50 / ×1500), đan phẩm chất → đan gốc, nguyên liệu luyện đan cũ → Linh thạch.
 
 ## Cách chơi
+
+### Tiến trình mức Khó và Ác Mộng
+
+- **Luyện Hư:** bắt đầu các chương đầu mức Khó. Đột phá lên Hợp Thể cần Ma Viên Hạch từ Boss chương 1 mức Khó.
+- **Hợp Thể:** tiến đến các chương cuối mức Khó. Đột phá lên Đại Thừa cần Cùng Kỳ Vương Hạch từ Boss chương 10 mức Khó.
+- **Đại Thừa:** tiến từ đầu đến giữa mức Ác Mộng (chương 1–5). Từ chương 6 độ khó tăng nhanh; các chương cuối dành cho cảnh giới mới sau Đại Thừa, hiện chưa khai mở.
+
+Khả năng vượt ải dựa trên tổng sức mạnh thực chiến: chỉ số cảnh giới, trang bị và hiệu ứng bộ, công pháp đang dùng và bị động, linh thú cùng cấp, sao, tư chất, tiến hóa, thức tỉnh và trang bị thú. Các nguồn có thể bù cho nhau; không bắt buộc đủ 10 ô trang bị để vào Boss. Nguyên liệu đột phá mức Khó chỉ rơi từ đúng Boss, đúng độ khó và được giữ lại khi đột phá thất bại.
 
 - **Tự động thám hiểm** (luôn bật): mỗi chuyến nhân vật đi qua rừng, gặp quái và giao chiến theo lượt. Cảnh đánh là pixel art (sprite 48×48 trong `wwwroot/img/*_48.png`, vẽ ở độ phân giải thấp rồi phóng to không làm mịn): tu sĩ bên trái, quái bên phải, vệt kiếm khí, số sát thương, thanh máu và vòng chọn mục tiêu; hoạt ảnh khớp đúng kết quả trận do server tính; xong chuyến nhân vật nhận thêm tu vi và vật phẩm rơi theo tỉ lệ của cảnh giới. Thanh nhỏ cạnh các nút cho biết thời gian đến chuyến tiếp theo.
 - **Tu vi tự tăng** (mặc định 3/giây ở Luyện Khí tầng 1), kể cả khi tắt game (tối đa 2 giờ). Khi mở lại, các chuyến thám hiểm lúc vắng mặt được cộng gộp vào một dòng nhật ký.

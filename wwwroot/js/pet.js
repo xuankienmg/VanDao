@@ -1,7 +1,7 @@
 /* Linh thú: server-owned state; no local simulation of pets or rewards. */
 (() => {
   'use strict';
-  const ui = { tab: 'stable', selected: null, element: '', rarity: '', sort: 'level', egg: '', codexElement: '', codexRarity: '', codexOwned: '', release: null, multi: false, picked: new Set(), multiArm: false, merge: null, star: null, starDonors: [null,null], pending: false, error: '', signature: '', state: null, received: 0, timer: null };
+  const ui = { tab: 'stable', selected: null, element: '', rarity: '', sort: 'level', egg: '', codexElement: '', codexRarity: '', codexOwned: '', release: null, multi: false, picked: new Set(), multiArm: false, merge: null, star: null, starDonors: [null,null], train: null, locks: new Set(), awakenDonor: null, pending: false, error: '', signature: '', state: null, received: 0, timer: null };
   let notice=null,noticeTimer=null;
   function noticeMarkup(){return `<div id="petNotice" class="pet-notice ${notice?.kind==='bad'?'is-error':'is-success'}" role="${notice?.kind==='bad'?'alert':'status'}" aria-live="polite"${notice?'':' hidden'}>${notice?`<button type="button" class="pet-notice-close" data-pet-action="notice-close" aria-label="Đóng thông báo">×</button><b>${notice.kind==='bad'?'Chưa thực hiện được':'Thành công'}</b><span>${esc(notice.message)}</span>`:''}</div>`;}
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -77,9 +77,9 @@
       const raw = num(p[a]), pct = Math.max(0, Math.min(100, raw <= 1 ? raw*100 : raw));
       return `<div class="pet-stat"><span>${petIcon(k)}${label}</span><strong>${f(p[k])}</strong><small>Tư chất ${Math.round(pct)}%</small><meter min="0" max="100" value="${pct}">${pct}%</meter></div>`;
     }).join('');
-    const slots = [button(num(p.slot) === 1 ? 'Đang xuất chiến' : 'Xuất chiến', 'slot:1', num(p.slot) === 1, 'pet-primary')];
+    const slots = [button(num(p.slot) === 1 ? 'Đang xuất chiến' : 'Xuất chiến', 'slot:1', num(p.slot) === 1, 'pet-primary'), button('Bồi dưỡng', `train-open:${p.id}`)];
     if (num(p.slot)) slots.push(button('Nghỉ', 'slot:0'));
-    return `<div class="pet-detail-head"><div><h3>${esc(p.name || d.name)} ${stars(p)}</h3><p>${esc(p.formName || d.forms?.[form]?.name)} · Cấp ${f(p.level)}${cap ? '/'+f(cap) : ''}</p></div><div>${badge(p)}</div></div>
+    return `<div class="pet-detail-head"><div><h3>${esc(p.name || d.name)} ${stars(p)}${num(p.training?.awaken)?` <em class="pet-awaken-tag">${esc(p.training.awakenName)}</em>`:''}</h3><p>${esc(p.formName || d.forms?.[form]?.name)} · Cấp ${f(p.level)}${cap ? '/'+f(cap) : ''}</p></div><div>${badge(p)}</div></div>
       <div class="pet-portrait">${image(p.defId,form,p.image)}${num(p.slot)===1?`<div class="pet-active-emblem" role="img" aria-label="Linh thú đang xuất chiến" title="Đang xuất chiến">${petIcon('atk')}<b>Xuất chiến</b></div>`:''}<span>${esc(role(p))}</span></div>
       <div class="pet-growth"><div class="pet-exp"><h4>Cấp ${f(p.level)} <small>/ ${f(cap)}</small></h4><span>${f(p.exp)} / ${f(p.expNeed)}</span><progress value="${num(p.exp)}" max="${Math.max(1,num(p.expNeed))}"></progress></div><h4>Tiến hóa</h4><div class="pet-evolution" aria-label="Tiến trình tiến hóa">${rail}</div></div>
       <div class="pet-stats">${stats}</div>
@@ -87,7 +87,7 @@
       <section class="pet-lore"><h4>Thiên phú</h4><p>${esc(p.talentText || d.talentText || 'Chưa có thông tin.')}</p><h4 class="pet-skill-summary"><span>${esc(d.forms?.[form]?.skillName || 'Kỹ năng')}</span><small>Thi triển mỗi ${f(p.skillEvery || d.skillEvery)} lượt</small></h4><p class="pet-skill-description">${esc(p.skillText || d.skillText || 'Chưa có thông tin kỹ năng.')}</p></section>
       ${p.miracle?`<section class="pet-miracle"><h4>Thần thông <small>1 lần mỗi trận</small></h4><b>${esc(p.miracle.name)}</b><p>${esc(p.miracle.description)}</p></section>`:''}
       <div class="pet-actions">${slots.join('')}</div>
-      <section class="pet-feed"><h4>Cho ăn <small>Linh Thú Đan: ${f(food)}${maxed ? ' · Đã đạt giới hạn cấp' : ''}</small></h4><div class="pet-actions">${button('×1','feed:1',!food||maxed)}${button('×10','feed:10',food<10||maxed)}${button('Tối đa','feed:0',!food||maxed)}</div></section>
+      <section class="pet-feed"><h4>Cho ăn <small>Linh Thú Đan: ${f(food)}${maxed ? ' · Đã đạt giới hạn cấp' : ''}</small></h4><div class="pet-actions">${button('×1','feed:1',!food||maxed)}${button('×10','feed:10',food<10||maxed)}${button('×100','feed:100',food<100||maxed)}${button('Tối đa','feed:0',!food||maxed)}</div></section>
       <section class="pet-evolve"><h4>Tiến hóa</h4><p class="pet-evolve-hint">${esc(p.evolveHint || (form>=2?'Đã mở hình thái cuối.':form===0?'Yêu cầu: linh thú cấp 30 và đủ nguyên liệu.':'Yêu cầu: linh thú cấp 60, nhân vật Nguyên Anh và đủ nguyên liệu.'))}</p><div class="pet-costs">${(p.evolveCost || []).map(c => `<span class="${num(c.have)<num(c.need)?'pet-short':''}">${esc(ITEM[c.item]?.name || c.item)} <b>${f(c.have)}/${f(c.need)}</b></span>`).join('')}</div>${form>0?'<small>Chọn hình thái đã mở ở trên để đổi ngoại hình, giữ nguyên sức mạnh.</small>':''}${button(form>=2?'Đã tiến hóa tối đa':'Tiến hóa','evolve',form>=2,'pet-primary')}</section>
       <div class="pet-release">${ui.release === String(p.id) ? `<p>Phóng sinh ${esc(p.name || d.name)}? Linh thú sẽ rời chuồng, nhận <b>${f(p.releaseValue)}</b> Linh Thú Đan.</p>${button('Xác nhận phóng sinh','release-confirm',false,'pet-danger')}${button('Giữ lại','release-cancel')}` : button(`Phóng sinh · +${f(p.releaseValue)} Linh Thú Đan`,'release-arm',false,'pet-text')}</div>`;
   }
@@ -145,6 +145,65 @@
       ${st<5&&(main.nextStarSkillText||main.nextStarTalentText)?`<section class="pet-star-effects"><h4>Khi lên ${next}★</h4><p><b>Kỹ năng:</b> ${esc(main.nextStarSkillText||'')}</p><p><b>Thiên phú:</b> ${esc(main.nextStarTalentText||'')}</p></section>`:''}
       ${mergeBox(main)}
     </section>`;
+    return `<div class="pet-star">${left}${right}</div>`;
+  }
+  /** Bồi dưỡng: tư chất (tẩy luyện có khóa / bồi linh), trang bị linh thú, thức tỉnh huyết mạch, cộng hưởng ngũ hành. Luật và số do server gửi. */
+  const RULES = () => state().training || {slots:[],tierNames:[],gear:[],fuseCount:3,fuseStones:[],maxLocks:2,maxAwaken:3,awakenBonus:.1,resonanceSame:.12,resonanceSupport:.05};
+  const have = k => num(S.inventory?.[k]);
+  const itemName = k => ITEM[k]?.name || k;
+  const itemIcon = k => k && ITEM[k] && typeof icon === 'function' ? icon(k) : '';
+  const pctTxt = v => (Math.round(num(v)*1000)/10).toLocaleString('vi-VN') + '%';
+  const APT = [['atk','Công','aptAtk'],['def','Thủ','aptDef'],['hp','Huyết','aptHp']];
+  function resonanceBox(p){
+    const t=p.training||{}, R=RULES(), el=t.manualElement;
+    const txt = t.resonanceKind==='same' ? `Cùng hệ công pháp đang kích hoạt (${esc(label(el))}): <b>+${pctTxt(t.resonance)}</b> chỉ số`
+      : t.resonanceKind==='support' ? `Tương sinh với công pháp ${esc(label(el))}: <b>+${pctTxt(t.resonance)}</b> chỉ số`
+      : `Không cộng hưởng với công pháp ${esc(label(el))}. Cùng hệ +${pctTxt(R.resonanceSame)}, tương sinh +${pctTxt(R.resonanceSupport)}.`;
+    return `<section class="pet-train-box pet-resonance ${t.resonanceKind?'on':''}"><h4>Cộng hưởng ngũ hành</h4><p>${txt}</p><small>Vòng tương sinh: Mộc/Phong → Hỏa → Thổ → Lôi → Thủy/Băng → Mộc/Phong. Đổi công pháp kích hoạt ở tab Kỹ năng.</small></section>`;
+  }
+  /** Tooltip cách nhận đan bồi dưỡng (chuỗi từ server: PetTrainingRules.Sources). */
+  function srcTip(id,name){ const s=RULES().sources?.[id]; return esc(name) + (s ? '&#10;' + esc(s) : ''); }
+  function aptBox(p){
+    const t=p.training||{}, R=RULES(), locks=[...ui.locks].filter(k=>APT.some(a=>a[0]===k));
+    const pills=1+locks.length, stones=num(t.rerollStones), reroll=have('hoan_cot_dan');
+    const rows=APT.map(([k,n,a])=>{const v=num(p[a]),max=num(t.aptMax),lock=ui.locks.has(k),full=v>=max;
+      return `<div class="pet-train-apt"><span>${petIcon(k)}${n}</span><meter min="0" max="${max||100}" value="${v}"></meter><b>${v}<small>/${max}</small></b>
+        <div class="pet-train-apt-btns"><button type="button" class="pet-btn pet-lock${lock?' on':''}" data-pet-action="lock:${k}" aria-pressed="${lock}"${ui.pending||(!lock&&locks.length>=num(R.maxLocks))?' disabled':''}>${lock?'Đã khóa':'Khóa'}</button></div></div>`;}).join('');
+    return `<section class="pet-train-box"><h4>Tư chất <small>Khoảng của phẩm: ${num(t.aptMin)}–${num(t.aptMax)}</small></h4>${rows}
+      <div class="pet-costs"><span class="${reroll<pills?'pet-short':''}" data-tip="${srcTip('hoan_cot_dan','Hoán Cốt Đan')}">Hoán Cốt Đan <b>${f(reroll)}/${pills}</b></span><span class="${have('linh_thach')<stones?'pet-short':''}">Linh thạch <b>${f(stones)}</b></span></div>
+      <div class="pet-actions">${button(`Tẩy luyện${locks.length?` (giữ ${locks.length})`:''}`,'reroll',reroll<pills||have('linh_thach')<stones,'pet-primary')}</div>
+      <small>Tẩy luyện random lại tư chất chưa khóa trong khoảng của phẩm (khóa tối đa ${num(R.maxLocks)}, mỗi tư chất khóa thêm 1 Hoán Cốt Đan). Tư chất tăng chỉ số theo cấp linh thú.</small></section>`;
+  }
+  function gearBox(p){
+    const t=p.training||{}, R=RULES(), info=id=>(R.gear||[]).find(g=>g.id===id);
+    const slots=(R.slots||[]).map(s=>{const id=t.gear?.[s.id]||'',g=info(id);
+      return `<div class="pet-gear-slot${id?' on':''}"><span class="pet-gear-ic">${itemIcon(id)||'<i>＋</i>'}</span><span><b>${esc(s.name)}</b><small>${id?`${esc(itemName(id))} · +${g?g.pct:0}% ${esc(s.statName)}`:`Trống · cộng % ${esc(s.statName)}`}</small></span>${id?button('Tháo',`ungear:${s.id}`):''}</div>`;}).join('');
+    const bag=(R.gear||[]).filter(g=>have(g.id)>0).sort((a,b)=>a.slot.localeCompare(b.slot)||b.tier-a.tier);
+    const list=bag.map(g=>{const s=(R.slots||[]).find(x=>x.id===g.slot)||{},n=have(g.id),can=g.tier<(R.tierNames||[]).length-1&&n>=num(R.fuseCount),cost=num(R.fuseStones?.[g.tier]);
+      return `<div class="pet-gear-item">${itemIcon(g.id)}<span><b>${esc(itemName(g.id))} ×${f(n)}</b><small>${esc(s.name||'')} · +${g.pct}% ${esc(s.statName||'')}</small></span>${button('Mặc',`gear:${g.id}`,t.gear?.[g.slot]===g.id)}${g.tier<(R.tierNames||[]).length-1?button(`Ghép ${num(R.fuseCount)}→1 · ${f(cost)} LT`,`gearfuse:${g.id}`,!can||have('linh_thach')<cost):''}</div>`;}).join('');
+    return `<section class="pet-train-box"><h4>Trang bị linh thú <small>Công +${num(t.gearPct?.atk)}% · Thủ +${num(t.gearPct?.def)}% · Huyết +${num(t.gearPct?.hp)}%</small></h4><div class="pet-gear-slots">${slots}</div>
+      <div class="pet-gear-bag">${list||'<p class="pet-merge-hint">Chưa có trang bị linh thú. Rơi khi hạ Boss (chương và mức khó cao cho phẩm cao hơn).</p>'}</div></section>`;
+  }
+  function awakenBox(p){
+    const t=p.training||{}, R=RULES(), lv=num(t.awaken), max=num(R.maxAwaken)||3, need=num(t.awakenDonorStars);
+    if(ui.awakenDonor&&!(state().owned||[]).some(x=>String(x.id)===ui.awakenDonor&&x.defId===p.defId&&!num(x.slot)&&num(x.stars)>=need&&String(x.id)!==String(p.id)))ui.awakenDonor=null;
+    const donors=(state().owned||[]).filter(x=>String(x.id)!==String(p.id)&&x.defId===p.defId&&!num(x.slot)&&num(x.stars)>=need).sort((a,b)=>num(a.stars)-num(b.stars)||num(a.level)-num(b.level));
+    const pips=Array.from({length:max},(_,i)=>`<i class="${i<lv?'on':''}">◆</i>`).join('');
+    const pay=(t.awakenCost||[]).every(c=>num(c.have)>=num(c.need));
+    const body=lv>=max?`<p class="pet-merge-hint">${esc(t.awakenHint||'')}</p>`:`<p class="pet-merge-hint">${esc(t.awakenHint||'')}</p>
+      <div class="pet-costs">${(t.awakenCost||[]).map(c=>`<span class="${num(c.have)<num(c.need)?'pet-short':''}">${esc(itemName(c.item))} <b>${f(c.have)}/${f(c.need)}</b></span>`).join('')}</div>
+      ${t.awakenGate?`<p class="pet-train-sub">Con hiến: cùng loài, từ ${need}★, đang nghỉ</p><div class="pet-merge-list">${donors.map(x=>{const on=ui.awakenDonor===String(x.id);return `<button type="button" class="pet-merge-pick${on?' on':''}" data-pet-action="awaken-donor:${esc(x.id)}" aria-pressed="${on}"${ui.pending?' disabled':''}>${image(x.defId,x.form,x.image)}<span><b>${esc(x.name)} · ${num(x.stars)}★</b><small>Lv.${f(x.level)} · ${esc(label(x.rarity))}${on?' · Đã chọn':''}</small></span></button>`;}).join('')||'<p class="pet-merge-hint">Chưa có con hiến phù hợp.</p>'}</div>
+      <div class="pet-actions">${button(`Thức tỉnh lên ${lv+1}/${max}`,'awaken',!ui.awakenDonor||!pay,'pet-primary')}</div>`:''}`;
+    return `<section class="pet-train-box pet-awaken-box"><h4>Thức tỉnh huyết mạch <span class="pet-awaken-pips">${pips}</span></h4><p>Sau 5★, mỗi cấp thức tỉnh +${Math.round(num(R.awakenBonus)*100)}% chỉ số (kỹ năng mạnh lên theo Linh Uy). Hiện tại: <b>+${Math.round(lv*num(R.awakenBonus)*100)}%</b>.</p>${body}<small>Con hiến sẽ biến mất, trang bị của nó về túi, hoàn nửa Linh Thú Đan đã cho ăn.</small></section>`;
+  }
+  function trainTab(){
+    const owned=[...(state().owned||[])].sort((a,b)=>num(b.slot)-num(a.slot)||power(b)-power(a));
+    if(!owned.some(p=>String(p.id)===ui.train))ui.train=ui.selected&&owned.some(p=>String(p.id)===ui.selected)?ui.selected:owned[0]?String(owned[0].id):null;
+    const main=owned.find(p=>String(p.id)===ui.train);
+    const left=`<section class="pet-star-list"><div class="pet-section-heading"><h4>Chọn linh thú</h4><small>Con xuất chiến nằm trên</small></div><div class="pet-train-pets">${owned.map(p=>`<button type="button" class="pet-star-pick${String(p.id)===ui.train?' on':''}" data-pet-action="train-pick:${esc(p.id)}" aria-pressed="${String(p.id)===ui.train}"${ui.pending?' disabled':''}>${image(p.defId,p.form,p.image)}<span><b>${esc(p.name)} ${num(p.training?.awaken)?`<em class="pet-awaken-tag">${esc(p.training.awakenName)}</em>`:''}</b><small>Lv.${f(p.level)} · ${esc(label(p.rarity))} · ${num(p.stars)}★${num(p.slot)?' · Xuất chiến':''}</small></span></button>`).join('')}</div></section>`;
+    if(!main)return `<div class="pet-star">${left}<section class="pet-star-main"><div class="pet-empty">${paw}<h3>Chưa có linh thú</h3></div></section></div>`;
+    const right=`<section class="pet-star-main pet-train"><div class="pet-star-head">${image(main.defId,main.form,main.image)}<div><h3>${esc(main.name)} ${stars(main)}</h3><p>${esc(label(main.element))} · ${esc(label(main.rarity))} · ${esc(main.formName||'')} · Cấp ${f(main.level)}</p><div class="pet-train-stats"><span>${petIcon('atk')}Công <b>${f(main.atk)}</b></span><span>${petIcon('def')}Thủ <b>${f(main.def)}</b></span><span>${petIcon('hp')}Huyết <b>${f(main.hp)}</b></span></div></div></div>
+      ${resonanceBox(main)}${aptBox(main)}${gearBox(main)}${awakenBox(main)}</section>`;
     return `<div class="pet-star">${left}${right}</div>`;
   }
   function stable() {
@@ -243,6 +302,19 @@
       if(main&&donor&&Number.isInteger(i)&&i>=0&&i<1+num(starRecipe(main)?.otherCount)&&donorFits(main,donor,i)&&!ui.starDonors.some((x,j)=>j!==i&&x===id))ui.starDonors[i]=ui.starDonors[i]===id?null:id;
       ui.merge=null;render(true);return;
     }
+    if (kind==='train-open') {ui.tab='train';ui.train=[arg,...rest].join(':');ui.awakenDonor=null;ui.locks.clear();render(true);return;}
+    if (kind==='train-pick') {ui.train=[arg,...rest].join(':');ui.awakenDonor=null;ui.locks.clear();render(true);return;}
+    if (kind==='lock') {ui.locks.has(arg)?ui.locks.delete(arg):ui.locks.size<num(RULES().maxLocks||2)&&ui.locks.add(arg);render(true);return;}
+    if (kind==='awaken-donor') {const id=[arg,...rest].join(':');ui.awakenDonor=ui.awakenDonor===id?null:id;render(true);return;}
+    if (kind==='gearfuse') return send(`petgear/fuse/${encodeURIComponent(arg)}?n=1`);
+    if (ui.tab==='train'&&ui.train&&['reroll','gear','ungear','awaken'].includes(kind)){
+      const base=`pet/${encodeURIComponent(ui.train)}/`;
+      if (kind==='reroll') return send(base+`reroll?locks=${encodeURIComponent([...ui.locks].join(','))}`);
+      if (kind==='gear') return send(base+`gear/${encodeURIComponent(arg)}`);
+      if (kind==='ungear') return send(base+`ungear/${encodeURIComponent(arg)}`);
+      if (kind==='awaken'&&ui.awakenDonor){const d=ui.awakenDonor;ui.awakenDonor=null;return send(base+`awaken/${encodeURIComponent(d)}`);}
+      return;
+    }
     if (kind==='hatch') return send(`hatch/${encodeURIComponent(rest.join(':'))}?slot=${num(arg)}`);
     if (kind==='now'||kind==='collect') return send(`hatch/${kind}?slot=${num(arg)}`);
     if (kind==='merge-confirm'&&ui.merge&&ui.tab==='star'&&ui.star){const main=(state().owned||[]).find(x=>String(x.id)===ui.star);if(main&&donorsReady(main)){ui.merge=null;return send(`pet/${encodeURIComponent(ui.star)}/merge?foods=${encodeURIComponent(chosenDonors(main).map(x=>x.id).join(','))}`);}return;}
@@ -275,16 +347,16 @@
       root.querySelectorAll('.pet-btn,.pet-egg-choice').forEach(b=>{b.disabled=true;});
       return;
     }
-    const signature=JSON.stringify([S.pet,S.inventory,DATA?.petDefs,ui.tab,ui.selected,ui.element,ui.rarity,ui.sort,ui.egg,ui.codexElement,ui.codexRarity,ui.codexOwned,ui.release,ui.multi,[...ui.picked],ui.multiArm,ui.merge,ui.star,ui.starDonors,ui.pending,ui.error]);
+    const signature=JSON.stringify([S.pet,S.inventory,DATA?.petDefs,ui.tab,ui.selected,ui.element,ui.rarity,ui.sort,ui.egg,ui.codexElement,ui.codexRarity,ui.codexOwned,ui.release,ui.multi,[...ui.picked],ui.multiArm,ui.merge,ui.star,ui.starDonors,ui.train,[...ui.locks],ui.awakenDonor,ui.pending,ui.error]);
     if (!force&&signature===ui.signature)return;
     // A server sync must not steal focus from an open filter or keyboard navigation.
     const focused=root.contains(document.activeElement)?document.activeElement:null;
     if (!force&&focused?.matches('select')) return;
     const focusKey=focused?.dataset.petAction, focusSelect=focused?.dataset.petSelect;
-    const scrolls=[...root.querySelectorAll('.pet-detail,.pet-cards,.pet-star-list,.pet-body')].map(el=>[el.className,el.scrollTop]);
+    const scrolls=[...root.querySelectorAll('.pet-detail,.pet-cards,.pet-star-list,.pet-star-main,.pet-body')].map(el=>[el.className,el.scrollTop]);
     ui.signature=signature;
     const next=document.createElement('div');
-    next.innerHTML=`<div class="pet-ui"><div class="pet-top"><header class="pet-header"><span class="pet-heading-icon"><img src="img/header/pet-emblem.png" alt=""></span><div><h2>Linh thú</h2><p>Duyên lành đồng hành</p></div><span>${f((state().owned||[]).length)} linh thú</span></header><nav class="pet-tabs" aria-label="Linh thú">${[['stable','Chuồng thú'],['star','Ghép sao'],['hatch','Ấp trứng'],['codex','Thú điển']].map(([k,label])=>`<button type="button" data-pet-action="tab:${k}" aria-current="${ui.tab===k?'page':'false'}" class="${ui.tab===k?'active':''}">${label}</button>`).join('')}</nav></div><div class="pet-status" role="${ui.error?'alert':'status'}">${ui.error?esc(ui.error):''}</div><div class="pet-body">${ui.tab==='hatch'?hatch():ui.tab==='codex'?codex():ui.tab==='star'?starTab():stable()}</div></div>`;
+    next.innerHTML=`<div class="pet-ui"><div class="pet-top"><header class="pet-header"><span class="pet-heading-icon"><img src="img/header/pet-emblem.png" alt=""></span><div><h2>Linh thú</h2><p>Duyên lành đồng hành</p></div><span>${f((state().owned||[]).length)} linh thú</span></header><nav class="pet-tabs" aria-label="Linh thú">${[['stable','Chuồng thú'],['star','Ghép sao'],['train','Bồi dưỡng'],['hatch','Ấp trứng'],['codex','Thú điển']].map(([k,label])=>`<button type="button" data-pet-action="tab:${k}" aria-current="${ui.tab===k?'page':'false'}" class="${ui.tab===k?'active':''}">${label}</button>`).join('')}</nav></div><div class="pet-status" role="${ui.error?'alert':'status'}">${ui.error?esc(ui.error):''}</div><div class="pet-body">${ui.tab==='hatch'?hatch():ui.tab==='codex'?codex():ui.tab==='star'?starTab():ui.tab==='train'?trainTab():stable()}</div></div>`;
     if(ui.tab==='stable')layoutStable(next);
     next.firstElementChild.insertAdjacentHTML('beforeend',noticeMarkup());
     reconcile(root,next);
