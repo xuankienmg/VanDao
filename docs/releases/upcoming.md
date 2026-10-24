@@ -1,27 +1,30 @@
 ## Nội dung cập nhật
 
-### Sự kiện Thiên Cơ
-- Thêm **sự kiện quay tích lũy Thiên Cơ** mỗi tuần (thứ Hai 00:00 → Chủ nhật 23:59 giờ Việt Nam), xen kẽ **Tuần Trang Bị** (tính lượt Quay trang bị) và **Tuần Linh Thú** (tính lượt Quay Linh Thú). Mỗi lượt quay đúng loại của tuần được 1 điểm.
-- Tuần Trang Bị có 9 mốc quà từ 10 → 600 điểm: vé vòng quay, Linh Thú Đan, Hóa Hình Đan, Hoán Cốt Đan, Thần Thú Huyết, Thú Đản Huyền / Địa / Thiên. Mốc cuối tặng **Rương Thiên Cơ**, mở ra 1 trang bị bộ cảnh giới hiện tại: 70% phẩm Đạo, 30% phẩm Huyền Tiên.
-- Tuần Linh Thú có 9 mốc quà từ 5 → 300 điểm: Linh Thú Đan, Vé Linh Thú, Hóa Hình Đan, Hoán Cốt Đan, Thần Thú Huyết, Thú Đản Huyền / Địa / Thiên. Mốc cuối tặng **Thượng Cổ Thú Đản**.
-- Khung sự kiện hiện ngay trong cửa sổ Vòng quay, có thanh tiến độ, thời gian còn lại và nút **Nhận tất cả**. Hết tuần, quà đã đạt mà chưa nhận được tự gửi vào Hành trang.
-- Chỉ tính điểm và nhận quà khi đang kết nối máy chủ, vì sự kiện dùng giờ máy chủ thay cho đồng hồ máy. Nhân vật từng dùng admin mode hoặc mở bằng bản game cũ không nhận được quà sự kiện.
-- Rương Thiên Cơ không giao dịch được ở Chợ.
+### Lôi Đài
+- Thêm **Lôi Đài**: đấu PK với người chơi khác theo bậc thang hạng. Mở bằng tab **Lôi đài** trong Thiên bảng (nút Bảng xếp hạng), cạnh Cảnh giới / Lực chiến / Vượt ải / Linh thú.
+- Lần đầu vào Lôi Đài, bạn đứng cuối bậc thang. Chỉ khiêu chiến được người xếp trên, trong khoảng 5 hạng hoặc 20% hạng hiện tại (lấy số lớn hơn).
+- Thắng thì **đổi hạng** với đối thủ. Thua thì giữ nguyên hạng, đối thủ cũng không mất gì.
+- Mỗi ngày có **15 lượt khiêu chiến**, làm mới lúc 0h giờ Việt Nam, nghỉ 20 giây giữa hai trận.
+- Trận đấu do máy chủ tính từ chỉ số mới nhất của hai bên (công, thủ, máu, bạo kích, thân pháp). Bên có thân pháp cao hơn ra đòn trước. Sau 30 hiệp mà chưa ai gục thì bên còn nhiều % máu hơn thắng.
+- Trận đấu được diễn lại trên màn hình, có thanh máu, sát thương từng đòn và nút Bỏ qua.
+- Đầu Lôi Đài luôn hiện **Tam cường** (top 3). Bên dưới là các đối thủ trong tầm khiêu chiến, rồi đến bạn và 2 người ngay sau.
+- Nhật ký Lôi Đài ghi 20 trận gần nhất, gồm cả trận bạn khiêu chiến và trận bạn bị khiêu chiến.
+- Nhân vật từng dùng admin mode không vào được Lôi Đài.
 
-### Rương
-- Mọi loại rương (thường, hiếm, Boss, kể cả Khó / Ác mộng) **không còn ra đan tiến giai**. Tỉ lệ đan cũ được chia đều cho các vật phẩm còn lại trong rương.
-- Hạ Boss **không còn rơi đan đột phá** (đan tiến giai theo cảnh giới, ở mọi chương và mọi mức khó). Đan đột phá vẫn rơi ở ải thường và luyện được tại mục Đan dược.
-- Rương trang phục bán được cho NPC (800 linh thạch, ngang Rương Boss) bằng nút Bán trong Hành trang hoặc quầy Luyện chế · Bán. Bán nhanh theo phẩm bỏ qua rương trang phục để tránh bán nhầm.
-- Rương trang phục đăng bán được ở Chợ.
+### Danh hiệu Đệ nhất
+- Người đứng hạng 1 mỗi bảng nhận danh hiệu: **Lôi Đài Bá Chủ** (Lôi đài), **Chiến Lực Vô Song** (Lực chiến), **Cảnh Giới Chí Tôn** (Cảnh giới), **Phá Thiên Giả** (Vượt ải), **Vạn Thú Chi Vương** (Linh thú).
+- Danh hiệu hiện cạnh tên ở mọi bảng xếp hạng, ở Lôi Đài và trong hồ sơ trang bị. Mất hạng 1 thì mất danh hiệu.
 
-### Bồi dưỡng linh thú
-- Bỏ **Bồi nguyên** và **Bồi Linh Đan**. Bồi Linh Đan còn trong Hành trang tự đổi thành **2.000 linh thạch** mỗi viên.
-- Trang bị linh thú có ảnh riêng. Ô Linh Giáp (Thủ) đổi tên thành **Móng Vuốt**.
-- Rê chuột vào Hoán Cốt Đan ở mục Tẩy luyện để xem tỉ lệ rơi khi hạ Boss theo từng mức khó.
+### Đột phá và mức Khó / Ác Mộng
+- Đột phá **Luyện Hư → Hợp Thể** cần **Ma Viên Hạch · Khó**, rơi 100% từ Boss Ma Viên chương 1 mức Khó. Thao Thiết Yêu Hạch (chương 9) không còn dùng để đột phá Hợp Thể.
+- Đột phá **Hợp Thể → Đại Thừa** cần thêm **Cùng Kỳ Vương Hạch · Khó**, rơi 100% từ Boss Cùng Kỳ Vương chương 10 mức Khó.
+- Thêm **Ác Mộng Cùng Kỳ Vương Hạch**, rơi từ Boss chương 10 mức Ác Mộng. Đây là nguyên liệu cho các cảnh giới sau Đại Thừa, hiện chưa có công thức đột phá.
+- Hạch Boss mức Khó được giữ lại khi đột phá thất bại.
+- Cân bằng lại độ khó theo cảnh giới. **Luyện Hư** đánh các chương đầu mức Khó, **Hợp Thể** đánh các chương cuối. **Đại Thừa** đi từ chương 1 đến chương 5 mức Ác Mộng. Từ chương 6 Ác Mộng, quái mạnh lên rất nhanh; các chương này dành cho cảnh giới mới.
+- Khi thiếu hạch Boss, thông báo ghi rõ đúng Boss, chương và mức khó cần đánh. Nút đi đánh Boss tự chuyển sang đúng mức khó.
+
+### Boss
+- Hạ Boss **không còn rơi đan đột phá** (đan tiến giai theo cảnh giới, kể cả Hóa Thần Đan) ở mọi chương và mọi mức khó. Đan đột phá vẫn rơi ở ải thường và luyện được tại mục Đan dược.
 
 ### Trang bị
-- Bộ trang bị **Đại Thừa** có ảnh riêng (trắng ngà, vàng kim, lam ngọc), không còn dùng tạm ảnh bộ Thiên Hợp.
-
-### Wiki
-- Trang vật phẩm có thêm mục **Nguồn nhận · Hạ Boss**, ghi tỉ lệ và số lượng theo từng mức khó và chương.
-- Sửa lỗi xuất dữ liệu Wiki khi triển khai trang.
+- Bộ trang bị **Đại Thừa** đổi sang cấp 40. Trang bị Đại Thừa đã có trong Hành trang, đang mặc hoặc đang bán ở Chợ vẫn dùng bình thường.
