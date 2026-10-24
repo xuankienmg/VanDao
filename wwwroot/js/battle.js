@@ -526,10 +526,10 @@ function battlePhase(){
   const b = S.battle, hits = Math.max(1, b.hits), ws = b.waves || [], gap = .8;   // gap = GameData.WaveSeconds
   const petTurns = new Set((b.pet?.casts || []).filter(c=>!(c.at>=.85)).map(c=>c.turn).filter(i=>Number.isInteger(i)&&i>=0&&i<hits));
   const cd = (S.exploreCooldownMs || 8000) / 1000, left = exploreLeft() / 1000;
-  const travelFactor = 1 - Math.max(0, Math.min(60, S.stats?.speed || 0)) / 100;
-  const walk = 2.5 * travelFactor;
-  const combatBase = hits + Math.max(0, ws.length - 1) * gap + 1;
-  const combatRaw = combatBase + petTurns.size * PET_CAST_SECONDS + (b.extra || []).slice(0, hits).filter(Boolean).length * EX_REP;
+  const tempoFactor = 1 - Math.max(0, Math.min(60, S.stats?.speed || 0)) / 100;
+  const walk = 2.5 * tempoFactor;
+  const combatBase = (hits + Math.max(0, ws.length - 1) * gap + 1) * tempoFactor;
+  const combatRaw = hits + Math.max(0, ws.length - 1) * gap + 1 + petTurns.size * PET_CAST_SECONDS + (b.extra || []).slice(0, hits).filter(Boolean).length * EX_REP;
   const tripScale = cd / (walk + combatBase);
   // Thân pháp tăng tốc cả chạy và combat; giữ lượt đánh, liên kích và chiêu linh thú khớp cooldown server.
   const f = tripScale * combatBase / combatRaw;
