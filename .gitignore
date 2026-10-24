@@ -12,6 +12,7 @@ GEMINI.md
 # Local development tools, previews and generated art sources.
 /tools/*
 !/tools/wiki_export/
+!/tools/agility_checks/
 /.forge/
 /exports/
 /docs/
