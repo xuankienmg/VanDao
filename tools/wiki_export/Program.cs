@@ -14,7 +14,7 @@ var chapters = GameData.Chapters.Select(c => new {
         name = GameData.DiffNames[d],
         drops = GameData.DiffDrops(c, d),
         herbChapter = GameData.DiffHerbChapter(c, d),
-        bossMaterials = PetLoot.BossMaterials(c.Index, d),   // vật phẩm rơi khi hạ Boss (không gồm đan tu luyện theo cảnh giới người chơi)
+        bossMaterials = PetLoot.BossMaterials(c.Index, d),   // vật phẩm rơi khi hạ Boss
         areas = Enumerable.Range(1, GameData.BossArea).Select(a => new {
             index = a, place = GameData.AreaPlace(c, a),
             waves = GameData.AreaWaves(c, a, d).Select(w => {
