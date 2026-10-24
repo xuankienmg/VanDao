@@ -789,7 +789,7 @@ window.I18N_EN = {
 "Đan luyện thần hoàn hư, kim quang xoáy như dải ngân hà, ngàn năm khó thành một lò.":"A pill that returns the spirit to the void, golden light swirling like the Milky Way; a single furnace takes a thousand years to succeed.",
 "Đan này chưa dùng được.":"This pill cannot be used yet.",
 "Đan ngưng tụ kim đan nơi đan điền.":"A pill that condenses a golden core in the dantian.",
-"Đan nhập môn, có từ Boss.":"An entry-level pill, obtained from Bosses.",
+"Đan nhập môn, rơi ở ải thường.":"An entry-level pill, dropped in regular stages.",
 "Đan phá bình chướng Hóa Thần → Luyện Hư, thần hồn hóa hư.":"A pill that breaks the bottleneck of Spirit Transformation → Void Refining, turning the soul into the void.",
 "Đan phá bình chướng Kim Đan → Nguyên Anh.":"A pill that breaks the bottleneck of Golden Core → Nascent Soul.",
 "Đan phá bình chướng Luyện Hư → Hợp Thể, nguyên thần nhập nhục thân.":"A pill that breaks the bottleneck of Void Refining → Body Integration, merging the primordial spirit into the flesh.",

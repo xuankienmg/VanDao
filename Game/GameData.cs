@@ -194,7 +194,7 @@ public static class GameData
         new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
             Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, linh thú hoặc công pháp (không ra đan tiến giai). Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
         // ---- đan theo cảnh giới: dùng để lên tầng và đột phá, luyện từ linh thảo ----
-        new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, có từ Boss.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
+        new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, rơi ở ải thường.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. Luyện chế từ linh thảo và linh thạch tại mục Đan dược."),
         new ItemDef("truc_co_dan",   "Trúc Cơ Đan",      "pill",  "#6fd39a", "Đan xây nền đạo cơ.", "img/dan/dan_04.png", Rarity: "rare", Kind: "Đan dược", Tier: 2,
             Use: "Dùng để đột phá đại cảnh giới Luyện Khí → Trúc Cơ, và lên kỳ trong Trúc Cơ."),

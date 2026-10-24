@@ -1098,7 +1098,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 b.MonsterHp, b.MonsterAtk, b.MonsterDef, b.Win, b.Hits, a <= amax || (a == GameData.BossArea && amax >= GameData.Areas), b.Image,
                 ws.Select(w => { var (lo, hi) = GameData.StoneRange(c, a, w.Tier, p.Diff); return new WaveInfoDto(w.Name, w.Image, w.Tier, w.Hp, w.Atk, w.Def, lo, hi); }).ToList(),
                 ws.Any(w => w.Tier == "elite"),a==GameData.BossArea?
-                    PetLoot.BossMaterials(c.Index,p.Diff,p.Realm).Select(d=>new DropInfoDto(d.Item,d.Min,d.Max,d.Chance,false)).ToList():
+                    PetLoot.BossMaterials(c.Index,p.Diff).Select(d=>new DropInfoDto(d.Item,d.Min,d.Max,d.Chance,false)).ToList():
                     PetLoot.StageOdds(c,p.Diff,a));
         }).ToList();
         return new MapDto(p.Area, amax, c.KeyItem, c.BossItem ?? "", c.BossLair, GameData.KeyChance(1), GameData.KeyChance(GameData.Areas), areas,
@@ -1261,7 +1261,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                         var nChest = TryAddLoot(p, bossChest, GameData.DiffBossChests[dif]);   // Boss chắc chắn rơi rương (Khó 2 · Ác mộng 3)
                         var chestOk = nChest > 0;
                         if (chestOk) loot[bossChest] = loot.GetValueOrDefault(bossChest) + nChest;
-                        foreach(var material in PetLoot.BossMaterials(r.Index,dif,p.Realm)){
+                        foreach(var material in PetLoot.BossMaterials(r.Index,dif)){
                             if(Random.Shared.NextDouble()>=material.Chance)continue;
                             var quantity=Random.Shared.Next(material.Min,material.Max+1);
                             var received=TryAddLoot(p,material.Item,quantity);

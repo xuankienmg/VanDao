@@ -76,7 +76,8 @@ public static class PetLoot
         }
         return parts.Count==0?"":$"Rơi khi hạ Boss (mọi chương): {string.Join("; ",parts)}.";
     }
-    public static DropDef[] BossMaterials(int chapter,int diff,int realm=-1)
+    /// <summary>Vật phẩm rơi khi hạ Boss. Không gồm đan đột phá (đan tiến giai theo cảnh giới).</summary>
+    public static DropDef[] BossMaterials(int chapter,int diff)
     {
         var quantity=1+Math.Max(0,chapter)/3+diff;
         var drops=new List<DropDef>{new("hoa_hinh_dan",quantity,quantity+1,.25+.05*diff)};
@@ -88,10 +89,6 @@ public static class PetLoot
         drops.Add(new(PetTraining.RerollItem,1,1+diff,Math.Min(.35,.15+.05*diff)));
         var tier=PetTraining.DropTier(chapter,diff);
         foreach(var slot in PetTraining.Slots)drops.Add(new(PetTraining.GearId(slot.Id,tier),1,1,(.12+.03*diff)/PetTraining.Slots.Length));
-        if(realm>=0){
-            var pill=GameData.Realms[realm].StageCost(0).Keys.First(k=>k!="linh_thach");
-            if(pill!="hoa_than_dan")drops.Add(new(pill,quantity,quantity+2,.25));   // Hóa Thần Đan không rơi ở ải Boss
-        }
         return drops.ToArray();
     }
 }
