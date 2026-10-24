@@ -162,7 +162,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
             logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", Player.AdminEnabled ? ChestOdds(p) : [],   // tỉ lệ rương chỉ hiện ở admin mode: bản phát hành khỏi tính + gửi ~11 KB mỗi lần đồng bộ
             p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p), CultivationManuals.Active(p),
-            UnlockedSkins(p).ToArray(), CurrentGender(p), EventStateFor(p));
+            UnlockedSkins(p).ToArray(), CurrentGender(p), EventStateFor(p), ArenaReplay(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -1189,6 +1189,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             .Skip(LogKeep).Select(l => l.Id).FirstOrDefaultAsync();
         if (cutoff > 0) await db.Logs.Where(l => l.PlayerId == p.Id && l.Id <= cutoff).ExecuteDeleteAsync();
         lb?.Track(p);   // bảng xếp hạng online: gửi nền, có giới hạn tần suất
+        _arena?.TrackLoadout(p, lb?.Excluded(p) == true);   // Lôi đài: ảnh chụp kỹ năng cho người khác đánh
     }
 
     public Task<LeaderboardDto> LeaderboardAsync(Player p, string? by) => lb?.GetAsync(p, by) ?? Task.FromResult(new LeaderboardDto(false, by ?? "realm", [], null, p.Tainted, p.Name));
