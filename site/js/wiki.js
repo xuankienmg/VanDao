@@ -91,6 +91,21 @@
     const herbs=data.herbDrops.filter(h=>h.chapters.includes(d.herbChapter));
     $('results').innerHTML=`<header class="chapter-header"><p class="eyebrow">CHƯƠNG ${c.index+1} / ${esc(d.name.toUpperCase())}</p><h3>${esc(c.name)}</h3><p class="muted">Cảnh giới gợi ý: ${esc(c.realm)} · Boss: ${esc(c.bossLair)}${c.enabled?'':' · Chương chưa mở'}</p><div class="drop-list">${ingredient(c.keyItem)}${c.bossItem?ingredient(c.bossItem):''}</div></header><p class="note">Mỗi ải thường gồm 3 đợt quái, từ ải 10 có tinh anh ở đợt cuối. Linh thạch dưới đây tính cho từng quái. Chỉ số đã tính theo mức độ khó, chưa tính hiệu ứng trong trận.</p>${areas.length?areas.map(a=>`<details class="area${a.index===16?' boss':''}"><summary><span>${c.index+1}-${a.index} · ${esc(a.place)}</span><small>${a.index===16?'BOSS':a.index>=10?'TINH ANH':'THƯỜNG'} · ${a.waves.length} đợt</small></summary><div class="area-content">${a.waves.map((w,i)=>`<div class="wave">${img(w.image,'monster',undefined)}<div><strong>${i+1}. ${esc(w.name)}</strong>${stats(w)}<p>Linh thạch: ${fmt(w.stoneMin)}–${fmt(w.stoneMax)}</p></div></div>`).join('')}${herbs.some(h=>a.index>=h.minArea)?`<p class="muted">Linh thảo có thể rơi tại ải này</p><div class="drop-list">${herbs.filter(h=>a.index>=h.minArea).map(h=>ingredient(h.item,undefined)).join('')}</div>`:''}</div></details>`).join(''):'<p class="empty">Không tìm thấy ải phù hợp.</p>'}<section class="paper"><h3>Vật phẩm trong bảng rơi của chương</h3><p class="muted">Danh sách nguyên liệu / vật phẩm gốc; phẩm trang bị được game chọn riêng. Phần thưởng thực tế còn tùy ải và loại quái.</p><div class="drop-list">${d.drops.filter(x=>x.item!=='linh_thach').map(x=>ingredient(x.item)).join('')}</div></section>`;
   }
+  /** Nơi rơi khi hạ Boss: gom các chương liền nhau có cùng tỉ lệ / số lượng theo từng mức khó. */
+  function bossSources(id) {
+    const out=[];
+    for(let d=0;d<3;d++){
+      let run=null;const runs=[];
+      for(const c of data.chapters.filter(c=>c.enabled)){
+        const m=(c.difficulties[d]?.bossMaterials||[]).find(x=>x.item===id);
+        const key=m?`${m.chance}|${m.min}|${m.max}`:'';
+        if(m&&run&&run.key===key&&run.to===c.index-1){run.to=c.index;continue;}
+        if(m){run={key,from:c.index,to:c.index,m};runs.push(run);}else run=null;
+      }
+      for(const r of runs)out.push(`<p class="detail-copy"><b>${esc(data.chapters[0].difficulties[d].name)}</b> · chương ${r.from+1}${r.to>r.from?'–'+(r.to+1):''}: ${fmt(Math.round(r.m.chance*1000)/10)}% · ${r.m.min===r.m.max?fmt(r.m.min):fmt(r.m.min)+'–'+fmt(r.m.max)} cái</p>`);
+    }
+    return out.join('');
+  }
   function showDetail(id,pet=false) {
     const p=pet?data.pets.find(p=>p.id===id):null,it=items[id];
     if(!p&&!it)return;
@@ -113,6 +128,8 @@
       if(b)html+=block('Đan phương · 1 viên',`<div class="drop-list">${Object.entries(b.in).map(([k,n])=>ingredient(k,n)).join('')}</div><p class="muted">Cảnh giới tối thiểu: ${esc(realmName(it.minRealm))}. Luôn thành công khi đủ nguyên liệu và chỗ trong hành trang.</p>`);
       const recipes=data.brews.filter(b=>Object.hasOwn(b.in,id));
       if(recipes.length)html+=block('Dùng để luyện',`<div class="drop-list">${recipes.map(b=>ingredient(b.out,b.in[id])).join('')}</div><p class="muted">Số lượng hiển thị là lượng nguyên liệu này cần cho mỗi viên.</p>`);
+      const boss=bossSources(id);
+      if(boss)html+=block('Nguồn nhận · Hạ Boss',boss+'<p class="muted">Mỗi lần hạ Boss gieo tỉ lệ một lần; số lượng ngẫu nhiên trong khoảng.</p>');
       const herbs=data.herbDrops.filter(h=>h.item===id);
       if(herbs.length)html+=block('Thu thập linh thảo',herbs.map(h=>`<p class="detail-copy">Chương ${h.chapters.map(c=>c+1).join(', ')} · từ ải ${h.minArea} · ${h.min}–${h.max} cây · tỉ lệ gốc ${fmt(h.chance*100)}%.</p>`).join('')+'<p class="muted">Ở Khó / Ác mộng, nguồn linh thảo theo chương quy đổi của game. Tỉ lệ thực tế còn phụ thuộc ải.</p>');
       if(it.sell)html+=block('Giá bán',`<p class="detail-copy">${fmt(it.sell)} linh thạch.</p>`);

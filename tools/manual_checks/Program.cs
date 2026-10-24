@@ -89,6 +89,7 @@ Check(CultivationManuals.Unlocked(fresh).Length==0,"new player bypassed manual g
 for(int realm=0;realm<GameData.Realms.Count;realm++)for(int diff=0;diff<3;diff++)for(int chapter=0;chapter<10;chapter++)foreach(var chest in GameData.Chests.Keys){
     var table=ChestRewards.Table(realm,chest,diff,chapter);
     Check(Math.Abs(table.Sum(x=>x.Probability)-1)<1e-8,"chest total not one");
+    Check(table.All(x=>x.Group!="pill"&&!GameData.Realms.Any(r=>r.StageCost(0).ContainsKey(x.Item))),"chest drops a realm pill");
     var manuals=table.Where(x=>x.Group=="manual").ToArray();
     Check(Math.Abs(manuals.Sum(x=>x.Probability)-(chest==GameData.BossChest?.01:0))<1e-10,"wrong manual chance");
     Check(manuals.All(x=>x.Qty==1&&GameData.ItemById[x.Item].Type=="manual"),"invalid manual reward");

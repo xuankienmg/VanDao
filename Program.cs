@@ -185,6 +185,8 @@ public static class Program
         api.MapPost("/players/{id:guid}/spin", (Guid id, int? n, string? mode, GameService game) =>
             RunCraft(id, game, p => mode == "pet" ? game.PetSpin(p, n ?? 1) : game.Spin(p, n ?? 1)));
 
+        // sự kiện quay tích lũy Thiên Cơ: i = chỉ số mốc, bỏ trống / -1 = nhận mọi mốc đã đạt
+        api.MapPost("/players/{id:guid}/event/claim", (Guid id, int? i, GameService game) => Run(id, game, p => game.ClaimEvent(p, i ?? -1)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/feed", (Guid id, Guid petId, int? n, GameService game) => Run(id, game, p => game.Feed(p, petId, n ?? 1)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/evolve", (Guid id, Guid petId, GameService game) => Run(id, game, p => game.Evolve(p, petId)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/appearance/{form:int}", (Guid id, Guid petId, int form, GameService game) => Run(id, game, p => game.SetPetAppearance(p, petId, form)));
@@ -196,7 +198,6 @@ public static class Program
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/merge/{foodId:guid}", (Guid id, Guid petId, Guid foodId, GameService game) => Run(id, game, p => game.MergePet(p, petId, foodId)));
         // bồi dưỡng linh thú: tẩy luyện / bồi nguyên tư chất · trang bị linh thú · thức tỉnh huyết mạch
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/reroll", (Guid id, Guid petId, string? locks, GameService game) => Run(id, game, p => game.RerollAptitude(p, petId, locks)));
-        api.MapPost("/players/{id:guid}/pet/{petId:guid}/train/{stat}", (Guid id, Guid petId, string stat, int? n, GameService game) => Run(id, game, p => game.TrainAptitude(p, petId, stat, n ?? 1)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/gear/{itemId}", (Guid id, Guid petId, string itemId, GameService game) => Run(id, game, p => game.EquipPetGear(p, petId, itemId)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/ungear/{slot}", (Guid id, Guid petId, string slot, GameService game) => Run(id, game, p => game.UnequipPetGear(p, petId, slot)));
         api.MapPost("/players/{id:guid}/pet/{petId:guid}/awaken/{donorId:guid}", (Guid id, Guid petId, Guid donorId, GameService game) => Run(id, game, p => game.AwakenPet(p, petId, donorId)));

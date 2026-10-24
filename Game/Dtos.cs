@@ -109,7 +109,11 @@ public record StateDto(
     EquipmentEffectsState? GearEffects = null,
     StatSourceDto[]? StatSources = null,
     EffectState[]? CombatLimits = null, PetState? Pet = null, SpinDailyDto? SpinDaily = null, SpinDailyDto? PetSpinDaily = null, string[]? UnlockedElements = null, string? ActiveManual = null,
-    string[]? SkinsUnlocked = null, string Gender = "male");   // Trang phục và giới tính chỉ đổi ngoại hình.
+    string[]? SkinsUnlocked = null, string Gender = "male", SpinEventDto? Event = null);
+/// <summary>Sự kiện quay tích lũy Thiên Cơ (track: gear · pet). Online = có giờ máy chủ, mới cộng điểm và nhận quà được.</summary>
+public record SpinEventDto(bool Active, bool Online, string Key, string Track, string Name, long StartsAt, long EndsAt, int Points,
+    List<SpinEventMilestoneDto> Milestones, string? Blocked, string NextTrack, long NextStartsAt);
+public record SpinEventMilestoneDto(int Points, List<ItemQtyDto> Rewards, bool Claimed, bool Ready);   // Trang phục và giới tính chỉ đổi ngoại hình.
 
 public record SpinDailyDto(int Limit, int Used, int Remaining, long ResetAt);
 
@@ -184,8 +188,8 @@ public record PetTrainingDto(int AptMin, int AptMax, int RerollStones, int Awake
 public record PetGearSlotDto(string Id, string Name, string Stat, string StatName);
 public record PetGearInfoDto(string Id, string Slot, int Tier, double Pct);
 /// <summary>Luật bồi dưỡng linh thú (hằng số), gửi kèm trạng thái để giao diện không tự đoán.</summary>
-public record PetTrainingRules(PetGearSlotDto[] Slots, string[] TierNames, PetGearInfoDto[] Gear, int FuseCount, int[] FuseStones, int MaxLocks, int TrainMin, int TrainMax,
-    int MaxAwaken, double AwakenBonus, double ResonanceSame, double ResonanceSupport);
+public record PetTrainingRules(PetGearSlotDto[] Slots, string[] TierNames, PetGearInfoDto[] Gear, int FuseCount, int[] FuseStones, int MaxLocks,
+    int MaxAwaken, double AwakenBonus, double ResonanceSame, double ResonanceSupport, Dictionary<string, string>? Sources = null);   // Sources: cách nhận đan bồi dưỡng (tooltip)
 public record HatchDto(int Slot, string Egg, DateTime ReadyAt, int ReadyInSeconds, bool Ready, int InstantCost);
 /// <param name="ParalyzeTurns">Số lượt quái bị khống bởi lần thi triển này (mọi loại khống); ControlKind = "paralyze" · "stun" · "freeze".</param>
 public record PetCastDto(int Turn, int Dmg, int Heal, int Guard, string Skill, int[]? Hits = null, string Kind = "", int ParalyzeTurns = 0, bool IsMiracle = false, double At = .45, string ControlKind = "");

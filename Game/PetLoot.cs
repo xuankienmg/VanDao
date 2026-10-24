@@ -65,6 +65,17 @@ public static class PetLoot
                 DropQuantity(first.Item,rows.Sum(x=>x.Max),diff),1-rows.Aggregate(1d,(n,x)=>n*(1-x.Chance)),first.Gear);
         }).ToList();
     }
+    /// <summary>Cách nhận một vật phẩm Boss (theo BossMaterials, mọi chương): "Rơi khi hạ Boss (mọi chương): Thường 15% · 1 viên; …".</summary>
+    public static string BossSource(string item)
+    {
+        var parts=new List<string>();
+        for(var d=0;d<GameData.DiffNames.Length;d++){
+            var x=BossMaterials(0,d).FirstOrDefault(m=>m.Item==item);
+            if(x is null)continue;
+            parts.Add($"{GameData.DiffNames[d]} {Math.Round(x.Chance*100):0}% · {(x.Min==x.Max?$"{x.Min}":$"{x.Min}–{x.Max}")} viên");
+        }
+        return parts.Count==0?"":$"Rơi khi hạ Boss (mọi chương): {string.Join("; ",parts)}.";
+    }
     public static DropDef[] BossMaterials(int chapter,int diff,int realm=-1)
     {
         var quantity=1+Math.Max(0,chapter)/3+diff;
@@ -75,7 +86,6 @@ public static class PetLoot
         }
         // bồi dưỡng linh thú: đan tư chất + trang bị linh thú (mỗi ô 1/3 tỉ lệ, phẩm theo chương và mức khó)
         drops.Add(new(PetTraining.RerollItem,1,1+diff,Math.Min(.35,.15+.05*diff)));
-        drops.Add(new(PetTraining.TrainItem,1,2+diff,Math.Min(.45,.25+.05*diff)));
         var tier=PetTraining.DropTier(chapter,diff);
         foreach(var slot in PetTraining.Slots)drops.Add(new(PetTraining.GearId(slot.Id,tier),1,1,(.12+.03*diff)/PetTraining.Slots.Length));
         if(realm>=0){

@@ -7,9 +7,10 @@ namespace VanDao.Game;
 /// Toàn bộ luật chơi chạy ở server. Client chỉ hiển thị và gửi hành động,
 /// nên người chơi không thể sửa tu vi hay vật phẩm từ trình duyệt.
 /// </summary>
-public partial class GameService(GameDbContext db, LeaderboardService? lb = null, MarketService? market = null)
+public partial class GameService(GameDbContext db, LeaderboardService? lb = null, MarketService? market = null, VersionService? version = null)
 {
     private readonly MarketService? _market = market;
+    private readonly VersionService? _version = version;   // giờ máy chủ cho sự kiện
     private const int LogKeep = 100;
     private const int LogShow = 40;
 
@@ -80,6 +81,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             Log(p, $"Luật điểm kỹ năng đã đổi (+{SkillData.PointsPerStage} mỗi tầng/kỳ, +{SkillData.PointsPerRealm} mỗi đại cảnh giới): kỹ năng đã được tẩy, hoàn lại {SkillPoints(p)} điểm để lĩnh ngộ lại.", "gold");
         }
         Tick(p, DateTime.UtcNow);
+        SyncEvent(p);   // sự kiện Thiên Cơ: sang đợt mới thì gửi quà còn sót, đặt lại tiến độ
         // ô "Nhẫn 2" cũ (ring2) → ô Hộ phù / Nhẫn: món đang mặc sai loại ô thì chuyển sang ô đúng nếu trống, không thì trả về túi
         foreach (var e in p.Equipment.Where(e => GameData.ItemById.TryGetValue(e.ItemId, out var d) && d.Slot != e.Slot).ToList())
         {
@@ -159,7 +161,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 Math.Max(0, (long)(p.DebuffUntil - DateTime.UtcNow).TotalMilliseconds), BreakPreview(p)),
             logs.Take(LogShow).ToList(), Player.AdminEnabled ? p.Admin : "", Player.AdminEnabled ? ChestOdds(p) : [],   // tỉ lệ rương chỉ hiện ở admin mode: bản phát hành khỏi tính + gửi ~11 KB mỗi lần đồng bộ
             p.PillBonus, CurrentSkin(p), p.SpinHistory, EquipmentEffects.Calculate(p), StatSources(p), CombatLimits(p), PetStateFor(p), SpinDailyFor(p), SpinDailyFor(p, pet: true), CultivationManuals.Unlocked(p), CultivationManuals.Active(p),
-            UnlockedSkins(p).ToArray(), CurrentGender(p));
+            UnlockedSkins(p).ToArray(), CurrentGender(p), EventStateFor(p));
     }
 
     /// <summary>Tỉ lệ phần thưởng khi mở từng loại rương, tính đúng như OpenOne (dùng cho chế độ admin).</summary>
@@ -258,6 +260,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
             return (message, kind, null);
         }
         if (GameData.ItemById.TryGetValue(itemId, out var d) && d.Type == "chest") return OpenChests(p, d, n);
+        if (d?.Type == "eventchest") return OpenEventChest(p, d, n);
         if (d?.Type == "skin") { var (sm, sk) = OpenSkinChest(p, itemId); return (sm, sk, null); }
         if (d?.Type == "egg")
         {
@@ -623,6 +626,10 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
                 foreach (var b in bases) p.Add(GameData.GearId(b, q), n);
                 return Log(p, $"[Admin] +{n:N0} bộ {parts[0]} [cấp {GameData.GearLevelOf(bases[0])} · {GameData.QualityName[q]}] ({bases.Count} món).", "good");
             }
+            case "eventpts":
+                SyncEvent(p);
+                p.EventPoints += n;
+                return Log(p, $"[Admin] +{n:N0} điểm sự kiện Thiên Cơ (đang có {p.EventPoints:N0}).", "good");
             case "stones":
                 p.Add("linh_thach", n);
                 return Log(p, $"[Admin] +{n:N0} linh thạch.", "good");
@@ -969,6 +976,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         var outs = Enumerable.Range(0, n)
             .Select(_ => GameData.GearId(pool[Random.Shared.Next(pool.Length)], GameData.RollQuality(GameData.SpinWeights))).ToList();
         RecordSpinDaily(p, n, quota);
+        var ev = AddEventPoints(p, "gear", n);   // sự kiện Thiên Cơ tuần Trang bị
         p.Add(GameData.SpinTicket, -n);
         foreach (var id in outs) p.Add(id, 1);
         p.SpinHistory = string.Join(';', p.SpinHistory.Split(';', StringSplitOptions.RemoveEmptyEntries)
@@ -976,7 +984,7 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         int Q(string id) => Array.IndexOf(GameData.RarityOrder, GameData.ItemById[id].Rarity);
         var best = outs.MaxBy(Q)!;
         var labels = string.Join(", ", outs.OrderByDescending(Q).Select(id => GameData.Label(GameData.ItemById[id])));
-        var (msg, kind) = Log(p, $"Vòng quay {n} lượt: {labels}.", Q(best) >= 4 ? "gold" : "good");
+        var (msg, kind) = Log(p, $"Vòng quay {n} lượt: {labels}.{(ev > 0 ? $" Thiên Cơ +{ev} điểm." : "")}", Q(best) >= 4 ? "gold" : "good");
         var got = outs.GroupBy(x => x).Select(g => new ItemQtyDto(g.Key, g.Count())).ToList();
         return (msg, kind, new CraftResultDto($"spin:{Q(best)}", new(best, 1), new List<ItemQtyDto> { new(GameData.SpinTicket, n) }, got));
     }
