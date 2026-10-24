@@ -2,6 +2,18 @@
 
 Game tu tiên 2D. Server C# xử lý toàn bộ luật chơi và lưu tiến độ vào SQLite; trình duyệt chỉ hiển thị canvas và gửi hành động.
 
+## Giới thiệu — Tu tiên ngay trên desktop
+
+**Người Lười Tu Tiên** dành cho những ai muốn nuôi dưỡng một tu sĩ trong lúc làm việc hoặc học tập. Game xuất hiện dưới dạng một cửa sổ nhỏ cạnh thanh taskbar: nhân vật tự thám hiểm, chiến đấu và tích lũy tu vi, còn bạn lựa chọn trang bị, công pháp và thời điểm đột phá.
+
+Hành trình bắt đầu từ Luyện Khí và mở rộng qua các cảnh giới đến Đại Thừa. Mỗi bước tiến gắn với việc thu thập tài nguyên, luyện đan, xây dựng bộ trang bị và vượt qua những thử thách mới. Bạn có thể quay lại các ải đã mở để tích lũy vật phẩm, chuẩn bị cho trận Boss và lần đột phá tiếp theo.
+
+Ngoài tu luyện, game còn có hệ thống linh thú: ấp trứng, nuôi dưỡng, tiến hóa và trang bị cho bạn đồng hành. Công pháp và các ô kỹ năng giúp bạn điều chỉnh sức mạnh của tu sĩ; hành trang, luyện chế và các hoạt động vòng quay bổ sung những hướng phát triển khác trong quá trình chơi.
+
+Tiến độ được lưu cục bộ bằng SQLite. Bạn có thể chơi bằng cửa sổ desktop hoặc mở giao diện trong trình duyệt theo hướng dẫn bên dưới.
+
+> **Trạng thái: đang phát triển và cập nhật.** Nội dung, hình ảnh và cân bằng có thể thay đổi giữa các phiên bản. Một số thông số trong phần hướng dẫn bên dưới mô tả cơ chế cũ; hãy đối chiếu với giao diện game và [wiki](site/README.md) được xuất từ dữ liệu hiện tại.
+
 ## Chạy
 
 Cần .NET 8 SDK và Windows.

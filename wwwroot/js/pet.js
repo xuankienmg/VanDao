@@ -161,17 +161,18 @@
       : `Không cộng hưởng với công pháp ${esc(label(el))}. Cùng hệ +${pctTxt(R.resonanceSame)}, tương sinh +${pctTxt(R.resonanceSupport)}.`;
     return `<section class="pet-train-box pet-resonance ${t.resonanceKind?'on':''}"><h4>Cộng hưởng ngũ hành</h4><p>${txt}</p><small>Vòng tương sinh: Mộc/Phong → Hỏa → Thổ → Lôi → Thủy/Băng → Mộc/Phong. Đổi công pháp kích hoạt ở tab Kỹ năng.</small></section>`;
   }
+  /** Tooltip cách nhận đan bồi dưỡng (chuỗi từ server: PetTrainingRules.Sources). */
+  function srcTip(id,name){ const s=RULES().sources?.[id]; return esc(name) + (s ? '&#10;' + esc(s) : ''); }
   function aptBox(p){
     const t=p.training||{}, R=RULES(), locks=[...ui.locks].filter(k=>APT.some(a=>a[0]===k));
-    const pills=1+locks.length, stones=num(t.rerollStones), reroll=have('hoan_cot_dan'), train=have('boi_linh_dan');
+    const pills=1+locks.length, stones=num(t.rerollStones), reroll=have('hoan_cot_dan');
     const rows=APT.map(([k,n,a])=>{const v=num(p[a]),max=num(t.aptMax),lock=ui.locks.has(k),full=v>=max;
       return `<div class="pet-train-apt"><span>${petIcon(k)}${n}</span><meter min="0" max="${max||100}" value="${v}"></meter><b>${v}<small>/${max}</small></b>
-        <div class="pet-train-apt-btns"><button type="button" class="pet-btn pet-lock${lock?' on':''}" data-pet-action="lock:${k}" aria-pressed="${lock}"${ui.pending||(!lock&&locks.length>=num(R.maxLocks))?' disabled':''}>${lock?'Đã khóa':'Khóa'}</button>
-        ${button('Bồi ×1',`train:${k}:1`,full||!train)}${button('×10',`train:${k}:10`,full||train<2)}${button('Tới trần',`train:${k}:0`,full||!train)}</div></div>`;}).join('');
+        <div class="pet-train-apt-btns"><button type="button" class="pet-btn pet-lock${lock?' on':''}" data-pet-action="lock:${k}" aria-pressed="${lock}"${ui.pending||(!lock&&locks.length>=num(R.maxLocks))?' disabled':''}>${lock?'Đã khóa':'Khóa'}</button></div></div>`;}).join('');
     return `<section class="pet-train-box"><h4>Tư chất <small>Khoảng của phẩm: ${num(t.aptMin)}–${num(t.aptMax)}</small></h4>${rows}
-      <div class="pet-costs"><span class="${reroll<pills?'pet-short':''}">Hoán Cốt Đan <b>${f(reroll)}/${pills}</b></span><span class="${have('linh_thach')<stones?'pet-short':''}">Linh thạch <b>${f(stones)}</b></span><span>Bồi Linh Đan <b>${f(train)}</b></span></div>
+      <div class="pet-costs"><span class="${reroll<pills?'pet-short':''}" data-tip="${srcTip('hoan_cot_dan','Hoán Cốt Đan')}">Hoán Cốt Đan <b>${f(reroll)}/${pills}</b></span><span class="${have('linh_thach')<stones?'pet-short':''}">Linh thạch <b>${f(stones)}</b></span></div>
       <div class="pet-actions">${button(`Tẩy luyện${locks.length?` (giữ ${locks.length})`:''}`,'reroll',reroll<pills||have('linh_thach')<stones,'pet-primary')}</div>
-      <small>Tẩy luyện random lại tư chất chưa khóa trong khoảng của phẩm (khóa tối đa ${num(R.maxLocks)}, mỗi tư chất khóa thêm 1 Hoán Cốt Đan). Bồi Linh Đan: mỗi viên +${num(R.trainMin)||1}~${num(R.trainMax)||3}, tối đa trần của phẩm. Tư chất tăng chỉ số theo cấp linh thú.</small></section>`;
+      <small>Tẩy luyện random lại tư chất chưa khóa trong khoảng của phẩm (khóa tối đa ${num(R.maxLocks)}, mỗi tư chất khóa thêm 1 Hoán Cốt Đan). Tư chất tăng chỉ số theo cấp linh thú.</small></section>`;
   }
   function gearBox(p){
     const t=p.training||{}, R=RULES(), info=id=>(R.gear||[]).find(g=>g.id===id);
@@ -306,10 +307,9 @@
     if (kind==='lock') {ui.locks.has(arg)?ui.locks.delete(arg):ui.locks.size<num(RULES().maxLocks||2)&&ui.locks.add(arg);render(true);return;}
     if (kind==='awaken-donor') {const id=[arg,...rest].join(':');ui.awakenDonor=ui.awakenDonor===id?null:id;render(true);return;}
     if (kind==='gearfuse') return send(`petgear/fuse/${encodeURIComponent(arg)}?n=1`);
-    if (ui.tab==='train'&&ui.train&&['reroll','train','gear','ungear','awaken'].includes(kind)){
+    if (ui.tab==='train'&&ui.train&&['reroll','gear','ungear','awaken'].includes(kind)){
       const base=`pet/${encodeURIComponent(ui.train)}/`;
       if (kind==='reroll') return send(base+`reroll?locks=${encodeURIComponent([...ui.locks].join(','))}`);
-      if (kind==='train') return send(base+`train/${encodeURIComponent(arg)}?n=${num(rest[0])}`);
       if (kind==='gear') return send(base+`gear/${encodeURIComponent(arg)}`);
       if (kind==='ungear') return send(base+`ungear/${encodeURIComponent(arg)}`);
       if (kind==='awaken'&&ui.awakenDonor){const d=ui.awakenDonor;ui.awakenDonor=null;return send(base+`awaken/${encodeURIComponent(d)}`);}

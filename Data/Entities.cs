@@ -82,6 +82,10 @@ public class Player
 
     // ---- Bảng xếp hạng online ----
     /// <summary>Khóa bí mật ngẫu nhiên của nhân vật trên bảng xếp hạng (server chỉ giữ SHA-256). Giữ nguyên khi tu lại từ đầu.</summary>
+    /// <summary>Sự kiện quay tích lũy: khóa đợt (yyyy-MM-dd:gear|pet), điểm, các mốc đã nhận (chỉ số, phẩy).</summary>
+    public string EventKey { get; set; } = "";
+    public int EventPoints { get; set; }
+    public string EventClaimed { get; set; } = "";
     public string LbSecret { get; set; } = "";
     /// <summary>Đã từng dùng admin mode → không được lên bảng xếp hạng cho tới khi tu lại từ đầu (không bật cờ admin).</summary>
     public bool Tainted { get; set; }

@@ -190,11 +190,11 @@ public static class GameData
         new ItemDef("ruong_thuong", "Rương thường", "chest", "#a8a39a", "Rương gỗ bọc sắt rơi khi diệt yêu.", Rarity: "common", Kind: "Rương",
             Use: "Nhận trang bị, linh thảo hoặc thức ăn linh thú. Không ra đan tiến giai; tỉ lệ đan cũ chia đều cho các vật phẩm còn lại. Xem bảng tỉ lệ theo cảnh giới trong Hành trang."),
         new ItemDef("ruong_hiem",   "Rương hiếm",   "chest", "#5aa2e6", "Rương lam khảm ngọc, phù văn còn sáng. Chỉ rơi ở ải 10–15 mỗi chương.", Rarity: "rare", Kind: "Rương",
-            Use: "Nhận một nhóm thưởng: 57% trang bị (gồm pháp bảo), 26,5% linh thảo; còn lại là đan lên tầng. Từ Nguyên Anh: 4% Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo."),
+            Use: "Nhận một nhóm thưởng: trang bị (gồm pháp bảo), linh thảo hoặc thức ăn linh thú. Không ra đan tiến giai; tỉ lệ đan cũ chia đều cho các vật phẩm còn lại. Từ Nguyên Anh có Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo."),
         new ItemDef("ruong_boss",   "Rương Boss",   "chest", "#f2c94c", "Rương vàng chạm long phượng, chắc chắn rơi khi hạ Boss.", Rarity: "legendary", Kind: "Rương",
-            Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, đan dược, linh thú hoặc công pháp. Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
+            Use: "Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, linh thú hoặc công pháp (không ra đan tiến giai). Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan."),
         // ---- đan theo cảnh giới: dùng để lên tầng và đột phá, luyện từ linh thảo ----
-        new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, có từ Boss, Rương hiếm hoặc Rương Boss.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
+        new ItemDef("tu_khi_dan",    "Tụ Khí Đan",       "pill",  "#bfeee2", "Đan nhập môn, có từ Boss.", "img/dan/dan_01.png", Rarity: "common", Kind: "Đan dược", Tier: 1,
             Use: "Dùng để đột phá các tầng Luyện Khí. Luyện chế từ linh thảo và linh thạch tại mục Đan dược."),
         new ItemDef("truc_co_dan",   "Trúc Cơ Đan",      "pill",  "#6fd39a", "Đan xây nền đạo cơ.", "img/dan/dan_04.png", Rarity: "rare", Kind: "Đan dược", Tier: 2,
             Use: "Dùng để đột phá đại cảnh giới Luyện Khí → Trúc Cơ, và lên kỳ trong Trúc Cơ."),
@@ -433,7 +433,7 @@ public static class GameData
             ["nhan"] = ("Thiên Hợp Xích Long Giới",   "Nhẫn hắc kim chạm kim long, nâng viên hồng ngọc lớn như mắt rồng.", "Nhẫn"),
             ["phu"]  = ("Thiên Hợp Âm Dương Lệnh",    "Lệnh bài hắc ngọc khắc kim long và ấn âm dương, treo tua đỏ thẫm.", "Hộ phù"),
             ["chau"] = ("Thiên Hợp Âm Dương Châu",    "Linh cầu âm dương xoay chuyển giữa đôi kim long, đặt trên đài hắc kim, hợp nhất càn khôn.", "Pháp bảo") }))
-        // bộ Đại Thừa (dt_*): tạm dùng lại ảnh bộ Thiên Hợp (img/ht_*.png) — thay ảnh riêng sau
+        // bộ Đại Thừa (dt_*): ảnh riêng trắng ngà, vàng kim và lam ngọc theo skin Thiên Hợp Tiên Y
         .Concat(DeriveSet("dt_", "Đại Thừa", 7, 3125, "none", "Bảo khí đại thừa, đạo vận viên mãn, một niệm thông thiên.", null, new()
         {
             ["kiem"] = ("Đại Thừa Long Hồn Kiếm", "Hắc kiếm viền kim, chuôi kim long ngậm đạo châu; một kiếm chém xuống, đại đạo tự mở đường.", "Kiếm"),
@@ -445,8 +445,7 @@ public static class GameData
             ["day"] = ("Đại Thừa Song Long Trụy", "Chuỗi kim treo song long ôm ngọc âm dương, rủ giọt hồng ngọc, hộ trì đạo tâm.", "Dây chuyền"),
             ["nhan"] = ("Đại Thừa Xích Long Giới", "Nhẫn hắc kim chạm kim long, nâng viên hồng ngọc lớn như mắt rồng, nuốt nhả đạo vận.", "Nhẫn"),
             ["phu"] = ("Đại Thừa Âm Dương Lệnh", "Lệnh bài hắc ngọc khắc kim long và ấn âm dương, vạn tà tránh lui.", "Hộ phù"),
-            ["chau"] = ("Đại Thừa Âm Dương Châu", "Linh cầu âm dương xoay giữa đôi kim long, ẩn chứa một phương tiểu thiên địa.", "Pháp bảo") })
-            .Select(x => x with { Icon = x.Icon?.Replace("img/dt_", "img/ht_") }))
+            ["chau"] = ("Đại Thừa Âm Dương Châu", "Linh cầu âm dương xoay giữa đôi kim long, ẩn chứa một phương tiểu thiên địa.", "Pháp bảo") }))
         .ToArray();
 
     /// <summary>Khó / Ác mộng rơi theo bảng chương cuối (bộ Luyện Hư): người chơi cảnh giới cao hơn nhận món cùng ô của bộ cảnh giới mình (vd. Hợp Thể → bộ Thiên Hợp).</summary>
@@ -518,6 +517,8 @@ public static class GameData
     {
         ["KIENDEPTRAI"] = (SpinTicket, 10),
         ["KIEN2026"] = (SpinTicket, 20),
+        ["KIENVIP"] = (SpinTicket, 20),
+        ["NGUOILUOITUTIEN"] = (PetSpinTicket, 20)
     };
     public static readonly double[] SpinWeights = { 32, 25, 17, 11, 6.5, 4, 2.3, 1.4, .75, .05 };
     /// <summary>Gieo phẩm (chỉ số trong RarityOrder) theo trọng số w.</summary>
@@ -611,7 +612,7 @@ public static class GameData
     /// <summary>Phàm → Huyền: ảnh gốc · Địa: ảnh hào quang tím (_epic) · Thiên: bộ ảnh Thiên cấp.</summary>
     private static string? GradeIcon(ItemDef b, int q)
     {
-        if (b.Icon is null || q < 3 || b.Set == LhSetName || b.Set == LkSetName || b.Slot == "charm" || b.Icon.StartsWith("img/hb_") || b.Icon.StartsWith("img/kd_") || b.Icon.StartsWith("img/th_") || b.Icon.StartsWith("img/tv_") || b.Icon.StartsWith("img/ht_")) return b.Icon;   // hb_/kd_ = ảnh riêng bộ Huyền Băng / Xích Kim   // bộ / hộ phù có ảnh riêng: mọi phẩm dùng chung ảnh          // bộ có ảnh riêng: mọi phẩm dùng chung ảnh, màu phẩm hiện ở nền ô
+        if (b.Icon is null || q < 3 || b.Set == LhSetName || b.Set == LkSetName || b.Slot == "charm" || b.Icon.StartsWith("img/hb_") || b.Icon.StartsWith("img/kd_") || b.Icon.StartsWith("img/th_") || b.Icon.StartsWith("img/tv_") || b.Icon.StartsWith("img/ht_") || b.Icon.StartsWith("img/dt_")) return b.Icon;   // hb_/kd_ = ảnh riêng bộ Huyền Băng / Xích Kim   // bộ / hộ phù có ảnh riêng: mọi phẩm dùng chung ảnh          // bộ có ảnh riêng: mọi phẩm dùng chung ảnh, màu phẩm hiện ở nền ô
         var epic = b.Icon.Replace(".png", "_epic.png");
         if (q == 3) return epic;
         var kind = b.Id[(b.Id.IndexOf('_') + 1)..];
@@ -677,7 +678,7 @@ public static class GameData
         .Select(d => it with { Id = ChestId(it.Id, d), Name = $"{it.Name} · {DiffNames[d]}", Icon = $"img/{it.Id}.png", Tint = DiffChestTint[d],
             Desc = $"{it.Desc} Rơi ở mức {DiffNames[d]}: phần thưởng tính theo mức {DiffNames[d]}." }));
 
-    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(DiffChests).Concat(PetData.Items).Concat(PetTraining.Items).Concat(CultivationManuals.Items).Concat(GearVariants)
+    public static readonly IReadOnlyList<ItemDef> AllItems = Items.Concat(DiffChests).Concat(PetData.Items).Concat(PetTraining.Items).Concat(SpinEvent.Items).Concat(CultivationManuals.Items).Concat(GearVariants)
         .Select(it => PixelIcons.Contains(it.Id) ? it with { Icon = $"img/{it.Id}.png" } : it)
         .Select(it => it with { Sell = SellPrice(it) }).ToList();
 
@@ -694,6 +695,7 @@ public static class GameData
     public static readonly Dictionary<string, (string To, int Factor)> Legacy = new()
     {
         ["lt_ha"] = ("linh_thach", 1), ["lt_trung"] = ("linh_thach", 50), ["lt_thuong"] = ("linh_thach", 1500),
+        [PetTraining.RemovedTrainItem] = ("linh_thach", 2000),   // Bồi Linh Đan đã bỏ
         ["boi_nguyen_dan"] = ("truc_co_dan", 1), ["ngung_than_hoa"] = ("huyet_can_thao", 1), ["kim_tuy_dan"] = ("ngung_kim_dan", 1),
         ["hoi_khi_dan"] = ("linh_thach", 20), ["luyen_the_dan"] = ("linh_thach", 30), ["hoa_tinh"] = ("linh_thach", 20),
         ["linh_thao"] = ("linh_thach", 2), ["huyet_sam"] = ("linh_thach", 20), ["hoa_linh_chi"] = ("linh_thach", 300),

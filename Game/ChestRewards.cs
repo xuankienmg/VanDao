@@ -60,7 +60,8 @@ public static class ChestRewards
             Add("hoa_hinh_dan",1+chapterIndex/3+diff,blood?.03:.045,"pet");
             Add("than_thu_huyet",1+Math.Max(0,chapterIndex-4)/3+diff,blood?.015:0,"pet");
         }else Add("linh_thu_dan",Math.Min(PetLoot.MaxFoodDrop,(1+chapterIndex/2)*(chest=="ruong_hiem"?3:1)+diff),petChance,"pet");
-        if(chest=="ruong_thuong"){
+        // Không rương nào ra đan tiến giai: tỉ lệ đan cũ chia đều cho các vật phẩm còn lại.
+        {
             var removed=list.Where(x=>x.Group=="pill").Sum(x=>x.Probability);
             list.RemoveAll(x=>x.Group=="pill");
             var itemOdds=list.GroupBy(x=>x.Item).ToDictionary(g=>g.Key,g=>g.Sum(x=>x.Probability));

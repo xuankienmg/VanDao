@@ -789,7 +789,7 @@ window.I18N_EN = {
 "Đan luyện thần hoàn hư, kim quang xoáy như dải ngân hà, ngàn năm khó thành một lò.":"A pill that returns the spirit to the void, golden light swirling like the Milky Way; a single furnace takes a thousand years to succeed.",
 "Đan này chưa dùng được.":"This pill cannot be used yet.",
 "Đan ngưng tụ kim đan nơi đan điền.":"A pill that condenses a golden core in the dantian.",
-"Đan nhập môn, có từ Boss, Rương hiếm hoặc Rương Boss.":"An entry-level pill, obtained from Bosses, Rare Chests, or Boss Chests.",
+"Đan nhập môn, có từ Boss.":"An entry-level pill, obtained from Bosses.",
 "Đan phá bình chướng Hóa Thần → Luyện Hư, thần hồn hóa hư.":"A pill that breaks the bottleneck of Spirit Transformation → Void Refining, turning the soul into the void.",
 "Đan phá bình chướng Kim Đan → Nguyên Anh.":"A pill that breaks the bottleneck of Golden Core → Nascent Soul.",
 "Đan phá bình chướng Luyện Hư → Hợp Thể, nguyên thần nhập nhục thân.":"A pill that breaks the bottleneck of Void Refining → Body Integration, merging the primordial spirit into the flesh.",
@@ -1450,7 +1450,7 @@ window.I18N_EN = {
 "Mỗi lượt 15% cơ hội giáng sét 60% công, bỏ qua phòng thủ":"Each turn, 15% chance to strike lightning for 60% ATK, ignoring DEF",
 "Mỗi ngày chỉ được quay {0} lượt {1}. Còn {2} lượt; đặt lại lúc 00:00 giờ Việt Nam.":"You can only spin {1} {0} times per day. {2} left; resets at 00:00 Vietnam time.",
 "Mỗi ô mặc món có Chiến lực cao nhất trong hành trang":"Each slot equips the highest Combat Power item in your inventory",
-"Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, đan dược, linh thú hoặc công pháp. Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan.":"Each chest grants one reward group based on realm: equipment, spirit herbs, pills, spirit beasts, or techniques. A total 1% chance of a random manual, split equally among Fire, Water, Wood, Earth, Thunder, Ice and Wind. From Nascent Soul: 5% Dao Enlightenment Pill.",
+"Mỗi rương nhận một nhóm thưởng theo cảnh giới: trang bị, linh thảo, linh thú hoặc công pháp (không ra đan tiến giai). Có tổng 1% nhận một bí kíp ngẫu nhiên trong 7 hệ Hỏa, Thủy, Mộc, Thổ, Lôi, Băng, Phong; xác suất mỗi hệ bằng nhau. Từ Nguyên Anh: 5% Ngộ Đạo Đan.":"Each chest grants one reward group based on realm: equipment, spirit herbs, spirit beasts, or techniques (no advancement pills). A total 1% chance of a random manual, split equally among Fire, Water, Wood, Earth, Thunder, Ice and Wind. From Nascent Soul: 5% Dao Enlightenment Pill.",
 "Mỗi sao +6% chỉ số, kỹ năng và thiên phú · {0}/5 sao (+{1}%)":"Each star +6% stats, skills and talent · {0}/5 stars (+{1}%)",
 "Mỗi sao tăng 6% chỉ số, kỹ năng và thiên phú.":"Each star adds 6% to stats, skills and talent.",
 "Mỗi Thú Đản mang đến một linh thú. Giữ chỗ trống trong chuồng để nhận khi trứng nở.":"Each Beast Egg brings one spirit beast. Keep space in the pen to claim it when the egg hatches.",
@@ -1539,7 +1539,7 @@ window.I18N_EN = {
 "Nhẫn kim tinh chạm lửa, ôm một viên dương châu, tụ linh khí thành sương quanh ngón tay.":"A golden-essence ring carved with flames, cradling a sun pearl, gathering spirit qi as mist around the finger.",
 "Nhận linh thú":"Claim spirit beast",
 "Nhận món":"Get item",
-"Nhận một nhóm thưởng: 57% trang bị (gồm pháp bảo), 26,5% linh thảo; còn lại là đan lên tầng. Từ Nguyên Anh: 4% Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo.":"Grants one reward group: 57% equipment (incl. magic treasures), 26.5% spirit herbs; the rest are stage-up pills. From Nascent Soul: 4% Dao Enlightenment Pill, may yield Divine; from Void Refining, Immortal and Dao.",
+"Nhận một nhóm thưởng: trang bị (gồm pháp bảo), linh thảo hoặc thức ăn linh thú. Không ra đan tiến giai; tỉ lệ đan cũ chia đều cho các vật phẩm còn lại. Từ Nguyên Anh có Ngộ Đạo Đan, có thể ra Thần; từ Luyện Hư có Tiên và Đạo.":"Grants one reward group: equipment (incl. magic treasures), spirit herbs, or spirit beast food. No advancement pills; the old pill chance is split evenly among the other items. From Nascent Soul: Dao Enlightenment Pill, may yield Divine; from Void Refining, Immortal and Dao.",
 "Nhận quà":"Claim gift",
 "Nhận quà khởi đầu: Trứng Hỏa Hồ ×1. Đem ấp để kết duyên cùng Hỏa Linh Hồ.":"Starter gift received: Fire Fox Egg ×1. Hatch it to form a bond with the Fire Spirit Fox.",
 "Nhận rương":"Receive chest",
@@ -2421,5 +2421,7 @@ window.I18N_EN = {
 "Hiệu ứng xấu bị động đã vô hiệu: cần kích hoạt công pháp cùng hệ.":"Passive debuff effect is disabled: activate the manual of the same element.",
 "→ {0}% ở Lv. {1}":"→ {0}% at Lv. {1}",
 "Đã vô hiệu: cần kích hoạt công pháp cùng hệ.":"Disabled: activate the manual of the same element.",
-"Hiệu ứng phụ:":"Secondary effect:"
+"Hiệu ứng phụ:":"Secondary effect:",
+"{0} {1}% · {2} viên":"{0} {1}% · {2} pcs",
+"Rơi khi hạ Boss (mọi chương): {0}.":"Drops from Bosses (every chapter): {0}."
 };

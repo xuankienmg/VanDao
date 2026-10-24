@@ -5,12 +5,12 @@ public static class PetTraining
 {
     // ================= Tư chất =================
     public const string RerollItem = "hoan_cot_dan";     // random lại các tư chất chưa khóa trong khoảng của phẩm
-    public const string TrainItem = "boi_linh_dan";   // +1~3 một tư chất, tối đa trần của phẩm
+    /// <summary>Bồi Linh Đan đã bỏ khỏi game: còn trong túi thì đổi ra linh thạch (GameData.Legacy).</summary>
+    public const string RemovedTrainItem = "boi_linh_dan";
     public const int MaxLocks = 2;
     /// <summary>Tẩy luyện: 1 Hoán Cốt Đan + 1 viên mỗi tư chất khóa, kèm linh thạch theo phẩm.</summary>
     public static int RerollPills(int locks) => 1 + Math.Clamp(locks, 0, MaxLocks);
     public static int RerollStones(int quality) => 5000 * (Math.Clamp(quality, 0, 5) + 1);
-    public const int TrainMin = 1, TrainMax = 3;
     /// <summary>Khoảng tư chất của con: theo phẩm riêng (Thượng Cổ theo loài, như lúc nở).</summary>
     public static (int Min, int Max) AptRange(VanDao.Data.Pet pet, PetDef d)
     {
@@ -22,9 +22,9 @@ public static class PetTraining
     public record GearSlotDef(string Id, string Name, string Stat, string StatName, string Icon);
     public static readonly GearSlotDef[] Slots =
     [
-        new("collar", "Hạng Khuyên", "atk", "Công", "img/kd_chau.png"),
-        new("armor", "Linh Giáp", "def", "Thủ", "img/kd_ao.png"),
-        new("charm", "Hộ Mệnh Phù", "hp", "Huyết", "img/kd_phu.png"),
+        new("collar", "Hạng Khuyên", "atk", "Công", "img/pet/gear/collar-cloud.png"),
+        new("armor", "Móng Vuốt", "def", "Thủ", "img/pet/gear/claw-cloud.png"),
+        new("charm", "Hộ Mệnh Phù", "hp", "Huyết", "img/pet/gear/charm-cloud.png"),
     ];
     public static readonly string[] TierNames = { "Phàm", "Linh", "Huyền", "Địa", "Thiên", "Thượng Cổ" };
     /// <summary>% chỉ số linh thú mỗi món theo phẩm Phàm → Thượng Cổ.</summary>
@@ -70,8 +70,6 @@ public static class PetTraining
     {
         new ItemDef(RerollItem, "Hoán Cốt Đan", "petmaterial", "#9fd4ef", "Tẩy luyện tư chất linh thú: random lại các tư chất chưa khóa trong khoảng của phẩm (khóa thêm tư chất tốn thêm 1 viên mỗi tư chất). Rơi khi hạ Boss (chương và mức khó cao rơi nhiều, phẩm cao hơn).",
             Icon: "img/pet/hoa_hinh_dan.png", Tint: "hue-rotate(160deg) saturate(1.3) brightness(1.1)", Rarity: "rare", Kind: "Đan linh thú"),
-        new ItemDef(TrainItem, "Bồi Linh Đan", "petmaterial", "#f2c94c", "Bồi dưỡng tư chất linh thú: +1~3 vào tư chất đã chọn, tối đa bằng trần tư chất của phẩm. Rơi khi hạ Boss (chương và mức khó cao rơi nhiều, phẩm cao hơn).",
-            Icon: "img/pet/linh_thu_dan.png", Tint: "hue-rotate(-60deg) saturate(1.6) brightness(1.15)", Rarity: "uncommon", Kind: "Đan linh thú"),
     }.Concat(Gear.Values.Select(g =>
     {
         var s = Slots.First(x => x.Id == g.Slot);

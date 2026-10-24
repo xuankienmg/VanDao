@@ -88,3 +88,12 @@ body{margin:0}
   body.panel #pane-inv .iv-next{display:none}
   body.panel #pane-inv .iv-stage{max-height:120px}
 }
+
+/* Sự kiện Thiên Cơ: biểu tượng hộp quà cạnh Bảng xếp hạng, chấm đỏ khi có mốc nhận được */
+#btnEvent{position:relative;color:#f2c94c;flex-shrink:0;animation:ev-glow 2.4s ease-in-out infinite}
+#btnEvent[hidden]{display:none}
+#btnEvent.pet{color:#c9a2ff}
+#btnEvent svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+#btnEvent.ready:after{content:'';position:absolute;right:2px;top:2px;width:6px;height:6px;border-radius:50%;background:#eb4d3d;border:1px solid #1a1405}
+@keyframes ev-glow{0%,100%{box-shadow:0 0 0 0 rgba(242,201,76,0)}50%{box-shadow:0 0 6px 1px rgba(242,201,76,.45)}}
+@media (prefers-reduced-motion:reduce){#btnEvent{animation:none}}

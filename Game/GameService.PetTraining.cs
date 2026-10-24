@@ -35,8 +35,9 @@ public partial class GameService
         PetTraining.TierNames,
         PetTraining.Gear.Values.Select(g => new PetGearInfoDto(g.Id, g.Slot, g.Tier, g.Pct)).ToArray(),
         PetTraining.FuseCount, Enumerable.Range(0, PetTraining.TierNames.Length).Select(PetTraining.FuseStones).ToArray(),
-        PetTraining.MaxLocks, PetTraining.TrainMin, PetTraining.TrainMax,
-        PetTraining.MaxAwaken, PetTraining.AwakenBonus, PetTraining.ResonanceSame, PetTraining.ResonanceSupport);
+        PetTraining.MaxLocks,
+        PetTraining.MaxAwaken, PetTraining.AwakenBonus, PetTraining.ResonanceSame, PetTraining.ResonanceSupport,
+        new[] { PetTraining.RerollItem }.ToDictionary(id => id, PetLoot.BossSource));
 
     private static PetTrainingDto TrainingFor(Player p, Pet pet)
     {
@@ -74,24 +75,6 @@ public partial class GameService
         return ($"Tẩy luyện {d.Name}: {Diff("Công", before.AptAtk, pet.AptAtk)} · {Diff("Thủ", before.AptDef, pet.AptDef)} · {Diff("Huyết", before.AptHp, pet.AptHp)}.", "good");
     }
 
-    /// <summary>Bồi nguyên: mỗi viên +1~3 vào một tư chất, dừng khi chạm trần của phẩm (n = số viên, 0 = tới trần).</summary>
-    public (string, string) TrainAptitude(Player p, Guid id, string? stat, int n)
-    {
-        var pet = FindPet(p, id); var d = PetData.ById[pet.DefId];
-        if (stat is not ("atk" or "def" or "hp")) throw new GameException("Chọn tư chất Công, Thủ hoặc Huyết.");
-        if (n is not (0 or 1 or 10)) throw new GameException("Chọn 1, 10 hoặc tới trần.");
-        var (_, hi) = PetTraining.AptRange(pet, d);
-        int Get() => stat == "atk" ? pet.AptAtk : stat == "def" ? pet.AptDef : pet.AptHp;
-        void Set(int v) { if (stat == "atk") pet.AptAtk = v; else if (stat == "def") pet.AptDef = v; else pet.AptHp = v; }
-        if (Get() >= hi) throw new GameException($"Tư chất này đã đạt trần {hi} của phẩm.");
-        var have = p.Count(PetTraining.TrainItem);
-        if (have < 1) throw new GameException("Không có Bồi Linh Đan.");
-        var limit = n == 0 ? have : Math.Min(n, have); var used = 0; var from = Get();
-        while (used < limit && Get() < hi) { used++; Set(Math.Min(hi, Get() + Random.Shared.Next(PetTraining.TrainMin, PetTraining.TrainMax + 1))); }
-        p.Add(PetTraining.TrainItem, -used);
-        var name = stat == "atk" ? "Công" : stat == "def" ? "Thủ" : "Huyết";
-        return ($"Bồi nguyên {used} viên: tư chất {name} {from}→{Get()}{(Get() >= hi ? " (đã đạt trần)" : "")}.", "good");
-    }
 
     // ================= Trang bị linh thú =================
     public (string, string) EquipPetGear(Player p, Guid id, string itemId)
