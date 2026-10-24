@@ -10,6 +10,7 @@
 
 ### Rương
 - Mọi loại rương (thường, hiếm, Boss, kể cả Khó / Ác mộng) **không còn ra đan tiến giai**. Tỉ lệ đan cũ được chia đều cho các vật phẩm còn lại trong rương. Đan tiến giai vẫn rơi khi hạ Boss và luyện được tại mục Đan dược.
+- **Hóa Thần Đan** không còn rơi ở ải Boss (mọi chương, mọi mức khó). Vẫn rơi ở ải thường và luyện được tại mục Đan dược.
 - Rương trang phục bán được cho NPC (800 linh thạch, ngang Rương Boss) bằng nút Bán trong Hành trang hoặc quầy Luyện chế · Bán. Bán nhanh theo phẩm bỏ qua rương trang phục để tránh bán nhầm.
 - Rương trang phục đăng bán được ở Chợ.
 

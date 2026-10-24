@@ -90,7 +90,7 @@ public static class PetLoot
         foreach(var slot in PetTraining.Slots)drops.Add(new(PetTraining.GearId(slot.Id,tier),1,1,(.12+.03*diff)/PetTraining.Slots.Length));
         if(realm>=0){
             var pill=GameData.Realms[realm].StageCost(0).Keys.First(k=>k!="linh_thach");
-            drops.Add(new(pill,quantity,quantity+2,.25));
+            if(pill!="hoa_than_dan")drops.Add(new(pill,quantity,quantity+2,.25));   // Hóa Thần Đan không rơi ở ải Boss
         }
         return drops.ToArray();
     }
