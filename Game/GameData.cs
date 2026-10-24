@@ -288,8 +288,14 @@ public static class GameData
         // ảnh img/core/core_01 → core_15 (thấp → cao). Đang dùng: 03 Ma Viên · 06 Hắc Giao · 08 Băng Phượng · 12 Cùng Kỳ.
         // Để dành cho Boss / cảnh giới sau: 01 đá xám · 02 ngọc lục · 04 hỏa hạch · 05 băng tinh · 07 lôi tinh · 09 kim hạch ·
         // 10 long hạch (rồng cuộn) · 11 tử tinh liên · 13 long văn bích ngọc · 14 đồng hạch xoáy · 15 hỗn độn hạch (tối thượng).
+        new ItemDef("kho_ma_vien_hach", "Ma Viên Hạch · Khó", "boss", "#c58cff", "Tinh hạch của Ma Viên ở mức Khó.", "img/core/core_03.png", Rarity: "mythic", Kind: "Nguyên liệu Boss",
+            Use: "Chỉ rơi từ Boss Ma Viên chương 1 mức Khó (100%, 1 viên). Cần 1 viên để đột phá Luyện Hư → Hợp Thể; giữ lại khi thất bại."),
+        new ItemDef("kho_cung_ky_vuong_hach", "Cùng Kỳ Vương Hạch · Khó", "boss", "#c58cff", "Yêu hạch của Cùng Kỳ Vương ở mức Khó.", "img/core/core_15.png", Rarity: "divine", Kind: "Nguyên liệu Boss",
+            Use: "Chỉ rơi từ Boss Cùng Kỳ Vương chương 10 mức Khó (100%, 1 viên). Cần 1 viên để đột phá Hợp Thể → Đại Thừa; giữ lại khi thất bại."),
+        new ItemDef("ac_mong_cung_ky_vuong_hach", "Ác Mộng Cùng Kỳ Vương Hạch", "boss", "#ffd86a", "Hạch hỗn độn của Cùng Kỳ Vương ở mức Ác Mộng.", "img/core/core_15.png", Rarity: "dao", Kind: "Nguyên liệu Boss",
+            Use: "Chỉ rơi từ Boss Cùng Kỳ Vương chương 10 mức Ác Mộng (100%, 1 viên). Nguyên liệu dành cho các cảnh giới sau Đại Thừa; chưa có công thức đột phá."),
         new ItemDef("thao_thiet_yeu_hach", "Thao Thiết Yêu Hạch", "boss", "#3f8a7a", "Yêu hạch của Thao Thiết, long văn bích ngọc cuộn quanh một miệng xoáy nuốt cả linh khí.", "img/core/core_13.png", Rarity: "divine", Kind: "Nguyên liệu Boss",
-            Use: "Rơi từ Boss chương 9. Bắt buộc khi đột phá Luyện Hư Hậu kỳ → Hợp Thể."),
+            Use: "Rơi từ Boss chương 9. Nguyên liệu Boss; không thay thế Ma Viên Hạch mức Khó để đột phá Hợp Thể."),
         new ItemDef("am_ma_ma_hach",     "Ám Ma Ma Hạch", "boss", "#8a6a3a", "Ma hạch của Ám Ma, ba xoáy ma khí cuộn mãi không tan trong lớp vỏ đồng đen.", "img/core/core_14.png", Rarity: "mythic", Kind: "Nguyên liệu Boss",
             Use: "Rơi từ Boss chương 7. Bắt buộc khi đột phá Hóa Thần Hậu kỳ → Luyện Hư."),
         new ItemDef("hac_lan_yeu_hach",  "Băng Phượng Tinh Hạch", "boss", "#b8c0f0", "Tinh hạch của Băng Phượng, hàn khí vạn năm ngưng lại quanh một đốm u quang.", "img/core/core_08.png", Rarity: "legendary", Kind: "Nguyên liệu Boss",
@@ -491,7 +497,7 @@ public static class GameData
     // ---- trang bị theo CẤP (gắn với cảnh giới yêu cầu) và PHẨM màu ----
     /// <summary>Cấp trang bị theo cảnh giới yêu cầu (MinRealm): cấp 1 = Luyện Khí · cấp 10 = Trúc Cơ · cấp 15 = Kim Đan.
     /// Mỗi bộ đồ có đúng 1 cấp: Thanh Vân cấp 1 · Huyền Băng và pháp bảo nhập môn cấp 10 · Xích Kim cấp 15.</summary>
-    public static readonly int[] GearLevels = { 1, 10, 15, 20, 25, 30, 35 };
+    public static readonly int[] GearLevels = { 1, 10, 15, 20, 25, 30, 35, 40 };
     public static int GearLevelOf(ItemDef b) => GearLevels[Math.Clamp(b.MinRealm, 0, GearLevels.Length - 1)];
     /// <summary>Cấp bậc trang bị: 0 Phàm · 1 Linh · 2 Huyền · 3 Địa · 4 Thiên (RarityOrder: common → legendary).
     /// Thần / Tiên cấp (khí linh) và hiệu ứng riêng của từng cấp (Hấp linh, Đại địa, Hoàng thiên…) chưa làm.</summary>
@@ -552,7 +558,8 @@ public static class GameData
     public static string Label(ItemDef d) =>
         d.ItemLevel > 0 ? $"{d.Name} [cấp {d.ItemLevel} · {QualityName[Math.Clamp(Array.IndexOf(RarityOrder, d.Rarity), 0, QualityName.Length - 1)]}]" : d.Name;
     public static readonly IReadOnlyDictionary<string, ItemDef> GearBaseById = GearBases.ToDictionary(b => b.Id);
-    public static string GearId(ItemDef b, int q) => $"{b.Id}_c{GearLevelOf(b)}q{q}";
+    // Đại Thừa từng dùng hậu tố c35: giữ ID để tương thích hành trang, trang bị và tin chợ đã lưu.
+    public static string GearId(ItemDef b, int q) => $"{b.Id}_c{(b.MinRealm == 7 ? 35 : GearLevelOf(b))}q{q}";
 
     /// <summary>Sinh món theo phẩm: chỉ số gốc (ở phẩm Rarity của món gốc) quy về phẩm Trắng rồi nhân hệ số phẩm. Sức mạnh theo cấp đã nằm sẵn trong chỉ số gốc của từng bộ.</summary>
     /// <summary>Cân bằng 10/2026: trang bị đang gánh phần lớn sức mạnh (công/máu gấp 2–5 lần chỉ số gốc, thủ gấp 8–25 lần) → thu nhỏ chỉ số
@@ -854,21 +861,30 @@ public static class GameData
     public static readonly double[] DiffQualityShift = { 0, 0.5, 1 };
     public static readonly double[] DiffRareChest = { 1, 1.5, 2 };
     public static readonly int[] DiffBossChests = { 1, 2, 3 };
-    /// <summary>Khó / Ác mộng (10/2026): nối tiếp sau chương cuối mức trước — ải 1-1 mạnh hơn ải 15 chương cuối mức trước DiffStartOver (10%),
-    /// trong chương tăng ải 1→15 như chương cuối mức Thường, mỗi chương ×DiffChapterGrowth; Boss giữ tỉ lệ Boss/ải 15 như mức Thường.
+    /// <summary>Khó đầu dành cho Luyện Hư, cuối dành cho Hợp Thể; Đại Thừa đi đầu–giữa Ác Mộng, cuối dành cho cảnh giới mới.
+    /// Khó tăng theo DiffChapterGrowth; Ác Mộng tăng chậm đến chương 5, rồi tăng nhanh cả chỉ số lẫn công / thủ riêng.
     /// Quái mang tên, hình của chương đang đi; chỉ số lấy theo chương cuối (DiffTop). Phần thưởng: bảng rơi chương cuối, linh thạch +DiffStoneGrowth mỗi chương.</summary>
-    public const double DiffStartOver = 1.10, DiffChapterGrowth = 1.3, DiffStoneGrowth = 0.10;
+    public const double DiffStartOver = 1.25, DiffChapterGrowth = 1.20, DiffStoneGrowth = 0.10;
+    public const double HardStartScale = 1.20, NightmareStartScale = 32;
+    // Đại Thừa tiến đến chương 5 Ác Mộng; nửa sau tăng nhanh cho cảnh giới tiếp theo.
+    public const int NightmareMidChapter = 4; // chương 5 (0-based)
+    public const double NightmareEarlyGrowth = 1.10, NightmareLateGrowth = 1.42;
+    public const double NightmareLateCombatGrowth = 3, NightmareLateCombatMax = 20;
     public static ChapterDef DiffTop => Chapters[OpenChapters - 1];
     /// <summary>Hệ số chỉ số mức d, chương ci so với chương cuối mức Thường.</summary>
     public static double DiffStatScale(int d, int ci)
     {
         if (d <= 0) return 1;
-        var top = DiffTop;
-        // ải 15 / ải 1 trong một chương, so cùng loại quái thường (đợt đầu). Trước đây lấy tổng máu cả 3 đợt: ải 15 có tinh anh (máu ×2)
-        // nên tỉ lệ bị đội lên ~33% → Khó 1-1 mạnh hơn Thường ải 15 chương cuối ~47% thay vì 10% (DiffStartOver), công / thủ cũng vậy.
-        var r = (double)AreaWavesRaw(top, Areas)[0].Hp / AreaWavesRaw(top, 1)[0].Hp;
-        double f = 1;                                                 // mức 0: chương cuối = 1
-        for (var i = 1; i <= d; i++) f = (i == 1 ? 1 : f * Math.Pow(DiffChapterGrowth, OpenChapters - 1)) * r * DiffStartOver;
+        // Khó đầu dành cho Luyện Hư, cuối dành cho Hợp Thể; Đại Thừa bắt đầu Ác Mộng.
+        // Neo trực tiếp vào chỉ số chương cuối Thường, tránh nhân thêm chênh lệch ải 1–15 mỗi lần đổi mức.
+        double f = d == 1 ? HardStartScale : NightmareStartScale;
+        for (var i = 3; i <= d; i++) f *= Math.Pow(DiffChapterGrowth, OpenChapters - 1) * DiffStartOver;
+        if (d == 2)
+        {
+            var chapter = Math.Max(0, ci);
+            return f * Math.Pow(NightmareEarlyGrowth, Math.Min(chapter, NightmareMidChapter))
+                * Math.Pow(NightmareLateGrowth, Math.Max(0, chapter - NightmareMidChapter));
+        }
         return f * Math.Pow(DiffChapterGrowth, Math.Max(0, ci));
     }
     /// <summary>Các đợt quái của ải ở mức khó d.</summary>
@@ -877,9 +893,13 @@ public static class GameData
         d = Math.Clamp(d, 0, DiffMult.Length - 1);
         if (d == 0) return AreaWaves(c, s);
         var k = DiffStatScale(d, c.Index);
+        // Công / thủ nửa sau Ác Mộng tăng nhanh hơn máu: dành cho cảnh giới sau Đại Thừa,
+        // tránh đẩy máu Boss vượt int.MaxValue chỉ để ngăn cấu hình Đại Thừa tối đa.
+        var combat = d == 2 ? Math.Min(NightmareLateCombatMax,
+            Math.Pow(NightmareLateCombatGrowth, Math.Max(0, c.Index - NightmareMidChapter))) : 1;
         var look = AreaWaves(c, s);
         return AreaWaves(DiffTop, s).Select((w, i) => w with { Name = look[Math.Min(i, look.Length - 1)].Name, Image = look[Math.Min(i, look.Length - 1)].Image,
-            Hp = (int)Math.Min(int.MaxValue, Math.Round(w.Hp * k)), Atk = (int)Math.Min(int.MaxValue, Math.Round(w.Atk * k)), Def = (int)Math.Min(int.MaxValue, Math.Round(w.Def * k)) }).ToArray();
+            Hp = (int)Math.Min(int.MaxValue, Math.Round(w.Hp * k)), Atk = (int)Math.Min(int.MaxValue, Math.Round(w.Atk * k * combat)), Def = (int)Math.Min(int.MaxValue, Math.Round(w.Def * k * combat)) }).ToArray();
     }
     /// <summary>Bảng rơi ở mức d (chưa nhân DiffReward): Thường theo chương; Khó / Ác mộng theo chương cuối, linh thạch +DiffStoneGrowth mỗi chương.</summary>
     public static DropDef[] DiffDrops(ChapterDef c, int d) =>
@@ -1070,16 +1090,16 @@ public static class GameData
             QiReq = s => Math.Round(3100000000 * Math.Pow(1.7, s)),   // cả cảnh giới ≈ 16 tỷ tu vi (×16 Hóa Thần, cùng nhịp các cảnh giới trước)
             Rate = s => 28000 + s * 8000,
             StageCost = s => new() { ["linh_thach"] = 9000 * (s + 1), ["luyen_hu_dan"] = s + 1 },
-            BreakCost = new() { ["hop_the_dan"] = 1, ["linh_thach"] = 175000, ["thao_thiet_yeu_hach"] = 1 }, BreakChance = .15,
+            BreakCost = new() { ["hop_the_dan"] = 1, ["linh_thach"] = 175000, ["kho_ma_vien_hach"] = 1 }, BreakChance = .15,
             StatMult = 4500,
             Boss = new MonsterDef("Thao Thiết", "img/boss_thao_thiet.png", Hp: 1, Atk: 1, Def: 1),
-            BossItem = "thao_thiet_yeu_hach",
+            BossItem = "kho_ma_vien_hach",
             Drops = new[] { new DropDef("linh_thach", 300, 700, 1), new DropDef("ket_anh_dan", 2, 3, .6), new DropDef("hoa_than_dan", 1, 1, .2), new DropDef("luyen_hu_dan", 1, 1, .02),
                 // bộ Huyền Long (lh_*): món gốc, khi rơi gieo phẩm. Pháp bảo Huyền Long Kính chỉ có khi mở rương
                 new DropDef("lh_ao", 1, 1, .006), new DropDef("lh_mu", 1, 1, .006), new DropDef("lh_gang", 1, 1, .006), new DropDef("lh_quan", 1, 1, .006),
                 new DropDef("lh_giay", 1, 1, .006), new DropDef("lh_truong", 1, 1, .008),
                 new DropDef("lh_day", 1, 1, .004), new DropDef("lh_nhan", 1, 1, .004), new DropDef("lh_phu", 1, 1, .004) },
-            Resources = new[] { "linh_thach", "hoa_than_dan", "luyen_hu_dan", "hop_the_dan", "dong_hai_lenh", "thao_thiet_yeu_hach" } },
+            Resources = new[] { "linh_thach", "hoa_than_dan", "luyen_hu_dan", "hop_the_dan", "dong_hai_lenh", "kho_ma_vien_hach" } },
         new RealmDef
         {
             Id = "hop_the", Name = "Hợp Thể",
@@ -1091,16 +1111,16 @@ public static class GameData
             QiReq = s => Math.Round(52000000000 * Math.Pow(1.7, s)),  // cả cảnh giới ≈ 270 tỷ tu vi (×16 Luyện Hư, cùng nhịp các cảnh giới trước)
             Rate = s => 155000 + s * 45000,
             StageCost = s => new() { ["linh_thach"] = 32000 * (s + 1), ["hop_the_dan"] = s + 1 },
-            BreakCost = new() { ["dai_thua_dan"] = 1, ["linh_thach"] = 450000 }, BreakChance = .12,   // Hợp Thể không có chương riêng: không cần yêu hạch Boss
+            BreakCost = new() { ["dai_thua_dan"] = 1, ["linh_thach"] = 450000, ["kho_cung_ky_vuong_hach"] = 1 }, BreakChance = .12,
             StatMult = 22500,
             Boss = new MonsterDef("Cùng Kỳ Vương", "img/boss_cung_ky_vuong.png", Hp: 1, Atk: 1, Def: 1),
-            BossItem = "",
+            BossItem = "kho_cung_ky_vuong_hach",
             Drops = new[] { new DropDef("linh_thach", 700, 1600, 1), new DropDef("hoa_than_dan", 2, 3, .6), new DropDef("luyen_hu_dan", 1, 1, .2), new DropDef("hop_the_dan", 1, 1, .02),
                 // bộ Thiên Hợp (ht_*): rương và vòng quay ra theo cảnh giới; Khó / Ác mộng đổi đồ Luyện Hư rơi sang bộ này (RealmGear)
                 new DropDef("ht_ao", 1, 1, .006), new DropDef("ht_mu", 1, 1, .006), new DropDef("ht_gang", 1, 1, .006), new DropDef("ht_quan", 1, 1, .006),
                 new DropDef("ht_giay", 1, 1, .006), new DropDef("ht_kiem", 1, 1, .008),
                 new DropDef("ht_day", 1, 1, .004), new DropDef("ht_nhan", 1, 1, .004), new DropDef("ht_phu", 1, 1, .004) },
-            Resources = new[] { "linh_thach", "luyen_hu_dan", "hop_the_dan", "dai_thua_dan", "dong_hai_lenh" } },
+            Resources = new[] { "linh_thach", "luyen_hu_dan", "hop_the_dan", "dai_thua_dan", "dong_hai_lenh", "kho_cung_ky_vuong_hach" } },
         new RealmDef
         {
             Id = "dai_thua", Name = "Đại Thừa",
@@ -1417,5 +1437,13 @@ public static class GameData
     /// <summary>Số chương đang mở (chương 7–10 tạm khóa).</summary>
     public static int OpenChapters => Chapters.Count(c => c.Enabled);
     /// <summary>Chương có Boss rơi nguyên liệu đột phá item (null nếu không có).</summary>
-    public static ChapterDef? ChapterDropping(string item) => Chapters.FirstOrDefault(c => c.BossItem == item);
+    public static string? BreakthroughBossItem(int chapter, int diff) => (chapter, diff) switch
+    {
+        (0, 1) => "kho_ma_vien_hach", (9, 1) => "kho_cung_ky_vuong_hach", (9, 2) => "ac_mong_cung_ky_vuong_hach", _ => null
+    };
+    public static int BossItemDifficulty(string item) => item switch
+    {
+        "kho_ma_vien_hach" or "kho_cung_ky_vuong_hach" => 1, "ac_mong_cung_ky_vuong_hach" => 2, _ => 0
+    };
+    public static ChapterDef? ChapterDropping(string item) => Chapters.FirstOrDefault(c => c.BossItem == item || BreakthroughBossItem(c.Index, 1) == item || BreakthroughBossItem(c.Index, 2) == item);
 }

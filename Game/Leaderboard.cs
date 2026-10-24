@@ -14,10 +14,10 @@ public sealed class LeaderboardOptions
 }
 
 public record LbPetDto(string Name, string Image, int Level, int Stars);
-public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default, bool Flagged = false, long Progress = 0, long PetPower = 0, LbPetDto? Pet = null);
+public record LbRowDto(long Rank, string Name, int Realm, int Stage, string RealmName, string StageName, long Power, bool Me, Guid Id = default, bool Flagged = false, long Progress = 0, long PetPower = 0, LbPetDto? Pet = null, List<TitleDto>? Titles = null);
 /// <summary>Hồ sơ một người trên bảng: trang bị đang mặc (ô → mã vật phẩm) và chỉ số chiến đấu lúc gửi điểm gần nhất.</summary>
 public record LbProfileDto(string Name, int Realm, int Stage, string RealmName, string StageName, long Power,
-    Dictionary<string, string> Equipment, Dictionary<string, double> Stats, DateTime UpdatedAt, bool Me);
+    Dictionary<string, string> Equipment, Dictionary<string, double> Stats, DateTime UpdatedAt, bool Me, List<TitleDto>? Titles = null);
 public record LeaderboardDto(bool Enabled, string By, List<LbRowDto> Rows, LbRowDto? Me, bool Tainted, string Name, string? Error = null, bool Flagged = false);
 
 /// <summary>
@@ -28,7 +28,7 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
 {
     /// <summary>Môi trường dev (ASPNETCORE_ENVIRONMENT=Development): bỏ qua cờ admin (Tainted), nhân vật thử nghiệm vẫn lên bảng.</summary>
     private bool Dev => env?.IsDevelopment() == true;
-    private bool Excluded(Player p) => p.Tainted && !Dev;
+    public bool Excluded(Player p) => p.Tainted && !Dev;
 
     public const int Top = 50;
     private static readonly TimeSpan MinGap = TimeSpan.FromSeconds(15);     // đổi cảnh giới / lực chiến / tên: gửi sớm nhất sau 15 giây
@@ -90,6 +90,33 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             _ = Task.Run(() => Post("rpc/remove_score", new { p_id = rid, p_secret = rsec }));
             return;
         }
+        var (body, oldBody, key) = Score(p);
+        var now = DateTime.UtcNow;
+        if (!force && _sent.TryGetValue(p.Id, out var last) && now - last.at < (last.key == key ? Refresh : MinGap)) return;
+        _sent[p.Id] = (now, key);
+        _ = Task.Run(() => Submit(body, oldBody));
+    }
+
+    /// <summary>Gửi điểm ngay và chờ xong: Lôi đài tính trận từ chỉ số trên Supabase nên cần bản mới nhất trước khi đánh.</summary>
+    public async Task<bool> SubmitNowAsync(Player p)
+    {
+        if (!Enabled || p.LbSecret.Length == 0 || Excluded(p)) return false;
+        var (body, oldBody, key) = Score(p);
+        _sent[p.Id] = (DateTime.UtcNow, key);
+        return await Submit(body, oldBody);
+    }
+
+    private async Task<bool> Submit(object body, object oldBody)
+    {
+        var ok = await Post("rpc/submit_score", body, quietNotFound: true);
+        if (!ok && _oldSchema) ok = await Post("rpc/submit_score", oldBody);
+        _cache.Clear();                     // để người chơi thấy ngay hạng mới của mình
+        return ok;
+    }
+
+    /// <summary>Thân yêu cầu submit_score (bản mới + bản cho SQL cũ chưa có p_flagged) và khóa so sánh "có gì đổi không".</summary>
+    private (object body, object oldBody, string key) Score(Player p)
+    {
         var r = GameService.Realm(p);
         var power = GameService.Power(p);
         var progress = GameService.LeaderboardProgress(p);
@@ -98,9 +125,6 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         var equipment = p.Equipment.Where(e => e.ItemId.Length > 0).OrderBy(e => e.Slot).ToDictionary(e => e.Slot, e => e.ItemId);
         var st = GameService.Stats(p);
         var key = $"{p.Name}|{p.Realm}|{p.Stage}|{power}|{progress}|{petPower}|{bestPet?.DefId}|{bestPet?.Level}|{bestPet?.StarPts}|{bestPet?.AppearanceForm}|{string.Join(',', equipment.Values)}";
-        var now = DateTime.UtcNow;
-        if (!force && _sent.TryGetValue(p.Id, out var last) && now - last.at < (last.key == key ? Refresh : MinGap)) return;
-        _sent[p.Id] = (now, key);
         var stats = new Dictionary<string, double> { ["progress"] = progress, ["pet_power"] = petPower, ["atk"] = st.Atk, ["def"] = st.Def, ["hp"] = st.Hp, ["crit"] = Math.Round(st.Crit, 1), ["speed"] = Math.Round(st.Speed, 1) };
         if (bestPet is not null)
         {
@@ -115,12 +139,7 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             p_power = power, p_version = Version, p_equipment = equipment, p_flagged = SaveGuard.DataFlagged(p, Dev),
             p_stats = stats,
         };
-        _ = Task.Run(async () =>
-        {
-            if (!await Post("rpc/submit_score", body, quietNotFound: true) && _oldSchema)
-                await Post("rpc/submit_score", new { body.p_id, body.p_secret, body.p_name, body.p_realm, body.p_stage, body.p_level, body.p_qi, body.p_realm_name, body.p_stage_name, body.p_power, body.p_version, body.p_equipment, body.p_stats });
-            _cache.Clear();                     // để người chơi thấy ngay hạng mới của mình
-        });
+        return (body, new { body.p_id, body.p_secret, body.p_name, body.p_realm, body.p_stage, body.p_level, body.p_qi, body.p_realm_name, body.p_stage_name, body.p_power, body.p_version, body.p_equipment, body.p_stats }, key);
     }
 
     /// <summary>Supabase chưa chạy docs/leaderboard/supabase.sql bản có cột flagged: đọc / gửi theo kiểu cũ (không có dấu *).</summary>
@@ -195,8 +214,9 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
             }
             var mine = c.rows.FirstOrDefault(x => x.PlayerId == p.Id)
                        ?? (await ReadRows($"player_id=eq.{p.Id}")).FirstOrDefault();
+            var titles = await TitlesAsync();
             LbRowDto Dto(Row x) => new(by switch { "power" => x.PowerRank, "progress" => x.ProgressRank, "pet" => x.PetRank, _ => x.RealmRank }, x.Name, x.Realm, x.Stage, x.RealmName, x.StageName, x.Power, x.PlayerId == p.Id, x.PlayerId,
-                x.Flagged && (x.PlayerId != p.Id || !SaveGuard.AdminDataExempt(p, Dev)), x.Progress, x.PetPower, RankedPet(x.Stats));
+                x.Flagged && (x.PlayerId != p.Id || !SaveGuard.AdminDataExempt(p, Dev)), x.Progress, x.PetPower, RankedPet(x.Stats), titles.GetValueOrDefault(x.PlayerId));
             return new LeaderboardDto(true, by, c.rows.Select(Dto).ToList(), Excluded(p) || mine is null ? null : Dto(mine), Excluded(p), p.Name, Flagged: SaveGuard.DataFlagged(p, Dev));
         }
         catch (Exception ex)
@@ -225,6 +245,36 @@ public sealed class LeaderboardService(LeaderboardOptions opt, ILogger<Leaderboa
         var r = c.row;
         // trang bị bản game khác (đã đổi mã, vd. Thương → Kiếm) quy về mã hiện tại; món lạ giữ nguyên để giao diện hiện "?"
         var eq = (r.Equipment ?? new()).ToDictionary(kv => kv.Key, kv => GameData.ReplaceSpear(kv.Value) ?? GameData.UpgradeGear(kv.Value) ?? kv.Value);
-        return new LbProfileDto(r.Name, r.Realm, r.Stage, r.RealmName, r.StageName, r.Power, eq, r.Stats ?? new(), DateTime.SpecifyKind(r.UpdatedAt, DateTimeKind.Utc), r.PlayerId == me.Id);
+        return new LbProfileDto(r.Name, r.Realm, r.Stage, r.RealmName, r.StageName, r.Power, eq, r.Stats ?? new(), DateTime.SpecifyKind(r.UpdatedAt, DateTimeKind.Utc), r.PlayerId == me.Id, (await TitlesAsync()).GetValueOrDefault(r.PlayerId));
     }
+
+    private sealed record TitleRow(string Category, Guid PlayerId);
+    private (DateTime at, Dictionary<Guid, List<TitleDto>> map) _titles = (DateTime.MinValue, new());
+    private volatile bool _titlesMissing;
+
+    /// <summary>Danh hiệu Đệ nhất (view titles_public, docs/arena/supabase.sql): người chơi → các danh hiệu đang giữ.
+    /// Lỗi mạng hoặc chưa chạy SQL thì trả về rỗng, bảng xếp hạng vẫn hiện bình thường.</summary>
+    public async Task<Dictionary<Guid, List<TitleDto>>> TitlesAsync()
+    {
+        if (!Enabled || _titlesMissing) return new();
+        if (DateTime.UtcNow - _titles.at < CacheFor) return _titles.map;
+        try
+        {
+            using var res = await _http.GetAsync("titles_public?select=category,player_id");
+            if (!res.IsSuccessStatusCode)
+            {
+                if (res.StatusCode == System.Net.HttpStatusCode.NotFound) _titlesMissing = true;   // chưa chạy docs/arena/supabase.sql
+                return _titles.map;
+            }
+            var rows = await res.Content.ReadFromJsonAsync<List<TitleRow>>(Json) ?? [];
+            var map = rows.Where(x => Titles.ById.ContainsKey(x.Category)).GroupBy(x => x.PlayerId)
+                .ToDictionary(g => g.Key, g => g.Select(x => Titles.ById[x.Category]).OrderBy(t => Array.IndexOf(Titles.All, t)).ToList());
+            _titles = (DateTime.UtcNow, map);
+        }
+        catch (Exception ex) { log.LogWarning("Leaderboard titles: {Error}", ex.Message); }
+        return _titles.map;
+    }
+
+    /// <summary>Bỏ cache danh hiệu (sau trận Lôi đài đổi hạng 1).</summary>
+    public void ForgetTitles() => _titles = (DateTime.MinValue, _titles.map);
 }

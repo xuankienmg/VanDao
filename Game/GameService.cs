@@ -7,9 +7,10 @@ namespace VanDao.Game;
 /// Toàn bộ luật chơi chạy ở server. Client chỉ hiển thị và gửi hành động,
 /// nên người chơi không thể sửa tu vi hay vật phẩm từ trình duyệt.
 /// </summary>
-public partial class GameService(GameDbContext db, LeaderboardService? lb = null, MarketService? market = null, VersionService? version = null)
+public partial class GameService(GameDbContext db, LeaderboardService? lb = null, MarketService? market = null, VersionService? version = null, ArenaService? arena = null)
 {
     private readonly MarketService? _market = market;
+    private readonly ArenaService? _arena = arena;
     private readonly VersionService? _version = version;   // giờ máy chủ cho sự kiện
     private const int LogKeep = 100;
     private const int LogShow = 40;
@@ -510,7 +511,9 @@ public partial class GameService(GameDbContext db, LeaderboardService? lb = null
         }
 
         var next = NextRealm(p) ?? throw new GameException($"Cảnh giới {GameData.LockedRealms[0]} chưa khai mở.");
-        if (!p.Has(cost)) throw new GameException(p.Count(r.BossItem) < 1 ? $"Thiếu {GameData.ItemById[r.BossItem].Name}: đánh bại Boss {r.Boss.Name} (chương {(GameData.ChapterDropping(r.BossItem)?.Index ?? p.Realm) + 1}) để nhận." : "Thiếu vật liệu.");
+        if (!p.Has(cost)) throw new GameException(cost.TryGetValue(r.BossItem, out var need) && p.Count(r.BossItem) < need
+            ? $"Thiếu {GameData.ItemById[r.BossItem].Name} ({p.Count(r.BossItem)}/{need}): đánh bại Boss {(GameData.ChapterDropping(r.BossItem)?.Boss.Name ?? r.Boss.Name)} (chương {(GameData.ChapterDropping(r.BossItem)?.Index ?? p.Realm) + 1}{(GameData.BossItemDifficulty(r.BossItem) > 0 ? " · " + GameData.DiffNames[GameData.BossItemDifficulty(r.BossItem)] : "")}) để nhận."
+            : "Thiếu vật liệu.");
         var now = DateTime.UtcNow;
         if (p.Cheat("break")) { p.DebuffUntil = p.BreakCooldownUntil = DateTime.MinValue; }   // admin: bỏ điều tức
         if (now < p.DebuffUntil) throw new GameException($"Kinh mạch còn hỗn loạn sau tẩu hỏa nhập ma, cần điều tức thêm {Math.Ceiling((p.DebuffUntil - now).TotalSeconds)} giây.");

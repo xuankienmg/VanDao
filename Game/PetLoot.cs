@@ -80,6 +80,8 @@ public static class PetLoot
     {
         var quantity=1+Math.Max(0,chapter)/3+diff;
         var drops=new List<DropDef>{new("hoa_hinh_dan",quantity,quantity+1,.25+.05*diff)};
+        if(GameData.BreakthroughBossItem(chapter,diff) is { } core)
+            drops.Add(new(core,1,1,1));
         if(BloodUnlocked(chapter,diff)){
             var blood=1+Math.Max(0,chapter-4)/3+diff;
             drops.Add(new("than_thu_huyet",blood,blood+1,Math.Min(.30,.12+.02*Math.Max(0,chapter-4)+.04*diff)));

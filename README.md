@@ -59,6 +59,14 @@ Mọi cài đặt được nhớ cho lần mở sau.
 
 ## Cách chơi
 
+### Tiến trình mức Khó và Ác Mộng
+
+- **Luyện Hư:** bắt đầu các chương đầu mức Khó. Đột phá lên Hợp Thể cần Ma Viên Hạch từ Boss chương 1 mức Khó.
+- **Hợp Thể:** tiến đến các chương cuối mức Khó. Đột phá lên Đại Thừa cần Cùng Kỳ Vương Hạch từ Boss chương 10 mức Khó.
+- **Đại Thừa:** tiến từ đầu đến giữa mức Ác Mộng (chương 1–5). Từ chương 6 độ khó tăng nhanh; các chương cuối dành cho cảnh giới mới sau Đại Thừa, hiện chưa khai mở.
+
+Khả năng vượt ải dựa trên tổng sức mạnh thực chiến: chỉ số cảnh giới, trang bị và hiệu ứng bộ, công pháp đang dùng và bị động, linh thú cùng cấp, sao, tư chất, tiến hóa, thức tỉnh và trang bị thú. Các nguồn có thể bù cho nhau; không bắt buộc đủ 10 ô trang bị để vào Boss. Nguyên liệu đột phá mức Khó chỉ rơi từ đúng Boss, đúng độ khó và được giữ lại khi đột phá thất bại.
+
 - **Tự động thám hiểm** (luôn bật): mỗi chuyến nhân vật đi qua rừng, gặp quái và giao chiến theo lượt. Cảnh đánh là pixel art (sprite 48×48 trong `wwwroot/img/*_48.png`, vẽ ở độ phân giải thấp rồi phóng to không làm mịn): tu sĩ bên trái, quái bên phải, vệt kiếm khí, số sát thương, thanh máu và vòng chọn mục tiêu; hoạt ảnh khớp đúng kết quả trận do server tính; xong chuyến nhân vật nhận thêm tu vi và vật phẩm rơi theo tỉ lệ của cảnh giới. Thanh nhỏ cạnh các nút cho biết thời gian đến chuyến tiếp theo.
 - **Tu vi tự tăng** (mặc định 3/giây ở Luyện Khí tầng 1), kể cả khi tắt game (tối đa 2 giờ). Khi mở lại, các chuyến thám hiểm lúc vắng mặt được cộng gộp vào một dòng nhật ký.
 - **Chỉ số chiến đấu**: Tấn công, Máu, Phòng thủ = chỉ số gốc theo cảnh giới/tầng + trang bị. Trận đánh theo lượt, không ngẫu nhiên: sát thương = tấn công − phòng thủ đối thủ. Thắng thì nhận tu vi và vật phẩm; thua thì rút lui, chỉ nhận nửa tu vi. Tấn công cao hạ quái nhanh hơn nên chuyến thám hiểm ngắn hơn.

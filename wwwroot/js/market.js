@@ -114,10 +114,10 @@ function mkSellView(d){
       <label>Số lượng <input id="mkQty" type="number" min="1" max="${have}" value="1"></label>
       <label>Tổng giá · Linh thạch <input id="mkPrice" type="number" min="1" max="2000000000" value="${unit}"></label>
       <p class="mk-net" id="mkNet"></p>
-      <button type="submit" ${d.blocked || openN >= d.maxOpen ? 'disabled' : ''}>Treo bán ${d.listingDays} ngày</button>
+      <button type="submit" ${d.blocked || (!d.unlimitedListings && openN >= d.maxOpen) ? 'disabled' : ''}>Treo bán ${d.listingDays} ngày</button>
     </form>`;
   }
-  return `<p class="mk-hint">Đang treo ${openN}/${d.maxOpen} tin · thuế ${d.taxPct}% trừ vào tiền bán · tối đa ${d.maxDaily} giao dịch/24 giờ.</p>
+  return `<p class="mk-hint">Đang treo ${openN}/${d.unlimitedListings ? '∞' : d.maxOpen} tin · thuế ${d.taxPct}% trừ vào tiền bán · tối đa ${d.unlimitedListings ? '∞' : d.maxDaily} giao dịch/24 giờ khi treo bán.</p>
     <div class="mk-sell-layout"><section class="mk-stock"><h3>Hành trang <small>${own.length} loại vật phẩm</small></h3><label class="mk-bag-order">Sắp xếp <select id="mkBagSort">${MK_BAG_SORTS.map(([k,n])=>`<option value="${k}" ${k===mkBagSort?'selected':''}>${n}</option>`).join('')}</select></label><div class="mk-bag">${own.length ? own.map(([k, n]) => `<button class="mk-cell${k === mkPick ? ' on' : ''}" aria-label="${mkEsc(ITEM[k].name)} · ${fmt(n)} món" aria-pressed="${k === mkPick}" data-mk-pick="${k}" data-card="bag" data-k="${k}">${icon(k)}<em>${n > 1 ? fmt(n) : ''}</em></button>`).join('') : '<p class="mk-empty">Không có vật phẩm giao dịch được.</p>'}</div></section><section class="mk-post"><h3>Treo bán vật phẩm</h3>${form}</section></div>`;
 }
 

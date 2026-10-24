@@ -10,6 +10,7 @@ foreach (var item in GameData.AllItems) Image(item.Icon);
 foreach (var pet in PetData.Definitions) foreach (var form in pet.Forms) Image(form.Image);
 var chapters = GameData.Chapters.Select(c => new {
     c.Index, c.Name, c.Realm, c.Enabled, c.BossLair, c.KeyItem, c.BossItem,
+    hardBossItem = GameData.BreakthroughBossItem(c.Index, 1), nightmareBossItem = GameData.BreakthroughBossItem(c.Index, 2),
     difficulties = Enumerable.Range(0, GameData.DiffNames.Length).Select(d => new {
         name = GameData.DiffNames[d],
         drops = GameData.DiffDrops(c, d),

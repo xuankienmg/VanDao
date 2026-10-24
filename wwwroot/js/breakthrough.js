@@ -42,7 +42,7 @@ function btReqs(){
   for (const c of S.targetCost){
     const it = ITEM[c.item], ok = c.have >= c.need;
     rows.push({ok, ic: c.item, name: it.name, val: `${fmt(c.have)} / ${fmt(c.need)}`, boss: it.type === 'boss',
-      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${DATA.chapters?.find(x => x.bossItem === realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Luyện chế đan</a>' : ''});
+      hint: ok ? '' : it.type === 'boss' ? `<a href="#" data-goboss>Đánh Boss ${bossChapterFor(realm().bossItem)?.boss || realm().boss}${bossChapterTag(realm().bossItem)}</a>` : it.type === 'pill' ? '<a href="#" data-gotab="craft">Luyện chế đan</a>' : ''});
   }
   if (S.isPeak) rows.push({ok: true, key: 'peak', name: 'Tu luyện viên mãn', val: S.stageName});
   const debuff = btLeft(S.break.debuffMs), cd = btLeft(S.break.cooldownMs);

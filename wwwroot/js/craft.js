@@ -34,7 +34,7 @@ function ddBreak(){
       bossBox = `<div class="dd-boss ${ok ? 'ok' : ''}" data-tip="${itemTip(c.item)}">
         <span class="dd-fr boss">${itemImg(c.item)}</span>
         <div><p class="nm">${it.name}</p><p class="st">${fmt(c.have)} / ${c.need} · nguyên liệu Boss</p>
-        <p class="hint">${ok ? 'Đã có, sẵn sàng đột phá.' : `Đánh bại Boss ${r.boss}${bossChapterTag(r.bossItem)} để nhận nguyên liệu.`}</p></div></div>`;
+        <p class="hint">${ok ? 'Đã có, sẵn sàng đột phá.' : `Đánh bại Boss ${bossChapterFor(r.bossItem)?.boss || r.boss}${bossChapterTag(r.bossItem)} để nhận nguyên liệu.`}</p></div></div>`;
       rows += row(ok, '', it.name, `${fmt(c.have)} / ${c.need}`, 'bossrow');
     } else rows += row(ok, itemImg(c.item), it.name, `${fmt(c.have)} / ${fmt(c.need)}`);
   }
@@ -42,7 +42,7 @@ function ddBreak(){
   const needBoss = S.isPeak && S.targetCost.some(c => ITEM[c.item].type === 'boss' && c.have < c.need);
   const btn = ready ? `<button class="dd-go gold" data-dd="advance">Đột phá</button>`
     : needBoss ? `<button class="dd-go" data-dd="boss">Đến khu vực Boss</button>` : '';
-  const upcoming = !S.isPeak && ITEM[r.bossItem] ? `<p class="dd-note">Đại cảnh giới ${DATA.realms[S.realm + 1] ? DATA.realms[S.realm + 1].name : DATA.lockedRealms[0]} cần thêm ${itemImg(r.bossItem)} <b>${ITEM[r.bossItem].name}</b> (Boss ${r.boss}${bossChapterTag(r.bossItem)}).</p>` : '';
+  const upcoming = !S.isPeak && ITEM[r.bossItem] ? `<p class="dd-note">Đại cảnh giới ${DATA.realms[S.realm + 1] ? DATA.realms[S.realm + 1].name : DATA.lockedRealms[0]} cần thêm ${itemImg(r.bossItem)} <b>${ITEM[r.bossItem].name}</b> (Boss ${bossChapterFor(r.bossItem)?.boss || r.boss}${bossChapterTag(r.bossItem)}).</p>` : '';
   return `<p class="dd-sec">${S.isPeak ? 'Đột phá kế tiếp' : 'Đột phá tầng kế tiếp'}</p>
     <div class="dd-path"><span>${cur}</span><i>→</i><b>${next}</b></div>
     <ul class="dd-req">${rows}</ul>${bossBox}${btn}${upcoming}`;
