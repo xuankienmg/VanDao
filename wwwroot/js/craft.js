@@ -26,7 +26,7 @@ function ddBreak(){
   const q = qiNow(), full = q >= S.qiReq;
   const cur = `${S.realmName} ${S.stageName}`, next = S.isPeak ? DATA.realms[S.realm + 1].name : S.targetTitle.replace(' · ', ' ');
   const row = (ok, ic, name, val, extra = '') => `<li class="${ok ? 'ok' : 'no'} ${extra}"><i>${ok ? '✓' : '✗'}</i>${ic}<span>${name}</span><b>${val}</b></li>`;
-  let rows = row(full, '', 'Tu vi', `<span id="ddQi2" title="${fmt(q)} / ${fmt(S.qiReq)}">${fmtCompact(q)} / ${fmtCompact(S.qiReq)}</span>`);
+  let rows = row(full, '', 'Tu vi', `<span id="ddQi2" title="${fmtFull(q)} / ${fmtFull(S.qiReq)}">${fmtCompact(q)} / ${fmtCompact(S.qiReq)}</span>`);
   let bossBox = '';
   for (const c of S.targetCost){
     const it = ITEM[c.item], ok = c.have >= c.need;
@@ -86,7 +86,7 @@ function liveDan(){
   if (!S || !$('ddCult')) return;
   const q = qiNow(), rq = S.qiReq;
   $('ddCult').innerHTML = `<span>Cảnh giới <b>${S.realmName}</b> · <b>${S.stageName}</b></span>
-    <div class="dd-qi" title="${fmt(q)} / ${fmt(rq)}"><i style="width:${Math.min(100, q / rq * 100)}%"></i><em>${fmtCompact(q)} / ${fmtCompact(rq)} tu vi</em></div>`;
+    <div class="dd-qi" title="${fmtFull(q)} / ${fmtFull(rq)}"><i style="width:${Math.min(100, q / rq * 100)}%"></i><em>${fmtCompact(q)} / ${fmtCompact(rq)} tu vi</em></div>`;
   setQiDisplay($('ddQi2'), q, rq);
 }
 

@@ -440,7 +440,7 @@ function drawPixelBattle(t, dt, ph, r){
       const size = big ? (critical ? 26 : 20) : (critical ? 18 : 14);
       const raw = String(f.text);
       const text = /^[+-]?\d+$/.test(raw)
-        ? raw.replace(/\d+/, digits => Number(digits).toLocaleString('vi-VN')).replace(/^-/, '−') : raw;
+        ? raw.replace(/\d+/, digits => fmt(Number(digits))).replace(/^-/, '−') : fmtNumberText(raw);
       ctx.save();
       ctx.globalAlpha = reduce ? 1 : Math.min(1, k / .08) * Math.min(1, (1 - k) / .25);
       ctx.font = `${critical ? 'italic 800' : '800'} ${size}px "Be Vietnam Pro", system-ui, sans-serif`;
@@ -465,19 +465,21 @@ function drawPixelBattle(t, dt, ph, r){
       continue;
     }
     ctx.font = `700 ${big ? 15 : 11}px "Be Vietnam Pro", system-ui, sans-serif`;
-    const half=ctx.measureText(f.text).width/2+4,x=Math.max(half,Math.min(W-half,f.x*sx));
+    const label=fmtNumberText(f.text);
+    const half=ctx.measureText(label).width/2+4,x=Math.max(half,Math.min(W-half,f.x*sx));
     const y=textY-(reduce?0:k*6);
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(f.text, x + 1, y + 1);
-    ctx.fillStyle = f.col; ctx.fillText(f.text, x, y);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(label, x + 1, y + 1);
+    ctx.fillStyle = f.col; ctx.fillText(label, x, y);
   }
   ctx.restore();
   floats = floats.filter(f => f.t < 1.6);
   for (const f of floats){
     f.t += dt;
+    const text=fmtNumberText(f.text);
     ctx.font = `600 ${big ? 14 : 10}px "Be Vietnam Pro", system-ui, sans-serif`;
     const x = heroX*sx, y = (g - sz - 8)*sy + (f.row||0)*(big ? 16 : 11) - f.t*(big ? 22 : 8);
-    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(f.text, x + 1, y + 1);
-    ctx.fillStyle = hexA(f.c || r.aura, Math.max(0, Math.min(1, 1 - f.t/1.6))); ctx.fillText(f.text, x, y);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(text, x + 1, y + 1);
+    ctx.fillStyle = hexA(f.c || r.aura, Math.max(0, Math.min(1, 1 - f.t/1.6))); ctx.fillText(text, x, y);
   }
   rings = rings.filter(q => q.t < (q.big ? 2.2 : 1.2));
   for (const q of rings){

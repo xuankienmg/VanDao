@@ -38,7 +38,7 @@ const BT_WARN = '<svg class="wn" viewBox="0 0 24 24" aria-hidden="true"><circle 
 /** Trạng thái điều kiện: tu vi, vật phẩm, viên mãn, thể trạng. */
 function btReqs(){
   const q = qiNow(), rows = [];
-  rows.push({ok: q >= S.qiReq, key: 'qi', name: 'Tu vi', val: `<span class="btq" title="${fmt(q)} / ${fmt(S.qiReq)}">${fmtCompact(q)} / ${fmtCompact(S.qiReq)}</span>`});
+  rows.push({ok: q >= S.qiReq, key: 'qi', name: 'Tu vi', val: `<span class="btq" title="${fmtFull(q)} / ${fmtFull(S.qiReq)}">${fmtCompact(q)} / ${fmtCompact(S.qiReq)}</span>`});
   for (const c of S.targetCost){
     const it = ITEM[c.item], ok = c.have >= c.need;
     rows.push({ok, ic: c.item, name: it.name, val: `${fmt(c.have)} / ${fmt(c.need)}`, boss: it.type === 'boss',
