@@ -60,6 +60,7 @@ public static class Program
         builder.Services.AddSingleton<LeaderboardService>();
         builder.Services.AddSingleton<VersionService>();  // bắt cập nhật: đọc app_config trên Supabase
         builder.Services.AddSingleton<MarketService>();   // Chợ giao dịch: dùng chung project Supabase
+        builder.Services.AddSingleton<ArenaService>();    // Lôi đài PK: dùng chung project Supabase
 
         var app = builder.Build();
         Player.AdminEnabled = app.Environment.IsDevelopment();   // admin mode chỉ có khi chạy dev
@@ -107,7 +108,8 @@ public static class Program
                 r.HeroStand, r.HeroMed, r.HeroCast, r.Halo)),
             GameData.Synths, SkillData.Elements, SkillData.Skills, GameData.PillChain, GameData.Areas,
             GameData.LockedRealms, GameData.FuseChance,
-            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem)),
+            GameData.Chapters.Select(c => new ChapterInfoDto(c.Index, c.Name, c.Realm, c.Enabled, c.Boss.Name, c.Boss.Image, c.BossLair, c.KeyItem, c.BossItem,
+                GameData.BreakthroughBossItem(c.Index, 1), GameData.BreakthroughBossItem(c.Index, 2))),
             GameData.Brews, GameData.HerbDrops, GameData.Skins, GameData.SpinWeights, GameData.SpinTicketPrice, EquipmentEffects.Sets, PetData.Definitions, PetData.PetSpinWeights, GameData.PetSpinTicketPrice));
 
         api.MapPost("/players", async (CreatePlayerRequest? req, GameService game) =>
@@ -268,6 +270,27 @@ public static class Program
         // nhận linh thạch đã bán / đồ trả về: giao diện gọi định kỳ
         api.MapPost("/players/{id:guid}/market/claim", (Guid id, GameService game) =>
             RunAsync(id, game, p => game.MarketClaimAsync(p)));
+
+        // Lôi đài (PK bất đồng bộ trên Supabase): bậc thang hạng, thắng thì đổi vị trí với đối thủ
+        api.MapGet("/players/{id:guid}/arena", async (Guid id, GameService game) =>
+        {
+            try { return Results.Ok(await game.ArenaAsync(await game.LoadAsync(id))); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+        });
+        api.MapPost("/players/{id:guid}/arena/fight/{target:guid}", async (Guid id, Guid target, GameService game) =>
+        {
+            await MutationGate.WaitAsync();
+            try
+            {
+                var p = await game.LoadAsync(id);
+                var (msg, kind, fight) = await game.ArenaFightAsync(p, target);
+                await game.SaveAsync(p);
+                return Results.Ok(new ArenaFightResponse(await game.BuildStateAsync(p), msg, kind, fight));
+            }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Không tìm thấy tu sĩ." }); }
+            catch (GameException ex) { return Results.BadRequest(new { error = ex.Message }); }
+            finally { MutationGate.Release(); }
+        });
 
         // bấm vào một người trên bảng xếp hạng: trang bị đang mặc + chỉ số
         api.MapGet("/players/{id:guid}/leaderboard/{other:guid}", async (Guid id, Guid other, GameService game, LeaderboardService lb) =>

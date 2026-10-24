@@ -53,7 +53,10 @@ async function ddBrew(k, n){
 }
 /** Đến Boss rơi nguyên liệu đột phá của cảnh giới hiện tại: chuyển sang chương của Boss đó (nếu đã mở), đủ lệnh thì vào ải Boss. */
 async function ddGoBoss(){
-  const c = DATA.chapters.find(x => x.bossItem === realm().bossItem);
+  const c = bossChapterFor(realm().bossItem), difficulty = bossDifficultyFor(realm().bossItem);
+  if (c && difficulty !== (S.map.diff || 0)) {
+    if (!await act(`diff/${difficulty}`)) { openTab('map'); return; }
+  }
   if (!c || c.index > S.map.chapterMax){ openTab('map'); return; }
   if (S.map.realm !== c.index) await act(`map/${c.index}`);
   const m = S.map;

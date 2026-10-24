@@ -23,6 +23,12 @@ Chỉ cần chạy thêm `supabase.sql` trong thư mục này ở **SQL Editor**
 
 ## Luồng ký gửi
 
+### Treo bán không giới hạn cho admin trong Development
+
+Chạy lại `supabase.sql`, sau đó đặt `market_players.unlimited_listings = true` cho UUID nhân vật thử nghiệm trong Supabase Table Editor. Nhân vật cần đã dùng admin (`Tainted`, cờ `Admin` hoặc `AdminPoints`) và game chạy ở `Development`. Giao diện hiển thị `∞`; khi treo bán bỏ giới hạn 5 tin và hạn mức 10 giao dịch/24 giờ. Mua hàng vẫn áp dụng hạn mức ngày; thuế, thời hạn tin, số lượng và giá hợp lệ vẫn giữ nguyên.
+
+Quyền này mặc định tắt và chỉ quản trị cơ sở dữ liệu cấp được. Cờ gửi từ client phải đi cùng quyền trên Supabase; bản phát hành và nhân vật thường không yêu cầu miễn giới hạn. Client cũ vẫn gọi được `market_list` với các tham số cũ.
+
 1. **Treo bán**: Supabase nhận tin → game mới trừ món khỏi túi. Món nằm trên Supabase cho tới khi bán, hủy hoặc hết hạn.
 2. **Mua**: game kiểm tra đủ linh thạch + chỗ trống → `market_buy` đổi tin sang "sold" trong một lệnh UPDATE
    (hai người bấm cùng lúc thì chỉ một người mua được) → game trừ linh thạch, thêm món.

@@ -1,6 +1,6 @@
 /* Vấn Đạo · js/leaderboard.js: Bảng xếp hạng online (Supabase qua server game) · 2 tab Cảnh giới / Lực chiến. */
 let lbBy = 'realm', lbData = null, lbLoading = false, lbAt = 0;
-try { const saved = localStorage.getItem('van-dao-lb-by'); lbBy = ['realm','power','progress','pet'].includes(saved) ? saved : 'realm'; } catch(e){}
+try { const saved = localStorage.getItem('van-dao-lb-by'); lbBy = ['realm','power','progress','pet','arena'].includes(saved) ? saved : 'realm'; } catch(e){}
 const lbEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 
 function initRank(){
@@ -15,6 +15,7 @@ function initRank(){
         <button data-lb="realm" role="tab">${lbIcon('realm')}Cảnh giới</button>
         <button data-lb="progress" role="tab">${lbIcon('board')}Vượt ải</button>
         <button data-lb="pet" role="tab">${lbIcon('realm')}Linh thú</button>
+        <button data-lb="arena" role="tab">${lbIcon('power')}Lôi đài</button>
       </div>
       <button class="lb-ref" id="lbRef" aria-label="Làm mới bảng xếp hạng" data-tip="Làm mới&#10;Bảng tự cập nhật mỗi 30 giây">↻</button>
     </div>
@@ -26,6 +27,7 @@ function initRank(){
     <div class="lb-note" id="lbNote" hidden></div>
     <div class="lb-body"><aside id="lbChampion" class="lb-champion" hidden></aside><section class="lb-results"><div class="lb-columns"><span>Hạng</span><span>Đạo hữu</span><span id="lbColumn">Cảnh giới</span></div><ol class="lb-list" id="lbList"></ol></section></div>
     <div class="lb-me" id="lbMe"></div>
+    <div class="ar" id="arenaView" hidden></div>
     <footer class="lb-footer">Tự cập nhật mỗi 30 giây</footer>
   </div>`;
   pane.addEventListener('click', async e => {
@@ -57,11 +59,12 @@ function initRank(){
     await act(`name?${new URLSearchParams({name})}`);
     setTimeout(() => loadRank(true), 1500);        // điểm gửi nền → đợi một chút rồi lấy lại bảng
   });
-  setInterval(() => { if (!$('pane-rank').hidden && !document.hidden) loadRank(true); }, 30000);
+  setInterval(() => { if (!$('pane-rank').hidden && !document.hidden && !arenaFighting()) loadRank(true); }, 30000);
 }
 
 async function loadRank(force){
   initRank();
+  if (lbBy === 'arena'){ renderRank(); return loadArena(force); }
   if (!S || lbLoading) return;
   if (!force && lbData?.by === lbBy && performance.now() - lbAt < 20000){ renderRank(); return; }
   lbLoading = true; renderRank();
@@ -72,7 +75,11 @@ async function loadRank(force){
 
 /** Chú thích dấu * đỏ: nhân vật từng mở bằng bản game cũ (SaveGuard) — vẫn xếp hạng nhưng không vào top 10, không giao dịch ở Chợ. */
 const LB_FLAG_TIP = 'Dữ liệu từng được mở bằng bản game cũ&#10;Vẫn được xếp hạng nhưng không vào top 10 và không giao dịch ở Chợ';
-const lbLabels = {realm: 'Cảnh giới', power: 'Lực chiến', progress: 'Vượt ải', pet: 'Linh thú'};
+const lbLabels = {realm: 'Cảnh giới', power: 'Lực chiến', progress: 'Vượt ải', pet: 'Linh thú', arena: 'Lôi đài'};
+/** Danh hiệu Đệ nhất (Game/Arena.cs → Titles) cạnh tên người chơi. */
+function lbTitles(list){
+  return (list || []).map(t => `<span class="lb-title tt-${lbEsc(t.id)}" data-tip="${lbEsc(t.desc)}">${lbEsc(t.name)}</span>`).join('');
+}
 function lbProgressText(value){
   const n = Number(value) || 0;
   if (!n) return 'Chưa vượt ải';
@@ -100,7 +107,7 @@ function lbRow(r, by){
   const main = lbScore(r, by);
   const sub = by === 'pet' || by === 'power' ? realmTxt : `Lực chiến ${fmt(r.power)}`;
   return `<li class="lb-row${top}${r.me ? ' me' : ''}"${r.id ? ` data-pid="${lbEsc(r.id)}" role="button" tabindex="0" aria-label="Xem trang bị của ${lbEsc(r.name)}" data-tip="Xem trang bị&#10;${lbEsc(r.name)}"` : ''}><span class="lb-rk">${r.rank}</span>
-    <span class="lb-nm"><b>${lbEsc(r.name)}</b>${r.flagged ? `<sup class="lb-flag" aria-label="Đã đánh dấu" data-tip="${LB_FLAG_TIP}">*</sup>` : ''}${r.me ? '<em class="lb-you">Bạn</em>' : ''}<small>${sub}</small></span><span class="lb-val">${main}${devMode && r.flagged && r.id ? `<button type="button" data-lb-clear="${lbEsc(r.id)}" aria-label="Gỡ cờ dữ liệu cho ${lbEsc(r.name)}">Gỡ cờ</button>` : ''}</span></li>`;
+    <span class="lb-nm"><b>${lbEsc(r.name)}</b>${r.flagged ? `<sup class="lb-flag" aria-label="Đã đánh dấu" data-tip="${LB_FLAG_TIP}">*</sup>` : ''}${r.me ? '<em class="lb-you">Bạn</em>' : ''}${lbTitles(r.titles)}<small>${sub}</small></span><span class="lb-val">${main}${devMode && r.flagged && r.id ? `<button type="button" data-lb-clear="${lbEsc(r.id)}" aria-label="Gỡ cờ dữ liệu cho ${lbEsc(r.name)}">Gỡ cờ</button>` : ''}</span></li>`;
 }
 
 function renderRank(){
@@ -108,6 +115,10 @@ function renderRank(){
   const pane = $('pane-rank'); if (!pane || !S) return;
   pane.querySelectorAll('[data-lb]').forEach(b => { const on = b.dataset.lb === lbBy; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   const inp = $('lbNameIn'); if (document.activeElement !== inp) inp.value = S.name;
+  const arena = lbBy === 'arena';
+  $('arenaView').hidden = !arena;
+  pane.querySelector('.lb-body').hidden = arena; $('lbMe').hidden = arena;
+  if (arena){ pane.dataset.by = 'arena'; $('lbNote').hidden = true; $('lbFlagNote')?.setAttribute('hidden', ''); $('lbRef').disabled = arLoading; renderArena(); return; }
   $('lbRef').disabled = lbLoading;
   const d = lbData?.by === lbBy ? lbData : null, note = $('lbNote');
   pane.dataset.by = lbBy;
@@ -115,7 +126,7 @@ function renderRank(){
   const champion = d?.enabled && !d.error ? d.rows.find(r => r.rank === 1) : null;
   const hero = champion ? DATA.realms[champion.realm]?.hero : null;
   $('lbChampion').hidden = !champion;
-  $('lbChampion').innerHTML = champion && lbBy === 'pet' && champion.pet ? lbPetChampion(champion) : champion ? `<div class="lb-first">Đệ nhất</div>${hero ? `<img src="${lbEsc(hero)}" alt="">` : lbIcon(lbBy === 'power' ? 'power' : 'realm')}<h3>${lbEsc(champion.name)}</h3><p>${lbEsc(champion.realmName)} · ${lbEsc(champion.stageName)}</p><strong>${lbScore(champion, lbBy)}</strong><p>${lbLabels[lbBy]}</p><div class="lb-motto">Độc bộ thiên hạ</div>` : '';
+  $('lbChampion').innerHTML = champion && lbBy === 'pet' && champion.pet ? lbPetChampion(champion) : champion ? `<div class="lb-first">Đệ nhất</div>${hero ? `<img src="${lbEsc(hero)}" alt="">` : lbIcon(lbBy === 'power' ? 'power' : 'realm')}<h3>${lbEsc(champion.name)}</h3>${champion.titles?.length ? `<div class="lb-titles">${lbTitles(champion.titles)}</div>` : ''}<p>${lbEsc(champion.realmName)} · ${lbEsc(champion.stageName)}</p><strong>${lbScore(champion, lbBy)}</strong><p>${lbLabels[lbBy]}</p><div class="lb-motto">Độc bộ thiên hạ</div>` : '';
   let msg = '';
   if (d && !d.enabled) msg = 'Bảng xếp hạng online chưa được cấu hình (appsettings.json → Leaderboard: Url, AnonKey).';
   else if (d?.error) msg = d.error;
@@ -164,7 +175,7 @@ async function lbShowProfile(pid){
   const st = pf.stats || {}, has = Object.keys(st).length > 0;
   const stat = (n, v) => `<div><span>${n}</span><b>${v}</b></div>`;
   el.querySelector('.lb-pf-card').innerHTML = `
-    <header><div><h3>${lbEsc(pf.name)}${pf.me ? ' <em class="lb-you">Bạn</em>' : ''}</h3><p>${lbEsc(pf.realmName)} · ${lbEsc(pf.stageName)} · Lực chiến <b>${fmt(pf.power)}</b></p></div>
+    <header><div><h3>${lbEsc(pf.name)}${pf.me ? ' <em class="lb-you">Bạn</em>' : ''}</h3>${pf.titles?.length ? `<div class="lb-titles">${lbTitles(pf.titles)}</div>` : ''}<p>${lbEsc(pf.realmName)} · ${lbEsc(pf.stageName)} · Lực chiến <b>${fmt(pf.power)}</b></p></div>
       <button class="lb-pf-x" data-pf-x aria-label="Đóng">✕</button></header>
     ${has ? `<div class="lb-pf-stats">${stat('Tấn công', fmt(st.atk || 0))}${stat('Phòng thủ', fmt(st.def || 0))}${stat('Máu', fmt(st.hp || 0))}${stat('Bạo kích', Math.round(st.crit || 0) + '%')}${stat('Thân pháp', Math.round(st.speed || 0) + '%')}</div>` : ''}
     <div class="lb-pf-gear">${slots}</div>
