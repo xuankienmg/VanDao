@@ -4,10 +4,14 @@
 - Thêm **Lôi Đài**: đấu PK với người chơi khác theo bậc thang hạng. Mở bằng tab **Lôi đài** trong Thiên bảng (nút Bảng xếp hạng), cạnh Cảnh giới / Lực chiến / Vượt ải / Linh thú.
 - Lần đầu vào Lôi Đài, bạn đứng cuối bậc thang. Chỉ khiêu chiến được người xếp trên, trong khoảng 5 hạng hoặc 20% hạng hiện tại (lấy số lớn hơn).
 - Thắng thì **đổi hạng** với đối thủ. Thua thì giữ nguyên hạng, đối thủ cũng không mất gì.
-- Mỗi ngày có **15 lượt khiêu chiến**, làm mới lúc 0h giờ Việt Nam, nghỉ 20 giây giữa hai trận.
-- Trận đấu do máy chủ tính từ chỉ số mới nhất của hai bên (công, thủ, máu, bạo kích, thân pháp). Bên có thân pháp cao hơn ra đòn trước. Sau 30 hiệp mà chưa ai gục thì bên còn nhiều % máu hơn thắng.
-- Trận đấu được diễn lại trên màn hình, có thanh máu, sát thương từng đòn và nút Bỏ qua.
-- Đầu Lôi Đài luôn hiện **Tam cường** (top 3). Bên dưới là các đối thủ trong tầm khiêu chiến, rồi đến bạn và 2 người ngay sau.
+- Đánh người xếp dưới là **tỷ thí**: không đổi hạng, không tính vào chiến tích thắng / thua.
+- Mỗi ngày có **15 lượt** (khiêu chiến và tỷ thí dùng chung), làm mới lúc 0h giờ Việt Nam, nghỉ 20 giây giữa hai trận.
+- Hai bên mang **đủ kỹ năng** vào trận: đòn thường, tuyệt kỹ (tung khi đủ nộ) cùng hiệu ứng phụ, bị động công pháp, hiệu ứng trang bị theo cấp và thần thông bộ đồ. Linh thú chưa tham chiến, nhưng chỉ số linh thú cộng cho chủ nhân vẫn được tính.
+- Bên có thân pháp cao hơn ra đòn trước. Trong Lôi Đài, máu hai bên được nhân 3. Từ hiệp 16, sát thương của cả hai bên tăng dần mỗi hiệp để trận nào cũng kết thúc bằng hạ gục.
+- Thiêu đốt trong Lôi Đài mỗi lượt gây tối đa 50% công của người đốt.
+- Trận đấu diễn ngay trên **màn hình chính**. Bạn đứng bên trái, đối thủ bên phải; trên màn hiện tên chiêu, sát thương, bạo kích, né, khống chế và hồi máu. Bấm Khiêu chiến thì bảng tự đóng để bạn xem trận.
+- Đối thủ chưa cập nhật bản game này sẽ dùng bộ kỹ năng giống hệt bạn, với chỉ số của chính họ.
+- Đầu Lôi Đài luôn hiện **Tam cường** (top 3). Bên dưới là **Đối thủ gần hạng bạn**: mọi người trong tầm khiêu chiến phía trên và 7 người có hạng gần bạn nhất. Người xếp dưới có nút **Tỷ thí**.
 - Nhật ký Lôi Đài ghi 20 trận gần nhất, gồm cả trận bạn khiêu chiến và trận bạn bị khiêu chiến.
 - Nhân vật từng dùng admin mode không vào được Lôi Đài.
 
