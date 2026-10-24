@@ -13,6 +13,7 @@ GEMINI.md
 /tools/*
 !/tools/wiki_export/
 !/tools/agility_checks/
+!/tools/number_format_checks.cjs
 /.forge/
 /exports/
 /docs/

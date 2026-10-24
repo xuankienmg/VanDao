@@ -241,10 +241,10 @@ function live(){
   const q = qiNow(), rq = S.qiReq, full = q >= rq;
   $('qiBar').firstElementChild.style.width = Math.min(100, q/rq*100) + '%';
   $('qiBar').classList.toggle('full', full);
-  $('qiText').textContent = `${fmt(q)} / ${fmt(rq)}`;
-  if (MODE === 'strip'){ $('sStage').textContent = S.stageName; $('qiBarTxt').textContent = `${fmt(q)}/${fmt(rq)}`; $('qiBar').dataset.tip = `Tu vi${full ? ' · bình cảnh' : ''}&#10;${fmt(q)} / ${fmt(rq)} · ${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')}/giây`.replace('&#10;', '\n'); }
+  setQiDisplay($('qiText'), q, rq);
+  if (MODE === 'strip'){ $('sStage').textContent = S.stageName; setQiDisplay($('qiBarTxt'), q, rq); $('qiBar').dataset.tip = `Tu vi${full ? ' · bình cảnh' : ''}&#10;${fmt(q)} / ${fmt(rq)} · ${(Math.round(S.rate*10)/10).toLocaleString('vi-VN')}/giây`.replace('&#10;', '\n'); }
   $('qiLabel').textContent = full ? 'Tu vi · bình cảnh' : 'Tu vi';
-  const rq2 = $('reqQi'); if (rq2){ rq2.textContent = `${fmt(q)} / ${fmt(rq)}`; rq2.classList.toggle('ok', full); }
+  const rq2 = $('reqQi'); if (rq2){ setQiDisplay(rq2, q, rq); rq2.classList.toggle('ok', full); }
   const a = advState(), b = $('btnAdvance');
   const b2 = $('btnAdvance2');
   if (b2){ b2.disabled = !a.ok || busy; b2.classList.toggle('ready', a.ok); $('advHint2').textContent = a.label; }

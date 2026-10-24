@@ -46,6 +46,20 @@ const qiNow = () => Math.min(S.qiReq, S.qi + S.rate * (performance.now() - recvA
 const exploreLeft = () => Math.max(0, S.exploreReadyInMs - (performance.now() - recvAt));
 const hasAll = cost => cost.every(c => c.have >= c.need);
 const fmt = n => Math.floor(n).toLocaleString('vi-VN');
+// Floor compact values so an almost-full cultivation bar never rounds up to its target.
+const fmtCompact = n => {
+  const value = Math.floor(n), magnitude = Math.abs(value);
+  const units = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+  const unit = units.find(([scale]) => magnitude >= scale);
+  if (!unit || !Number.isFinite(value)) return fmt(value);
+  const scaled = Math.trunc(value / (unit[0] / 100)) / 100;
+  return scaled.toLocaleString('vi-VN', {maximumFractionDigits: 2}) + unit[1];
+};
+function setQiDisplay(el, current, required){
+  if (!el) return;
+  el.textContent = `${fmtCompact(current)} / ${fmtCompact(required)}`;
+  el.title = `${fmt(current)} / ${fmt(required)}`;
+}
 const $ = id => document.getElementById(id);
 
 let lastPull = 0;

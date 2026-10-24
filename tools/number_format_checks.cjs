@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('wwwroot/js/core.js','utf8');
+const context={};
+vm.runInNewContext(source.slice(source.indexOf('const fmt ='),source.indexOf('const $ ='))+';globalThis.compact=fmtCompact;globalThis.full=fmt;globalThis.display=setQiDisplay;',context);
+const cases=[[0,'0'],[9.9,'9'],[999.99,'999'],[1000,'1K'],[1150,'1,15K'],[999999,'999,99K'],[1000000,'1M'],[1150000,'1,15M'],[1234567,'1,23M'],[999999999,'999,99M'],[1000000000,'1B'],[1090275218,'1,09B'],[1000000000000,'1T'],[2404480000000,'2,4T'],[-1150000,'-1,15M']];
+for(const [n,expected] of cases)assert.equal(context.compact(n),expected,`format ${n}`);
+assert.equal(context.full(1000000),'1.000.000');
+const el={};context.display(el,1090275218,2404480000000);
+assert.equal(el.textContent,'1,09B / 2,4T');
+assert.equal(el.title,'1.090.275.218 / 2.404.480.000.000');
+context.display(null,1,2);
+context.display(el,999999,1000000);assert.equal(el.textContent,'999,99K / 1M');
+context.display(el,1000000,1000000);assert.equal(el.textContent,'1M / 1M');
+console.log(`PASS: ${cases.length} compact number cases, exact tooltip values, unchanged full formatter and cultivation completion boundaries.`);

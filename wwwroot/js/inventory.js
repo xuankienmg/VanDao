@@ -506,7 +506,7 @@ function itemCardHtml(k, src){
 }
 function liveInv(){
   const f = $('ivQiFill'); if (!f || !S) return;
-  const q = qiNow(); f.style.width = Math.min(100, q / S.qiReq * 100) + '%'; $('ivQiTxt').textContent = `${fmt(q)}/${fmt(S.qiReq)}`;
+  const q = qiNow(); f.style.width = Math.min(100, q / S.qiReq * 100) + '%'; setQiDisplay($('ivQiTxt'), q, S.qiReq);
 }
 
 // ---- tương tác: chọn, nhấp đúp, kéo thả, phím tắt ----
